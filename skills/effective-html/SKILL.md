@@ -1,5 +1,6 @@
 ---
 name: effective-html
+license: MIT
 description: 'Generate polished, self-contained static HTML pages from user intent and raw material. Six families: exploration (compare code approaches, visual design directions), code (PR review summaries, codebase walkthroughs, design systems, component variants), prototypes (animation and interaction demos), communication (slide decks, status reports, incident postmortems, implementation plans, PR write-ups), diagrams and explainers (SVG illustrations, flowcharts, concept explainers), and small editor UIs (triage boards, config editors, live-preview tuners). Use whenever the user wants to SEE something rather than read prose — 做个页面 / 可视化 / 原型 / 看板 / 复盘页 / 汇报页 / make me a page / interactive demo / compare options side by side — even when "HTML" is never said but a rendered, clickable artifact beats markdown. NOT for print/PDF documents, resumes, or landing pages (use kami), nor multi-page production websites.'
 ---
 

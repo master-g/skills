@@ -1,5 +1,6 @@
 ---
 name: show-me-html
+license: MIT
 description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设计语言，自带 light/dark/system 主题切换与「复制为 Markdown」按钮，为团队内转发而做。
 ---
 

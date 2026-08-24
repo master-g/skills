@@ -1,5 +1,6 @@
 ---
 name: makemake
+license: MIT
 description: 把当前项目散落的命令收敛成一个自文档 Makefile。
 ---
 

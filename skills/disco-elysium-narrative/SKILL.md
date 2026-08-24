@@ -1,5 +1,6 @@
 ---
 name: disco-elysium-narrative
+license: MIT
 description: "Transform any topic into a Disco Elysium-style multi-voice internal drama. Use this skill when the user explicitly requests Disco Elysium style, mentions '极乐迪斯科', asks for skill checks, internal dialogue, or wants existential/philosophical narrative treatment of any subject. Also trigger when user mentions thought cabinet, skill personas, or detective-style introspection."
 ---
 

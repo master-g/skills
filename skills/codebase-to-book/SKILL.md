@@ -1,5 +1,6 @@
 ---
 name: codebase-to-book
+license: MIT
 description: >-
   Turn a codebase into a publication-quality technical book rendered as a
   bilingual Astro web artifact. Spawn this skill whenever the user wants to

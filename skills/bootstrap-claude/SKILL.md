@@ -1,5 +1,6 @@
 ---
 name: bootstrap-claude
+license: MIT
 description: >-
   Bootstrap and maintain a project's Claude/AI-agent context files. Use this
   skill whenever the user wants to initialize or set up a workspace for Claude —

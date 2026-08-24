@@ -1,5 +1,6 @@
 ---
 name: storm
+license: MIT
 description: >-
   Generate a comprehensive, citation-grounded, Wikipedia-style article on any topic
   from scratch using Stanford's STORM method: discover multiple perspectives, run

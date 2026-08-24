@@ -1,5 +1,6 @@
 ---
 name: url-to-kami
+license: MIT
 description: 'Read content from any URL (articles, blog posts, tweets, docs) and typeset it into a beautiful HTML document using the Kami design system. Use this skill whenever the user provides a URL and wants it turned into a readable, printable, or shareable document — even if they say "make this pretty", "turn this into a PDF", "save this article", "read this link", or "format this page". Triggers on URLs paired with any document or formatting intent.'
 ---
 

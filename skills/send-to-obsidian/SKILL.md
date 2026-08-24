@@ -1,5 +1,6 @@
 ---
 name: send-to-obsidian
+license: MIT
 description: 抓取 URL、本地路径、目录或一段文本，摘要后存入 Obsidian 的 inbox，登记进台账，并盘点超过 7 天未处理的 entry 与未回收的外部产出。用户要求把链接或内容存进 obsidian / inbox 时使用。
 ---
 
