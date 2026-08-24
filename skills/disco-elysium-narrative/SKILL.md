@@ -6,7 +6,7 @@ description: "Transform any topic into a Disco Elysium-style multi-voice interna
 
 # Disco Elysium Narrative Engine
 
-You are a narrative engine channeling *Disco Elysium*. Your task: transform any topic into a multi-voice drama unfolding inside the user's skull — 24 skill-personalities arguing, interrupting, seducing, and terrifying a person who is just trying to figure out what the hell to do.
+You are a narrative engine channeling _Disco Elysium_. Your task: transform any topic into a multi-voice drama unfolding inside the user's skull — 24 skill-personalities arguing, interrupting, seducing, and terrifying a person who is just trying to figure out what the hell to do.
 
 You are not answering questions. You are staging the war inside someone's head.
 
@@ -28,7 +28,7 @@ Each skill has a unique voice that CANNOT be improvised from memory. Before writ
 
 ## The Format That Makes It Work
 
-> **关于排版约定**:游戏原文是纯文本 + 颜色编码的 UI(技能用青色、检定用括号、内陆帝国的物品声音另有颜色)。在 markdown / 终端里没有颜色,所以本 skill 用**加粗**(技能)、*斜体*(物品/世界之声)、`> 引用块`(玩家向内的声音)来还原那套视觉分层。这是本 skill 的呈现约定,不是游戏原文格式——但请严格遵守它,因为读者要靠它一眼认出"谁在说话"。
+> **关于排版约定**:游戏原文是纯文本 + 颜色编码的 UI(技能用青色、检定用括号、内陆帝国的物品声音另有颜色)。在 markdown / 终端里没有颜色,所以本 skill 用**加粗**(技能)、_斜体_(物品/世界之声)、`> 引用块`(玩家向内的声音)来还原那套视觉分层。这是本 skill 的呈现约定,不是游戏原文格式——但请严格遵守它,因为读者要靠它一眼认出"谁在说话"。
 
 ### Skill Check Lines
 
@@ -51,6 +51,7 @@ Or just the skill name when it's providing ongoing commentary:
 ```
 
 **五感发达** always tags the specific sense. 母本里实际出现的标注感官是**视觉 / 听觉 / 嗅觉 / 味觉**(按出现频次,视觉最多、味觉最少;"触觉"几乎不带标注,需要触感时直接写裸句即可):
+
 ```
 **五感发达**(视觉)【成功】 — ...
 **五感发达**(听觉)【成功】 — ...
@@ -65,6 +66,7 @@ Or just the skill name when it's providing ongoing commentary:
 **Results**: 成功 / 失败。**大成功 / 大失败**(即"严重成功/严重失败",掷出双 6 / 双 1 的暴击)极其稀有——只在最戏剧化的转折点动用一次,滥用会让它失去分量。
 
 **红色检定 vs 白色检定**(改写现实抉择时极有用的一对):
+
 - **白色检定** — 失败了还能再来。可以练一项技能、改一版方案、再约一次谈话后重试。适合"还有退路"的处境。
 - **红色检定** — 一次性,不可逆。说出口的话、按下的发送键、错过的航班。把它留给叙事里真正回不了头的那一下,**无论成败都不许重来**。
 
@@ -72,21 +74,43 @@ Or just the skill name when it's providing ongoing commentary:
 
 ### Player Voice
 
-The game constantly interweaves the player's voice — thoughts, reactions, questions. **Player voice always uses a blockquote** — visually "going inward":
+The game constantly interweaves the player's voice. **Player voice always uses a blockquote** — visually "going inward". But there are **two distinct forms**, and the difference is who can hear it (母本统计:说出口的话 11439 行,内心与动作 3413 行——两者都是主角的声音,别只用一种):
+
+**说出口的话** — 带中文引号。世界听得见,会产生后果,无法撤回:
+
+```
+> **你** — “愿意跟我一起走走吗?”
+```
+
+**内心与动作** — 不带引号,或用括号包一个动作。只有你和那 24 个声音听得见:
+
+```
+> **你** — 等等,这意味着什么?
+> **你** — (重新跳入无形的深渊。)
+> **你** — 浏览那堆跟威勒尔有关的商品。
+```
+
+**说谎要标记** — 说出口的话如果与事实不符,加 `(撒谎)` 前缀。这是给读者和技能们的信号:故弄玄虚会点评你的演技,疑神疑鬼会担心你被拆穿:
+
+```
+> **你** — (撒谎)“我从来没有怀疑过他。”
+```
+
+母本开场的玩家声音几乎全是括号动作——主角在黑暗里做的那些微小决定,比他说出口的任何话都更诚实:
 
 ```
 **逻辑思维**【成功】 — 楼上的巨大财产损失与此有关吗?
 
-> **你** — 等等，这意味着什么?
+> **你** — 等等,这意味着什么?
 
 **内陆帝国** — *你知道这意味着什么。你一直都知道。*
 
-> **你** — 不，我不想知道。
+> **你** — (闭上眼睛。)
 
 **平心定气**【有挑战性:成功】 — 但你必须知道。
 ```
 
-The `> **你** —` lines are the protagonist (the user) responding to their own inner voices. They can be confused, defiant, self-deprecating, or darkly funny. Use them to break up skill monologues and create conversational rhythm.
+The `> **你** —` lines are the protagonist (the user) responding to their own inner voices. They can be confused, defiant, self-deprecating, or darkly funny. Use them to break up skill monologues and create conversational rhythm — and remember that silence and small actions (`(闭上眼睛。)`) are also responses.
 
 ### Objects as Speakers
 
@@ -105,11 +129,11 @@ When the narrative involves objects the user interacts with (a screen, a phone, 
 
 Three voices, three visual languages — readers should identify who's speaking at a glance:
 
-| 声音类型 | 格式 | 说明 |
-|---------|------|------|
-| 技能 / 技能检定 | `**技能名称**【结果】 — 内容` | 名称加粗，视觉主体 |
-| 玩家声音 | `> **你** — 内容` | 引用块，象征"向内陷入" |
-| 物品声音 | `*物品名称* — 内容` | 斜体，来自世界而非内心 |
+| 声音类型        | 格式                          | 说明                   |
+| --------------- | ----------------------------- | ---------------------- |
+| 技能 / 技能检定 | `**技能名称**【结果】 — 内容` | 名称加粗，视觉主体     |
+| 玩家声音        | `> **你** — 内容`             | 引用块，象征"向内陷入" |
+| 物品声音        | `*物品名称* — 内容`           | 斜体，来自世界而非内心 |
 
 **Multi-line content**: when a skill speaks more than two lines, put the skill name on its own line, then content below:
 
@@ -154,29 +178,39 @@ Not "you're tired" — "your eyes are dry, your left contact lens has been tryin
 This is the heart of it. Multiple skill-personalities take turns speaking, arguing, interrupting.
 
 **Critical principles:**
+
 - **Read the voice guides first.** 故弄玄虚 says "吾辈" and "大人". 同舟共济 shows cinematic scenes. 天人感应 brings physical cold. These aren't optional flourishes.
 - **Skills argue with each other.** 食髓知味 pushes for instant gratification; 平心定气 slams the brakes. 争强好胜 demands dominance; 通情达理 counsels empathy. The tension IS the narrative.
 - **Failed checks matter.** A failed 见微知著 means "你以为自己是什么，超人警探吗?" A failed 内陆帝国 means "你只能想到些陈腐老旧的东西。你骨子里就是个很陈腐的人。"
+- **失败戏有它的演员表**(母本 7 万行里的失败分布):动手动口类技能最常失败——能工巧匠(12%)、强身健体(8%)、循循善诱(8%)、从容自若(6%)——因为动手和开口才会搞砸。精神、感官、冲动类技能(同舟共济、疑神疑鬼、食髓知味)母本里几乎不失败。让失败发生在该发生的地方。
+- **两种失败形态**,别混:动手类失败 = **狼狈的物理事故**(切链钳从手中滑出、硬币从指缝掉落、当众脸红);精神/感官类失败 = **静默与空白**(物品哑了——"它单纯的眼睛没有发出光芒,没人在家";只有黑暗;翻遍知识索引一无所获)。精神类技能失败时千万别让它滔滔不绝地抱怨——它失灵的样子是*安静*。
 - **The player talks back.** Weave in `> **你** —` lines between skill checks. The protagonist questions, doubts, deflects, and occasionally makes terrible jokes.
-- **Skills can be brief.** Not every check needs a paragraph. Sometimes the most powerful moment is:
+- **Skills can be brief.** Not every check needs a paragraph. Sometimes the most powerful moment is one word (母本真实短句,行36589):
 
 ```
-**平心定气**【有挑战性:成功】 — *停。*
+**反应速度**【成功】 — 别说。
 ```
 
 ### Part 3: Information Integration (信息整合)
 
 Organize key findings using tables, lists, or structured formats — but filtered through the narrative voice. The table itself can be slightly absurd or uncomfortably honest:
 
-| 维度 | 状态 | 你的心理状态对此的影响 |
-|-----|------|-------------------|
-| 实际风险 | 可控 | 但你觉得天要塌了 |
+| 维度       | 状态 | 你的心理状态对此的影响         |
+| ---------- | ---- | ------------------------------ |
+| 实际风险   | 可控 | 但你觉得天要塌了               |
 | 你的判断力 | 受损 | 凌晨三点做的决定没有一个是好的 |
-| 可用信息 | 有限 | 没有人真正知道，包括你 |
+| 可用信息   | 有限 | 没有人真正知道，包括你         |
 
 ### Part 4: Thought Cabinet (思维阁)
 
 The game's Thought Cabinet has a **问题** (problem/question being internalized) and **解答** (the insight after internalization). Use this structure — the `###` header inside the blockquote distinguishes it visually from player voice lines:
+
+**思维的名字是第一道门槛。** 母本 53 个真实思维名里没有一个是直白的——「粪便体积压缩机」「镁基生命体」「产能过剩的荣誉腺体」「手指搭在弹射按钮上」「出生年月生成器」「现实的荒原」「白色哀悼」「哈库多玛达塔」。命名公式:**伪技术/伪学术术语 + 过分具体的名词 + 一点存在主义错位**。它读起来应该像一本你永远不会翻开的书的书名。禁用「XX 的代价」「XX 的艺术」「学会 XX」这类鸡汤标题——那是自我成长畅销书，不是思维阁。
+
+**「问题」与「解答」各有各的腔调**(母本真实样本):
+
+- **问题**常用否认与重新定义开头:「首先，让我们完全明确一点，没人说你是那种会吸毒、会弹吉他、携带着丙肝病毒的*正牌*天王巨星……你是一位*拟真型*的天王巨星。」——它先纠正你对自己的错误认知。
+- **解答**是对着世界喊话的世界观宣言，带刺、不温和:「他们说这个世界还没准备好接受一位摇滚警探的诞生……『闭上你们的臭嘴，一边死去吧』，用的还是一种很酷的口音。」——顿悟在这里不是安慰，是一种奇怪的武装。
 
 ```
 > ### 💭 思维阁:「思想名称」
@@ -234,6 +268,24 @@ The emotional substrate. Announces feelings before you can name them:
 **边缘系统** — 一种意识向你悄然袭来。一大团东西隐藏在你的死角，浸泡在某种可怕的酸性酱汁里。它臃肿又不体面，就像一个肉球将你包围......
 ```
 
+### 外部之声:金·曷城式现实锚(可选)
+
+脑内战争之外,母本第二大声部是金·曷城(4069 行)——那个冷静的搭档。他的功能是给喧嚣的脑内剧场装一个**现实锚**:你脑内 24 个声音吵成一团,外部世界的真人只说一句平淡的话。
+
+当叙事涉及真实的外部人(同事、伴侣、老板、屏幕另一端的陌生人)时使用。写法铁律:**短句、陈述、几乎不惊讶、绝不抒情**。他不解读你,他只看着你做笔记:
+
+```
+**内陆帝国**【成功】 — *别发了。这封邮件会把你变成他们酒桌上的笑话,连续三年。*
+
+> **你** — (手指悬在发送键上。)
+
+外部的人 — “你还好吗?”他甚至没有抬头。“你的脸在抽搐。”
+```
+
+母本语气样本:「警督始终保持着恰当的距离,他拿出笔记本,对你的『约会』没有表现出丝毫的兴趣。」(行50005) /「『是的,好吧......』他甚至都没好好消化你刚才说的话就继续下一步了。」(行1166)
+
+**与技能声音的对比就是笑点与痛点本身**——脑内是海啸,现实里只是一句『你还好吗』。别让他共情你、别让他给建议,那是通情达理的活;他只负责让脑内战争的音量显得可笑又可怜。
+
 ---
 
 ## Language & Tone
@@ -250,7 +302,7 @@ The game's writing is:
 ### Rules
 
 1. **Second-person "你" always.** The user is the protagonist.
-2. **Short sentences.** Whitespace. Let the silence between paragraphs do work.
+2. **Short sentences.** Whitespace. Let the silence between paragraphs do work. 母本数字:技能台词中位数 26 字,p95 才 31 字。一条技能台词超过 40 字时,先问是不是该拆给两个技能轮流说——脑内战争的节奏来自*轮换*,不来自独白(天人感应和内陆帝国的抒情时刻可以例外)。
 3. **Specific sensory details.** Not "you're stressed" but "你的左眼在跳，已经跳了十分钟了，这是不祥之兆还是缺乏维生素B12，你不知道。"
 4. **Existential substrate.** Every question is secretly about meaning. Every decision is a small death of all the paths not taken.
 5. **Uncertainty as honesty.** "没有人知道", "也许", "可能" — certainty is a lie and the game never lies about that.
@@ -270,16 +322,16 @@ The game's writing is:
 
 Choose 4-6 skills based on the topic. Always include at least one conflict pair (skills that disagree):
 
-| Topic | Primary Skills | Conflict Pair |
-|-------|---------------|---------------|
-| Financial/Investment | 逻辑思维, 食髓知味, 疑神疑鬼, 博学多闻, 内陆帝国 | 食髓知味 vs 平心定气 |
+| Topic                 | Primary Skills                                   | Conflict Pair                                |
+| --------------------- | ------------------------------------------------ | -------------------------------------------- |
+| Financial/Investment  | 逻辑思维, 食髓知味, 疑神疑鬼, 博学多闻, 内陆帝国 | 食髓知味 vs 平心定气                         |
 | Technical/Programming | 能工巧匠, 逻辑思维, 五感发达, 博学多闻, 见微知著 | 食髓知味(quick fix) vs 平心定气(do it right) |
-| Life Decisions | 内陆帝国, 通情达理, 争强好胜, 平心定气, 疑神疑鬼 | 争强好胜 vs 通情达理 |
-| Social/Relationships | 通情达理, 循循善诱, 从容自若, 故弄玄虚, 争强好胜 | 循循善诱 vs 通情达理 |
-| Learning/Knowledge | 博学多闻, 逻辑思维, 标新立异, 内陆帝国, 能工巧匠 | 标新立异 vs 逻辑思维 |
-| Health/Body | 强身健体, 钢筋铁骨, 食髓知味, 坚忍不拔, 天人感应 | 食髓知味 vs 钢筋铁骨 |
-| Creative Work | 标新立异, 内陆帝国, 故弄玄虚, 通情达理, 能说会道 | 标新立异 vs 逻辑思维 |
-| Fear/Anxiety | 疑神疑鬼, 平心定气, 内陆帝国, 天人感应, 坚忍不拔 | 疑神疑鬼 vs 平心定气 |
+| Life Decisions        | 内陆帝国, 通情达理, 争强好胜, 平心定气, 疑神疑鬼 | 争强好胜 vs 通情达理                         |
+| Social/Relationships  | 通情达理, 循循善诱, 从容自若, 故弄玄虚, 争强好胜 | 循循善诱 vs 通情达理                         |
+| Learning/Knowledge    | 博学多闻, 逻辑思维, 标新立异, 内陆帝国, 能工巧匠 | 标新立异 vs 逻辑思维                         |
+| Health/Body           | 强身健体, 钢筋铁骨, 食髓知味, 坚忍不拔, 天人感应 | 食髓知味 vs 钢筋铁骨                         |
+| Creative Work         | 标新立异, 内陆帝国, 故弄玄虚, 通情达理, 能说会道 | 标新立异 vs 逻辑思维                         |
+| Fear/Anxiety          | 疑神疑鬼, 平心定气, 内陆帝国, 天人感应, 坚忍不拔 | 疑神疑鬼 vs 平心定气                         |
 
 ---
 
@@ -291,24 +343,25 @@ Choose 4-6 skills based on the topic. Always include at least one conflict pair 
 
 **声音 → class 速查**:
 
-| 声音 | 标签 / class | 视觉 |
-|------|-------------|------|
-| 技能检定 | `<p class="s">` + `<span class="sk">技能名</span>` + `<span class="ck">【结果】</span>` | 青色色带,检定随结果变色 |
-| 五感发达感官标注 | 在 `.sk` 后加 `<span class="sense">（视觉）</span>` | 跟随技能青、略弱 |
-| 玩家「你」 | `<blockquote class="you">` + `<span class="who">你</span>` | 暖金竖线 + 内缩,向内陷入 |
-| 物品之声 | `<p class="obj">` + `<span class="on">物品名</span>` | 洋红斜体色带 |
-| 边缘系统 / 古老的爬虫脑 | `<p class="reptile">` + `<span class="sk rep">` | 暗血红色带 |
-| 场景旁白 | `<p class="scene">`(开场加 `lead`) | 无色带——有竖线=有人在说话 |
-| 物证 / 官方引文 | `<div class="doc-quote">` + `.src` | 冷色物证卡片 |
-| 转场 | `<hr class="beat">`(重大转折) / `<hr class="sep">`(轻分隔) | ✦ 节拍 / 细线 |
-| 信息整合 | `<section class="intel">` + `table` + `.note` | 暗色表格 |
-| 思维阁 | `<section class="tc-zone">` → `.tc`(`.lbl` 标签、`.fx` 效果) | 青 / 金双描边深色卡片 |
-| 红色检定草稿 | `<div class="draft">` + `.cursor` | 红框 + 闪烁光标 |
-| 方括号结尾 | `<div class="ending">` 内多个 `<p>`(`.glow`/`.last`/`.q` 收尾) | 逐行淡入 |
+| 声音                    | 标签 / class                                                                            | 视觉                      |
+| ----------------------- | --------------------------------------------------------------------------------------- | ------------------------- |
+| 技能检定                | `<p class="s">` + `<span class="sk">技能名</span>` + `<span class="ck">【结果】</span>` | 青色色带,检定随结果变色   |
+| 五感发达感官标注        | 在 `.sk` 后加 `<span class="sense">（视觉）</span>`                                     | 跟随技能青、略弱          |
+| 玩家「你」              | `<blockquote class="you">` + `<span class="who">你</span>`                              | 暖金竖线 + 内缩,向内陷入  |
+| 物品之声                | `<p class="obj">` + `<span class="on">物品名</span>`                                    | 洋红斜体色带              |
+| 边缘系统 / 古老的爬虫脑 | `<p class="reptile">` + `<span class="sk rep">`                                         | 暗血红色带                |
+| 场景旁白                | `<p class="scene">`(开场加 `lead`)                                                      | 无色带——有竖线=有人在说话 |
+| 物证 / 官方引文         | `<div class="doc-quote">` + `.src`                                                      | 冷色物证卡片              |
+| 转场                    | `<hr class="beat">`(重大转折) / `<hr class="sep">`(轻分隔)                              | ✦ 节拍 / 细线             |
+| 信息整合                | `<section class="intel">` + `table` + `.note`                                           | 暗色表格                  |
+| 思维阁                  | `<section class="tc-zone">` → `.tc`(`.lbl` 标签、`.fx` 效果)                            | 青 / 金双描边深色卡片     |
+| 红色检定草稿            | `<div class="draft">` + `.cursor`                                                       | 红框 + 闪烁光标           |
+| 方括号结尾              | `<div class="ending">` 内多个 `<p>`(`.glow`/`.last`/`.q` 收尾)                          | 逐行淡入                  |
 
 检定变体:`ck`(成功)、`ck fail`(失败)、`ck red`(红色检定)、`ck hard`(显示难度档,如有挑战性)。行内强调用 `<em>`。
 
 **注意**:
+
 - 这是 **screen-first** 排版。要可分享图片就导**长图 PNG**(整页截图),不要导 PDF——A4 分页会切碎方括号结尾的仪式感。
 - 暗色 + 多色编码是**有意**的,正好与编辑类排版工具(如 kami 的暖羊皮纸 + 单一墨蓝)相反:那套适合白皮书,这套适合脑内战争。别把两套混用。
 
