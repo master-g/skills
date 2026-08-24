@@ -1,0 +1,224 @@
+{
+  "skill_name": "effective-html",
+  "evals": [
+    {
+      "id": 1,
+      "name": "sprint-status-report",
+      "prompt": "这是我们这周 sprint 的零散记录，下午要给老板同步进度，帮我整理成一个能直接发给他看的页面：\n- 支付重构：完成 80%，stripe webhook 迁移完了，剩下退款流程，预计周四能完\n- 搜索性能：p95 从 1.2s 降到 340ms，用了 ES 的 query cache + 预热\n- bug：iOS 端闪退（crash rate 0.8%），定位到是图片缓存 OOM，修复在 review 中\n- 招聘：后端二面挂了 2 个，下周再约 3 个\n- 风险：支付重构如果周四赶不上，会影响下周一开始的灰度计划\n- 团队：小王下周休假，他手上的 on-call 需要交接",
+      "expected_output": "一个自包含的状态报告 HTML 页面：信息层级清晰（指标/进展/风险/人员），所有事实来自笔记原文，无编造数据，中文，浅色编辑风设计",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts, web fonts, or remote images; outbound <a> links are allowed)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum, no TBD/TODO markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, and lang attribute on <html>",
+        "Factual fidelity: all six note items appear (支付重构 80%/周四, p95 1.2s→340ms, iOS crash 0.8% OOM, 招聘 2 挂 3 约, 灰度风险, 小王 on-call 交接) and NO metrics beyond those in the notes are invented",
+        "Page is in Chinese with clear information hierarchy: progress, risks, and people/process items are visually distinguishable sections rather than one flat list",
+        "The schedule risk (支付重构延期影响灰度) is visually surfaced (callout/highlight/distinct treatment), not buried as a plain bullet",
+        "Publishes the status-report family marker and includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)",
+        "Leads with a delivery position, then material movement and evidence, and closes with risks plus accountable carryover; it does not open as an equal-card KPI dashboard",
+        "Carryover preserves the supplied accountability: 小王's on-call handoff is explicit, and no owner, date, or staffing assumption absent from the notes is invented"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "backoff-jitter-explainer",
+      "prompt": "I'm onboarding two junior devs next week and they keep hammering our API with naive retry loops. Can you make me a little interactive page that teaches exponential backoff with jitter? I want them to actually SEE why jitter matters — like what happens when 50 clients all retry at the same moment vs. with jitter spreading them out. Something they can play with, sliders or whatever.",
+      "expected_output": "A self-contained interactive concept-explainer HTML page: sliders/controls driving a live visualization of retry storms with vs. without jitter, working vanilla JS, no external dependencies; page prose in Simplified Chinese (the English prompt does not explicitly request an output language, so the Chinese default applies)",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts like Chart.js/D3, no web fonts, no remote images)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum, no TBD/TODO markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, and lang attribute on <html>",
+        "Interactive controls exist and are wired: at least one slider or equivalent control whose input/change event re-renders the visualization (verifiable in the JS source)",
+        "The jitter-vs-no-jitter contrast is explicitly visualized: the thundering-herd scenario (many clients retrying at the same moment) is visibly compared against jittered spreading, side by side or toggleable",
+        "JavaScript is syntactically valid (passes node --check or equivalent parse) and every interactive control referenced in HTML has a corresponding handler",
+        "Publishes the technical-explainer family marker with the concept variant and includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)",
+        "The teaching order is concept → mechanism → worked understanding; the interactive laboratory is the dark focal surface rather than a decorative dark card",
+        "Page prose (headings, section labels, body text) is in Simplified Chinese — the prompt is English but does not explicitly request an output language, so the skill's Simplified-Chinese default applies; code snippets, API names, and technical terms may remain in English"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "notifications-transport-comparison",
+      "prompt": "我们的 SaaS 要加站内通知功能（顶栏小铃铛那种），团队在纠结用 SSE、WebSocket 还是短轮询。帮我做一个对比页面发到群里讨论。我们的情况：Rails 后端 + Puma，部署在 Heroku 上，大概 5000 日活，通知频率不高（每人每天十几条），但未来半年可能要加实时协作编辑功能。页面里要有一个明确的推荐结论。",
+      "expected_output": "一个三方案对比的探索页面：每个方案的机制/优劣/与给定约束（Heroku、Puma、5000 DAU、未来协作编辑）的契合度，有明确推荐卡片，事实准确，自包含",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts, web fonts, or remote images)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum, no TBD/TODO markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, and lang attribute on <html>",
+        "All three options (SSE / WebSocket / 短轮询) are each presented with mechanism and tradeoffs — none reduced to a single throwaway line",
+        "The user's stated constraints are explicitly engaged: Rails+Puma, Heroku, 5000 DAU, low notification frequency, AND the future real-time collaborative-editing requirement all appear in the analysis",
+        "One option is clearly recommended with visually distinct treatment (recommended card/badge/callout) and the recommendation acknowledges the collaborative-editing tension",
+        "Publishes the approach-comparison family marker and includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)",
+        "Establishes a shared constraint baseline before a dark side-by-side decision surface; the recommendation is visually dominant and not just a fourth equal card"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "english-override-api-changelog",
+      "prompt": "我们要给海外客户发一个 API 变更说明页,受众全是英文用户,页面请用英文写。内容:1) /v2/orders 的 status 字段从 string 改为 enum(pending/paid/shipped/cancelled),旧值 2026-09-01 起不再返回;2) 新增 webhook 事件 order.refunded;3) rate limit 从 60 rpm 提到 120 rpm;4) /v1 整体 2027-01-01 EOL。做成一个客户能直接看的页面。",
+      "expected_output": "A self-contained feature-explainer/changelog HTML page written in English (the user explicitly requested English output, overriding the skill's Simplified-Chinese default), covering all four changes with dates and values exactly as given",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts, web fonts, or remote images; outbound <a> links are allowed)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum, no TBD/TODO markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, and lang attribute on <html>",
+        "Page prose (headings, labels, body) is in English and <html lang> is an en variant — the user explicitly requested English, which overrides the skill's Simplified-Chinese default",
+        "Factual fidelity: all four changes appear with their exact values (status enum with 4 values + 2026-09-01, order.refunded webhook, 60→120 rpm, /v1 EOL 2027-01-01) and no invented dates or limits",
+        "The breaking change (status field type change) is visually distinguished from additive changes (badge/callout/severity treatment), not presented as an equal-weight bullet",
+        "Publishes the technical-explainer family marker with the feature-api variant and includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)",
+        "Organizes the customer-facing explanation around behavior, migration/execution path, configuration or client action, and operational dates/gotchas"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "bug-triage-board",
+      "prompt": "把我们积压的这些 bug 做成一个能拖来拖去的 triage 看板,我明天和 QA 一起过一遍优先级:1) 导出 CSV 中文乱码(BOM 问题,影响所有 Excel 用户);2) 深色模式下下拉菜单文字看不清;3) 移动端上传头像偶发 413(nginx 限制 1M);4) 搜索结果分页在最后一页显示空列表;5) Webhook 重试没有上限,打挂过一次下游;6) 密码重置邮件偶尔进垃圾箱。列就用 待定/本周修/下个迭代/不修 四档,先都放在待定。",
+      "expected_output": "一个自包含的可拖拽 triage 看板页面:四列(待定/本周修/下个迭代/不修),六张 bug 卡片初始都在待定列,原生 drag & drop 可跨列移动,简体中文界面",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts, web fonts, or remote images)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, and lang attribute on <html> set to a zh variant",
+        "Page UI (column headers, buttons, labels) is in Simplified Chinese — the prompt is Chinese and no other language was explicitly requested",
+        "All six bugs appear as cards with their key facts preserved (BOM/CSV, dark-mode dropdown, 413/1M nginx, empty last page, webhook retry unbounded, reset email spam) and all start in the 待定 column",
+        "Native drag & drop is wired: cards carry draggable attributes and the JS handles dragstart/dragover/drop so cards can move across all four columns (verifiable in source; dragover calls preventDefault)",
+        "JavaScript is syntactically valid (passes node --check or equivalent parse) and no console errors on load"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "account-export-implementation-plan",
+      "prompt": "请把下面这些已经定下来的内容整理成一份能直接交给实现者的 HTML 实施计划。目标：让用户在设置页申请导出自己的账户数据，后台生成快照，完成后收到带签名下载链接的通知。顺序：1) 新增导出申请 endpoint 和鉴权；2) 后台 job 按申请时刻读取数据快照；3) 写入现有对象存储并生成 24 小时有效的签名 URL；4) 站内通知和邮件通知；5) 记录申请、完成、下载三类审计事件。依赖：现有 job queue、对象存储、邮件服务，以及数据访问政策 review。风险：跨表读取造成快照不一致、PII 泄露、job 重试产生重复文件、大账户导出超时。约束：必须在 feature flag 后；材料里没有工期，也不需要 UI mockup。不要替我补估时或画假界面。",
+      "expected_output": "一个自包含的简体中文实施计划 HTML：明确目标、按顺序呈现工作、标出依赖与风险、给出可验证的完成条件；不编造工期、指标或 UI mockup",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file: no external resource loads (no CDN scripts, web fonts, or remote images)",
+        "No placeholder or template residue: no {{...}}, no lorem ipsum, no TBD/TODO markers, no 'Acme' sample data",
+        "Required metadata present: <meta name=viewport>, a meaningful <title>, lang set to a zh variant, and effective-html-family set to implementation-plan",
+        "Factual fidelity: the endpoint/auth, point-in-time job snapshot, existing object storage, 24-hour signed URL, in-app plus email notification, and three audit event types all appear",
+        "All four named dependencies and all four named risks are explicit and easy to scan",
+        "No unsupported estimate, schedule, metric, staffing assumption, or UI mockup is invented",
+        "The plan foregrounds objective, ordered execution spine, dependencies, risks, and verification rather than presenting an equal-card dashboard",
+        "Includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "optimistic-mutation-code-review",
+      "prompt": "请根据下面已经核实的 PR 材料做一份给作者看的代码审查 HTML，不要改写成 PR 介绍，也不要补不存在的缺陷。\n\nPR #247：给任务列表加 optimistic update，6 files，+142/-38。\n- src/hooks/useOptimisticTasks.ts：onMutate 先读旧 cache，再 setQueryData，但没有 cancelQueries；如果后台 refetch 在 mutation 完成前返回，会覆盖 optimistic state。\n- src/api/tasks.ts：updateTask 的 idempotency key 默认参数是 crypto.randomUUID()；mutation 重试会重新调用函数并生成新 key。\n- src/components/TaskList.tsx：解构了 isPending 但没有使用。这是非阻塞问题。\n- Toast.tsx 与 types/task.ts 是纯新增/类型扩展，没有发现阻塞风险。\n- 测试已覆盖成功更新与失败 rollback，但没有覆盖 refetch race，也没有验证 retry 复用 key。\n\n结论请明确：request changes。阻塞项只能是 cancelQueries 与稳定 idempotency key；最后列出窄范围复审需要看的修改和测试。",
+      "expected_output": "一个自包含的简体中文 code-review HTML：以 reviewer verdict 开场，按风险拓扑组织两个阻塞发现与一个非阻塞问题，发现锚定文件和行为证据，以复审动作收尾；不把材料改写成作者视角 PR 宣传页",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to code-review",
+        "The opening reviewer verdict is request changes and appears before file-level evidence",
+        "Exactly the two supplied blocking themes are prominent: cancelQueries/refetch race and stable idempotency key across retry; isPending remains explicitly non-blocking",
+        "Factual fidelity preserves 6 files, +142/-38, the safe Toast/types changes, and the two stated test gaps without inventing another defect, metric, author, or deadline",
+        "The reader order is reviewer position → risk topology → finding evidence → narrow re-review actions",
+        "Includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "webhook-execution-code-understanding",
+      "prompt": "我要接手支付 webhook，请把下面的代码调查笔记整理成一份 HTML 代码理解文档，重点是一次请求怎样执行，以及信任边界在哪里。只能用这些已经确认的信息：\n1) POST /webhooks/payment 进入 src/routes/paymentWebhook.ts；路由必须拿 raw body。\n2) src/middleware/verifySignature.ts 用 PAYMENT_WEBHOOK_SECRET 和 raw body 验签；失败直接 401。这是外部输入变成可信事件的边界。\n3) src/services/EventStore.ts 以 provider_event_id 写 Postgres，唯一索引负责去重；重复事件返回已有记录。\n4) 新事件入队 payment.apply，payload 只有内部 eventId。\n5) src/jobs/applyPayment.ts 按 eventId 重读 EventStore，在一个 DB transaction 里更新 invoice 并写 payment_applied audit event。\n6) 路由在持久化并入队后返回 202，不等待 invoice 更新。\n边界提醒：raw body 不能先 JSON.parse；Postgres 是状态 owner；queue 只传内部 eventId。不要发明 retry 次数、队列产品、表结构字段或延迟数据。",
+      "expected_output": "一个自包含的简体中文 code-understanding HTML：先给系统定位，再按 route→signature→EventStore→queue→job 的因果执行路径解释状态变化，用代码/路径证据支撑阶段，并明确验签与状态所有权边界",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to code-understanding",
+        "The causal order is preserved: route/raw body → signature verification/401 → Postgres dedupe → payment.apply with internal eventId → transactional invoice plus audit update → 202 response semantics",
+        "The signature middleware is explicitly identified as the trust boundary and Postgres as the state owner",
+        "All named file paths and the provider_event_id uniqueness mechanism remain attached to the execution stage they explain",
+        "No retry count, queue vendor, schema field, latency metric, or unprovided architecture component is invented",
+        "Includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "connection-pool-incident-report",
+      "prompt": "把这份已经核实的事故记录整理成最终 incident report HTML。不要补时间、影响范围或责任人。\n- INC-0412，SEV-2，task sync 502。\n- 14:02 配置发布；14:06 开始影响；14:07 sync_5xx_rate > 2% 告警；14:18 回滚最近两个应用发布但无效；14:31 发现 worker pool wait 饱和；14:44 回滚配置并重启 worker；14:47 错误率回到 0.2% 以下；14:49 宣布 resolved。\n- 根因：sync-worker 的 max_connections 本应是 64，但调试值 8 被提交；配置校验只查类型不查安全范围；配置直接全量发布；值班页面先显示应用发布、没有显示配置发布，导致先回滚错对象。\n- 影响：约 41,200 个请求 502，峰值 21.4%，约 2,300 个 workspace，持续 47 分钟；客户端安全重试，没有数据丢失；未突破月度 SLO。\n- prevention：Runtime 团队 4/18 加范围与继承校验；Reliability 团队 4/25 把配置发布放进值班页面；Infrastructure 团队 5/2 做单 AZ 10 分钟 canary。配置恢复 64 已在 4/12 完成。",
+      "expected_output": "一个自包含的简体中文 incident-report HTML：当前状态与严重级别优先，按时间线重建检测/误判/诊断/缓解，将四段因果链与影响数据分开，并以有 owner/date 的 prevention work 收尾",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to incident-report",
+        "INC-0412, SEV-2, resolved state, all supplied timestamps from 14:02 through 14:49, and the 47-minute duration are preserved exactly",
+        "The causal chain separates bad value, insufficient validation, full rollout, and poor configuration visibility instead of blaming only the trigger",
+        "Impact preserves 41,200 failed requests, 21.4% peak, 2,300 workspaces, no data loss, safe client retries, and no monthly SLO breach without adding metrics",
+        "All four prevention items preserve their supplied team owner and date; no named individual or invented action is introduced",
+        "Reader order is incident state → chronology → causal chain → impact → prevention work, with canonical Claude document roles (#FAF9F5, #EFE9DE, #181715, #CC785C)"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "notification-queue-pr-writeup",
+      "prompt": "请把这些已确认的改动整理成作者视角的 PR write-up HTML，给半年没碰通知代码的 reviewer 看。不要做 code review，也不要发明基准数据。\n目标：把通知发送移出 comments.create 请求路径。\nBefore：handler 保存 comment 后同步 sendEmail/sendChat；provider timeout 会让已经保存成功的 comment 返回 500；没有持久 retry 证据。\nAfter：handler 保存 comment、resolve watchers、为每个 recipient/channel enqueue notify.deliver，然后返回 comment。worker 读用户 channel preferences，调用 adapter；retryable error 交给 queue backoff，超过各 channel 的既有上限后写 dead-letter。singleton key 是 commentId:recipientId:channel。\n阅读顺序：1) packages/notify/src/worker.ts（新执行 owner）；2) packages/api/src/routers/comments.ts（enqueue boundary）；3) packages/db/migrations/0051_dead_letter.sql（失败证据）；4) adapters 与 worker registration（plumbing）。\nReview focus：retry/dead-letter 边界、singleton key 是否唯一、明确不做 digest batching/delivery receipts/priority lanes。\nProof：worker integration 14 cases 通过；3 watchers 产生 9 个唯一 job 的 request integration 通过；SMTP interruption 要在 10% ramp 时手测。\nRollout：notify_queue_v2；先 internal，再 10%；dead-letter rate >0.5% 就暂停；观察通过后 100%，下个 release 删除 dormant inline path。",
+      "expected_output": "一个自包含的简体中文 pr-writeup HTML：以 author intent 和 before/after 行为差异开场，按因果阅读顺序做 change tour，明确 reviewer focus、现有测试证据、待做 ramp 检查和 rollout 条件",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to pr-writeup",
+        "The author intent and before/after request behavior appear before the change tour; the page does not open with reviewer verdict or invented findings",
+        "The four supplied change-tour stages remain in causal reading order with the why for each",
+        "Review focus preserves retry/dead-letter, singleton-key uniqueness, and the three explicit out-of-scope items",
+        "Proof distinguishes passed 14-case worker integration, passed 3-watchers/9-jobs integration, and the pending SMTP interruption ramp check",
+        "Rollout preserves notify_queue_v2, internal → 10% → 100%, the >0.5% pause condition, and dormant-path removal next release without adding dates or performance claims",
+        "Includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "empty-state-visual-directions",
+      "prompt": "我们要给新用户的空项目页定视觉方向。请做一个可以发给设计和产品一起评审的 HTML。四个候选方向是：A 极简几何，强调清晰；B 温暖插画，强调亲和与品牌记忆；C 数据图形，强调效率；D 编辑排版，强调专业与作者感。四个方向必须使用相同文案：标题「从第一个项目开始」，说明「把任务、决策和协作者放在同一个地方」，主操作「创建项目」。评审标准是清晰度、品牌个性、行动引导。当前倾向 B，但要明确写出每个方向适用场景和风险，不要假装已经完成用户测试。",
+      "expected_output": "一个自包含的简体中文 visual-directions HTML：先建立共同决策情境和标准，再以同文案、同层级的四个方向进行可比展示，最后给出有前提的 B 方向建议；不编造用户测试、指标或研究结论",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to visual-directions",
+        "All four directions are shown with the exact shared title, description, and primary action rather than using different copy to manufacture contrast",
+        "The decision brief explicitly establishes the three supplied criteria before the direction stage",
+        "Each direction includes both contextual fit and a concrete risk or tradeoff",
+        "Direction B is recommended with an explicit assumption, while the page does not claim user testing, conversion evidence, or any metric absent from the prompt",
+        "Reader order is decision brief → shared criteria → direction stage → tradeoffs → selection guidance",
+        "Includes the canonical Claude document roles (#FAF9F5 canvas, #EFE9DE card, #181715 dark surface, #CC785C coral)"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "internal-product-design-system-reference",
+      "prompt": "请把下面已经定下来的内部产品设计语言整理成一个可查询的 HTML reference，不是品牌宣传页。原则：强调必须有理由；先用间距和细分隔线组织信息，再考虑卡片；文案标签要具体。基础：画布 #FAF9F5，卡片 #EFE9DE，深色技术面 #181715，强调色 #CC785C；正文使用系统无衬线，展示标题可以用系统自带 serif；间距基于 4px；圆角只用 8/14/22px。示例需要覆盖主/次操作与一条有后果的系统通知。最后写清 do/don't 和可访问性要求。不要增加渐变、玻璃效果、外部字体或新的品牌色。",
+      "expected_output": "一个自包含的简体中文 design-system-reference HTML：按原则、foundation reference、组合示例、usage guardrails 组织，值和语义角色可直接查询，示例解释选择理由，并忠实保留给定约束",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external loads, gradients, backdrop-filter, remote fonts, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to design-system-reference",
+        "All three supplied system principles appear before foundation values and are written as operational guidance rather than marketing slogans alone",
+        "Foundation reference preserves the exact four color roles, system typography constraint, 4px spacing base, and only 8/14/22px radii",
+        "Composition examples include primary/secondary actions and a consequential system notice, with rationale attached to their use",
+        "Usage guardrails include concrete do and don't guidance plus accessibility requirements",
+        "Reader order is system principles → foundation reference → composition examples → usage guardrails",
+        "No new brand color, decorative effect, unsupported component category, or external dependency is introduced"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "permission-prompt-component-variants",
+      "prompt": "帮我做一个 permission prompt 的交互式 variants HTML，方便工程和设计一起收敛 API。情境：用户授权一个助手读取 workspace 的项目名、状态和 owner；只能读，不能编辑或删除；授权可以撤销。需要比较 standard、quiet、framed、accent、dark、inline 六个语义 variant。现场可以调 padding、border 和是否有轻微 elevation；选中 variant 或改设置后，旁边要同步显示适用场景，并更新一段组件调用代码。不要把 hover 当成唯一交互，也不要做假的 Allow 请求。",
+      "expected_output": "一个自包含的简体中文 component-variants HTML：用可键盘操作的 live variant lab 比较六个语义 variant，控件实时更新预览、适用场景和实现契约代码，不触发网络或伪造授权结果",
+      "files": [],
+      "assertions": [
+        "Self-contained single .html file with no external resource loads, sample-company identity, or template residue",
+        "Required metadata present: viewport, meaningful title, zh lang, and effective-html-family set to component-variants",
+        "The variant question preserves the supplied read-only, revocable permission scope before presenting visual choices",
+        "All six named semantic variants are selectable with keyboard-operable controls; hover is not the only interaction",
+        "Padding, border, and restrained elevation controls are wired to update the live preview",
+        "Selecting a variant updates contextual-fit guidance, and all tuning changes update the implementation contract code",
+        "The preview does not issue a network request or present a fake successful authorization flow",
+        "Reader order is variant question → live variant lab → contextual fit → implementation contract, with canonical Claude document roles (#FAF9F5, #EFE9DE, #181715, #CC785C)"
+      ]
+    }
+  ]
+}

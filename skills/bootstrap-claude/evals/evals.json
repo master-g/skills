@@ -1,0 +1,54 @@
+{
+  "skill_name": "bootstrap-claude",
+  "evals": [
+    {
+      "id": 1,
+      "name": "greenfield-fill",
+      "prompt": "I just cloned this acme-checkout repo and there's no Claude setup yet. Can you bootstrap it — set up the context file and a project memory file so future sessions know how to build, test and behave here? Fill them in with the actual stuff from the repo, don't leave it blank.",
+      "expected_output": "CLAUDE.md (real) + AGENTS.md (symlink) + PROJECT_MEMORY.md created. The five sections are filled with REAL facts from the repo: TypeScript 5 / vitest / eslint+prettier; commands npm run build/test/lint; dist and package-lock listed as forbidden/generated; review rule that CI lint+tests must pass before merge. PROJECT_MEMORY.md has the four sections.",
+      "files": ["evals/files/node-app"],
+      "expectations": [
+        "CLAUDE.md exists in the project and is a regular file (the source of truth)",
+        "AGENTS.md exists and is a symlink pointing at CLAUDE.md",
+        "PROJECT_MEMORY.md exists and contains all four headings: 已验证的事实, 失败尝试, 上次会话, 下次运行",
+        "CLAUDE.md contains all five headings: 技术栈, 命令, 代码风格, 禁止文件, 审查规则",
+        "The 命令 section references the real scripts (build/test/lint), not invented ones — e.g. mentions vitest or 'npm run test' and eslint",
+        "The 技术栈 section names TypeScript and the test runner (vitest), drawn from package.json/tsconfig",
+        "The 禁止文件 section lists the generated dist/ directory and/or the lockfile",
+        "No section is left as a bare '_待填写_' placeholder",
+        "CLAUDE.md links to PROJECT_MEMORY.md and includes the write-back convention"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "agents-compat",
+      "prompt": "This service already uses an AGENTS.md for agent context (and CLAUDE.md is just a symlink to it). I want to make sure the Claude setup is complete here without breaking that arrangement. Can you fill out whatever's missing?",
+      "expected_output": "AGENTS.md remains the real source of truth and is EDITED (missing sections appended) — the existing 技术栈 line about Go/chi/sqlc is preserved, not overwritten. CLAUDE.md stays a symlink to AGENTS.md. PROJECT_MEMORY.md is created. Sections filled with real Go facts (make build/test/lint).",
+      "files": ["evals/files/go-svc"],
+      "expectations": [
+        "AGENTS.md is still a regular file (not turned into a symlink)",
+        "CLAUDE.md is still a symlink pointing at AGENTS.md",
+        "The original AGENTS.md content (Go 1.22 / chi / sqlc / Postgres) is preserved, not deleted",
+        "AGENTS.md now contains the previously-missing headings: 命令, 代码风格, 禁止文件, 审查规则",
+        "The 命令 section uses the real Makefile targets (go build / go test / golangci-lint), not invented commands",
+        "PROJECT_MEMORY.md was created with its four sections",
+        "Edits were made to AGENTS.md (the real file), not duplicated into the CLAUDE.md symlink as a separate file"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "writeback",
+      "prompt": "Quick update before I close out: we ended up migrating textkit off poetry onto uv this session, because poetry's lockfile kept conflicting on the team and resolves were painfully slow. The build commands changed too (uv sync / uv run pytest). Can you record this in the project memory so the next session has it, and update the context file's commands?",
+      "expected_output": "PROJECT_MEMORY.md updated: a 失败尝试 entry about poetry's lockfile conflicts, and/or a 已验证的事实 entry that the project now uses uv. Entries are dated with today's date (2026-06-18) in the - [YYYY-MM-DD] format and appended without destroying the existing entries. CLAUDE.md/命令 updated to uv sync / uv run pytest. File stays well under 400 lines.",
+      "files": ["evals/files/py-lib"],
+      "expectations": [
+        "PROJECT_MEMORY.md gained a new entry capturing the poetry→uv migration and the reason (lockfile conflicts / slow resolves)",
+        "The new entry is in the 失败尝试 and/or 已验证的事实 section, in the '- [YYYY-MM-DD]' format",
+        "The new entry carries today's date 2026-06-18",
+        "All pre-existing PROJECT_MEMORY.md entries (slugify Unicode fact, str.translate failure, etc.) are still present",
+        "CLAUDE.md (or the source-of-truth context file) 命令 section now references uv (uv sync / uv run pytest) instead of poetry",
+        "PROJECT_MEMORY.md is still under 400 lines"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PAGE TITLE</title>
+    <script>
+      /* 主题：在首次绘制前决定，避免闪烁。三态 light / dark / system。 */
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("show-me-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") t = "system";
+        var dark =
+          t === "dark" ||
+          (t === "system" &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!--SHOW-ME:CSS-->
+    <style data-show-me="palette">
+      /* ── Anthropic 调色板。整块不要改，页面自己的样式写到下一个 <style> 里。 ──
+     色值来自 anthropic.design.md。浅色一栏是原值；深色一栏是推导值 ——
+     design.md 只描述了浅色的 marketing 面，没有暗色梯度。
+     这段 CSS 不在 @layer 里，所以优先于 basecoat 分层定义的中性灰。 */
+      :root {
+        /* 8 色强调面板（research / news 子页的分类色）。页面用 data-tone 取用。 */
+        --tone-clay: #d97757;
+        --tone-fig: #c46686;
+        --tone-sky: #6a9bcc;
+        --tone-cactus: #bcd1ca;
+        --tone-olive: #788c5d;
+        --tone-heather: #cbcadb;
+        --tone-kraft: #d4a27f;
+        --tone-manilla: #ebdbbc;
+        --ink-fixed: #141413; /* 两种主题下都不变，给反白文字用 */
+        --font-serif:
+          Georgia, "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC",
+          serif;
+
+        --background: #faf9f5; /* canvas */
+        --foreground: #141413; /* ink */
+        --card: #f0eee6; /* surface-secondary：卡片比页面底深一步，不靠阴影 */
+        --card-foreground: #141413;
+        --popover: #faf9f5;
+        --popover-foreground: #141413;
+        --primary: #d97757; /* clay。ink 字在其上 5.9:1 */
+        --primary-foreground: #141413;
+        --secondary: #f0eee6;
+        --secondary-foreground: #141413;
+        --muted: #f0eee6;
+        --muted-foreground: #5e5d59; /* text-muted。design.md 的 #b0aea5 只有 2.1:1，仅够做装饰线 */
+        --accent: #e8e6dc; /* surface-secondary-hover：悬停面要比 muted 再深一步才看得出 */
+        --accent-foreground: #141413;
+        --destructive: #9d3c5c; /* 推导：fig 压暗。白字 6.5:1，作文字在卡片上 5.6:1 */
+        --border: #d1cfc5; /* hairline */
+        --input: #d1cfc5;
+        --ring: #d97757;
+        /* 图表色在浅底上压暗到 ≥3.4:1，深底上用原色 */
+        --chart-1: #c96442;
+        --chart-2: #4f7fb3;
+        --chart-3: #6a7d4f;
+        --chart-4: #b1567a;
+        --chart-5: #87867f;
+        --link-accent: #a8422a; /* 推导：clay 压暗到 5.7:1，正文链接的悬停色 */
+        /* 语法高亮。chart 色是按色块的 3:1 调的，当代码文字用在浅底上只有 3.2–4.0:1，
+           所以另推一组：在代码块底（--color-muted）上实测 4.62–5.67:1 */
+        --syn-comment: #5e5d59;
+        --syn-keyword: #a65337;
+        --syn-string: #5f7047;
+        --syn-type: #446d9a;
+        --syn-number: #a34f71;
+      }
+      .dark {
+        --background: #191817; /* 暖黑，不是纯黑：整页长文用 #000 太硬 */
+        --foreground: #faf9f5;
+        --card: #232120;
+        --card-foreground: #faf9f5;
+        --popover: #232120;
+        --popover-foreground: #faf9f5;
+        --primary: #d97757;
+        --primary-foreground: #141413;
+        --secondary: #2b2926;
+        --secondary-foreground: #faf9f5;
+        --muted: #232120;
+        --muted-foreground: #a3a099;
+        --accent: #332f2c;
+        --accent-foreground: #faf9f5;
+        --destructive: #e08099; /* 亮玫红：作文字在卡片上 5.9:1 */
+        --border: #faf9f524;
+        --input: #faf9f533;
+        --ring: #d97757;
+        --chart-1: #d97757;
+        --chart-2: #6a9bcc;
+        --chart-3: #9ab07a;
+        --chart-4: #c46686;
+        --chart-5: #a3a099;
+        --link-accent: #e8926f;
+        --syn-comment: #a3a099;
+        --syn-keyword: #d97757;
+        --syn-string: #9ab07a;
+        --syn-type: #6a9bcc;
+        --syn-number: #cd6a8c;
+      }
+
+      /* 分类色：任意元素写 data-tone="clay|fig|sky|cactus|olive|heather|kraft|manilla"，
+     拿到 --tone / --tone-surface / --tone-edge / --tone-ink 四个变量。
+     色调面上的 --tone-ink 两种主题都 ≥5:1，正文色（--color-foreground）≥11:1。 */
+      [data-tone="clay"] {
+        --tone: var(--tone-clay);
+      }
+      [data-tone="fig"] {
+        --tone: var(--tone-fig);
+      }
+      [data-tone="sky"] {
+        --tone: var(--tone-sky);
+      }
+      [data-tone="cactus"] {
+        --tone: var(--tone-cactus);
+      }
+      [data-tone="olive"] {
+        --tone: var(--tone-olive);
+      }
+      [data-tone="heather"] {
+        --tone: var(--tone-heather);
+      }
+      [data-tone="kraft"] {
+        --tone: var(--tone-kraft);
+      }
+      [data-tone="manilla"] {
+        --tone: var(--tone-manilla);
+      }
+      [data-tone] {
+        --tone-surface: color-mix(
+          in oklab,
+          var(--tone) 16%,
+          var(--color-background)
+        );
+        --tone-edge: color-mix(
+          in oklab,
+          var(--tone) 34%,
+          var(--color-background)
+        );
+        --tone-ink: color-mix(
+          in oklab,
+          var(--color-foreground) 55%,
+          var(--tone)
+        );
+      }
+      .dark [data-tone] {
+        --tone-surface: color-mix(
+          in oklab,
+          var(--tone) 20%,
+          var(--color-background)
+        );
+        --tone-edge: color-mix(
+          in oklab,
+          var(--tone) 38%,
+          var(--color-background)
+        );
+        --tone-ink: color-mix(
+          in oklab,
+          var(--tone) 78%,
+          var(--color-foreground)
+        );
+      }
+      .card[data-tone],
+      .alert[data-tone],
+      .item[data-tone] {
+        background-color: var(--tone-surface);
+        border-color: var(--tone-edge);
+      }
+      .badge[data-tone] {
+        background-color: var(--tone-surface);
+        color: var(--tone-ink);
+        border-color: var(--tone-edge);
+      }
+    </style>
+
+    <style>
+      /* ── 页面级排版。组件外观全部来自 basecoat，这里只写版式。 ── */
+      :root {
+        --font-sans:
+          ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        --font-mono:
+          ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+          "Liberation Mono", monospace;
+        --page: 60rem; /* 常规页宽；读多写少的长文改 46rem */
+        --gutter: 1.5rem;
+        --toc-w: 15rem; /* 右侧目录列宽 */
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        min-height: 100vh;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      /* 版心：工具条内层与内容容器共用同一组几何，左右缘因此始终对齐 */
+      .chrome-inner,
+      .layout {
+        max-width: var(--page);
+        margin-inline: auto;
+        padding-inline: var(--gutter);
+      }
+      main {
+        padding-block: 2.5rem 6rem;
+      }
+      /* ≥80rem 且目录存在（body.has-toc，由骨架 JS 开门）时：版心向右扩出目录列，内容列宽度不变 */
+      @media (min-width: 80rem) {
+        body.has-toc .chrome-inner,
+        body.has-toc .layout {
+          max-width: calc(var(--page) + var(--toc-w) + 3rem);
+        }
+        body.has-toc .layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) var(--toc-w);
+          gap: 3rem;
+        }
+      }
+      main > section {
+        margin-block-start: 3.5rem;
+        scroll-margin-top: 5rem;
+      }
+      main > section:first-of-type {
+        margin-block-start: 0;
+      }
+      #doc h2,
+      #doc h3 {
+        scroll-margin-top: 5rem;
+      } /* 目录锚点跳转别被 sticky 工具条盖住 */
+
+      /* 标题走衬线、字重 400 —— Anthropic 的层级靠字号和留白，不靠加粗 */
+      h1 {
+        font-family: var(--font-serif);
+        font-size: 2.125rem;
+        font-weight: 400;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+      }
+      h2 {
+        font-family: var(--font-serif);
+        font-size: 1.5rem;
+        font-weight: 400;
+        line-height: 1.3;
+        margin-block-end: 1.25rem;
+      }
+      h3 {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      p {
+        line-height: 1.7;
+      }
+      /* ── 间距节奏：四级 56 / 40 / 20 / 12，层级靠间距读出来，不靠分隔线 ──
+         56 大节之间 · 40 新小节开始 · 20 不同类型的块之间 · 12 同一组内
+         四条规则优先级相同（0,0,3），**顺序即胜负**，不要重排。 */
+      main > section > * + * {
+        margin-block-start: 1.25rem; /* 块与块：段落→表格、段落→代码、卡片网格前后 */
+      }
+      main p + p {
+        margin-block-start: 0.75rem; /* 连续段落属于同一组，比块间距紧 */
+      }
+      main > section > * + h3 {
+        margin-block-start: 2.5rem; /* 新小节开始。h3 与正文同字号，层级全靠这段空隙 */
+      }
+      main > section > h3 + * {
+        margin-block-start: 0.75rem; /* 标题与它的第一块内容是一组 */
+      }
+      /* basecoat 的 .alert > section 是 grid，其内 p 自带 margin-bottom，
+         与 gap 叠加后会比正文段落还松 —— 容器内不该比容器外松 */
+      .alert > section > p {
+        margin-block-end: 0;
+      }
+      .alert > section > p + p {
+        margin-block-start: 0.5rem;
+      }
+      /* 眉标：mono 大写小字。放在 [data-tone] 里会跟着拿分类色 */
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--tone-ink, var(--color-muted-foreground));
+      }
+      /* 链接是正文色 + clay 下划线：clay 直接当文字色只有 2.9:1。只管正文，目录与 chrome 不吃这套 */
+      main a:not(.btn):not(.item) {
+        color: var(--color-foreground);
+        text-decoration: underline;
+        text-decoration-color: var(--tone-clay);
+        text-underline-offset: 2px;
+        text-decoration-thickness: 1px;
+      }
+      main a:not(.btn):not(.item):hover {
+        color: var(--link-accent);
+        text-decoration-color: var(--link-accent);
+      }
+      ul,
+      ol {
+        padding-inline-start: 1.25rem;
+        line-height: 1.7;
+      }
+      ul {
+        list-style: disc;
+      }
+      ol {
+        list-style: decimal;
+      }
+      li + li {
+        margin-block-start: 0.25rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 1rem;
+        border-radius: var(--radius);
+        background: var(--color-muted);
+        font-size: 0.8125rem;
+        line-height: 1.6;
+      }
+      pre code {
+        font-family: var(--font-mono);
+      }
+      /* 语法高亮：class 由 build.py 内联的分词器在运行时发，配色在这里给。
+         运算符（shj-syn-oper）和变量（shj-syn-var）刻意不上色 —— 全上会花。 */
+      .shj-syn-cmnt {
+        color: var(--syn-comment);
+        font-style: italic;
+      }
+      .shj-syn-kwd,
+      .shj-syn-bool {
+        color: var(--syn-keyword);
+      }
+      .shj-syn-str,
+      .shj-syn-insert {
+        color: var(--syn-string);
+      }
+      .shj-syn-type,
+      .shj-syn-class,
+      .shj-syn-func,
+      .shj-syn-section {
+        color: var(--syn-type);
+      }
+      .shj-syn-num {
+        color: var(--syn-number);
+      }
+      .shj-syn-err,
+      .shj-syn-deleted {
+        color: var(--color-destructive);
+      }
+      /* 行内 code 用 manilla 淡底，卡片（--color-card）里也分得出来 */
+      :not(pre) > code {
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        background: color-mix(
+          in oklab,
+          var(--tone-manilla) 30%,
+          var(--color-background)
+        );
+        padding: 0.125rem 0.375rem;
+        border-radius: calc(var(--radius) - 2px);
+      }
+      /* 只管正文里的分隔线；组件内部的 hr（.item-group、菜单、按钮组）交给 basecoat */
+      main > section > hr {
+        border: 0;
+        border-top: 1px solid var(--color-border);
+        margin-block: 2rem;
+      }
+      blockquote {
+        border-inline-start: 2px solid var(--color-border);
+        padding-inline-start: 1rem;
+        color: var(--color-muted-foreground);
+      }
+      /* 内容里的长标识符不得撑破栅格 */
+      .grid,
+      [class*="cols-"] {
+        min-width: 0;
+      }
+      .grid > *,
+      main > * {
+        min-width: 0;
+      }
+      code,
+      .kbd {
+        overflow-wrap: anywhere;
+      }
+
+      /* ── 页眉工具条：背景和 hairline 全宽，内容靠 .chrome-inner 与版心对齐 ── */
+      .page-chrome {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: color-mix(
+          in oklab,
+          var(--color-background) 88%,
+          transparent
+        );
+        backdrop-filter: blur(8px);
+        border-block-end: 1px solid var(--color-border);
+      }
+      .chrome-inner {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-block: 0.625rem;
+      }
+      .page-chrome .chrome-title {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--color-muted-foreground);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1 1 auto;
+        min-width: 0; /* 没有这两条，工具条会把整页撑宽 */
+      }
+      .page-chrome .chrome-actions {
+        margin-inline-start: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      /* 选中态用 primary 而不是 accent：accent 在浅色主题下与白底几乎同色，看不出选了哪个 */
+      .theme-switch button[aria-pressed="true"] {
+        background: var(--color-primary);
+        color: var(--color-primary-foreground);
+        border-color: var(--color-primary);
+      }
+
+      /* ── 右侧目录。结构参考 VitePress outline：hairline 轨道 + 滑动指示条 + 嵌套链接。
+     骨架 JS 扫描 #doc 的 h2/h3 生成条目；≥80rem 且条目 ≥2 时出现，否则整块不存在。 ── */
+      .toc {
+        display: none;
+      }
+      @media (min-width: 80rem) {
+        body.has-toc .toc {
+          display: block;
+        }
+      }
+      .toc-inner {
+        position: sticky;
+        top: 4.5rem;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
+        border-inline-start: 1px solid var(--color-border);
+        padding-inline-start: 1rem;
+      }
+      .toc-marker {
+        position: absolute;
+        top: 2rem;
+        left: -1px;
+        width: 2px;
+        height: 1.125rem;
+        border-radius: 2px;
+        background: var(--color-primary);
+        opacity: 0;
+        transition:
+          top 0.25s cubic-bezier(0, 1, 0.5, 1),
+          opacity 0.25s;
+      }
+      .toc-title {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 2rem;
+      }
+      .toc-list {
+        position: relative;
+        z-index: 1;
+        list-style: none;
+        padding-inline-start: 0;
+        line-height: inherit;
+      }
+      .toc-list .toc-list {
+        padding-inline-start: 1rem;
+      }
+      .toc-list li + li {
+        margin-block-start: 0;
+      }
+      .toc-link {
+        display: block;
+        line-height: 1.875rem;
+        font-size: 0.8125rem;
+        color: var(--color-muted-foreground);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.5s;
+      }
+      .toc-link:hover,
+      .toc-link.active {
+        color: var(--color-foreground);
+        transition: color 0.25s;
+      }
+      @media (max-width: 640px) {
+        :root {
+          --gutter: 1rem;
+        }
+        main {
+          padding-block-start: 1.75rem;
+        }
+      }
+      @media print {
+        .page-chrome,
+        .toc {
+          display: none;
+        }
+        .layout {
+          max-width: none;
+          padding: 0;
+          display: block;
+        }
+        main {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-chrome" data-md-skip>
+      <div class="chrome-inner">
+        <span class="chrome-title">PAGE TITLE</span>
+        <div class="chrome-actions">
+          <button
+            type="button"
+            class="btn"
+            data-variant="outline"
+            data-size="icon-sm"
+            data-copy-md
+            title="复制为 Markdown"
+            aria-label="复制为 Markdown"
+          >
+            <i data-lucide="clipboard"></i><i data-lucide="check" hidden></i>
+          </button>
+          <div class="button-group theme-switch" role="group" aria-label="主题">
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="light"
+              title="浅色"
+              aria-label="浅色"
+            >
+              <i data-lucide="sun"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="system"
+              title="跟随系统"
+              aria-label="跟随系统"
+            >
+              <i data-lucide="monitor"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="dark"
+              title="深色"
+              aria-label="深色"
+            >
+              <i data-lucide="moon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main id="doc">
+        <!-- 页面内容写在这里。#doc 的内容就是「复制为 Markdown」导出的范围。 -->
+      </main>
+      <!-- 右侧目录：骨架 JS 自动生成条目；条目不足 2 个时整块不出现，不要手写 -->
+      <aside class="toc" data-md-skip aria-labelledby="toc-title">
+        <nav class="toc-inner">
+          <div class="toc-marker"></div>
+          <div class="toc-title" id="toc-title" role="heading" aria-level="2">
+            本页目录
+          </div>
+          <ul class="toc-list root"></ul>
+        </nav>
+      </aside>
+    </div>
+
+    <!--SHOW-ME:JS-->
+    <script>
+      /* ── 主题三态切换 ── */
+      (function () {
+        var root = document.documentElement;
+        var mq = matchMedia("(prefers-color-scheme: dark)");
+        function apply(t) {
+          root.dataset.theme = t;
+          root.classList.toggle(
+            "dark",
+            t === "dark" || (t === "system" && mq.matches),
+          );
+          document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+          });
+        }
+        document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var t = b.dataset.themeSet;
+            try {
+              t === "system"
+                ? localStorage.removeItem("show-me-theme")
+                : localStorage.setItem("show-me-theme", t);
+            } catch (e) {}
+            apply(t);
+          });
+        });
+        mq.addEventListener("change", function () {
+          if (root.dataset.theme === "system") apply("system");
+        });
+        apply(root.dataset.theme || "system");
+      })();
+
+      /* ── 复制为 Markdown ──
+   遍历 #doc（或 [data-md-root]）生成 GFM。跳过 [data-md-skip] / [hidden] / 脚本 / 弹层。 */
+      (function () {
+        var SKIP = new Set([
+          "SCRIPT",
+          "STYLE",
+          "TEMPLATE",
+          "DIALOG",
+          "NOSCRIPT",
+          "SVG",
+          "CANVAS",
+        ]);
+        var INLINE_ONLY = new Set([
+          "A",
+          "CODE",
+          "STRONG",
+          "B",
+          "EM",
+          "I",
+          "DEL",
+          "S",
+          "SPAN",
+          "KBD",
+          "SMALL",
+          "ABBR",
+          "MARK",
+          "SUP",
+          "SUB",
+          "BR",
+          "IMG",
+          "TIME",
+          "U",
+          "Q",
+          "LABEL",
+          "OUTPUT",
+        ]);
+
+        function skipped(el) {
+          return (
+            SKIP.has(el.tagName) ||
+            el.hasAttribute("data-md-skip") ||
+            el.hasAttribute("hidden") ||
+            el.getAttribute("aria-hidden") === "true"
+          );
+        }
+        function txt(s) {
+          return (s || "").replace(/\s+/g, " ");
+        }
+
+        function inline(node) {
+          var out = "";
+          node.childNodes.forEach(function (n) {
+            if (n.nodeType === 3) {
+              out += txt(n.nodeValue);
+              return;
+            }
+            if (n.nodeType !== 1 || skipped(n)) return;
+            var t = n.tagName,
+              inner = inline(n);
+            if (t === "BR") out += "  \n";
+            else if (t === "IMG")
+              out +=
+                "![" +
+                (n.alt || "") +
+                "](" +
+                (n.getAttribute("src") || "") +
+                ")";
+            else if (
+              t === "CODE" ||
+              t === "KBD" ||
+              n.classList.contains("badge") ||
+              n.classList.contains("kbd")
+            )
+              out += inner.trim() ? "`" + inner.trim() + "`" : "";
+            else if (t === "A") {
+              var href = n.getAttribute("href") || "";
+              out +=
+                href && !href.startsWith("#")
+                  ? "[" + inner.trim() + "](" + href + ")"
+                  : inner;
+            } else if (t === "STRONG" || t === "B")
+              out += inner.trim() ? "**" + inner.trim() + "**" : "";
+            else if (t === "EM" || t === "I")
+              out += inner.trim() ? "*" + inner.trim() + "*" : "";
+            else if (t === "DEL" || t === "S")
+              out += inner.trim() ? "~~" + inner.trim() + "~~" : "";
+            else out += inner;
+          });
+          return out;
+        }
+
+        function cell(el) {
+          return inline(el).trim().replace(/\|/g, "\\|").replace(/\n/g, " ");
+        }
+
+        function table(el) {
+          var rows = Array.from(el.querySelectorAll("tr")).filter(function (r) {
+            return !skipped(r);
+          });
+          if (!rows.length) return "";
+          var head = rows[0],
+            body = rows.slice(1);
+          var cols = Array.from(head.children).map(cell);
+          var out =
+            "| " +
+            cols.join(" | ") +
+            " |\n|" +
+            cols
+              .map(function () {
+                return " --- ";
+              })
+              .join("|") +
+            "|\n";
+          body.forEach(function (r) {
+            out += "| " + Array.from(r.children).map(cell).join(" | ") + " |\n";
+          });
+          return out;
+        }
+
+        function list(el, depth) {
+          var ordered = el.tagName === "OL",
+            i = 0,
+            out = "";
+          Array.from(el.children).forEach(function (li) {
+            if (li.tagName !== "LI" || skipped(li)) return;
+            i++;
+            var marker = ordered ? i + ". " : "- ";
+            var pad = "  ".repeat(depth);
+            var sub = "";
+            var own = document.createElement("div");
+            Array.from(li.childNodes).forEach(function (n) {
+              if (
+                n.nodeType === 1 &&
+                (n.tagName === "UL" || n.tagName === "OL")
+              )
+                sub += list(n, depth + 1);
+              else own.appendChild(n.cloneNode(true));
+            });
+            var text = inline(own).trim();
+            if (text) out += pad + marker + text + "\n";
+            out += sub;
+          });
+          return out;
+        }
+
+        function block(el, depth) {
+          var out = "";
+          Array.from(el.children).forEach(function (n) {
+            if (skipped(n)) return;
+            var t = n.tagName;
+            if (/^H[1-6]$/.test(t)) {
+              out += "\n" + "#".repeat(+t[1]) + " " + inline(n).trim() + "\n\n";
+            } else if (t === "P") {
+              var s = inline(n).trim();
+              if (s) out += s + "\n\n";
+            } else if (t === "UL" || t === "OL") {
+              out += list(n, 0) + "\n";
+            } else if (t === "PRE") {
+              var code = n.querySelector("code");
+              var lang =
+                (code &&
+                  (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
+                "";
+              out +=
+                "```" +
+                lang +
+                "\n" +
+                (n.textContent || "").replace(/\n+$/, "") +
+                "\n```\n\n";
+            } else if (t === "TABLE") {
+              out += table(n) + "\n";
+            } else if (t === "HR") {
+              out += "---\n\n";
+            } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {
+              out +=
+                block(n, depth)
+                  .trim()
+                  .split("\n")
+                  .map(function (l) {
+                    return l ? "> " + l : ">";
+                  })
+                  .join("\n") + "\n\n";
+            } else if (n.classList.contains("tabs")) {
+              /* Markdown 没有标签页：每个标签导出成小标题 + 它的面板，隐藏的面板也要出。 */
+              n.querySelectorAll('[role="tablist"] > [role="tab"]').forEach(
+                function (tab) {
+                  out += "**" + inline(tab).trim() + "**\n\n";
+                  var panel = document.getElementById(
+                    tab.getAttribute("aria-controls"),
+                  );
+                  if (panel) out += block(panel, depth);
+                },
+              );
+            } else if (t === "DETAILS") {
+              var sum = n.querySelector("summary");
+              if (sum) out += "**" + inline(sum).trim() + "**\n\n";
+              out += block(n, depth);
+            } else if (t === "DL") {
+              Array.from(n.children).forEach(function (d) {
+                if (d.tagName === "DT")
+                  out += "**" + inline(d).trim() + "** — ";
+                else if (d.tagName === "DD") out += inline(d).trim() + "\n\n";
+              });
+            } else if (
+              n.children.length === 0 ||
+              Array.from(n.children).every(function (c) {
+                return INLINE_ONLY.has(c.tagName);
+              })
+            ) {
+              var s2 = inline(n).trim();
+              if (s2) out += s2 + "\n\n";
+            } else {
+              out += block(n, depth);
+            }
+          });
+          return out;
+        }
+
+        function toMarkdown() {
+          var root =
+            document.querySelector("[data-md-root]") ||
+            document.getElementById("doc") ||
+            document.body;
+          var md = block(root, 0)
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+          var title = document.title;
+          return (md.startsWith("# ") ? "" : "# " + title + "\n\n") + md + "\n";
+        }
+
+        /* 暴露给页面用：需要「下载 .md」之类的额外入口时调用它，不要另写一份转换器。 */
+        window.showMeMarkdown = toMarkdown;
+
+        document.querySelectorAll("[data-copy-md]").forEach(function (btn) {
+          var icons = btn.querySelectorAll("svg, i");
+          btn.addEventListener("click", async function () {
+            var md = toMarkdown();
+            /* 反馈先行：剪贴板图标换成对勾 1.6s。不等待 writeText —— 权限 pending 时它可能永不 settle。
+         SVG 没有 hidden 反射属性，必须操作属性本身 */
+            if (icons.length >= 2) {
+              icons[0].setAttribute("hidden", "");
+              icons[1].removeAttribute("hidden");
+            }
+            btn.setAttribute("data-variant", "secondary");
+            setTimeout(function () {
+              if (icons.length >= 2) {
+                icons[0].removeAttribute("hidden");
+                icons[1].setAttribute("hidden", "");
+              }
+              btn.setAttribute("data-variant", "outline");
+            }, 1600);
+            try {
+              await navigator.clipboard.writeText(md);
+            } catch (e) {
+              var ta = document.createElement("textarea");
+              ta.value = md;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              try {
+                document.execCommand("copy");
+              } catch (e2) {}
+              ta.remove();
+            }
+          });
+        });
+      })();
+
+      /* ── 右侧目录：扫描 #doc 的 h2/h3 生成条目，指示条随滚动滑动到当前节。
+   移植自 VitePress 的 outline：scroll（throttle 100ms）+ 标题绝对位置比较。
+   标题加 data-toc-skip 可豁免；点击时立即定位指示条，平滑滚动途中不跟跳。 ── */
+      (function () {
+        var doc = document.getElementById("doc");
+        var aside = document.querySelector(".toc");
+        if (!doc || !aside) return;
+        var list = aside.querySelector(".toc-list");
+        var marker = aside.querySelector(".toc-marker");
+        var headings = Array.from(doc.querySelectorAll("h2, h3")).filter(
+          function (h) {
+            return (
+              !h.closest("[data-toc-skip]") && !h.closest("[data-md-skip]")
+            );
+          },
+        );
+        if (headings.length < 2) return;
+
+        /* h3 嵌进前一个 h2 的子列表；没有前置 h2 的 h3 按顶层处理 */
+        var n = 0,
+          sub = null;
+        headings.forEach(function (h) {
+          if (!h.id) h.id = "toc-" + ++n;
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.className = "toc-link";
+          a.href = "#" + h.id;
+          a.textContent = a.title = h.textContent.trim();
+          li.appendChild(a);
+          if (h.tagName === "H2" || !sub) {
+            list.appendChild(li);
+            sub = null;
+            if (h.tagName === "H2") {
+              sub = document.createElement("ul");
+              sub.className = "toc-list nested";
+              li.appendChild(sub);
+            }
+          } else {
+            sub.appendChild(li);
+          }
+        });
+        document.body.classList.add("has-toc");
+
+        var mq = matchMedia("(min-width: 80rem)");
+        var prev = null,
+          skipOnce = false,
+          timer = 0;
+
+        function topOf(el) {
+          var t = 0;
+          while (el !== document.body) {
+            if (el === null)
+              return NaN; /* display:none 的元素拿不到位置，自然被过滤 */
+            t += el.offsetTop;
+            el = el.offsetParent;
+          }
+          return t;
+        }
+
+        function activate(hash) {
+          if (prev) prev.classList.remove("active");
+          prev = null;
+          if (hash) {
+            var links = list.querySelectorAll("a");
+            for (var i = 0; i < links.length; i++) {
+              if (links[i].getAttribute("href") === hash) {
+                prev = links[i];
+                break;
+              }
+            }
+          }
+          if (prev) {
+            prev.classList.add("active");
+            /* 链接的 offsetParent 是 .toc-list，指示条的参照是 .toc-inner，两者原点要补齐 */
+            marker.style.top =
+              prev.offsetTop +
+              (prev.offsetParent ? prev.offsetParent.offsetTop : 0) +
+              (prev.offsetHeight - marker.offsetHeight) / 2 +
+              "px";
+            marker.style.opacity = "1";
+          } else {
+            marker.style.top = "";
+            marker.style.opacity = "0";
+          }
+        }
+
+        function setActive() {
+          if (!mq.matches) return;
+          if (skipOnce) {
+            skipOnce = false;
+            return;
+          }
+          var items = headings
+            .map(function (h) {
+              return {
+                id: h.id,
+                top: topOf(h),
+                sm: parseFloat(getComputedStyle(h).scrollMarginTop) || 0,
+              };
+            })
+            .filter(function (x) {
+              return !isNaN(x.top);
+            })
+            .sort(function (a, b) {
+              return a.top - b.top;
+            });
+          if (!items.length) return activate(null);
+          if (scrollY < 1) return activate(null); /* 页顶：无激活项 */
+          if (
+            Math.ceil(scrollY + innerHeight) >=
+            document.documentElement.scrollHeight
+          )
+            return activate(
+              "#" + items[items.length - 1].id,
+            ); /* 页底：激活最后一项 */
+          var active = null;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].top > scrollY + items[i].sm + 4) break;
+            active = items[i].id;
+          }
+          activate(active ? "#" + active : null);
+        }
+
+        aside.addEventListener("click", function (e) {
+          var a = e.target instanceof Element ? e.target.closest("a") : null;
+          if (a && a.hash) {
+            skipOnce = true;
+            activate(a.hash);
+          }
+        });
+        addEventListener(
+          "scroll",
+          function () {
+            if (!timer)
+              timer = setTimeout(function () {
+                timer = 0;
+                setActive();
+              }, 100);
+          },
+          { passive: true },
+        );
+        addEventListener(
+          "load",
+          setActive,
+        ); /* 等浏览器恢复滚动位置后再定位一次 */
+        mq.addEventListener("change", setActive);
+        setActive();
+      })();
+    </script>
+  </body>
+</html>

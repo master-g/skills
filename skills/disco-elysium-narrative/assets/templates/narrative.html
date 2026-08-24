@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="disco-elysium-narrative">
+<meta name="description" content="{{一句话引子}}">
+<meta name="keywords" content="极乐迪斯科, 内心戏剧, 技能检定, 思维阁">
+<title>{{标题}} · 极乐迪斯科思维内剧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  极乐迪斯科叙事 · 沉浸式暗色单页模板
+  用法：复制本文件 → 只填 <body> → CSS 一律不动。
+  CSS 里的颜色 = 游戏的视觉分层（技能青 / 物品洋红 / 玩家暖金 / 爬虫脑暗血 / 红色检定）。改了就破功。
+  声音 → class 速查见 SKILL.md「可选：沉浸式 HTML 输出」一节。
+  这是 screen-first 排版：要分享就导长图 PNG（整页截图），不要导 PDF 分页。
+-->
+<style>
+:root{
+  --bg-0:#0c0a07;
+  --bg-1:#1a150f;
+  --ink:#b6aa93;
+  --ink-bright:#cfc2a8;
+  --ink-dim:#8f8773;
+  --skill:#6cbcb4;
+  --skill-rule:rgba(108,188,180,.38);
+  --player:#ecdab6;
+  --player-rule:#7c6233;
+  --object:#cf95c4;
+  --object-rule:rgba(207,149,196,.42);
+  --red:#d65a45;
+  --fail:#8d8571;
+  --reptile:#b25862;
+  --reptile-rule:rgba(178,88,98,.42);
+  --rule:rgba(184,168,140,.15);
+  --card:#16120c;
+  --gold:#b08d4f;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1a150f 0%, #110d09 45%, #0a0806 100%) fixed;
+  color:var(--ink);
+  font-family:"Noto Serif SC","Songti SC","STSong","Noto Serif CJK SC",Georgia,serif;
+  font-size:17.5px;
+  line-height:1.95;
+  letter-spacing:.005em;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+/* 做旧噪点 + 暗角 */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.035'/></svg>");
+  mix-blend-mode:overlay;
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  box-shadow:inset 0 0 240px 60px rgba(0,0,0,.7);
+}
+.wrap{
+  position:relative;z-index:1;
+  max-width:712px;
+  margin:0 auto;
+  padding:96px 30px 140px;
+}
+/* ---------- header ---------- */
+header{margin-bottom:64px}
+.kicker{
+  font-size:12.5px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--skill);opacity:.85;margin:0 0 26px;font-weight:600;
+}
+h1{
+  font-size:50px;line-height:1.12;margin:0 0 18px;font-weight:700;
+  color:#e7dcc4;letter-spacing:.02em;
+}
+.dek{font-size:16px;color:var(--ink-dim);margin:0;line-height:1.7;font-style:italic}
+.cast{
+  margin-top:30px;padding-top:22px;border-top:1px solid var(--rule);
+  font-size:13.5px;color:var(--ink-dim);line-height:2.1;letter-spacing:.02em;
+}
+.cast b{color:var(--skill);font-weight:600}
+.cast .vs{color:var(--red)}
+.stamp{
+  display:inline-block;margin-top:8px;font-size:13px;letter-spacing:.3em;
+  color:var(--gold);opacity:.9;
+}
+/* ---------- voices ---------- */
+.scene{margin:0 0 1.15em;color:var(--ink-bright)}
+.scene.lead{font-size:19px;color:#d6c9ae}
+.timestamp{
+  font-size:64px;line-height:1;color:#e7dcc4;font-weight:700;
+  letter-spacing:.04em;display:block;margin:6px 0 30px;
+}
+.s,.obj,.you,.reptile{
+  margin:0 0 1.05em;padding-left:1.25em;
+  border-left:2px solid var(--rule);
+}
+.s{border-left-color:var(--skill-rule)}
+.obj{
+  border-left-color:var(--object-rule);
+  color:var(--object);font-style:italic;
+}
+.obj .on{font-weight:600;font-style:italic;color:#e2a7d6}
+.you{
+  border-left-color:var(--player-rule);
+  color:var(--player);
+  background:linear-gradient(90deg, rgba(124,98,51,.10), rgba(124,98,51,0) 70%);
+  padding-top:.15em;padding-bottom:.15em;
+}
+.you .who{color:#f0e1bf;font-weight:600}
+.reptile{border-left-color:var(--reptile-rule);color:var(--reptile)}
+.sk{color:var(--skill);font-weight:600;letter-spacing:.02em}
+.sk.rep{color:var(--reptile)}
+.sense{color:var(--skill);opacity:.8;font-weight:400;font-size:.92em}
+.ck{font-size:.9em;font-weight:600;color:#9fc7c1;letter-spacing:.02em}
+.ck.fail{color:var(--fail)}
+.ck.red{color:var(--red)}
+.ck.hard{color:#c7b06a}
+em{font-style:italic;color:#d6c8a8}
+.obj em{color:#e7b6dd}
+.who-says{color:var(--ink-dim)}
+/* 多行检定的有序列表 */
+.s ol{margin:.5em 0 .2em;padding-left:1.4em}
+.s ol li{margin:.2em 0;color:var(--ink-bright)}
+/* 官方 / 物证引文 */
+.doc-quote{
+  margin:1.4em 0;padding:18px 22px;
+  background:rgba(60,72,74,.14);
+  border:1px solid rgba(140,165,165,.18);
+  border-radius:3px;
+  color:#a9b4b0;font-size:15.5px;line-height:1.8;font-style:italic;
+}
+.doc-quote .src{
+  display:block;margin-top:10px;font-size:12px;font-style:normal;
+  letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase;
+}
+/* dividers */
+hr.sep{
+  border:0;height:1px;width:64px;margin:2.4em auto;
+  background:var(--rule);
+}
+hr.beat{
+  width:100%;height:auto;background:none;margin:2.6em 0;
+  text-align:center;
+}
+hr.beat::after{
+  content:"✦";color:var(--gold);opacity:.7;font-size:15px;letter-spacing:.5em;
+}
+/* ---------- intel table ---------- */
+.intel{margin:3em 0 2.4em}
+.intel h2,.tc-zone h2,.choice h2{
+  font-size:13px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;margin:0 0 6px;
+}
+.intel .sub{font-size:20px;color:#d6c9ae;margin:0 0 22px;font-weight:600;letter-spacing:.02em}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.6}
+thead th{
+  text-align:left;padding:0 14px 10px 0;color:var(--skill);
+  font-weight:600;border-bottom:1px solid var(--skill-rule);
+  font-size:12.5px;letter-spacing:.06em;
+}
+tbody td{
+  padding:11px 14px 11px 0;border-bottom:1px solid var(--rule);
+  vertical-align:top;color:var(--ink);
+}
+tbody td:first-child{color:var(--ink-bright)}
+tbody tr:last-child td{border-bottom:none}
+.note{
+  margin-top:16px;font-size:13px;font-style:italic;color:var(--ink-dim);
+  line-height:1.8;padding-left:1.1em;border-left:2px solid var(--rule);
+}
+/* ---------- thought cabinet ---------- */
+.tc-zone{margin:3.4em 0}
+.tc{
+  position:relative;background:
+    linear-gradient(180deg, rgba(108,188,180,.05), rgba(0,0,0,0) 40%),
+    var(--card);
+  border:1px solid rgba(108,188,180,.26);
+  border-radius:4px;
+  padding:34px 34px 30px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 24px 60px -30px rgba(0,0,0,.9),
+             inset 0 1px 0 rgba(108,188,180,.12);
+}
+.tc::before{
+  content:"";position:absolute;left:16px;top:16px;right:16px;bottom:16px;
+  border:1px solid rgba(176,141,79,.16);border-radius:2px;pointer-events:none;
+}
+.tc h3{
+  margin:0 0 20px;font-size:21px;color:var(--skill);font-weight:700;
+  letter-spacing:.02em;position:relative;
+}
+.tc p{margin:0 0 1em;font-size:16px;line-height:1.85;color:var(--ink)}
+.tc .lbl{color:var(--gold);font-weight:600;font-style:normal;letter-spacing:.04em}
+.tc .fx{
+  margin-top:22px;padding-top:20px;border-top:1px solid rgba(176,141,79,.22);
+}
+.tc .fx-h{color:var(--gold);font-weight:600;font-size:13px;letter-spacing:.2em;
+  text-transform:uppercase;display:block;margin-bottom:12px}
+.tc ul{margin:0;padding:0;list-style:none}
+.tc li{
+  position:relative;padding-left:1.4em;margin:.45em 0;font-size:14.5px;
+  color:var(--ink-bright);line-height:1.7;
+}
+.tc li::before{content:"›";position:absolute;left:0;color:var(--skill);font-weight:700}
+.tc li .sk{font-size:1em}
+/* ---------- choice / red check ---------- */
+.choice{margin:3.4em 0 2.6em}
+.draft{
+  margin:1.3em 0;padding:16px 20px;
+  background:rgba(214,90,69,.06);
+  border:1px solid rgba(214,90,69,.26);border-radius:3px;
+  color:#e3d2b0;font-size:15.5px;line-height:1.8;
+}
+.draft .cursor{
+  display:inline-block;width:2px;height:1.05em;background:var(--red);
+  vertical-align:text-bottom;margin-left:2px;
+  animation:blink 1.05s step-end infinite;
+}
+/* ---------- ending ---------- */
+.ending{
+  margin:3.6em 0 0;text-align:center;
+}
+.ending p{
+  margin:.32em 0;color:var(--ink-dim);font-size:15px;
+  letter-spacing:.05em;line-height:1.7;
+}
+.ending p.glow{color:var(--skill);opacity:.95}
+.ending p.last{color:var(--player);margin-top:1.4em;font-size:16px}
+.ending p.q{color:var(--gold);margin-top:.9em;letter-spacing:.18em}
+/* ---------- colophon ---------- */
+.colophon{
+  margin-top:80px;padding-top:26px;border-top:1px solid var(--rule);
+  font-size:12px;color:var(--ink-dim);line-height:1.9;letter-spacing:.04em;
+}
+.colophon .legend span{margin-right:18px;white-space:nowrap}
+.colophon .dot{display:inline-block;width:9px;height:9px;border-radius:2px;
+  margin-right:6px;vertical-align:middle;transform:rotate(45deg)}
+/* ---------- motion ---------- */
+@keyframes blink{50%{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){
+  .wrap > *{animation:rise .8s both}
+  .ending p{animation:rise .9s both}
+  .ending p:nth-child(1){animation-delay:.05s}
+  .ending p:nth-child(2){animation-delay:.12s}
+  .ending p:nth-child(3){animation-delay:.19s}
+  .ending p:nth-child(4){animation-delay:.26s}
+  .ending p:nth-child(5){animation-delay:.33s}
+  .ending p:nth-child(6){animation-delay:.40s}
+  .ending p:nth-child(7){animation-delay:.47s}
+  .ending p:nth-child(8){animation-delay:.54s}
+  .ending p:nth-child(n+9){animation-delay:.6s}
+}
+/* ---------- responsive ---------- */
+@media (max-width:560px){
+  body{font-size:16.5px;line-height:1.9}
+  .wrap{padding:62px 20px 96px}
+  h1{font-size:38px}
+  .timestamp{font-size:48px}
+  .tc{padding:26px 22px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============================================================
+     填充指南：直接替换每个区块里的占位文字；复制 .s / .you / .obj
+     等行来扩展。删掉用不到的区块。所有 class 含义见文件顶部注释。
+     ============================================================ -->
+
+<header>
+  <p class="kicker">极乐迪斯科 · 思维内剧</p>
+  <h1>{{标题}}</h1>
+  <p class="dek">{{一句话引子：题材 + 那个正困在选择里的人。可换行用 &lt;br&gt;}}</p>
+  <div class="cast">
+    出场：<b>技能甲</b> · <b>技能乙</b> · <b>技能丙</b> · <span class="vs"><b>冲突方A</b> ⚔ <b>冲突方B</b></span>
+    <span class="stamp">场景：{{地点}} · {{时间，精确到分}}</span>
+  </div>
+</header>
+
+<!-- ============ PART 1 · 场景 ============ -->
+<span class="timestamp">{{时间戳}}</span>
+
+<p class="scene lead">{{开场：一句把人钉进物理现实的话。具体、略可悲、略荒诞的感官细节。}}</p>
+
+<p class="scene">{{继续铺场景。短句。段间留白。}}</p>
+
+<!-- 物证 / 被引用的官方文本（可选，没有就删） -->
+<div class="doc-quote">
+  {{被争议 / 被凝视的那段原文}}
+  <span class="src">{{出处 · 状态，如：已置顶 · 未修改}}</span>
+</div>
+
+<hr class="sep">
+
+<!-- ============ PART 2 · 技能检定与对话 ============ -->
+
+<!-- 单行技能检定 -->
+<p class="s"><span class="sk">技能名</span><span class="ck">【成功】</span> — {{这个声音说的话。}}</p>
+
+<!-- 五感发达：必须带感官标注 -->
+<p class="s"><span class="sk">五感发达</span><span class="sense">（视觉）</span><span class="ck">【成功】</span> — {{一个别人忽略的细节。}}</p>
+
+<!-- 失败检定 -->
+<p class="s"><span class="sk">技能名</span><span class="ck fail">【失败】</span> — {{失败揭示弱点。}}</p>
+
+<!-- 玩家「你」：向内陷入 -->
+<blockquote class="you"><span class="who">你</span> — {{困惑、反驳、自嘲或糟糕的玩笑。}}</blockquote>
+
+<!-- 多行技能检定（带列表） -->
+<p class="s"><span class="sk">逻辑思维</span><span class="ck">【成功】</span> — {{引出推理。}}摆开：</p>
+<p class="s">
+<ol>
+  <li>{{事实 A}}</li>
+  <li>{{与之矛盾的事实 B}}</li>
+</ol>
+{{把矛盾点破。可用 &lt;em&gt;斜体&lt;/em&gt; 强调关键词。}}</p>
+
+<!-- 节拍转场（重大转折用 beat，轻分隔用 sep） -->
+<hr class="beat">
+
+<!-- 物品之声：内陆帝国让世界开口 -->
+<p class="obj"><span class="on">某个物品</span> — {{它知道些什么，它判断，它威胁或安慰。}}</p>
+
+<!-- 边缘系统 / 古老的爬虫脑：虚无、放弃、疲惫 -->
+<p class="reptile"><span class="sk rep">古老的爬虫脑</span> — {{这里什么也没有，只有温暖的、原始的黑暗。}}</p>
+
+<!-- 难度档：主动检定才显示难度（被动检定只写【成功】/【失败】） -->
+<p class="s"><span class="sk">平心定气</span><span class="ck hard">【有挑战性：成功】</span> — <em>停。</em>{{踩刹车。}}</p>
+
+<!-- ============ PART 3 · 信息整合 ============ -->
+<section class="intel">
+  <h2>信息整合</h2>
+  <p class="sub">{{一句带叙事腔的小标题}}</p>
+  <table>
+    <thead>
+      <tr><th style="width:32%">{{维度}}</th><th style="width:34%">{{状态}}</th><th>{{它对你心理的影响}}</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>{{...}}</td><td>{{...}}</td><td>{{...}}</td></tr>
+      <tr><td>{{...}}</td><td>{{...}}</td><td>{{...}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note">注：{{一句诚实到不舒服的旁注——哪一行才是硬事实，其余只是翻涌。}}</p>
+</section>
+
+<!-- ============ PART 4 · 思维阁 ============ -->
+<section class="tc-zone">
+  <h2>思维阁</h2>
+  <div class="tc">
+    <h3>💭 「{{思想名称}}」</h3>
+    <p><span class="lbl">问题：</span>{{这个思想如何萦绕、困扰你。}}</p>
+    <p><span class="lbl">解答：</span>{{内化后的核心洞察——出人意料，带黑色幽默或存在主义色彩。可用 &lt;em&gt;斜体&lt;/em&gt;。}}</p>
+    <div class="fx">
+      <span class="fx-h">内化完成后效果</span>
+      <ul>
+        <li><span class="sk">技能名</span> +1，<span class="sk">技能名</span> −1（{{为什么}}）</li>
+        <li>解锁思想：「{{下一个思想}}」</li>
+        <li>永久效果：{{某种不可逆的认知改变}}</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART 5 · 红色检定 + 游戏式结尾 ============ -->
+<section class="choice">
+  <h2>主动检定</h2>
+  <p class="s"><span class="sk">技能名</span><span class="ck red">【红色检定 · ？？】</span> — {{那个不可逆的抉择。}}</p>
+  <!-- 输入框 / 草稿（可选） -->
+  <div class="draft">
+    {{打了一半的话}}<span class="cursor"></span>
+  </div>
+  <p class="s">{{红色检定 = 一次性，发出去收不回。}}</p>
+  <blockquote class="you"><span class="who">你</span> — ……</blockquote>
+</section>
+
+<div class="ending">
+  <!-- 方括号结尾：每行一个 <p>，短，有节奏 -->
+  <p>[{{...}}]</p>
+  <p>[{{...}}]</p>
+  <p>[{{...}}]</p>
+  <p class="last">[{{倒数第二拍，给玩家}}]</p>
+  <p class="glow">[{{一句微光}}]</p>
+  <p>[存档点已创建]</p>
+  <p>[你可以随时回来]</p>
+  <p class="q">[对吧？]</p>
+</div>
+
+<!-- 图例（可保留，帮读者认色） -->
+<div class="colophon">
+  <div class="legend">
+    <span><span class="dot" style="background:var(--skill)"></span>技能之声</span>
+    <span><span class="dot" style="background:var(--object)"></span>物品之声</span>
+    <span><span class="dot" style="background:var(--player-rule)"></span>玩家「你」</span>
+    <span><span class="dot" style="background:var(--reptile)"></span>边缘 / 爬虫脑</span>
+    <span><span class="dot" style="background:var(--red)"></span>红色检定</span>
+  </div>
+  <div style="margin-top:12px">极乐迪斯科叙事引擎 · 「{{标题}}」</div>
+</div>
+
+</div>
+</body>
+</html>

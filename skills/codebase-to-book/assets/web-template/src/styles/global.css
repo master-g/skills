@@ -1,0 +1,171 @@
+@import "tailwindcss";
+@import "@fontsource-variable/source-serif-4";
+@import "@fontsource-variable/jetbrains-mono";
+
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Anthropic palette — extracted from anthropic.com */
+  --color-cream: #f5f4ed;
+  --color-beige: #e8e6dc;
+  --color-terracotta: #d97757;
+  --color-charcoal: #141413;
+  --color-dark-surface: #1e1e1c;
+  --color-secondary: #30302e;
+  --color-muted: #87867f;
+  --color-border: #c2c0b6;
+  --color-highlight: #eda100;
+
+  --font-serif: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono Variable", "Fira Code", "Consolas", monospace;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background-color: var(--color-charcoal);
+  color: var(--color-cream);
+}
+
+/* Code blocks — base */
+code, pre {
+  font-family: var(--font-mono);
+}
+
+pre {
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  border: 1px solid var(--color-border);
+  background-color: #f8f7f1;
+  color: #24292e;
+}
+
+pre code {
+  background-color: transparent !important;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Override Tailwind Typography prose code block styles */
+.prose pre, .chapter-prose pre {
+  background-color: #f8f7f1 !important;
+  color: #24292e !important;
+  max-width: none;
+}
+
+.prose pre code, .chapter-prose pre code {
+  background-color: transparent !important;
+  color: #24292e !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* --- Dark mode code blocks --- */
+html.dark pre {
+  background-color: #0d1117 !important;
+  border-color: #30363d !important;
+  color: #c9d1d9 !important;
+}
+
+html.dark pre code {
+  color: #c9d1d9 !important;
+}
+
+html.dark .prose pre, html.dark .chapter-prose pre {
+  background-color: #0d1117 !important;
+}
+
+html.dark .prose pre code, html.dark .chapter-prose pre code {
+  background-color: transparent !important;
+  color: #c9d1d9 !important;
+}
+
+/* Shiki / Astro dual-theme code — force dark colors via inline CSS vars */
+/* Shiki inlines light-theme colors via style="color:#XXX".
+ * Dark mode uses --shiki-dark / --shiki-dark-bg CSS variables per span.
+ * We use !important to override the inline style attributes. */
+html.dark .astro-code {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+
+html.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: transparent !important;
+}
+
+html.dark .astro-code .line {
+  color: var(--shiki-dark) !important;
+}
+
+/* Also fix for non-themed code blocks (plaintext, mermaid, etc.) */
+html.dark pre:not(.astro-code) {
+  background-color: #0d1117 !important;
+  color: #c9d1d9 !important;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background-color: var(--color-beige);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  color: var(--color-charcoal);
+}
+
+html.dark :not(pre) > code {
+  background-color: var(--color-dark-surface);
+  color: var(--color-cream);
+}
+
+/* Copy button — dark mode */
+html.dark .copy-button {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+
+html.dark .copy-button:hover {
+  background-color: var(--color-terracotta);
+  color: white;
+  border-color: var(--color-terracotta);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #444;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(204, 120, 92, 0.3);
+}

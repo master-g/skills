@@ -1,0 +1,82 @@
+[
+  {
+    "query": "https://x.com/karpathy/status/1885026028428681698 这条帮我存进 ~/obsidian/inbox/ 里，我想之后写文章的时候引用",
+    "should_trigger": true
+  },
+  {
+    "query": "老哥这个 thread 挺长的 https://x.com/swyx/status/1841234567890123456 能不能整理成一份干净的文字稿给我，图片链接留着就行",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我看看这条推文到底说了啥 twitter.com/sama/status/1958442752148643866 我这边打不开 x",
+    "should_trigger": true
+  },
+  {
+    "query": "我在做一个 AI infra 的调研，收集了 7 个 X 链接放在 /Users/alice/research/x-links.txt 里，一行一个。挨个抓下来存成单独的 md 文件，文件名带上作者 handle",
+    "should_trigger": true
+  },
+  {
+    "query": "convert this to markdown for my newsletter draft — https://x.com/dwarkesh_sp/status/1899876543210987654",
+    "should_trigger": true
+  },
+  {
+    "query": "这个 X 长文 https://x.com/lexfridman/article/1867683893543686144 抓下来，我想让你读完之后帮我总结三个要点",
+    "should_trigger": true
+  },
+  {
+    "query": "周报要交了，把我这周收藏的这两条推文的内容摘出来： https://x.com/OpenAI/status/1905555555555555555 和 https://x.com/AnthropicAI/status/1906666666666666666",
+    "should_trigger": true
+  },
+  {
+    "query": "archive this thread before it gets deleted, the guy is being ratio'd hard https://x.com/somedevguy/status/1912345678901234567",
+    "should_trigger": true
+  },
+  {
+    "query": "x.com/tszzl/status/1888888888888888888 读一下",
+    "should_trigger": true
+  },
+  {
+    "query": "有个人在 X 上发了个关于 RAG 的很长的帖子，链接是 https://twitter.com/jerryjliu0/status/1877777777777777777，我想把它塞进我的 Logseq 第二大脑里，格式别太乱",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我抓一下这个 HN 讨论转成 markdown https://news.ycombinator.com/item?id=42345678 评论也要，我想看看大家怎么喷这个新框架的",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写一条推文发到 X 上，内容是我们刚开源了一个 rust 写的 embedding 服务，要那种不油腻的语气，200 字以内，最后带 github 链接",
+    "should_trigger": false
+  },
+  {
+    "query": "downloads 里有个 'Q4 增长复盘 final v3.docx'，转成 markdown 我要放进 repo 的 docs/ 目录，图片抽出来放 docs/assets/",
+    "should_trigger": false
+  },
+  {
+    "query": "我要用 Twitter API v2 写个脚本监控几个 handle 的新推文，bearer token 已经有了。free tier 的 rate limit 到底是多少，会不会一天就打满",
+    "should_trigger": false
+  },
+  {
+    "query": "这篇 Substack 长文 https://www.interconnects.ai/p/olmo-3-reasoning 帮我抓成 markdown，它有付费墙但前半段是免费的",
+    "should_trigger": false
+  },
+  {
+    "query": "去 X 上搜一下最近大家对 MCP 的讨论，按互动量排一下，我想看看主流看法是什么。不用太多，20 条左右够了",
+    "should_trigger": false
+  },
+  {
+    "query": "我这份 markdown 笔记 /Users/alice/notes/agent-memory.md 太长了，帮我拆成一个 8 条的 X thread，每条不超过 280 字符，第一条要能钩住人",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我登录 x.com 把个人简介改成 'building things at night'，然后置顶我那条讲 ponytail mode 的推文",
+    "should_trigger": false
+  },
+  {
+    "query": "这个 youtube 访谈 https://www.youtube.com/watch?v=dQw4w9WgXcQ 两个半小时太长了，有没有办法搞到文字稿然后转 md",
+    "should_trigger": false
+  },
+  {
+    "query": "昨天 X 上那个说 transformer 已经到头了的观点你怎么看？我觉得挺扯的但说不出为什么，帮我理一理反驳的思路",
+    "should_trigger": false
+  }
+]

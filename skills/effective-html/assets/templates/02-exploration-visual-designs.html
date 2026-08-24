@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="effective-html-family" content="visual-directions">
+  <title>Visual direction review</title>
+  <style>
+    :root {
+      --canvas: #faf9f5;
+      --surface-card: #efe9de;
+      --surface-dark: #181715;
+      --coral: #cc785c;
+      --ink: #24221f;
+      --muted: #6e6961;
+      --line: #d9d2c7;
+      --paper: #fffefa;
+      --sage: #76866f;
+      --blue: #657d8d;
+      --amber: #b68145;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --content: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .review-bar {
+      position: sticky;
+      z-index: 10;
+      top: 0;
+      border-bottom: 1px solid var(--line);
+      background: var(--canvas);
+    }
+
+    .review-bar__inner {
+      width: min(calc(100% - 40px), var(--content));
+      min-height: 58px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .eyebrow,
+    .section-label,
+    .direction-number,
+    .criterion-index {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .review-title {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 720;
+      letter-spacing: 0.01em;
+    }
+
+    .surface-control {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 0;
+    }
+
+    .surface-control legend {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .surface-option {
+      position: relative;
+    }
+
+    .surface-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .surface-option span {
+      display: block;
+      min-width: 62px;
+      padding: 7px 12px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .surface-option input:checked + span {
+      border-color: var(--line);
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .surface-option input:focus-visible + span {
+      outline: 3px solid rgba(204, 120, 92, 0.28);
+      outline-offset: 2px;
+    }
+
+    main {
+      overflow: hidden;
+    }
+
+    .decision-brief {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto;
+      padding: 92px 0 72px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 80px;
+      align-items: end;
+    }
+
+    .brief-copy h1 {
+      max-width: 760px;
+      margin: 14px 0 24px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(3rem, 6.7vw, 6.35rem);
+      font-weight: 400;
+      letter-spacing: -0.055em;
+      line-height: 0.94;
+    }
+
+    .brief-copy h1 em {
+      color: var(--coral);
+      font-weight: 400;
+    }
+
+    .brief-copy > p {
+      max-width: 620px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .brief-context {
+      padding-top: 18px;
+      border-top: 1px solid var(--ink);
+    }
+
+    .brief-context dl {
+      margin: 18px 0 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .brief-context div {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 14px;
+      font-size: 0.86rem;
+    }
+
+    .brief-context dt {
+      color: var(--muted);
+    }
+
+    .brief-context dd {
+      margin: 0;
+      font-weight: 680;
+    }
+
+    .criteria {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto 92px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .criterion {
+      min-height: 180px;
+      padding: 26px 30px 30px;
+      border-right: 1px solid var(--line);
+    }
+
+    .criterion:last-child {
+      border-right: 0;
+    }
+
+    .criterion h2 {
+      margin: 28px 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.45rem;
+      font-weight: 400;
+    }
+
+    .criterion p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .direction-stage {
+      padding: 88px 0 104px;
+      background: var(--surface-card);
+    }
+
+    .section-heading {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto 46px;
+      display: grid;
+      grid-template-columns: 1fr minmax(280px, 0.75fr);
+      gap: 56px;
+      align-items: end;
+    }
+
+    .section-heading h2 {
+      margin: 10px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.3rem, 4.3vw, 4.2rem);
+      font-weight: 400;
+      letter-spacing: -0.045em;
+      line-height: 1;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .directions {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .direction {
+      padding: 14px;
+      border: 1px solid rgba(36, 34, 31, 0.14);
+      border-radius: var(--radius-lg);
+      background: var(--canvas);
+    }
+
+    .direction[data-recommended="true"] {
+      border-color: var(--coral);
+    }
+
+    .direction-header {
+      min-height: 62px;
+      padding: 3px 5px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .direction-name {
+      margin: 2px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+    }
+
+    .recommendation {
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--coral);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .artboard {
+      position: relative;
+      min-height: 370px;
+      padding: 22px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+      transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+    }
+
+    .artboard-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .product-mark {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .product-mark::before {
+      width: 15px;
+      height: 15px;
+      border-radius: 4px 4px 4px 1px;
+      background: var(--coral);
+      content: "";
+      transform: rotate(-8deg);
+    }
+
+    .board-pill,
+    .preview-action {
+      padding: 6px 10px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      font-size: 0.64rem;
+      font-weight: 750;
+    }
+
+    .empty-state {
+      min-height: 286px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .empty-state__inner {
+      width: min(100%, 310px);
+    }
+
+    .empty-state h3 {
+      margin: 18px 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      line-height: 1.12;
+    }
+
+    .empty-state p {
+      margin: 0 auto 18px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .preview-action {
+      display: inline-block;
+      border-color: transparent;
+      color: #fff;
+      background: var(--coral);
+    }
+
+    .motif {
+      position: relative;
+      width: 126px;
+      height: 110px;
+      margin: 0 auto;
+    }
+
+    .motif-minimal {
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+    }
+
+    .motif-minimal::before,
+    .motif-minimal::after {
+      position: absolute;
+      width: 58px;
+      height: 1px;
+      background: var(--ink);
+      content: "";
+    }
+
+    .motif-minimal::before {
+      transform: rotate(28deg);
+    }
+
+    .motif-minimal::after {
+      transform: rotate(-28deg);
+    }
+
+    .motif-illustrated::before {
+      position: absolute;
+      inset: 17px 20px 10px;
+      border-radius: 48% 52% 46% 54%;
+      background: #ddd3c4;
+      content: "";
+      transform: rotate(-8deg);
+    }
+
+    .motif-illustrated::after {
+      position: absolute;
+      left: 36px;
+      top: 18px;
+      width: 55px;
+      height: 68px;
+      border: 2px solid var(--ink);
+      border-radius: 8px 8px 24px 8px;
+      content: "";
+      transform: rotate(8deg);
+    }
+
+    .spark {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--coral);
+    }
+
+    .spark.one {
+      left: 16px;
+      top: 28px;
+    }
+
+    .spark.two {
+      right: 12px;
+      bottom: 16px;
+      background: var(--sage);
+    }
+
+    .motif-data {
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      gap: 8px;
+      padding: 18px 20px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .motif-data span {
+      width: 18px;
+      border-radius: 3px 3px 0 0;
+      background: var(--blue);
+    }
+
+    .motif-data span:nth-child(1) {
+      height: 32px;
+    }
+
+    .motif-data span:nth-child(2) {
+      height: 62px;
+      background: var(--coral);
+    }
+
+    .motif-data span:nth-child(3) {
+      height: 44px;
+      background: var(--amber);
+    }
+
+    .motif-editorial {
+      border-left: 1px solid var(--ink);
+    }
+
+    .motif-editorial::before {
+      position: absolute;
+      left: 14px;
+      top: 8px;
+      color: var(--coral);
+      content: "01";
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 4.7rem;
+      line-height: 1;
+    }
+
+    .motif-editorial::after {
+      position: absolute;
+      right: 0;
+      bottom: 20px;
+      width: 72px;
+      height: 38px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      content: "";
+    }
+
+    .direction-notes {
+      padding: 18px 6px 7px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .direction-notes strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .direction-notes p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.79rem;
+    }
+
+    .direction-notes div:last-child {
+      padding-left: 18px;
+      border-left: 1px solid var(--line);
+    }
+
+    .artboard.dark {
+      color: #f4f0e8;
+      border-color: #3d3a35;
+      background: var(--surface-dark);
+    }
+
+    .artboard.dark .empty-state p {
+      color: #aaa49b;
+    }
+
+    .artboard.dark .motif-minimal,
+    .artboard.dark .motif-data {
+      border-color: #5a554e;
+    }
+
+    .artboard.dark .motif-minimal::before,
+    .artboard.dark .motif-minimal::after {
+      background: #f4f0e8;
+    }
+
+    .artboard.dark .motif-illustrated::before {
+      background: #393630;
+    }
+
+    .artboard.dark .motif-illustrated::after,
+    .artboard.dark .motif-editorial {
+      border-color: #f4f0e8;
+    }
+
+    .artboard.dark .motif-editorial::after {
+      border-color: #f4f0e8;
+    }
+
+    .selection-guidance {
+      color: #f3eee6;
+      background: var(--surface-dark);
+    }
+
+    .selection-guidance__inner {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto;
+      padding: 96px 0 102px;
+      display: grid;
+      grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
+      gap: 80px;
+    }
+
+    .selection-guidance h2 {
+      margin: 12px 0 20px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.4rem, 4.8vw, 4.5rem);
+      font-weight: 400;
+      letter-spacing: -0.045em;
+      line-height: 1;
+    }
+
+    .selection-guidance .section-label {
+      color: #aaa49b;
+    }
+
+    .selection-guidance .lead {
+      margin: 0;
+      color: #aaa49b;
+    }
+
+    .decision-callout {
+      margin-top: 32px;
+      padding: 18px 0 0 20px;
+      border-top: 1px solid #514c45;
+      border-left: 3px solid var(--coral);
+      font-size: 0.9rem;
+    }
+
+    .decision-matrix {
+      border-top: 1px solid #514c45;
+    }
+
+    .matrix-row {
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 128px 1fr 112px;
+      gap: 24px;
+      align-items: center;
+      border-bottom: 1px solid #3f3b36;
+    }
+
+    .matrix-row h3 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.14rem;
+      font-weight: 400;
+    }
+
+    .matrix-row p {
+      margin: 0;
+      color: #aaa49b;
+      font-size: 0.84rem;
+    }
+
+    .fit {
+      color: #ddd5ca;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .fit.best {
+      color: #e39a80;
+    }
+
+    footer {
+      padding: 26px 20px;
+      color: var(--muted);
+      background: var(--canvas);
+      text-align: center;
+      font-size: 0.74rem;
+    }
+
+    @media (max-width: 900px) {
+      .decision-brief,
+      .section-heading,
+      .selection-guidance__inner {
+        grid-template-columns: 1fr;
+        gap: 42px;
+      }
+
+      .decision-brief {
+        padding-top: 68px;
+      }
+
+      .criteria {
+        grid-template-columns: 1fr;
+      }
+
+      .criterion {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .criterion:last-child {
+        border-bottom: 0;
+      }
+
+      .directions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .review-bar__inner {
+        width: min(calc(100% - 28px), var(--content));
+      }
+
+      .review-title {
+        display: none;
+      }
+
+      .decision-brief,
+      .criteria,
+      .section-heading,
+      .directions,
+      .selection-guidance__inner {
+        width: min(calc(100% - 28px), var(--content));
+      }
+
+      .decision-brief {
+        padding: 54px 0 52px;
+      }
+
+      .brief-copy h1 {
+        font-size: clamp(3rem, 16vw, 4.4rem);
+      }
+
+      .brief-context div {
+        grid-template-columns: 76px 1fr;
+      }
+
+      .criteria {
+        margin-bottom: 68px;
+      }
+
+      .criterion {
+        padding-inline: 4px;
+      }
+
+      .direction-stage {
+        padding: 64px 0 72px;
+      }
+
+      .direction {
+        padding: 9px;
+        border-radius: 17px;
+      }
+
+      .artboard {
+        min-height: 344px;
+        padding: 17px;
+      }
+
+      .direction-notes {
+        grid-template-columns: 1fr;
+      }
+
+      .direction-notes div:last-child {
+        padding: 14px 0 0;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+
+      .selection-guidance__inner {
+        padding: 70px 0 76px;
+      }
+
+      .matrix-row {
+        padding: 20px 0;
+        grid-template-columns: 1fr auto;
+        gap: 7px 16px;
+      }
+
+      .matrix-row p {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .artboard {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="review-bar">
+    <div class="review-bar__inner">
+      <p class="review-title">Empty-state visual direction review</p>
+      <fieldset class="surface-control">
+        <legend>Preview surface</legend>
+        <label class="surface-option">
+          <input type="radio" name="surface" value="light" checked>
+          <span>Light</span>
+        </label>
+        <label class="surface-option">
+          <input type="radio" name="surface" value="dark">
+          <span>Dark</span>
+        </label>
+      </fieldset>
+    </div>
+  </header>
+
+  <main>
+    <section class="decision-brief">
+      <div class="brief-copy">
+        <span class="eyebrow">Decision brief · 04 directions</span>
+        <h1>Give an empty workspace a <em>point of view.</em></h1>
+        <p>Four visual systems answer the same product moment: a new user has arrived, but has not created their first project. Compare the expression—not the layout.</p>
+      </div>
+      <aside class="brief-context" aria-label="Review context">
+        <span class="section-label">Shared context</span>
+        <dl>
+          <div><dt>Audience</dt><dd>Independent creative teams</dd></div>
+          <div><dt>Moment</dt><dd>First-run empty state</dd></div>
+          <div><dt>Action</dt><dd>Create the first project</dd></div>
+          <div><dt>Constraint</dt><dd>Must work on both surfaces</dd></div>
+        </dl>
+      </aside>
+    </section>
+
+    <section class="criteria" aria-label="Selection criteria">
+      <article class="criterion">
+        <span class="criterion-index">01 · Clarity</span>
+        <h2>Orient immediately</h2>
+        <p>The illustration must support the next action without becoming the task itself.</p>
+      </article>
+      <article class="criterion">
+        <span class="criterion-index">02 · Personality</span>
+        <h2>Feel recognizably ours</h2>
+        <p>The direction should carry warmth and judgment without drifting into decoration.</p>
+      </article>
+      <article class="criterion">
+        <span class="criterion-index">03 · Guidance</span>
+        <h2>Invite momentum</h2>
+        <p>The composition should turn an empty screen into a clear beginning, not a dead end.</p>
+      </article>
+    </section>
+
+    <section class="direction-stage" id="directions">
+      <div class="section-heading">
+        <div>
+          <span class="section-label">Direction stage</span>
+          <h2>Same moment.<br>Different voice.</h2>
+        </div>
+        <p>Each artboard uses identical product copy and hierarchy. Switch the surface above, then judge how each visual language changes the emotional read.</p>
+      </div>
+
+      <div class="directions">
+        <article class="direction">
+          <header class="direction-header">
+            <div>
+              <span class="direction-number">Direction 01</span>
+              <h3 class="direction-name">Essential</h3>
+            </div>
+          </header>
+          <div class="artboard" data-artboard>
+            <div class="artboard-top">
+              <span class="product-mark">Northstar</span>
+              <span class="board-pill">Projects</span>
+            </div>
+            <div class="empty-state">
+              <div class="empty-state__inner">
+                <div class="motif motif-minimal" aria-hidden="true"></div>
+                <h3>Your first project starts here</h3>
+                <p>Collect the work, decisions, and people that move an idea forward.</p>
+                <span class="preview-action">Create a project</span>
+              </div>
+            </div>
+          </div>
+          <div class="direction-notes">
+            <div><strong>Works when</strong><p>The product itself is already visually dense and needs a quiet frame.</p></div>
+            <div><strong>Watch</strong><p>Precision can read as generic when brand recognition is still forming.</p></div>
+          </div>
+        </article>
+
+        <article class="direction" data-recommended="true">
+          <header class="direction-header">
+            <div>
+              <span class="direction-number">Direction 02</span>
+              <h3 class="direction-name">Illustrated</h3>
+            </div>
+            <span class="recommendation">Recommended</span>
+          </header>
+          <div class="artboard" data-artboard>
+            <div class="artboard-top">
+              <span class="product-mark">Northstar</span>
+              <span class="board-pill">Projects</span>
+            </div>
+            <div class="empty-state">
+              <div class="empty-state__inner">
+                <div class="motif motif-illustrated" aria-hidden="true">
+                  <span class="spark one"></span>
+                  <span class="spark two"></span>
+                </div>
+                <h3>Your first project starts here</h3>
+                <p>Collect the work, decisions, and people that move an idea forward.</p>
+                <span class="preview-action">Create a project</span>
+              </div>
+            </div>
+          </div>
+          <div class="direction-notes">
+            <div><strong>Works when</strong><p>Warmth and memorability need to coexist with a clear product action.</p></div>
+            <div><strong>Watch</strong><p>Keep the illustration vocabulary small enough to remain systematic.</p></div>
+          </div>
+        </article>
+
+        <article class="direction">
+          <header class="direction-header">
+            <div>
+              <span class="direction-number">Direction 03</span>
+              <h3 class="direction-name">Evidence-led</h3>
+            </div>
+          </header>
+          <div class="artboard" data-artboard>
+            <div class="artboard-top">
+              <span class="product-mark">Northstar</span>
+              <span class="board-pill">Projects</span>
+            </div>
+            <div class="empty-state">
+              <div class="empty-state__inner">
+                <div class="motif motif-data" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </div>
+                <h3>Your first project starts here</h3>
+                <p>Collect the work, decisions, and people that move an idea forward.</p>
+                <span class="preview-action">Create a project</span>
+              </div>
+            </div>
+          </div>
+          <div class="direction-notes">
+            <div><strong>Works when</strong><p>The audience values utility and measurable progress above expressiveness.</p></div>
+            <div><strong>Watch</strong><p>A chart implies existing activity—an awkward promise on a truly empty screen.</p></div>
+          </div>
+        </article>
+
+        <article class="direction">
+          <header class="direction-header">
+            <div>
+              <span class="direction-number">Direction 04</span>
+              <h3 class="direction-name">Editorial</h3>
+            </div>
+          </header>
+          <div class="artboard" data-artboard>
+            <div class="artboard-top">
+              <span class="product-mark">Northstar</span>
+              <span class="board-pill">Projects</span>
+            </div>
+            <div class="empty-state">
+              <div class="empty-state__inner">
+                <div class="motif motif-editorial" aria-hidden="true"></div>
+                <h3>Your first project starts here</h3>
+                <p>Collect the work, decisions, and people that move an idea forward.</p>
+                <span class="preview-action">Create a project</span>
+              </div>
+            </div>
+          </div>
+          <div class="direction-notes">
+            <div><strong>Works when</strong><p>The brand earns authority through strong authorship and content hierarchy.</p></div>
+            <div><strong>Watch</strong><p>The oversized numbering may compete with localization and compact layouts.</p></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="selection-guidance">
+      <div class="selection-guidance__inner">
+        <div>
+          <span class="section-label">Selection guidance</span>
+          <h2>Choose illustrated restraint.</h2>
+          <p class="lead">Direction 02 carries enough character to be memorable while keeping the task, copy, and primary action dominant.</p>
+          <div class="decision-callout">Recommendation assumes the first-run experience is a meaningful brand moment. If speed and information density become primary, revisit Direction 01.</div>
+        </div>
+        <div class="decision-matrix" aria-label="Direction comparison">
+          <div class="matrix-row">
+            <h3>Essential</h3>
+            <p>Highest clarity; lowest expressive ownership.</p>
+            <span class="fit">Safe fit</span>
+          </div>
+          <div class="matrix-row">
+            <h3>Illustrated</h3>
+            <p>Balances warmth, differentiation, and action clarity.</p>
+            <span class="fit best">Best fit</span>
+          </div>
+          <div class="matrix-row">
+            <h3>Evidence-led</h3>
+            <p>Signals utility, but contradicts the absence of data.</p>
+            <span class="fit">Weak fit</span>
+          </div>
+          <div class="matrix-row">
+            <h3>Editorial</h3>
+            <p>Ownable voice with greater localization risk.</p>
+            <span class="fit">Bold fit</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Visual direction review · Empty-state concept · July 2026</footer>
+
+  <script>
+    const surfaceInputs = document.querySelectorAll('input[name="surface"]');
+    const artboards = document.querySelectorAll('[data-artboard]');
+
+    surfaceInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        const isDark = input.value === "dark";
+        artboards.forEach((artboard) => artboard.classList.toggle("dark", isDark));
+      });
+    });
+  </script>
+</body>
+</html>

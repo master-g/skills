@@ -1,0 +1,28 @@
+---
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  currentLang: Lang;
+}
+
+const { currentLang } = Astro.props;
+---
+
+<button
+  id="lang-toggle"
+  type="button"
+  aria-label="Switch language"
+  data-current={currentLang}
+  class="p-2 rounded-lg hover:bg-[var(--color-beige)] dark:hover:bg-[var(--color-dark-surface)] transition-colors text-sm font-medium text-[var(--color-charcoal)] dark:text-[var(--color-cream)]"
+>
+  {currentLang === 'zh' ? 'EN' : '中文'}
+</button>
+
+<script>
+  import { toggleLang } from '../scripts/lang';
+  const btn = document.getElementById('lang-toggle');
+  btn?.addEventListener('click', () => {
+    const current = btn.dataset.current as import('../scripts/lang').Lang;
+    toggleLang(current);
+  });
+</script>

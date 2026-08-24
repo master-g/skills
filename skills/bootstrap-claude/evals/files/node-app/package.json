@@ -1,0 +1,16 @@
+{
+  "name": "acme-checkout",
+  "version": "1.2.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "eslint": "^9.2.0",
+    "prettier": "^3.2.0"
+  }
+}

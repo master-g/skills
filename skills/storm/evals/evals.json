@@ -1,0 +1,62 @@
+{
+  "skill_name": "storm",
+  "evals": [
+    {
+      "id": 0,
+      "name": "tech-concept-rag",
+      "prompt": "我最近在补 LLM 的知识，想要一篇比较完整、带出处的 retrieval-augmented generation（RAG）介绍长文。从它到底解决什么问题、典型架构怎么实现、有哪些主流变种、局限性在哪都讲清楚，能当个百科条目那种结构化的，存成 markdown 给我。",
+      "expected_output": "一篇维基式 Markdown 长文：清晰的 lead 段定义 RAG，多个层级 section（问题背景/架构/变种/局限等），全文带内联数字引用 [n]，末尾 References 列表对应真实 URL，来源广而不依赖单一出处，对有争议处显式呈现分歧。",
+      "files": [],
+      "expectations": [
+        "Inline citations: the article body contains at least 8 inline citation markers.",
+        "Source breadth: at least 25 distinct sources are cited, each with a real http(s) URL.",
+        "Source diversity: no single source accounts for more than 35% of inline citations (no over-reliance on one source such as Wikipedia).",
+        "Citation integrity: every inline citation resolves to a reference entry (no orphans), and every reference entry carries a well-formed URL (no missing/placeholder URLs).",
+        "Hierarchical structure: at least 4 '##' sections and at least 2 '###' sub-sections.",
+        "Encyclopedic neutral lead: opens with a standalone definitional lead paragraph in neutral third-person (no 'I/we/我们').",
+        "Surfaces source disagreement / caveats weak evidence: where sources conflict or evidence is shaky, the article explicitly flags it (differing figures, methodological caveats) rather than asserting a single unqualified claim.",
+        "Covers all four requested facets: the problem RAG solves, its typical architecture, major variants, and limitations each get dedicated coverage.",
+        "Names at least two specific RAG variants/techniques (e.g., advanced/modular RAG, hybrid search, reranking, HyDE, Self-RAG, CRAG, GraphRAG, agentic RAG)."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "controversy-four-day-week",
+      "prompt": "帮我从零写一篇关于「四天工作制」的维基式条目。我想看到支持方和反对方各自的论据、几个国家/公司试点的实际结果、对生产力和员工健康的研究证据，最后要有引用。给我 markdown。",
+      "expected_output": "一篇带引用的结构化 Markdown 文章，明显体现多视角（支持方/反对方/试点证据/研究结论），对立观点并列呈现而非压平，来源广而不依赖单一出处，弱证据有 caveat，所有事实性论断都有 [n] 引用和真实 URL。",
+      "files": [],
+      "expectations": [
+        "Inline citations: the article body contains at least 8 inline citation markers.",
+        "Source breadth: at least 25 distinct sources are cited, each with a real http(s) URL.",
+        "Source diversity: no single source accounts for more than 35% of inline citations (no over-reliance on one source such as Wikipedia).",
+        "Citation integrity: every inline citation resolves to a reference entry (no orphans), and every reference entry carries a well-formed URL (no missing/placeholder URLs).",
+        "Hierarchical structure: at least 4 '##' sections and at least 2 '###' sub-sections.",
+        "Encyclopedic neutral lead: opens with a standalone definitional lead paragraph in neutral third-person (no 'I/we/我们').",
+        "Surfaces source disagreement / caveats weak evidence: where pilot results or studies are contested or methodologically weak (self-selection, small samples), the article explicitly flags it rather than presenting headline numbers unqualified.",
+        "Both sides represented: the article explicitly presents BOTH pro (支持方) AND con (反对方) arguments, not a one-sided take.",
+        "At least two named real-world pilots/trials with outcomes (e.g., UK 4 Day Week pilot, Iceland trials, Microsoft Japan, 4 Day Week Global).",
+        "Reports specific study/trial findings on productivity and/or employee wellbeing, with citations."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "event-svb-collapse",
+      "prompt": "系统梳理一下 2023 年硅谷银行（SVB）倒闭事件的来龙去脉，起因、过程时间线、各方（储户/监管/市场）的反应、以及后续影响，给我一份带出处的 markdown 报告。",
+      "expected_output": "一篇维基式 Markdown 报告：lead 概述事件，含时间线/起因/各方反应/后续影响等 section，事实有内联引用 [n]，末尾 References 对应真实 URL，来源广而不过度依赖单一出处（如维基），口径有分歧处显式标注，叙述中立百科风格。",
+      "files": [],
+      "expectations": [
+        "Inline citations: the article body contains at least 8 inline citation markers.",
+        "Source breadth: at least 25 distinct sources are cited, each with a real http(s) URL.",
+        "Source diversity: no single source accounts for more than 35% of inline citations (no over-reliance on one source such as Wikipedia).",
+        "Citation integrity: every inline citation resolves to a reference entry (no orphans), and every reference entry carries a well-formed URL (no missing/placeholder URLs).",
+        "Hierarchical structure: at least 4 '##' sections and at least 2 '###' sub-sections.",
+        "Encyclopedic neutral lead: opens with a standalone definitional lead paragraph in neutral third-person (no 'I/we/我们').",
+        "Surfaces source disagreement / caveats weak evidence: where figures differ across sources (e.g., uninsured-deposit share, deposit-run amounts), the article explicitly flags the discrepancy rather than asserting one number.",
+        "At least 3 specific dated timeline events from the collapse (e.g., March 8 / March 9 / March 10, 2023).",
+        "Causal mechanism explained: rising interest rates / unrealized bond-portfolio losses and the deposit run / concentration of uninsured deposits.",
+        "Covers reactions of depositors, regulators (FDIC/Fed/Treasury), and the market/wider banking sector.",
+        "Covers aftermath/contagion (e.g., Signature Bank, First Republic, the federal backstop / BTFP)."
+      ]
+    }
+  ]
+}

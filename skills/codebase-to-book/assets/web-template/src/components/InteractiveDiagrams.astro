@@ -1,0 +1,88 @@
+---
+/**
+ * Interactive diagram teleporter (stub).
+ *
+ * Mermaid blocks render via remark-mermaid-raw.mjs + scripts/mermaid-init.ts.
+ * To attach React components to a chapter, populate `chapterDiagrams` and
+ * import the React components above.
+ *
+ * Each entry maps a chapter number to one or more diagrams; `slotIndex` is
+ * the zero-based mermaid block in that chapter (>= 0 teleports into the slot,
+ * < 0 appends below the chapter body).
+ */
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  chapterNumber: number;
+  lang: Lang;
+}
+
+const { chapterNumber, lang } = Astro.props;
+
+interface DiagramEntry {
+  component: string;
+  slotIndex: number;
+  title?: string;
+  description?: string;
+}
+
+const chapterDiagrams: Record<number, DiagramEntry[]> = {};
+
+const entries = chapterDiagrams[chapterNumber] ?? [];
+const slotEntries = entries.filter(d => d.slotIndex >= 0);
+const bottomEntries = entries.filter(d => d.slotIndex < 0);
+---
+
+{slotEntries.map((entry) => (
+  <div class="diagram-source hidden" data-target-slot={entry.slotIndex}>
+    <div class="my-8 p-5 rounded-xl border border-[var(--color-border)] dark:border-[#333]">
+      {entry.title && (
+        <h4 class="text-base font-semibold font-[var(--font-serif)] text-[var(--color-charcoal)] dark:text-[var(--color-cream)] mb-1">
+          {entry.title}
+        </h4>
+      )}
+      {entry.description && (
+        <p class="text-sm text-[var(--color-muted)] mb-4">{entry.description}</p>
+      )}
+      {/* Render the matching React component here (e.g. {entry.component === 'MyDiagram' && <MyDiagram client:only="react" />}). */}
+    </div>
+  </div>
+))}
+
+{bottomEntries.length > 0 && (
+  <div class="mt-12">
+    {bottomEntries.map((entry) => (
+      <div class="mb-10 p-5 rounded-xl border border-[var(--color-border)] dark:border-[#333]">
+        {entry.title && (
+          <h4 class="text-base font-semibold font-[var(--font-serif)] text-[var(--color-charcoal)] dark:text-[var(--color-cream)] mb-1">
+            {entry.title}
+          </h4>
+        )}
+        {entry.description && (
+          <p class="text-sm text-[var(--color-muted)] mb-4">{entry.description}</p>
+        )}
+        {/* Render the matching React component here. */}
+      </div>
+    ))}
+  </div>
+)}
+
+<script>
+  function teleportDiagrams() {
+    document.querySelectorAll('.diagram-source[data-target-slot]').forEach((source) => {
+      const idx = source.getAttribute('data-target-slot');
+      const slot = document.querySelector(`.diagram-slot[data-diagram-index="${idx}"]`);
+      if (slot) {
+        slot.innerHTML = '';
+        slot.appendChild(source);
+      }
+      source.classList.remove('hidden');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', teleportDiagrams);
+  } else {
+    teleportDiagrams();
+  }
+</script>

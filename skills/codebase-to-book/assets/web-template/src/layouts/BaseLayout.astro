@@ -1,0 +1,68 @@
+---
+import SEO from '../components/SEO.astro';
+import '../styles/global.css';
+import '../styles/prose.css';
+import { type Lang } from '../i18n/ui';
+
+interface Props {
+  title: string;
+  description: string;
+  lang?: Lang;
+}
+
+const { title, description, lang = 'en' } = Astro.props;
+const htmlLang = lang === 'zh' ? 'zh-CN' : 'en';
+
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
+const pathAfterBase = Astro.url.pathname.startsWith(base)
+  ? Astro.url.pathname.slice(base.length)
+  : Astro.url.pathname;
+const stripped = pathAfterBase.replace(/^\/zh(\/|$)/, '/') || '/';
+const canonicalPath = (base + stripped) || '/';
+const zhPath = base + '/zh' + (stripped === '/' ? '/' : stripped);
+---
+
+<!doctype html>
+<html lang={htmlLang} data-lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <SEO title={title} description={description} />
+
+    <!-- hreflang alternates -->
+    <link rel="alternate" hreflang="en" href={new URL(canonicalPath, Astro.site).href} />
+    <link rel="alternate" hreflang="zh-CN" href={new URL(zhPath, Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(canonicalPath, Astro.site).href} />
+
+    <!-- Prevent flash of wrong theme -->
+    <script is:inline>
+      (function() {
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+
+    <!-- Redirect to saved language preference -->
+    <script is:inline define:vars={{ base }}>
+      (function() {
+        const stored = localStorage.getItem('lang');
+        if (stored !== 'zh') return;
+        const p = window.location.pathname;
+        const afterBase = p.startsWith(base) ? p.slice(base.length) : p;
+        if (afterBase.startsWith('/zh/') || afterBase === '/zh') return;
+        window.location.href = base + '/zh' + (afterBase || '/');
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen">
+    <slot />
+    <script>
+      import '../scripts/mermaid-init';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+interface:
+  display_name: "makemake"
+  short_description: "把项目命令收敛成自文档 Makefile"
+policy:
+  allow_implicit_invocation: false

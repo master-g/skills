@@ -1,0 +1,23 @@
+{
+  "skill_name": "url-to-kami",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Read this article and turn it into a beautiful PDF document I can print: https://blog.samaltman.com/what-i-wish-someone-had-told-me",
+      "expected_output": "A Kami-styled HTML file and PDF saved to pwd, containing the full article content with proper title, author attribution, structured sections, and source URL in footer",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Make this blog post into a nice one-pager I can share: https://paulgraham.com/foundermode.html",
+      "expected_output": "A Kami one-pager HTML and PDF with condensed, scannable layout, key points highlighted, and source attribution",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Save this article as a formatted document: https://www.lesswrong.com/posts/7hFeMWYJwHdaEo7jF/the-lucy-s-paradox",
+      "expected_output": "A Kami long-doc HTML and PDF with the article content properly structured, including any data or arguments preserved in a readable format",
+      "files": []
+    }
+  ]
+}

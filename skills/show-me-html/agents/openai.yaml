@@ -1,0 +1,5 @@
+interface:
+  display_name: "show-me-html"
+  short_description: "生成可离线转发的 shadcn/ui 风格 HTML 页面"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="effective-html-family" content="code-understanding">
+  <title>How session authentication moves through the codebase</title>
+  <style>
+    :root {
+      --canvas: #faf9f5;
+      --surface-card: #efe9de;
+      --surface-dark: #181715;
+      --coral: #cc785c;
+      --coral-active: #a9583e;
+      --ink: #252320;
+      --muted: #6b6862;
+      --line: #d8d1c6;
+      --paper: #fffdf8;
+      --sage: #6d795e;
+      --serif: ui-serif, Georgia, "Times New Roman", serif;
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.64;
+    }
+    code { font-family: var(--mono); font-size: .88em; }
+    .page { width: min(1140px, calc(100% - 48px)); margin: 0 auto; padding: 28px 0 90px; }
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      font: 700 11px/1.3 var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .system-orientation {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr);
+      gap: 64px;
+      margin: 52px 0 60px;
+      align-items: end;
+    }
+    .kicker, .section-label {
+      font: 700 11px/1.3 var(--mono);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--coral);
+    }
+    h1 {
+      max-width: 780px;
+      margin: 11px 0 20px;
+      font: 500 clamp(44px, 6.5vw, 76px)/.98 var(--serif);
+      letter-spacing: -.045em;
+    }
+    .orientation-copy { max-width: 760px; margin: 0; font-size: 18px; color: #4d4943; }
+    .orientation-card { padding: 24px; background: var(--surface-card); border-top: 3px solid var(--ink); }
+    .orientation-card b { display: block; margin-bottom: 14px; font: 500 25px/1.12 var(--serif); }
+    .orientation-card p { margin: 0; font-size: 13px; color: var(--muted); }
+    .system-map {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      margin-bottom: 68px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .node { position: relative; padding: 20px 15px; min-width: 0; }
+    .node + .node { border-left: 1px solid var(--line); }
+    .node + .node::before {
+      content: "→";
+      position: absolute;
+      left: -8px;
+      top: 18px;
+      width: 16px;
+      background: var(--canvas);
+      color: var(--coral);
+      text-align: center;
+    }
+    .node span { display: block; overflow-wrap: anywhere; font: 11px/1.35 var(--mono); color: var(--muted); }
+    .node strong { display: block; margin-top: 8px; font-size: 14px; }
+    .content { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 58px; }
+    .content > div { min-width: 0; }
+    nav { position: sticky; top: 24px; align-self: start; padding-left: 18px; border-left: 1px solid var(--line); }
+    nav b { display: block; margin-bottom: 9px; font: 700 10px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    nav a { display: block; padding: 5px 0; color: var(--muted); text-decoration: none; font-size: 13px; }
+    nav a:hover { color: var(--coral); }
+    section { margin-bottom: 72px; scroll-margin-top: 24px; }
+    h2 { margin: 8px 0 18px; font: 500 36px/1.08 var(--serif); letter-spacing: -.03em; }
+    .lede { max-width: 760px; margin: 0 0 25px; color: #504c46; font-size: 16px; }
+    .execution-trace {
+      background: var(--surface-dark);
+      color: #ece6dd;
+      border-left: 7px solid var(--coral);
+      counter-reset: trace;
+    }
+    .trace-stage {
+      counter-increment: trace;
+      display: grid;
+      grid-template-columns: 58px minmax(170px, .55fr) minmax(0, 1fr);
+      gap: 18px;
+      padding: 22px 24px;
+      border-bottom: 1px solid #3b3935;
+      align-items: start;
+    }
+    .trace-stage:last-child { border-bottom: 0; }
+    .trace-stage::before { content: "0" counter(trace); font: 12px/1.5 var(--mono); color: #de8c72; }
+    .trace-loc { font: 12px/1.55 var(--mono); color: #aaa49b; overflow-wrap: anywhere; }
+    .trace-stage p { margin: 0; font-size: 14px; color: #ddd6cc; }
+    .trace-stage strong { color: #fff; }
+    .trace-stage.hot { background: #211f1c; }
+    .stage-note {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 7px;
+      border: 1px solid #504c46;
+      color: #c9c0b5;
+      font: 10px/1.4 var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+    details { border-bottom: 1px solid var(--line); }
+    details:first-child { border-top: 1px solid var(--ink); }
+    summary {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 19px 0;
+      cursor: pointer;
+      list-style: none;
+      align-items: baseline;
+    }
+    summary::-webkit-details-marker { display: none; }
+    .index { font: 12px/1.4 var(--mono); color: var(--coral); }
+    .file { font: 13px/1.4 var(--mono); overflow-wrap: anywhere; }
+    .role { font: 700 10px/1.4 var(--mono); color: var(--muted); letter-spacing: .07em; text-transform: uppercase; }
+    .source-body { padding: 0 0 28px 60px; }
+    .source-body p { max-width: 720px; margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+    pre {
+      max-width: 760px;
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      background: var(--surface-dark);
+      color: #e8e1d7;
+      font: 12px/1.72 var(--mono);
+    }
+    .kw { color: #df937b; }
+    .str { color: #b7c39f; }
+    .dim { color: #8f8a82; }
+    .trust-boundary {
+      display: grid;
+      grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr);
+      border: 1px solid var(--line);
+      background: var(--paper);
+    }
+    .boundary-title { padding: 28px; background: var(--surface-card); }
+    .boundary-title span { font: 700 10px/1.4 var(--mono); color: var(--coral-active); text-transform: uppercase; letter-spacing: .08em; }
+    .boundary-title h3 { margin: 30px 0 0; font: 500 28px/1.12 var(--serif); }
+    .boundary-body { padding: 28px; }
+    .boundary-body p { margin: 0 0 18px; color: #504c46; }
+    .invariants { margin: 0; padding: 0; list-style: none; }
+    .invariants li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 14px; }
+    .invariants li::before { content: "✓"; color: var(--sage); font-weight: 700; }
+    .gotchas { margin-top: 22px; padding: 22px; border-left: 4px solid var(--coral); background: var(--surface-card); }
+    .gotchas b { font: 700 10px/1.4 var(--mono); color: var(--coral-active); letter-spacing: .08em; text-transform: uppercase; }
+    .gotchas ul { margin: 12px 0 0; padding-left: 19px; font-size: 14px; }
+    .gotchas li + li { margin-top: 8px; }
+    @media (max-width: 900px) {
+      .page { width: min(100% - 32px, 740px); }
+      .system-orientation { grid-template-columns: 1fr; gap: 30px; }
+      .system-map { grid-template-columns: 1fr; }
+      .node + .node { border-left: 0; border-top: 1px solid var(--line); padding-left: 32px; }
+      .node + .node::before { left: 10px; top: 20px; transform: rotate(90deg); }
+      .content { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+    @media (max-width: 600px) {
+      .page { width: calc(100% - 24px); padding-top: 18px; }
+      .masthead { flex-direction: column; gap: 5px; }
+      .system-orientation { margin: 34px 0 42px; }
+      h1 { font-size: 44px; }
+      .trace-stage { grid-template-columns: 34px 1fr; padding: 19px 16px; gap: 12px; }
+      .trace-stage p { grid-column: 2; }
+      summary { grid-template-columns: 30px minmax(0, 1fr); }
+      .role { grid-column: 2; }
+      .source-body { padding-left: 42px; }
+      pre { font-size: 11px; padding: 16px; }
+      .trust-boundary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="masthead">
+      <span>Code understanding · Authentication</span>
+      <span>Read path · request to session row</span>
+    </div>
+
+    <header class="system-orientation">
+      <div>
+        <div class="kicker">System orientation</div>
+        <h1>Authentication is a request-time session lookup.</h1>
+        <p class="orientation-copy">The browser carries an opaque signed cookie. Server middleware resolves it into a session, rejects missing or expired state, and exposes one trusted value to downstream handlers. Routes consume that value; they do not authenticate independently.</p>
+      </div>
+      <aside class="orientation-card">
+        <b>One boundary,<br>five code stages</b>
+        <p>Start at the request middleware. The client provider is a mirror of server state, not the authority.</p>
+      </aside>
+    </header>
+
+    <div class="system-map" aria-label="Authentication system map">
+      <div class="node"><span>Client</span><strong>AuthProvider</strong></div>
+      <div class="node"><span>Route</span><strong>/api/session</strong></div>
+      <div class="node"><span>Boundary</span><strong>verifySession</strong></div>
+      <div class="node"><span>Lookup</span><strong>SessionStore</strong></div>
+      <div class="node"><span>Record</span><strong>sessions table</strong></div>
+    </div>
+
+    <div class="content">
+      <div>
+        <section id="trace">
+          <div class="section-label">01 · Execution trace</div>
+          <h2>Follow the value that becomes trusted.</h2>
+          <p class="lede">This is the causal path for <code>GET /api/session</code>. Each stage names the value it receives and the value it passes forward.</p>
+          <div class="execution-trace">
+            <div class="trace-stage">
+              <div class="trace-loc">AuthProvider.tsx<br>L22–48</div>
+              <p><strong>Input:</strong> mounted application. Sends <code>GET /api/session</code> with credentials, then mirrors the returned user into client context.</p>
+            </div>
+            <div class="trace-stage">
+              <div class="trace-loc">routes/session.ts<br>L9–27</div>
+              <p><strong>Input:</strong> HTTP request plus middleware chain. The handler serializes <code>req.ctx.session</code>; it contains no independent auth branch.</p>
+            </div>
+            <div class="trace-stage hot">
+              <div class="trace-loc">middleware/auth.ts<br>L14–31</div>
+              <p><strong>Input:</strong> signed cookie bytes. Resolves, validates expiry, and produces the trusted <code>Session</code> attached to request context.<br><span class="stage-note">Trust changes here</span></p>
+            </div>
+            <div class="trace-stage">
+              <div class="trace-loc">sessionStore.ts<br>L8–52</div>
+              <p><strong>Input:</strong> opaque session id. Reads a process-local cache, falls back to Postgres, and returns a session record or <code>null</code>.</p>
+            </div>
+            <div class="trace-stage">
+              <div class="trace-loc">004_sessions.sql<br>L1–18</div>
+              <p><strong>Input:</strong> indexed primary key. Persists the user binding and expiry used by middleware to admit or reject the request.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="source">
+          <div class="section-label">02 · Code-backed stages</div>
+          <h2>Open the evidence, one layer at a time.</h2>
+          <p class="lede">The source excerpts emphasize ownership boundaries. Only one excerpt stays open so the runtime story remains visible around the code.</p>
+          <div class="source-list">
+            <details>
+              <summary><span class="index">01</span><span class="file">src/app/providers/AuthProvider.tsx</span><span class="role">Client mirror</span></summary>
+              <div class="source-body">
+                <p>The provider does not validate the cookie. It asks the server for the current session and translates a 401 into an unauthenticated UI state.</p>
+                <pre><span class="kw">export function</span> AuthProvider({ children }) {
+  useEffect(() =&gt; {
+    fetch(<span class="str">"/api/session"</span>, { credentials: <span class="str">"include"</span> })
+      .then((response) =&gt; response.ok ? response.json() : <span class="kw">null</span>)
+      .then(setUser);
+  }, []);
+}</pre>
+              </div>
+            </details>
+            <details open>
+              <summary><span class="index">02</span><span class="file">src/middleware/auth.ts</span><span class="role">Trust boundary</span></summary>
+              <div class="source-body">
+                <p>All protected routes cross this function. Missing, unknown, and expired sessions converge on the same rejection path; only a validated record enters request context.</p>
+                <pre><span class="kw">export async function</span> verifySession(req, res, next) {
+  <span class="kw">const</span> id = req.signedCookies[<span class="str">"sid"</span>];
+  <span class="kw">const</span> session = id ? <span class="kw">await</span> SessionStore.get(id) : <span class="kw">null</span>;
+
+  <span class="kw">if</span> (!session || session.expiresAt &lt; Date.now()) {
+    <span class="kw">return</span> res.status(401).end();
+  }
+  req.ctx = { ...req.ctx, session };
+  next();
+}</pre>
+              </div>
+            </details>
+            <details>
+              <summary><span class="index">03</span><span class="file">src/lib/sessionStore.ts</span><span class="role">Lookup owner</span></summary>
+              <div class="source-body">
+                <p>The store owns persistence access and the read-through LRU. This keeps database knowledge out of middleware while preserving one session resolution path.</p>
+                <pre><span class="kw">async</span> get(id: string) {
+  <span class="kw">const</span> cached = cache.get(id);
+  <span class="kw">if</span> (cached) <span class="kw">return</span> cached;
+
+  <span class="kw">const</span> row = <span class="kw">await</span> db.oneOrNone(SELECT_SESSION, [id]);
+  <span class="kw">if</span> (row) cache.set(id, row);
+  <span class="kw">return</span> row;
+}</pre>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="boundary">
+          <div class="section-label">03 · Boundary and invariants</div>
+          <h2>What must stay true.</h2>
+          <div class="trust-boundary">
+            <div class="boundary-title">
+              <span>Trust boundary</span>
+              <h3>Untrusted cookie in.<br>Validated session out.</h3>
+            </div>
+            <div class="boundary-body">
+              <p><code>verifySession()</code> is the only stage that changes the security meaning of the request. Everything before it is transport; everything after it assumes the attached session is valid.</p>
+              <ul class="invariants">
+                <li>Protected routes are mounted behind the middleware.</li>
+                <li>Handlers read identity from request context, never directly from cookies.</li>
+                <li>Expiry is enforced before context assignment.</li>
+                <li>SessionStore is the only caller of the sessions table.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="gotchas">
+            <b>Operational gotchas</b>
+            <ul>
+              <li>The LRU is process-local. Revocation can remain visible on another worker until its 60-second cache entry expires.</li>
+              <li>The database driver returns <code>expiresAt</code> as a <code>Date</code>. Converting it to a string without changing the comparison would silently weaken expiry checks.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <nav aria-label="Code understanding sections">
+        <b>Reading path</b>
+        <a href="#trace">Execution trace</a>
+        <a href="#source">Code-backed stages</a>
+        <a href="#boundary">Trust boundary</a>
+      </nav>
+    </div>
+  </main>
+
+  <script>
+    var excerpts = document.querySelectorAll(".source-list details");
+    excerpts.forEach(function (excerpt) {
+      excerpt.addEventListener("toggle", function () {
+        if (!excerpt.open) return;
+        excerpts.forEach(function (other) {
+          if (other !== excerpt) other.open = false;
+        });
+      });
+    });
+  </script>
+</body>
+</html>
