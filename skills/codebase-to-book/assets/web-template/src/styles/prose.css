@@ -3,6 +3,8 @@
   max-width: 72ch;
   font-size: 1.0625rem;
   line-height: 1.8;
+  text-wrap: pretty;
+  hanging-punctuation: first allow-end;
 }
 
 /* Focus mode: wider, centered reading area */
@@ -14,6 +16,12 @@
   max-width: 60rem;
   margin-left: auto;
   margin-right: auto;
+}
+
+.chapter-prose h1,
+.chapter-prose h2,
+.chapter-prose h3 {
+  text-wrap: balance;
 }
 
 .chapter-prose h1 {
@@ -91,8 +99,10 @@ html.dark .chapter-prose strong {
 }
 
 /* Override Tailwind Typography prose bold (uses 600 by default) */
-.prose strong, .prose b,
-.chapter-prose strong, .chapter-prose b {
+.prose strong,
+.prose b,
+.chapter-prose strong,
+.chapter-prose b {
   font-weight: 700 !important;
 }
 
@@ -155,7 +165,8 @@ html.dark .chapter-prose hr {
 }
 
 /* Lists */
-.chapter-prose ul, .chapter-prose ol {
+.chapter-prose ul,
+.chapter-prose ol {
   padding-left: 1.5rem;
   margin-bottom: 1.25rem;
 }

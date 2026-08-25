@@ -56,14 +56,14 @@ If the user only wants short documentation, a README, or a single architecture d
 
 Required from the user (ask if missing):
 
-| Input | Default | Notes |
-|---|---|---|
-| `SOURCE_PATH` | — | Absolute path to the repo to analyze |
-| `PROJECT_NAME` | basename of `SOURCE_PATH` | Display name; used in siteTitle |
-| `OUTPUT_LANG` | `zh` | `zh` writes to `book-zh/`; `en` writes to `book/` |
-| `OUTPUT_DIR` | `<parent-of-SOURCE_PATH>/<basename>-from-source` | Sibling of source repo |
-| `GITHUB_URL` | empty | Optional; appears in header + footer |
-| `DEPLOY_URL` | empty | Optional; public origin for SEO canonical + OG tags. Leave empty for local-only |
+| Input          | Default                                          | Notes                                                                           |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `SOURCE_PATH`  | —                                                | Absolute path to the repo to analyze                                            |
+| `PROJECT_NAME` | basename of `SOURCE_PATH`                        | Display name; used in siteTitle                                                 |
+| `OUTPUT_LANG`  | `zh`                                             | `zh` writes to `book-zh/`; `en` writes to `book/`                               |
+| `OUTPUT_DIR`   | `<parent-of-SOURCE_PATH>/<basename>-from-source` | Sibling of source repo                                                          |
+| `GITHUB_URL`   | empty                                            | Optional; appears in header + footer                                            |
+| `DEPLOY_URL`   | empty                                            | Optional; public origin for SEO canonical + OG tags. Leave empty for local-only |
 
 Confirm `SOURCE_PATH` exists and that `OUTPUT_DIR` does not already contain a populated `web/` (refuse to overwrite without explicit user permission).
 
@@ -122,19 +122,20 @@ Read `references/prompt.md` (relative to the skill directory) — that file hold
 
 Then execute the seven phases in order. Phase responsibilities:
 
-| Phase | Output | Notes |
-|---|---|---|
-| 1. Exploration | `OUTPUT_DIR/.reference/phase1-<subsystem>.md` | Parallel subagents, one per subsystem |
-| 2. Audience | `.reference/phase2-positioning.md` | Audience + thesis + value |
-| 3. Structure | `web/src/book.config.ts` populated; user-approved outline | **Get user sign-off before Phase 4** |
-| 4. Writing | `book-zh/chNN-slug.md` (or `book/`) | Each chapter 300-800 lines |
-| 5. Review | `.reference/phase5-review.md` | 2-3 review subagents |
-| 6. Revision | Updated chapter files + book.config.ts | Apply review feedback |
-| 7. Audit | Sanitized chapter files | Replace any verbatim source with pseudocode |
+| Phase          | Output                                                    | Notes                                       |
+| -------------- | --------------------------------------------------------- | ------------------------------------------- |
+| 1. Exploration | `OUTPUT_DIR/.reference/phase1-<subsystem>.md`             | Parallel subagents, one per subsystem       |
+| 2. Audience    | `.reference/phase2-positioning.md`                        | Audience + thesis + value                   |
+| 3. Structure   | `web/src/book.config.ts` populated; user-approved outline | **Get user sign-off before Phase 4**        |
+| 4. Writing     | `book-zh/chNN-slug.md` (or `book/`)                       | Each chapter 300-800 lines                  |
+| 5. Review      | `.reference/phase5-review.md`                             | 2-3 review subagents                        |
+| 6. Revision    | Updated chapter files + book.config.ts                    | Apply review feedback                       |
+| 7. Audit       | Sanitized chapter files                                   | Replace any verbatim source with pseudocode |
 
 In Phase 3, also update `web/src/i18n/ui.ts`: replace `__PROJECT_NAME__` markers in `siteTitle.en` / `siteTitle.zh` with `PROJECT_NAME`, and rewrite `siteTagline` / `heroDescription` / `disclaimer` to fit the project. If the user supplied `GITHUB_URL`, set `githubUrl` in both languages.
 
 Slug discipline (critical):
+
 - Chapter slugs in `book.config.ts` use kebab-case with zero-padded numbers: `ch01-intro`, `ch12-runtime`.
 - Markdown filenames in `book-zh/` (and `book/`) must match exactly: `ch01-intro.md`.
 - Mismatches cause empty pages with no error — verify after Phase 4.
@@ -155,19 +156,19 @@ If the user wants to preview the scaffold mid-way (e.g. after Phase 3 to inspect
 ## Template details
 
 - **Stack**: Astro 6 (static), React 19, Tailwind v4, Mermaid 11.
-- **Mermaid rendering**: `web/src/plugins/remark-mermaid-raw.mjs` rewrites ` ```mermaid ` blocks to placeholder divs containing the source; `web/src/scripts/mermaid-init.ts` runs `mermaid.run()` on `DOMContentLoaded`. Theme switches re-render.
+- **Mermaid rendering**: `web/src/plugins/remark-mermaid-raw.mjs` rewrites ` ```mermaid ` blocks to placeholder divs containing the source; `web/src/scripts/mermaid-init.ts` runs `mermaid.run()` on `DOMContentLoaded`. Theme switches restore the stashed source and re-render with the other theme. Clicking a rendered diagram opens a zoom overlay (click or Esc to close).
 - **Interactive React diagrams**: `web/src/components/InteractiveDiagrams.astro` is a stub. To attach a React component to a chapter, populate `chapterDiagrams[chapterNumber]`, import the component, and add the corresponding render branch. Add `d3` / `framer-motion` to `package.json` if the components need them — they are not in the template by default.
 - **Bilingual routing**: `/` → English (uses `chapter.title`), `/zh/` → Simplified Chinese (uses `chapter.titleZh`). Both routes consume the same `book.config.ts`.
 
 ## Common failure modes
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| Chapter page is blank | Slug mismatch between `book.config.ts` and markdown filename | Rename markdown or update slug; they must be identical |
-| Mermaid blocks render as code | `mermaid-init.ts` not loaded; usually a build error elsewhere | Check browser console; rerun `bun run dev` after fixing |
-| Index page shows "no chapters yet" | `parts` / `chapters` arrays empty | Phase 3 didn't update `book.config.ts` |
-| `bun install` fails with peer warnings | Old bun version (< 1.1) | Upgrade bun, or fall back to `pnpm install` |
-| Chinese characters render as boxes | Font loading issue | The template loads Source Serif 4 + JetBrains Mono via fontsource; confirm fonts are bundled |
+| Symptom                                                 | Cause                                                                        | Fix                                                                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Chapter page is blank                                   | Slug mismatch between `book.config.ts` and markdown filename                 | Rename markdown or update slug; they must be identical                                                                    |
+| Mermaid blocks render as code                           | `mermaid-init.ts` not loaded; usually a build error elsewhere                | Check browser console; rerun `bun run dev` after fixing                                                                   |
+| Index page shows "no chapters yet"                      | `parts` / `chapters` arrays empty                                            | Phase 3 didn't update `book.config.ts`                                                                                    |
+| `bun install` fails with peer warnings                  | Old bun version (< 1.1)                                                      | Upgrade bun, or fall back to `pnpm install`                                                                               |
+| Chinese characters render as boxes                      | Font loading issue                                                           | The template loads Source Serif 4 + JetBrains Mono via fontsource; confirm fonts are bundled                              |
 | Mermaid diagrams unreadable in dark mode (low contrast) | Hardcoded `fill:#XXX` / `classDef` color directives override theme switching | Remove all `style`/`classDef` color lines; let the theme control colors; use `subgraph` grouping for semantic distinction |
 
 ## When to stop and ask the user

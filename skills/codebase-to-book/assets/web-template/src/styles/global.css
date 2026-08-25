@@ -16,8 +16,12 @@
   --color-border: #c2c0b6;
   --color-highlight: #eda100;
 
-  --font-serif: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
-  --font-mono: "JetBrains Mono Variable", "Fira Code", "Consolas", monospace;
+  --font-serif:
+    "Source Serif 4 Variable", Georgia, "Songti SC", "Noto Serif CJK SC",
+    "Source Han Serif SC", serif;
+  --font-mono:
+    "JetBrains Mono Variable", "SF Mono", "Sarasa Mono SC", "Fira Code",
+    "Consolas", monospace;
 }
 
 /* Base styles */
@@ -29,9 +33,12 @@ html {
 
 body {
   font-family: var(--font-serif);
+  font-optical-sizing: auto;
   background-color: var(--color-cream);
   color: var(--color-charcoal);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 html.dark body {
@@ -40,7 +47,8 @@ html.dark body {
 }
 
 /* Code blocks — base */
-code, pre {
+code,
+pre {
   font-family: var(--font-mono);
 }
 
@@ -62,13 +70,15 @@ pre code {
 }
 
 /* Override Tailwind Typography prose code block styles */
-.prose pre, .chapter-prose pre {
+.prose pre,
+.chapter-prose pre {
   background-color: #f8f7f1 !important;
   color: #24292e !important;
   max-width: none;
 }
 
-.prose pre code, .chapter-prose pre code {
+.prose pre code,
+.chapter-prose pre code {
   background-color: transparent !important;
   color: #24292e !important;
   border: none !important;
@@ -86,11 +96,13 @@ html.dark pre code {
   color: #c9d1d9 !important;
 }
 
-html.dark .prose pre, html.dark .chapter-prose pre {
+html.dark .prose pre,
+html.dark .chapter-prose pre {
   background-color: #0d1117 !important;
 }
 
-html.dark .prose pre code, html.dark .chapter-prose pre code {
+html.dark .prose pre code,
+html.dark .chapter-prose pre code {
   background-color: transparent !important;
   color: #c9d1d9 !important;
 }
@@ -168,4 +180,45 @@ html.dark ::-webkit-scrollbar-thumb {
 /* Selection */
 ::selection {
   background-color: rgba(204, 120, 92, 0.3);
+}
+
+/* Mermaid diagrams: click to zoom */
+pre.mermaid:has(svg) {
+  cursor: zoom-in;
+}
+
+.diagram-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: 2rem;
+  background: rgba(20, 20, 19, 0.72);
+  cursor: zoom-out;
+}
+
+.diagram-overlay.open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diagram-overlay-content {
+  background: var(--color-cream);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .diagram-overlay-content {
+  background: var(--color-dark-surface);
+}
+
+.diagram-overlay-content svg {
+  display: block;
+  max-width: calc(92vw - 3rem);
+  max-height: calc(88vh - 3rem);
 }
