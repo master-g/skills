@@ -35,6 +35,7 @@ npx skills add master-g/skills --skill '*' -g
 - `show-me-html`: create self-contained HTML explanations using a shadcn/ui-inspired design language.
 - `storm`: research and write citation-grounded articles using the STORM method.
 - `url-to-kami`: extract a URL and typeset it with the Kami design system.
+- `wtf`: re-explain the previous message in clear, unambiguous Simplified Chinese.
 - `x-to-markdown`: convert X posts, threads, and articles to Markdown.
 
 ## License
