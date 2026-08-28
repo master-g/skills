@@ -29,6 +29,7 @@ npx skills add master-g/skills --skill '*' -g
 - `bootstrap-claude`: bootstrap and maintain project instructions and memory files.
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
+- `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
 - `effective-html`: create self-contained technical HTML artifacts.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
