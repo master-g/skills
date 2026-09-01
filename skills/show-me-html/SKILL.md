@@ -232,7 +232,10 @@ JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 
 - 存成描述性的 kebab-case 文件名（`auth-refactor-review.html`，不是 `output.html`），放在工作目录或用户指定处。
 - 汇报三件事：文件路径、先看哪里、还剩哪些 `[DATA NEEDED]` 缺口。
-- 可以提议打开（macOS：`open 文件.html`），但不要替用户打开。
+- 交付时可以提议：`python3 <skill-path>/scripts/build.py 页面.html --open`，
+  自检通过后会用系统默认浏览器打开（macOS `open` / Windows `os.startfile` /
+  Linux·WSL `wslview`→`xdg-open`，自检有错误时不打开）。
+  是否执行由用户决定 —— 生成过程中不要替用户打开。
 
 ## 反馈处理
 
@@ -258,7 +261,8 @@ JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 - `references/diagrams.md` — SVG 图的类型路由、连线六规则、节点语义处理、复杂度预算、无障碍契约。**画任何图前必读。**
 - `references/anti-patterns.md` — 页面层与骨架层反模式名册。自检时对照，新失败在这里登记。
 - `MAINTENANCE.md` — 维护规则：纠正路由、毕业规则、版本对齐。**修改本 skill 任何文件前必读，不进页面生成路径。**
-- `scripts/build.py` — 合成（内联 CSS/图标/JS/语法高亮）+ 自检。每次输出都要跑。
+- `scripts/build.py` — 合成（内联 CSS/图标/JS/语法高亮）+ 自检（`--open` 自检通过后用默认浏览器打开）。每次输出都要跑。
+- `scenarios/` — 冻结场景集（五个场景 + 轮次流程）。改骨架或检查后按它跑回归，见 `MAINTENANCE.md` 联动规则。
 - `assets/vendor/` — basecoat CSS（8 套风格包）、basecoat JS、lucide sprite、
   语法高亮（`shj/`，@speed-highlight/core，CC0）。
   **不要把这些文件读进上下文**，全部由 `build.py` 拼接。

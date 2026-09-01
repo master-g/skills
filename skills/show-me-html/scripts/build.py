@@ -5,6 +5,7 @@
     python3 build.py page.html                # 内联资产 + 自检
     python3 build.py page.html --style nova   # 换一套 basecoat 风格包
     python3 build.py page.html --check-only   # 只跑自检，不改文件
+    python3 build.py page.html --open         # 自检通过后用系统默认浏览器打开
 
 做四件事，然后自检：
   1. 把 basecoat CSS 内联到 <!--SHOW-ME:CSS--> 处。
@@ -81,6 +82,34 @@ def check_native_controls(html, warns):
                 f"页面用了原生 {name} 控件，但没有任何裸 `input[type={name}]` 的样式规则："
                 "basecoat 只管 .field / .input 两种包裹，别的壳一律落回系统外观。"
                 "从 assets/shell.html 重新起手，或把那段滑块样式补回来")
+
+
+# ── 在默认浏览器里打开（--open）────────────────────────────────────
+def open_page(path):
+    """用系统默认浏览器打开生成好的页面。返回 True 表示已发起。"""
+    import shutil
+    import subprocess
+
+    if sys.platform == "darwin":
+        subprocess.run(["open", str(path)], check=False)
+        return True
+    import os
+
+    if os.name == "nt":
+        # os.startfile 是 Windows 的 ShellExecute，走的就是「默认浏览器/默认关联程序」
+        startfile = getattr(os, "startfile", None)
+        if startfile:
+            startfile(str(path))
+            return True
+        return False
+    # Linux / BSD / WSL：xdg-open 是桌面标准；WSL 下优先 wslview（wslu），
+    # 它会把路径翻译成 Windows 侧 UNC 路径再用宿主默认浏览器打开
+    for cmd in ("wslview", "xdg-open"):
+        exe = shutil.which(cmd)
+        if exe:
+            subprocess.run([exe, str(path)], check=False)
+            return True
+    return False
 
 
 # ── 字体栈 ──────────────────────────────────────────────────────────────
@@ -252,6 +281,33 @@ def main_children(html):
     p = MainChildren()
     p.feed(html)
     return p.children
+
+
+# ── 自造 grid 容器 ──────────────────────────────────────────────────
+# 隐式轨道溢出（anti-patterns.md #3）：`display: grid` 不写
+# `grid-template-columns` 时，隐式 auto 轨道按内容 max-content 计宽，
+# 窄屏时文档宽超出视口（实测 500px 视口被撑到 596px）。
+# 渲染关只能抓到溢出症状，这条指根因。
+RULE_BLOCK_RE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+
+
+def check_grid_tracks(html, warns):
+    own = VENDOR_STYLE_RE.sub("", html)
+    seen = set()
+    for m in RULE_BLOCK_RE.finditer(own):
+        body = m.group(2)
+        if not re.search(r"display\s*:\s*grid", body):
+            continue
+        if re.search(r"grid-template-columns|grid-template-areas", body):
+            continue
+        sel = re.sub(r"\s+", " ", m.group(1)).strip()[:60]
+        if sel in seen:
+            continue
+        seen.add(sel)
+        warns.append(
+            f"`{sel}` 是 grid 但没写 grid-template-columns：隐式 auto 轨道按内容"
+            " max-content 计宽，窄屏会横向溢出。单列写 1fr，多列抄 layouts.md 里"
+            "带 minmax(min(100%,…),…) 的写法（anti-patterns.md #3）")
 
 
 def fail(msg):
@@ -457,6 +513,11 @@ def check(html, path):
                 "骨架的间距节奏写在 `main > section > * + *` 上，不包 section 的内容"
                 "拿不到任何块间距，整页会挤成一团。每个大节包一个 <section id=\"…\">。")
 
+    # 一级标题只能有一个：多 h1 会同时搞坏目录语义与 Markdown 导出的 title 拼接规则
+    h1s = re.findall(r"<h1\b", stripped)
+    if len(h1s) > 1:
+        errors.append(f"页面有 {len(h1s)} 个 <h1>：一级标题只能有一个，小节用 h2/h3。")
+
     # 行内 MathML 里的堆叠分数会把正文行高撑坏；MathML Core 不支持 bevelled，行内改写线性形式
     for m in re.finditer(r"<(p|li)\b[^>]*>(.*?)</\1>", html, re.S):
         if "<mfrac" in m.group(2):
@@ -479,6 +540,7 @@ def check(html, path):
     check_font_stacks(html, warns, errors)
     check_native_controls(html, warns)
     check_svgs(stripped, warns, errors)
+    check_grid_tracks(stripped, warns)
 
     size = len(html.encode("utf-8"))
     if size > 3_000_000:
@@ -573,6 +635,11 @@ def main():
     ap.add_argument("--style", default="vega", choices=STYLES)
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--no-render", action="store_true", help="跳过无头浏览器的溢出检查")
+    ap.add_argument(
+        "--open",
+        action="store_true",
+        help="自检通过后用系统默认浏览器打开（macOS: open / Windows: os.startfile / Linux·WSL: wslview→xdg-open）",
+    )
     args = ap.parse_args()
 
     if not args.page.exists():
@@ -613,6 +680,15 @@ def main():
     elif not args.no_render:
         print("渲染检查未运行：找不到 Chrome/Chromium。横向溢出没有被验证过，"
               "自己在浏览器里拉一遍窄屏，不要报「已验证」。")
+
+    if args.open:
+        if errors:
+            print("--open 未执行：自检有错误，先修再开。")
+        elif not open_page(args.page.resolve()):
+            print("--open 未执行：找不到可用的打开命令（macOS 需要 open，"
+                  "Linux/WSL 需要 wslview 或 xdg-open，Windows 用 os.startfile）。")
+        else:
+            print(f"已在默认浏览器打开 {args.page}")
     return 0
 
 

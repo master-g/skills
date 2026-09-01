@@ -26,9 +26,14 @@
 
 ## 联动规则
 
-改 `assets/shell.html` 或 `scripts/build.py` 后，提交前必须重跑至少一个已知页面
-（冻结场景集落地前的最小替代），确认机械关通过、页面无回归。
-P1 落地场景集后，此规则升级为「跑一轮全部场景，改动前后各一轮，人工盲比」。
+改 `assets/shell.html` 或 `scripts/build.py` 后，提交前按 `scenarios/README.md` 的轮次流程
+跑冻结场景（时间紧时至少 `status-report` + `concept-explainer` 两个：
+一个验只读排版，一个验 JS 交互），改动前后各一轮，人工盲比。
+轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
+
+旧页面（骨架改动前生成的）不会自动获得新骨架行为 —— 它们携带的是生成时的骨架副本。
+骨架修复只对今后从新 `shell.html` 起手的页面生效；历史页面不动。
+旧页面的回归用 `--check-only` 验证新检查不误报即可。
 
 ## 版本规则
 

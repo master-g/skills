@@ -1071,7 +1071,10 @@
             .replace(/\n{3,}/g, "\n\n")
             .trim();
           var title = document.title;
-          return (md.startsWith("# ") ? "" : "# " + title + "\n\n") + md + "\n";
+          /* 正文里只要有一级标题就不再拼 <title>：否则 eyebrow 段落排在 h1 前时，
+             导出会得到两个「# 」（anti-patterns.md #2）。 */
+          var hasH1 = /^# /m.test(md);
+          return (hasH1 ? "" : "# " + title + "\n\n") + md + "\n";
         }
 
         /* 暴露给页面用：需要「下载 .md」之类的额外入口时调用它，不要另写一份转换器。 */
@@ -1124,8 +1127,14 @@
         var marker = aside.querySelector(".toc-marker");
         var headings = Array.from(doc.querySelectorAll("h2, h3")).filter(
           function (h) {
+            /* 组件容器内的标题不是节标题：卡片头的 h3、折叠面板的标题都不得进目录。
+               否则统计数字写成标题时会产出「7」「91 → 39」这类孤儿条目（anti-patterns.md #1）。 */
             return (
-              !h.closest("[data-toc-skip]") && !h.closest("[data-md-skip]")
+              !h.closest("[data-toc-skip]") &&
+              !h.closest("[data-md-skip]") &&
+              !h.closest(
+                ".card, .fig-box, .alert, .item, .accordion, .dialog, .empty"
+              )
             );
           }
         );
