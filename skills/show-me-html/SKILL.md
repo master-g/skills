@@ -217,6 +217,7 @@ python3 <skill-path>/scripts/build.py 输出文件.html
   工具条、目录和筛选器有没有混进去（应该被 `data-md-skip` 挡掉）。
 - 通读一遍：只看各级标题，故事应该是通的。
 - 没有 AI 味的填充 —— 复述标题的段落、为了对称而存在的空章节、编造的统计数字。
+- 对照 `references/anti-patterns.md` 的名册过一遍：统计孤儿、双头导出、隐式轨道溢出都是检查抓不到、靠识别的失败。
 
 JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 
@@ -255,6 +256,8 @@ JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 - `references/layouts.md` — 20 条配方的章节顺序与组件选择。读选中的那一条。
 - `references/interactions.md` — 拖拽、键盘翻页、旋钮联动、可点 SVG 等现成代码。加交互时读。
 - `references/diagrams.md` — SVG 图的类型路由、连线六规则、节点语义处理、复杂度预算、无障碍契约。**画任何图前必读。**
+- `references/anti-patterns.md` — 页面层与骨架层反模式名册。自检时对照，新失败在这里登记。
+- `MAINTENANCE.md` — 维护规则：纠正路由、毕业规则、版本对齐。**修改本 skill 任何文件前必读，不进页面生成路径。**
 - `scripts/build.py` — 合成（内联 CSS/图标/JS/语法高亮）+ 自检。每次输出都要跑。
 - `assets/vendor/` — basecoat CSS（8 套风格包）、basecoat JS、lucide sprite、
   语法高亮（`shj/`，@speed-highlight/core，CC0）。
