@@ -38,8 +38,12 @@ P1 落地场景集后，此规则升级为「跑一轮全部场景，改动前�
 - 同步命令（仓库 → 安装副本）：
 
   ```sh
-  cd /Users/mg/github/skills && npx skills add . --skill show-me-html -g
+  rsync -a --delete --exclude .git --exclude agents --exclude README.md \
+    /Users/mg/github/skills/skills/show-me-html/ ~/.agents/skills/show-me-html/
   ```
+
+  （不用 `npx skills add . -g`：实测报「PromptScript does not support global skill installation」，
+  文件虽复制但注册环节失败，不作为验证过的通道。）
 
   同步后用 `diff -rq skills/show-me-html ~/.agents/skills/show-me-html` 验证一致
   （`.git`、`agents/`、`README.md` 属仓库侧文件，差异属预期）。
