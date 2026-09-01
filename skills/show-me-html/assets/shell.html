@@ -4,6 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PAGE TITLE</title>
+    <!-- ── 网络字体：本骨架唯一允许的外部资源 ─────────────────────────────────
+         **异步加载**（media="print" + onload 换回 all）。fonts.googleapis.com 在
+         部分网络下不可达，同步 <link> 会把首屏卡在请求超时上；这样写则首屏立刻用
+         兜底字体渲染，字体取到了再换上去。
+
+         取不到时页面完全正常，只是落到系统字体 —— `--font-serif` / `--font-mono`
+         的后半段就是为这种情况准备的，**别把它们删短**。
+
+         CJK 只请求 500/700，不请求 400：正文请求 400 时 CSS 的字体匹配会挑最近的可用面
+         （400→500），中文因此自动比拉丁重一档 —— 中西配平就这么来的，不用写技巧。
+         少要一个 600 是有意的：Google 把中文切成上百个 unicode-range 分片，每多一个字重
+         就多约 31 KB 的声明（三个字重 93 KB，两个 63 KB）；h3 的 600 会落到 700，是真字重
+         不是合成粗体。详见 references/components.md 的「字体」。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+      href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&amp;family=Noto+Serif+SC:wght@500;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+    />
+    <noscript
+      ><link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&amp;family=Noto+Serif+SC:wght@500;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+    /></noscript>
     <script>
       /* 主题：在首次绘制前决定，避免闪烁。三态 light / dark / system。 */
       (function () {
@@ -37,9 +63,17 @@
         --tone-kraft: #d4a27f;
         --tone-manilla: #ebdbbc;
         --ink-fixed: #141413; /* 两种主题下都不变，给反白文字用 */
+        /* 拉丁在前，中文在后 —— 字体栈按字符逐个回落，Georgia 没有汉字自然让给后面。
+           "Han Serif Balanced" 是下面 @font-face 拼出来的配平家族，装了思源宋体才生效；
+           没装就继续往后落。**家族名写错一个字母的表现是静默回退**（"Source Han Serif SC"
+           少了 " VF" 就一直落在 Songti SC 上，只表现为「怎么这么细」），build.py 有闸门守着。 */
         --font-serif:
-          Georgia, "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC",
-          serif;
+          /* 网络字体 */
+          Merriweather, "Noto Serif SC", /* 拉丁兜底 */ Georgia,
+          "Iowan Old Style", "Times New Roman",
+          /* 中文兜底 */ "Han Serif Balanced", "Source Han Serif SC VF",
+          "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", STSong,
+          SimSun, serif;
 
         --background: #faf9f5; /* canvas */
         --foreground: #141413; /* ink */
@@ -186,18 +220,101 @@
         --font-sans:
           ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        /* 中文没有好的系统等宽，交给正文那支 sans —— 代码块里真正需要等宽对齐的是
+           拉丁与符号，中文只出现在注释与眉标上。不写就会落到某支度量不同的字体上。 */
         --font-mono:
-          ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-          "Liberation Mono", monospace;
+          /* 网络字体 */
+          "JetBrains Mono", /* 兜底 */ ui-monospace, SFMono-Regular, "SF Mono",
+          Menlo, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei",
+          monospace;
+        /* 缓动。两条就够，别再造第三条。
+           expo：Calligraph 的默认曲线，冲出去然后长长地收住，适合位移与淡入淡出。
+           spring：ζ=0.72 的阻尼弹簧采样成 linear()，约 3.8% 过冲，适合数字与尺寸变化。
+           JS 里要一样的手感就照抄 interactions.md 的 EASE，两边是同一条曲线。 */
+        --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        --ease-spring: linear(
+          0,
+          0.0533,
+          0.1781,
+          0.3335,
+          0.492,
+          0.6367,
+          0.7591,
+          0.856,
+          0.9282,
+          0.9785,
+          1.0107,
+          1.0289,
+          1.037,
+          1.0382,
+          1.0352,
+          1.0299,
+          1.0238,
+          1.0179,
+          1.0125,
+          1.0081,
+          1.0046,
+          1.0021,
+          1.0004,
+          0.9993,
+          0.9988,
+          0.9985,
+          0.9986,
+          0.9987,
+          0.9989,
+          0.9992,
+          1
+        );
         --page: 60rem; /* 常规页宽；读多写少的长文改 46rem */
         --gutter: 1.5rem;
         --toc-w: 15rem; /* 右侧目录列宽 */
       }
+      /* ── 中西配平 ────────────────────────────────────────────────────────
+         思源宋体的笔画比 Georgia 细，同一 font-weight 下并排会显得虚。CSS 没法在一条
+         font-family 栈里给不同字体指定不同字重，于是给中文单起一个家族，用单值字重面
+         把它整体推重一档：请求 400 落到 500，600 落到 600，700 落到 700。
+
+         **单值范围（`500 500`）是必须的**：写成 `500 900` 浏览器会按请求的字重去实例化
+         可变轴，配平当场失效。
+
+         src 全是 `local()` —— 页面不联网，装了哪支用哪支，一支都没有时整个 @font-face
+         被忽略，`--font-serif` 继续往后落到系统宋体。这是渐进增强，不是保证。
+         想调深浅就动这三个数（思源 wght 轴 250~900，一档 50 看得出来）。 */
+      @font-face {
+        font-family: "Han Serif Balanced";
+        src:
+          local("Source Han Serif SC VF"), local("Source Han Serif SC"),
+          local("Noto Serif CJK SC"), local("Noto Serif SC");
+        font-weight: 500 500;
+      }
+      @font-face {
+        font-family: "Han Serif Balanced";
+        src:
+          local("Source Han Serif SC VF"), local("Source Han Serif SC"),
+          local("Noto Serif CJK SC"), local("Noto Serif SC");
+        font-weight: 600 600;
+      }
+      @font-face {
+        font-family: "Han Serif Balanced";
+        src:
+          local("Source Han Serif SC VF"), local("Source Han Serif SC"),
+          local("Noto Serif CJK SC"), local("Noto Serif SC");
+        font-weight: 700 700;
+      }
+
       html {
         scroll-behavior: smooth;
       }
       body {
         min-height: 100vh;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      /* 断词交给作者，不交给算法：auto 会在中英混排里断出莫名其妙的位置 */
+      main {
+        -webkit-hyphens: manual;
+        hyphens: manual;
       }
       [hidden] {
         display: none !important;
@@ -237,6 +354,88 @@
       } /* 目录锚点跳转别被 sticky 工具条盖住 */
 
       /* 标题走衬线、字重 400 —— Anthropic 的层级靠字号和留白，不靠加粗 */
+      /* balance：标题不许出现一个字单独占一行。pretty：段末不许留孤字。
+         都是纯排版收尾，不支持的浏览器忽略即可。 */
+      h1,
+      h2,
+      h3,
+      h4 {
+        text-wrap: balance;
+      }
+      main p,
+      main li,
+      figcaption,
+      blockquote {
+        text-wrap: pretty;
+      }
+      /* 表格里的数字要能按位对齐，这是表格的本分，不该让每个页面自己加行内样式 */
+      .table {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ── 滑块 ────────────────────────────────────────────────────────────
+         **三种选择器一起写，缺一不可。** basecoat 只管 `.field > input[type=range]`
+         和 `.input[type=range]`；页面自造一个 `.knob` 之类的壳把滑块包进去，两个都不命中，
+         滑块就退回操作系统外观 —— macOS 上是一条亮蓝色粗轨道，跟任何调色板都不搭。
+         它不报错，只是难看。所以这里连裸 `input[type=range]` 一起兜住。 */
+      input[type="range"],
+      .field > input[type="range"],
+      .input[type="range"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        height: 1.25rem; /* 命中区，不是视觉高度；视觉高度在 track 上 */
+        padding: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track,
+      .field > input[type="range"]::-webkit-slider-runnable-track,
+      .input[type="range"]::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(
+          to right,
+          var(--color-primary) var(--slider-value, 0%),
+          var(--color-border) var(--slider-value, 0%)
+        );
+      }
+      input[type="range"]::-webkit-slider-thumb,
+      .field > input[type="range"]::-webkit-slider-thumb,
+      .input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-top: -0.25rem; /* (4px − 12px) / 2，把圆点压回轨道中线 */
+        border: 0;
+        border-radius: 999px;
+        background: var(--color-primary);
+      }
+      input[type="range"]::-moz-range-track,
+      .field > input[type="range"]::-moz-range-track,
+      .input[type="range"]::-moz-range-track {
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(
+          to right,
+          var(--color-primary) var(--slider-value, 0%),
+          var(--color-border) var(--slider-value, 0%)
+        );
+      }
+      input[type="range"]::-moz-range-thumb,
+      .field > input[type="range"]::-moz-range-thumb,
+      .input[type="range"]::-moz-range-thumb {
+        width: 0.75rem;
+        height: 0.75rem;
+        border: 0;
+        border-radius: 999px;
+        background: var(--color-primary);
+      }
+      input[type="range"]:focus-visible {
+        outline: 2px solid var(--color-ring);
+        outline-offset: 2px;
+      }
       h1 {
         font-family: var(--font-serif);
         font-size: 2.125rem;
@@ -593,6 +792,27 @@
 
     <!--SHOW-ME:JS-->
     <script>
+      /* ── 滑块填充 ──────────────────────────────────────────────────────
+         轨道的已填充部分由 --slider-value 驱动。basecoat 只在它自己的 JS 里更新这个变量，
+         而那份 JS 只有页面用到 tabs / dropdown 时才会被内联 —— 只有滑块的页面就会看到
+         一条永远停在 20% 的填充。所以骨架自己管，与 basecoat JS 在不在无关。 */
+      (function () {
+        function sync(el) {
+          var min = Number(el.min || 0),
+            max = Number(el.max === "" ? 100 : el.max);
+          var pct =
+            max === min ? 0 : ((Number(el.value) - min) / (max - min)) * 100;
+          el.style.setProperty("--slider-value", pct + "%");
+        }
+        document.querySelectorAll('input[type="range"]').forEach(sync);
+        /* 事件委托：后插进来的滑块也照样跟着走 */
+        document.addEventListener("input", function (e) {
+          if (e.target.matches && e.target.matches('input[type="range"]'))
+            sync(e.target);
+        });
+      })();
+    </script>
+    <script>
       /* ── 主题三态切换 ── */
       (function () {
         var root = document.documentElement;
@@ -601,7 +821,7 @@
           root.dataset.theme = t;
           root.classList.toggle(
             "dark",
-            t === "dark" || (t === "system" && mq.matches),
+            t === "dark" || (t === "system" && mq.matches)
           );
           document.querySelectorAll("[data-theme-set]").forEach(function (b) {
             b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
@@ -812,10 +1032,10 @@
                 function (tab) {
                   out += "**" + inline(tab).trim() + "**\n\n";
                   var panel = document.getElementById(
-                    tab.getAttribute("aria-controls"),
+                    tab.getAttribute("aria-controls")
                   );
                   if (panel) out += block(panel, depth);
-                },
+                }
               );
             } else if (t === "DETAILS") {
               var sum = n.querySelector("summary");
@@ -907,7 +1127,7 @@
             return (
               !h.closest("[data-toc-skip]") && !h.closest("[data-md-skip]")
             );
-          },
+          }
         );
         if (headings.length < 2) return;
 
@@ -1006,7 +1226,7 @@
             document.documentElement.scrollHeight
           )
             return activate(
-              "#" + items[items.length - 1].id,
+              "#" + items[items.length - 1].id
             ); /* 页底：激活最后一项 */
           var active = null;
           for (var i = 0; i < items.length; i++) {
@@ -1032,11 +1252,11 @@
                 setActive();
               }, 100);
           },
-          { passive: true },
+          { passive: true }
         );
         addEventListener(
           "load",
-          setActive,
+          setActive
         ); /* 等浏览器恢复滚动位置后再定位一次 */
         mq.addEventListener("change", setActive);
         setActive();

@@ -16,12 +16,16 @@
 
 ### 间距节奏（骨架已实现，四级）
 
-| 间距 | 用在哪 |
-|---|---|
-| 56px | 大节之间（`section` → `section`） |
-| 40px | 新小节开始（任意块 → `h3`） |
+**版心先定：**长文（`concept-explainer` / `feature-explainer` / `pr-writeup` / `incident-report` 等
+读多写少的）写 `:root { --page: 46rem }`；仪表盘、看板、并排对比留默认 60rem。
+中文一行超过 40 字就是太宽。
+
+| 间距 | 用在哪                                                              |
+| ---- | ------------------------------------------------------------------- |
+| 56px | 大节之间（`section` → `section`）                                   |
+| 40px | 新小节开始（任意块 → `h3`）                                         |
 | 20px | 不同类型的块之间（段落 → 表格 / 代码 / 卡片网格），以及 `h2` 到内容 |
-| 12px | 同一组内（连续段落、`h3` 到它的第一块内容） |
+| 12px | 同一组内（连续段落、`h3` 到它的第一块内容）                         |
 
 层级靠这四级读出来，不靠分隔线，也不靠字号 —— `h3` 与正文同为 16px，
 它之所以能被认出是小节标题，全靠前面那 40px。**长页面里这是唯一的分组信号。**
@@ -31,7 +35,10 @@
 这类元素的浏览器默认边距时，只清用得着的方向：
 
 ```css
-figure.quote { margin-inline: 0; margin-block-end: 0; }  /* 不碰 margin-top */
+figure.quote {
+  margin-inline: 0;
+  margin-block-end: 0;
+} /* 不碰 margin-top */
 ```
 
 同理，组件内部的间距要比外部紧。basecoat 有些组件（`.alert > section`）内部的 `p`
@@ -66,12 +73,12 @@ figure.quote { margin-inline: 0; margin-block-end: 0; }  /* 不碰 margin-top */
 读者要看的是**形状**而不是逐行内容时，用 `<pre>` 画结构，不要用散文描述，也不要贴整块代码。
 四种载体，按问题选：
 
-| 读者的问题 | 载体 |
-|---|---|
-| 这段逻辑怎么判断 | 伪代码 |
-| 运行时谁调用谁 | 调用树 |
-| 界面由哪些组件构成、状态在哪 | 组件树 |
-| 哪个目录负责什么 | 浅文件树（只到承担职责的那一层） |
+| 读者的问题                   | 载体                             |
+| ---------------------------- | -------------------------------- |
+| 这段逻辑怎么判断             | 伪代码                           |
+| 运行时谁调用谁               | 调用树                           |
+| 界面由哪些组件构成、状态在哪 | 组件树                           |
+| 哪个目录负责什么             | 浅文件树（只到承担职责的那一层） |
 
 ```html
 <pre><code class="language-text">submitForm
@@ -110,9 +117,18 @@ src/
 diff 行着色写进页面 CSS，四条代码类配方共用（负外边距是为了让底色铺满 `pre` 的 1rem 内边距）：
 
 ```css
-.d-add, .d-del { display: block; margin-inline: -1rem; padding-inline: 1rem; }
-.d-add { background: color-mix(in oklab, var(--color-primary) 12%, transparent); }
-.d-del { background: color-mix(in oklab, var(--color-destructive) 12%, transparent); }
+.d-add,
+.d-del {
+  display: block;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+}
+.d-add {
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+}
+.d-del {
+  background: color-mix(in oklab, var(--color-destructive) 12%, transparent);
+}
 ```
 
 **不要用结构视图的情况**：形状大部分是新的、省略的上下文会让归属或顺序看不出来、
@@ -215,14 +231,13 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码�
 
 流程总览 SVG（节点可点）→ 详情面板（点节点切换）→ 节点清单表。
 
-- SVG 节点：圆角矩形 + `stroke: var(--color-border)` + `fill: var(--color-card)`，标签 `--font-mono` 10–11px。
-- 点击换详情的代码见 `interactions.md`。
+- 节点画法、连线规则、复杂度预算一律按 `diagrams.md`；点击换详情的代码见 `interactions.md`。
 
 ### `svg-illustrations` · 拿走一组示意图
 
 每图一张卡：标题 → 渲染的 SVG → 用途说明 → 复制 SVG 源码按钮。
 
-- 图形只用 token 颜色，这样两种主题下都成立。
+- 图形只用 token 颜色，这样两种主题下都成立；无障碍契约（`role`/`title`/`desc`）按 `diagrams.md`。
 
 ### `feature-explainer` · 讲清一个功能 / API
 
@@ -233,6 +248,12 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码�
 直觉 → **可拖动的模型**（滑块驱动实时结果）→ 形式化定义 → 边界情形。
 
 - 交互模型是这类页的核心，不是装饰。没有能做成交互的东西时，改用 `feature-explainer`。
+- **先写模型函数，再写图。** 一页里多张图讲同一件事时，它们应该是同一个函数的三个投影，
+  正文里出现的每个数字也由它算出 —— 数字就不可能编错。代码见 `interactions.md` 的「先写模型，再写图」。
+- 多张图套统一的 figure 外壳（编号 + 标题 + 操作提示 + 图注），见 `interactions.md`。
+  三种交互层级对应三种问题：离散按钮答「改什么会坏什么」，连续旋钮答「参数怎么改变结论」，
+  相对基线的差值图答「这个策略比不做好还是差」。
+- 外行读者的补词走术语 tooltip，不要为此插解释段落打断行文。
 
 ---
 

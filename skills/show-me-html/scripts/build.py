@@ -19,6 +19,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from html.parser import HTMLParser
 
 VENDOR = Path(__file__).resolve().parent.parent / "assets" / "vendor"
 STYLES = ("vega", "nova", "maia", "lyra", "mira", "luma", "sera", "rhea")
@@ -37,6 +38,8 @@ JS_COMPONENTS = (
 
 # 页面自己写死的颜色。骨架的调色板块与 vendor CSS 不算。
 VENDOR_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette)"[^>]*>.*?</style>', re.S)
+# 只剥 vendor 的 basecoat CSS：palette 块里住着 --font-serif，剥掉字体闸就瞎了
+VENDOR_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -58,6 +61,197 @@ HL_ALIASES = {
 }
 # diff 由页面自己的 .d-add / .d-del 着色，text/plain 是结构视图（调用树、文件树）—— 都不碰
 HL_SKIP = {"diff", "text", "plain", "plaintext", "txt"}
+
+
+# ── 原生控件 ────────────────────────────────────────────────────────────
+# 和 <section> 那条闸是同一种失败模式：**没命中选择器，不报错，只是难看。**
+# basecoat 只给 `.field > input[type=range]` 和 `.input[type=range]` 上样式，页面自造一个
+# 壳把滑块包进去就两个都不命中，滑块退回操作系统外观（macOS 上是一条亮蓝色粗轨道）。
+# 骨架已经连裸 `input[type=range]` 一起兜住了，这道闸是防着有人把那段删掉或改窄。
+NATIVE_CONTROLS = {
+    "range": (r'<input[^>]+type="range"', r"input\[type=.range.\]::-webkit-slider-runnable-track"),
+}
+
+
+def check_native_controls(html, warns):
+    own = VENDOR_CSS_RE.sub("", html)
+    for name, (uses, styled) in NATIVE_CONTROLS.items():
+        if re.search(uses, html, re.I) and not re.search(styled, own):
+            warns.append(
+                f"页面用了原生 {name} 控件，但没有任何裸 `input[type={name}]` 的样式规则："
+                "basecoat 只管 .field / .input 两种包裹，别的壳一律落回系统外观。"
+                "从 assets/shell.html 重新起手，或把那段滑块样式补回来")
+
+
+# ── 字体栈 ──────────────────────────────────────────────────────────────
+# 字体是这样一类东西：写错的表现不是崩，是变丑，而变丑没有退出码。家族名少一个词
+# （"Source Han Serif SC" 少了 " VF"）浏览器不报错，安静地落到栈里下一个系统字体，
+# 中文从此一直是 Songti SC —— 直到有人觉得「怎么这么细」。所以把「栈里每个家族名
+# 都必须有出处」变成一道闸。
+#
+# 出处有两种：在下面这张已知名单里，或者页面自己有对应的 @font-face。
+# 名单只收真实存在的家族名；拿不准的新字体请连 @font-face 一起加。
+KNOWN_FAMILIES = {
+    # 拉丁 / 系统
+    "Segoe UI", "Helvetica Neue", "Times New Roman", "Iowan Old Style",
+    "SF Mono", "SFMono-Regular", "Liberation Mono", "JetBrains Mono",
+    "JetBrains Maple Mono", "Cascadia Code", "Fira Code", "IBM Plex Mono",
+    # 中文
+    "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Songti SC", "STSong", "STHeiti", "SimSun", "SimHei",
+    "Source Han Serif SC VF", "Source Han Serif SC",
+    "Source Han Sans SC VF", "Source Han Sans SC",
+    "Noto Serif CJK SC", "Noto Serif SC", "Noto Sans CJK SC", "Noto Sans SC",
+    "LXGW WenKai", "Sarasa Gothic SC", "Sarasa Mono SC",
+    # 日文 / 韩文
+    "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Apple SD Gothic Neo",
+}
+FONT_HOSTS = {"fonts.googleapis.com", "fonts.gstatic.com"}
+# 通用族。字体栈必须以其中之一收尾，否则最后一步匹配失败时落到浏览器默认字体
+GENERIC_FAMILIES = {"serif", "sans-serif", "monospace", "cursive", "fantasy",
+                    "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace",
+                    "ui-rounded", "math", "emoji", "fangsong"}
+GF_FAMILY_RE = re.compile(r"family=([^:&]+)")
+FONT_TOKEN_RE = re.compile(r"--font-[a-z-]+\s*:([^;]+);")
+FACE_FAMILY_RE = re.compile(r"@font-face\s*\{[^}]*?font-family:\s*[\"\']([^\"\']+)", re.S)
+
+
+def check_font_stacks(html, warns, errors):
+    html = VENDOR_CSS_RE.sub("", html)
+    declared = set(FACE_FAMILY_RE.findall(html))
+
+    # 网络字体：取不到时必须还有得可落。这是「自包含」这条规矩为字体开的口子的代价。
+    webfonts = set()
+    for href in re.findall(r'href="https?://fonts\.googleapis\.com/[^"]+"', html):
+        for fam in GF_FAMILY_RE.findall(href.replace("&amp;", "&")):
+            webfonts.add(fam.replace("+", " "))
+
+    stacks = {}
+    for m in re.finditer(r"(--font-[a-z-]+)\s*:([^;]+);", html):
+        raw = re.sub(r"/\*.*?\*/", " ", m.group(2), flags=re.S)
+        stacks[m.group(1)] = [x.strip().strip("\"'") for x in raw.split(",") if x.strip()]
+
+    for token, families in stacks.items():
+        if families[-1] not in GENERIC_FAMILIES:
+            errors.append(
+                f"{token} 没有以通用族收尾（现在是 `{families[-1]}`）："
+                "栈里每一个都没匹配上时会落到浏览器默认字体，中文尤其难看。"
+                "结尾补 serif / sans-serif / monospace")
+        for i, fam in enumerate(families):
+            if fam in webfonts and not any(f not in webfonts for f in families[i + 1:]):
+                errors.append(
+                    f"{token} 里的网络字体 `{fam}` 后面没有任何本地兜底："
+                    "Google Fonts 取不到时（离线、被墙、请求失败）这个位置就空了。"
+                    "网络字体后面必须跟系统字体，再以通用族收尾")
+
+    seen = set()
+    for m in FONT_TOKEN_RE.finditer(html):
+        for family in re.findall(r"[\"\']([^\"\']+)[\"\']", m.group(1)):
+            if family in KNOWN_FAMILIES or family in declared or family in seen:
+                continue
+            seen.add(family)
+            warns.append(
+                f"字体栈里的 \"{family}\" 既不在已知家族名单里，页面也没有对应的 "
+                "@font-face：写错一个字母的表现是静默回退到下一个字体，不会报错。"
+                "确认名字无误就把它加进 build.py 的 KNOWN_FAMILIES")
+    # local() 引用的家族名同样是「写错就静默失效」，一并核一遍
+    for family in re.findall(r"local\(\s*[\"\']([^\"\']+)[\"\']\s*\)", html):
+        if family not in KNOWN_FAMILIES and family not in seen:
+            seen.add(family)
+            warns.append(
+                f"@font-face 的 local(\"{family}\") 不在已知家族名单里："
+                "这个名字要是错的，这条 src 就是死的，而页面看起来一切正常")
+
+
+# ── SVG 图 ─────────────────────────────────────────────────────────────
+# references/diagrams.md 里能机械判定的两条：斜线直连（规则 1）与无障碍契约。
+# lucide 图标不查：那是 24×24 的装饰性 path，斜线、无 <title> 都是它的正常形态。
+# 几何级规则（遮罩重叠、6–10px 间隙）要解析坐标，留在眼睛关，脚本不查。
+SVG_BLOCK_RE = re.compile(r"<svg\b([^>]*)>(.*?)</svg>", re.S | re.I)
+LINE_TAG_RE = re.compile(r"<line\b[^>]*?/?>", re.I)
+LINE_ATTR_RE = re.compile(r'\b(x[12]|y[12])="(-?[\d.]+)"')
+
+
+def check_svgs(html, warns, errors):
+    for m in SVG_BLOCK_RE.finditer(html):
+        attrs, body = m.group(1), m.group(2)
+        if "lucide" in attrs or 'aria-hidden="true"' in attrs:
+            continue
+        missing = []
+        if 'role="img"' not in attrs:
+            missing.append('role="img"')
+        if "aria-labelledby" not in attrs:
+            missing.append("aria-labelledby")
+        if not re.search(r"<title[\s>]", body):
+            missing.append("<title>")
+        if not re.search(r"<desc[\s>]", body):
+            missing.append("<desc>")
+        if missing:
+            snippet = re.sub(r"\s+", " ", m.group(0)[:80]).strip()
+            warns.append(f"SVG 图缺少 {'、'.join(missing)}（{snippet}…）：读屏器拿不到这张图的内容。"
+                         "契约见 references/diagrams.md「无障碍 SVG 契约」；"
+                         "纯装饰图写 aria-hidden=\"true\"")
+        diagonals = []
+        for line in LINE_TAG_RE.findall(body):
+            nums = dict(LINE_ATTR_RE.findall(line))
+            if len(nums) < 4:
+                continue
+            try:
+                x1, y1, x2, y2 = (float(nums[k]) for k in ("x1", "y1", "x2", "y2"))
+            except ValueError:
+                continue
+            if x1 != x2 and y1 != y2:
+                diagonals.append(f"({x1:g},{y1:g})→({x2:g},{y2:g})")
+        if diagonals:
+            shown = "、".join(diagonals[:3]) + (f" 等 {len(diagonals)} 处" if len(diagonals) > 3 else "")
+            errors.append(f"SVG 里有斜线直连：{shown}。不共轴的节点之间必须走圆角直角肘形线"
+                          "（references/diagrams.md 规则 1 有 path 公式），斜线没有例外")
+
+
+# ── <main> 直接子元素 ────────────────────────────────────────────────────
+# 骨架的间距节奏全部挂在 `main > section > * + *` 上（56/40/20/12 四级）。
+# 内容不包 section 时这四条规则一条都不命中，整页间距塌成零 —— 而且只有人眼看得出来。
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img",
+             "input", "link", "meta", "param", "source", "track", "wbr"}
+
+
+class MainChildren(HTMLParser):
+    """收集 <main> 的直接子元素标签名（按出现顺序，可重复）。"""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.depth = None          # None 还没进 main，负数表示已经出来了
+        self.children = []
+
+    def _inside(self):
+        return self.depth is not None and self.depth > 0
+
+    def handle_starttag(self, tag, attrs):
+        if self.depth is None:
+            if tag == "main":
+                self.depth = 1
+            return
+        if not self._inside():
+            return
+        if self.depth == 1:
+            self.children.append(tag)
+        if tag not in VOID_TAGS:
+            self.depth += 1
+
+    def handle_startendtag(self, tag, attrs):
+        if self._inside() and self.depth == 1:
+            self.children.append(tag)
+
+    def handle_endtag(self, tag):
+        if not self._inside() or tag in VOID_TAGS:
+            return
+        self.depth -= 1
+
+
+def main_children(html):
+    p = MainChildren()
+    p.feed(html)
+    return p.children
 
 
 def fail(msg):
@@ -195,15 +389,24 @@ def check(html, path):
     errors, warns = [], []
     stripped = re.sub(r"<!--.*?-->", "", html, flags=re.S)
 
+    # 页面必须离线可开。唯一例外是 Google Fonts —— 它取不到时会静默回退到系统字体栈，
+    # 页面照常可读（骨架把它写成异步加载，首屏也不会被卡住）。别的外部资源没有这个性质。
     for m in re.finditer(r'<(link|script|img|iframe|source|video|audio|use)\b[^>]*'
-                         r'(?:src|href|xlink:href)="(https?:)?//[^"]+"', stripped, re.I):
+                         r'(?:src|href|xlink:href)="(https?:)?//([^"/]+)[^"]*"', stripped, re.I):
+        if m.group(3).lower() in FONT_HOSTS:
+            continue
         errors.append(f"外部资源引用：{m.group(0)[:90]}…（页面必须离线可开）")
     for m in re.finditer(r'url\(\s*["\']?(?:https?:)?//', stripped):
         errors.append("CSS 里有外部 url() 引用")
     if re.search(r"@import\s+url\(\s*[\"']?(?:https?:)?//", stripped):
         errors.append("CSS 里有外部 @import")
-    if re.search(r"@font-face", stripped) and "base64" not in stripped:
-        warns.append("有 @font-face 但没看到 base64 字体，可能会去联网取字体")
+    # 只用 local() 的 @font-face 永远不会联网（配平面就是这么写的），别误报
+    for face in re.findall(r"@font-face\s*\{[^}]*\}", stripped, re.S):
+        srcs = re.findall(r"url\(\s*[\"']?([^)\"']+)", face)
+        if srcs and not all(u.startswith("data:") for u in srcs):
+            warns.append("有 @font-face 的 src 不是 data: URI，页面可能会去联网取字体："
+                         f"{srcs[0][:60]}")
+            break
 
     for slot in (CSS_SLOT, JS_SLOT):
         if slot in html:
@@ -245,6 +448,21 @@ def check(html, path):
 
     if re.search(r"<main[^>]*>\s*(<!--.*?-->)?\s*</main>", html, re.S):
         errors.append("<main> 是空的")
+    else:
+        stray = [t for t in main_children(html) if t != "section"]
+        if stray:
+            shown = "、".join(dict.fromkeys(stray))[:60]
+            errors.append(
+                f"<main> 里有 {len(stray)} 个不是 <section> 的直接子元素（{shown}）："
+                "骨架的间距节奏写在 `main > section > * + *` 上，不包 section 的内容"
+                "拿不到任何块间距，整页会挤成一团。每个大节包一个 <section id=\"…\">。")
+
+    # 行内 MathML 里的堆叠分数会把正文行高撑坏；MathML Core 不支持 bevelled，行内改写线性形式
+    for m in re.finditer(r"<(p|li)\b[^>]*>(.*?)</\1>", html, re.S):
+        if "<mfrac" in m.group(2):
+            warns.append("正文里的行内 <math> 用了 <mfrac>，会撑坏行高："
+                         "行内公式写成 `2P₀ / Δ` 的线性形式，<mfrac> 只用在 display=\"block\" 里")
+            break
 
     # 高亮脚本发的是 class，页面没给对应规则的话代码块只会变成一色黑
     if HL_MARK in html and ".shj-syn-" not in html:
@@ -257,6 +475,10 @@ def check(html, path):
         shown = "、".join(dict.fromkeys(hard))[:80]
         warns.append(f"页面自己写死了 {len(hard)} 处颜色（{shown}）："
                      "深色主题下不会跟着变，改用 var(--color-*) / var(--tone-*) / var(--chart-*)")
+
+    check_font_stacks(html, warns, errors)
+    check_native_controls(html, warns)
+    check_svgs(stripped, warns, errors)
 
     size = len(html.encode("utf-8"))
     if size > 3_000_000:
