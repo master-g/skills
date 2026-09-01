@@ -532,6 +532,11 @@ def check(html, path):
                      "从 assets/shell.html 重新起手，或把那段 CSS 补进来")
 
     own = VENDOR_STYLE_RE.sub("", stripped)
+    # @media print 块里的字面色是合法的：打印重置的目的就是无视主题强制白纸深字，
+    # 用 var() 会循环引用。剥掉 print 块再查。
+    own = re.sub(
+        r"@media print\b[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", own
+    )
     hard = [m.group(1) for m in HARDCODED_COLOR_RE.finditer(own)]
     if hard:
         shown = "、".join(dict.fromkeys(hard))[:80]
@@ -544,8 +549,15 @@ def check(html, path):
     check_grid_tracks(stripped, warns)
 
     size = len(html.encode("utf-8"))
+    # 体积预算：basecoat 全量内联就 ~218KB，单文件成品的常态是 250–290KB。
+    # 这些页面主要走 IM / 邮件附件转发，分级预警让作者在发送前知情。
     if size > 3_000_000:
-        warns.append(f"页面 {size/1e6:.1f} MB，偏大")
+        warns.append(f"页面 {size/1e6:.1f} MB，过大：检查是否内联了大图/长代码")
+    elif size > 1_000_000:
+        warns.append(f"页面 {size/1e6:.1f} MB，超过 1 MB：IM/邮件转发可能被压缩或拒收")
+    elif size > 400_000:
+        warns.append(f"页面 {size/1e3:.0f} KB，超过 400 KB（常态 250–290 KB）："
+                     "检查是否有可裁的内联内容")
     return errors, warns
 
 

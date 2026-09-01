@@ -27,3 +27,6 @@
   `.card/.fig-box/.alert/.item` 等组件容器内的标题）；#3 毕业为 build.py WARN（`check_grid_tracks`），
   首跑即命中存量案例一处。#1 的导出面不毕业为检查 —— 卡片内 `h3` 是官方 markup
   （components.md 的 `.card > header > h3`），静态无法区分「卡片标题」与「统计数字」，靠本名册识别。
+- 2026-09-01 模板审计（frontend-design / vercel-react-best-practices / improve 三视角并行）：
+  另修骨架六处 —— 深色模式打印、details 导出双输出、reduce-motion 回退、无表头表格占位列名、
+  正文链接焦点环、嵌套列表拍平；均为骨架一次性根治，生成时无需识别，故不入册。

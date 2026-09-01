@@ -143,6 +143,8 @@ description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设
 4. **要加交互时读 `references/interactions.md`**：拖拽、键盘翻页、旋钮联动、可点 SVG、筛选、滚动高亮都有现成代码。
 5. **自包含是硬约束，只有一个例外。** 不引 CDN、不引外链图片、不引框架。图标写 `<i data-lucide="名字"></i>`
    由 `build.py` 内联，插图用内联 SVG，脚本用原生 JS。`<a href>` 指向外部可以；**加载**外部资源不行。
+   浏览器底线：Chrome 111+ / Safari 16.2+ / Firefox 113+（2023-03 起，`color-mix()`、`:focus-visible`、`oklab` 全量可用）；
+   更旧的浏览器上 tone 卡片面色与 header 背景会静默丢失，不做逐条 fallback。
 
    例外是**骨架自带的 Google Fonts**（Merriweather / Noto Serif SC / JetBrains Mono）。
    它异步加载，取不到时静默回退到系统字体栈，页面照常可读 —— 别的外部资源没有这个性质，

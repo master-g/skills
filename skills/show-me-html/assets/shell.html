@@ -305,6 +305,18 @@
       html {
         scroll-behavior: smooth;
       }
+      /* 运动敏感用户：关掉平滑滚动与所有骨架过渡（页面自己的动效由 interactions.md 管） */
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
       body {
         min-height: 100vh;
         text-rendering: optimizeLegibility;
@@ -499,6 +511,10 @@
       main a:not(.btn):not(.item):hover {
         color: var(--link-accent);
         text-decoration-color: var(--link-accent);
+      }
+      main a:not(.btn):not(.item):focus-visible {
+        outline: 2px solid var(--color-ring);
+        outline-offset: 2px;
       }
       ul,
       ol {
@@ -708,6 +724,18 @@
         .toc {
           display: none;
         }
+        /* 打印永远用浅色纸：深色主题的前景 token 是浅色，不重置会变成浅字印白纸 */
+        :root,
+        .dark {
+          --background: #fff;
+          --foreground: #141413;
+          --card: #fff;
+          --card-foreground: #141413;
+          --muted: #fff;
+          --muted-foreground: #5e5d59;
+          --border: #d1cfc5;
+          background: #fff;
+        }
         .layout {
           max-width: none;
           padding: 0;
@@ -715,6 +743,12 @@
         }
         main {
           padding: 0;
+        }
+        /* 纸质副本能追链接：正文链接后附 href */
+        main a[href^="http"]::after {
+          content: " (" attr(href) ")";
+          font-size: 0.75em;
+          word-break: break-all;
         }
       }
     </style>
@@ -944,9 +978,14 @@
             return !skipped(r);
           });
           if (!rows.length) return "";
+          /* 没有表头行的表：全部行当数据，列名留空占位 ——
+             否则第一行数据会被当成表头，语义就错了 */
+          var hasTh = !!rows[0].querySelector("th");
           var head = rows[0],
-            body = rows.slice(1);
-          var cols = Array.from(head.children).map(cell);
+            body = hasTh ? rows.slice(1) : rows;
+          var cols = Array.from(head.children).map(function (c, i) {
+            return hasTh ? cell(c) : "列" + (i + 1);
+          });
           var out =
             "| " +
             cols.join(" | ") +
@@ -979,7 +1018,8 @@
                 n.nodeType === 1 &&
                 (n.tagName === "UL" || n.tagName === "OL")
               )
-                sub += list(n, depth + 1);
+                /* 深层嵌套拍平到本级：GFM 对超过 4–5 层的子列表解析不稳，保内容齐整优先 */
+                sub += list(n, depth < 6 ? depth + 1 : depth);
               else own.appendChild(n.cloneNode(true));
             });
             var text = inline(own).trim();
@@ -994,6 +1034,8 @@
           Array.from(el.children).forEach(function (n) {
             if (skipped(n)) return;
             var t = n.tagName;
+            if (t === "SUMMARY")
+              return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
             if (/^H[1-6]$/.test(t)) {
               out += "\n" + "#".repeat(+t[1]) + " " + inline(n).trim() + "\n\n";
             } else if (t === "P") {
@@ -1167,8 +1209,7 @@
 
         var mq = matchMedia("(min-width: 80rem)");
         var prev = null,
-          skipOnce = false,
-          timer = 0;
+          skipOnce = false;
 
         function topOf(el) {
           var t = 0;
@@ -1208,13 +1249,10 @@
           }
         }
 
-        function setActive() {
-          if (!mq.matches) return;
-          if (skipOnce) {
-            skipOnce = false;
-            return;
-          }
-          var items = headings
+        var geom =
+          null; /* 缓存的标题几何：resize 后失效，滚动时不再逐个读 offsetTop */
+        function measure() {
+          geom = headings
             .map(function (h) {
               return {
                 id: h.id,
@@ -1228,6 +1266,16 @@
             .sort(function (a, b) {
               return a.top - b.top;
             });
+        }
+
+        function setActive() {
+          if (!mq.matches) return;
+          if (skipOnce) {
+            skipOnce = false;
+            return;
+          }
+          if (!geom) measure();
+          var items = geom;
           if (!items.length) return activate(null);
           if (scrollY < 1) return activate(null); /* 页顶：无激活项 */
           if (
@@ -1252,17 +1300,23 @@
             activate(a.hash);
           }
         });
+        var ticking = false;
         addEventListener(
           "scroll",
           function () {
-            if (!timer)
-              timer = setTimeout(function () {
-                timer = 0;
-                setActive();
-              }, 100);
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+              ticking = false;
+              setActive();
+            });
           },
           { passive: true }
         );
+        addEventListener("resize", function () {
+          geom = null;
+          setActive();
+        });
         addEventListener(
           "load",
           setActive
