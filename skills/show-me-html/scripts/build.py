@@ -295,7 +295,8 @@ def check_grid_tracks(html, warns):
     own = VENDOR_STYLE_RE.sub("", html)
     seen = set()
     for m in RULE_BLOCK_RE.finditer(own):
-        body = m.group(2)
+        # 先剥 CSS 注释再判断：注释里提到 grid-template-columns 字样不能算写了模板
+        body = re.sub(r"/\*.*?\*/", " ", m.group(2))
         if not re.search(r"display\s*:\s*grid", body):
             continue
         if re.search(r"grid-template-columns|grid-template-areas", body):
