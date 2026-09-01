@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Component states</title>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="design-system-ref">
+    <header class="page-chrome" data-md-skip>
+      <button type="button" class="btn" data-copy-md>复制为 Markdown</button>
+      <div class="button-group" role="group" aria-label="主题">
+        <button type="button" class="btn" data-theme-set="light">浅色</button>
+        <button type="button" class="btn" data-theme-set="system">系统</button>
+        <button type="button" class="btn" data-theme-set="dark">深色</button>
+      </div>
+    </header>
+    <main id="doc">
+      <section>
+        <h1>组件状态</h1>
+        <div class="component-grid">
+          <article class="card">
+            <header><h2>按钮与状态</h2></header>
+            <section class="fixture-row">
+              <button type="button" class="btn">主按钮</button>
+              <button type="button" class="btn" data-variant="secondary">
+                次要
+              </button>
+              <button type="button" class="btn" data-variant="outline">
+                描边
+              </button>
+              <button type="button" class="btn" data-variant="destructive">
+                危险
+              </button>
+              <button type="button" class="btn" disabled>禁用</button>
+            </section>
+          </article>
+          <article class="card" data-tone="sky">
+            <header><h2>表单</h2></header>
+            <section class="fixture-row">
+              <label class="field">名称 <input value="示例" /></label>
+              <label class="field"
+                >范围 <input type="range" value="62"
+              /></label>
+              <label><input type="checkbox" checked /> 已启用</label>
+              <label><input type="radio" name="mode" checked /> 自动</label>
+            </section>
+          </article>
+          <article class="card">
+            <header><h2>提示与徽章</h2></header>
+            <section class="fixture-row">
+              <span class="badge">默认</span>
+              <span class="badge" data-variant="secondary">次要</span>
+              <div class="alert" data-variant="destructive">
+                <section>
+                  <strong>错误</strong>
+                  <p>需要处理。</p>
+                </section>
+              </div>
+            </section>
+          </article>
+          <article class="card">
+            <header><h2>标签页</h2></header>
+            <section>
+              <div class="tabs">
+                <div role="tablist" aria-label="示例标签">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="panel-a"
+                    id="tab-a"
+                  >
+                    概览
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-b"
+                    id="tab-b"
+                  >
+                    细节
+                  </button>
+                </div>
+                <div role="tabpanel" id="panel-a" aria-labelledby="tab-a">
+                  概览内容
+                </div>
+                <div
+                  role="tabpanel"
+                  id="panel-b"
+                  aria-labelledby="tab-b"
+                  hidden
+                >
+                  细节内容
+                </div>
+              </div>
+              <details>
+                <summary>原生折叠</summary>
+                <p>折叠内容。</p>
+              </details>
+            </section>
+          </article>
+          <article class="card">
+            <header><h2>编辑与重排</h2></header>
+            <section class="fixture-row">
+              <div
+                class="editor"
+                contenteditable="true"
+                role="textbox"
+                aria-label="文本编辑器"
+              >
+                纯文本状态
+              </div>
+              <button type="button" class="diagram-node" aria-pressed="true">
+                节点 A
+              </button>
+              <div class="reorder-controls" role="group" aria-label="调整顺序">
+                <button type="button" class="btn" data-size="sm">上移</button>
+                <button type="button" class="btn" data-size="sm">下移</button>
+              </div>
+            </section>
+          </article>
+        </div>
+      </section>
+    </main>
+    <!--SHOW-ME:JS-->
+  </body>
+</html>

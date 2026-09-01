@@ -7,13 +7,14 @@
 
 评审或眼检发现一个失败时，把它落进**能稳定执行的最窄处**，一次只落一个主落点：
 
-| 失败类型                     | 落点                                      | 例子                              |
-| ---------------------------- | ----------------------------------------- | --------------------------------- |
-| 判断类（怎么写更好）         | `references/*.md` 散文                    | 「先写模型函数再写图」            |
-| 可复用机制（每个页面都该有） | `assets/shell.html` 骨架                  | 滑块轨道填充、间距节奏            |
-| 可机械核对                   | `scripts/build.py` 检查（ERROR/WARN）     | 斜线 `<line>`、写死颜色、横向溢出 |
-| harness 自身的问题           | harness（build.py / 骨架的 TOC 与导出器） | TOC 吞掉卡片内标题                |
-| 只有一个模型 / 只出现一次    | 观察名单（本文末尾），复现后再编码        | —                                 |
+| 失败类型                     | 落点                                      | 例子                       |
+| ---------------------------- | ----------------------------------------- | -------------------------- |
+| 判断类（怎么写更好）         | `references/*.md` 散文                    | 「先写模型函数再写图」     |
+| 可复用视觉（每个页面都该有） | `assets/show-me.css`                      | 滑块轨道、焦点、间距节奏   |
+| 可复用行为                   | `assets/shell.html` 骨架                  | 主题、TOC、Markdown 导出   |
+| 可机械核对                   | `scripts/build.py` 检查（ERROR/WARN）     | 配方名、写死颜色、横向溢出 |
+| harness 自身的问题           | harness（build.py / 骨架的 TOC 与导出器） | TOC 吞掉卡片内标题         |
+| 只有一个模型 / 只出现一次    | 观察名单（本文末尾），复现后再编码        | —                          |
 
 **禁止调用方补丁**：失败出在骨架或导出器时，只在当页改标记绕过（加 skip、换标签），
 同一失败会在下一页复发。页面层的绕过是止血，必须同时在名册登记并按上表安排根治。
@@ -26,13 +27,9 @@
 
 ## 联动规则
 
-改 `assets/shell.html` 或 `scripts/build.py` 后，提交前按 `scenarios/README.md` 的轮次流程
-跑冻结场景（时间紧时至少 `status-report` + `concept-explainer` 两个：
-一个验只读排版，一个验 JS 交互），改动前后各一轮，人工盲比。
-轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
+改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
-旧页面（骨架改动前生成的）不会自动获得新骨架行为 —— 它们携带的是生成时的骨架副本。
-骨架修复只对今后从新 `shell.html` 起手的页面生效；历史页面不动。
+旧页面不会自动获得新的视觉或骨架行为，它们携带的是生成时的 CSS 与 HTML 副本。视觉/骨架修复只影响今后合成的页面；历史页面不动。
 旧页面的回归用 `--check-only` 验证新检查不误报即可。
 
 ## 版本规则

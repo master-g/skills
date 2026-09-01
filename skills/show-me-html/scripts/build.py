@@ -3,15 +3,14 @@
 
 用法：
     python3 build.py page.html                # 内联资产 + 自检
-    python3 build.py page.html --style nova   # 换一套 basecoat 风格包
     python3 build.py page.html --check-only   # 只跑自检，不改文件
     python3 build.py page.html --open         # 自检通过后用系统默认浏览器打开
 
 做四件事，然后自检：
-  1. 把 basecoat CSS 内联到 <!--SHOW-ME:CSS--> 处。
+  1. 把 show-me-html 自有 CSS 内联到 <!--SHOW-ME:CSS--> 处。
   2. 把用到的 lucide 图标从 sprite 里抽出来，替换 data-lucide="name"。
-  3. 页面用到需要 JS 的组件时，把 basecoat JS 内联到 <!--SHOW-ME:JS--> 处。
-  4. 按页面实际出现的 language-* 内联语法高亮：只带上用到的那几种语言。
+  3. 页面用到需要 JS 的组件时，把保留的 basecoat JS 内联到 <!--SHOW-ME:JS--> 处。
+  4. 按页面实际出现的 language-* 内联语法高亮：只带上用到的语言。
 
 对已合成的文件重复运行是安全的：占位符已消失时只跑自检。
 """
@@ -22,8 +21,17 @@ import sys
 from pathlib import Path
 from html.parser import HTMLParser
 
-VENDOR = Path(__file__).resolve().parent.parent / "assets" / "vendor"
-STYLES = ("vega", "nova", "maia", "lyra", "mira", "luma", "sera", "rhea")
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
+VENDOR = ASSETS / "vendor"
+CSS_PATH = ASSETS / "show-me.css"
+RECIPES = (
+    "approach-compare", "visual-directions", "code-review", "pr-writeup",
+    "code-understanding", "design-system-ref", "component-variants",
+    "animation-proto", "interaction-proto", "status-report", "incident-report",
+    "implementation-plan", "slide-deck", "flowchart", "svg-illustrations",
+    "feature-explainer", "concept-explainer", "triage-board", "config-editor",
+    "text-tuner",
+)
 
 CSS_SLOT = "<!--SHOW-ME:CSS-->"
 JS_SLOT = "<!--SHOW-ME:JS-->"
@@ -37,10 +45,10 @@ JS_COMPONENTS = (
     "sidebar", "drawer", "tabs", "toaster", "chart",
 )
 
-# 页面自己写死的颜色。骨架的调色板块与 vendor CSS 不算。
-VENDOR_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette)"[^>]*>.*?</style>', re.S)
-# 只剥 vendor 的 basecoat CSS：palette 块里住着 --font-serif，剥掉字体闸就瞎了
-VENDOR_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
+# 页面自己写死的颜色。show-me-html 自有 CSS 不算。
+SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette)"[^>]*>.*?</style>', re.S)
+SYSTEM_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
+SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl)"[^>]*>.*?</script>', re.S)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -65,23 +73,56 @@ HL_SKIP = {"diff", "text", "plain", "plaintext", "txt"}
 
 
 # ── 原生控件 ────────────────────────────────────────────────────────────
-# 和 <section> 那条闸是同一种失败模式：**没命中选择器，不报错，只是难看。**
-# basecoat 只给 `.field > input[type=range]` 和 `.input[type=range]` 上样式，页面自造一个
-# 壳把滑块包进去就两个都不命中，滑块退回操作系统外观（macOS 上是一条亮蓝色粗轨道）。
-# 骨架已经连裸 `input[type=range]` 一起兜住了，这道闸是防着有人把那段删掉或改窄。
+# 和 <section> 那条闸是同一种失败模式：没命中选择器，不报错，只是难看。
+# show-me.css 同时覆盖裸 range、`.field` 和 `.input` 包裹。这道闸防止有人误删或改窄
+# 裸控件规则，导致自定义壳里的滑块退回系统外观。
 NATIVE_CONTROLS = {
     "range": (r'<input[^>]+type="range"', r"input\[type=.range.\]::-webkit-slider-runnable-track"),
 }
 
 
 def check_native_controls(html, warns):
-    own = VENDOR_CSS_RE.sub("", html)
     for name, (uses, styled) in NATIVE_CONTROLS.items():
-        if re.search(uses, html, re.I) and not re.search(styled, own):
+        if re.search(uses, html, re.I) and not re.search(styled, html):
             warns.append(
-                f"页面用了原生 {name} 控件，但没有任何裸 `input[type={name}]` 的样式规则："
-                "basecoat 只管 .field / .input 两种包裹，别的壳一律落回系统外观。"
-                "从 assets/shell.html 重新起手，或把那段滑块样式补回来")
+                f"页面用了原生 {name} 控件，但 show-me.css 没有裸 `input[type={name}]` 样式："
+                "自定义壳里的控件会落回系统外观；恢复 owned CSS 的裸控件规则。")
+
+
+def check_accessible_authored_controls(html, errors):
+    """拦截两种窄而可证的鼠标专用控件；复杂委托交互仍由人工门禁负责。"""
+    markup = re.sub(r"<(?:script|style)\b[^>]*>.*?</(?:script|style)>", "", html, flags=re.I | re.S)
+    for tag in re.findall(r"<input\b[^>]*>", markup, flags=re.I):
+        input_type = re.search(r'\btype=["\']([^"\']+)', tag, flags=re.I)
+        if input_type and input_type.group(1).lower() == "hidden":
+            continue
+        hidden = re.search(r"\shidden(?:\s|=|/?>)", tag, flags=re.I) or re.search(
+            r'\bstyle=["\'][^"\']*(?:display\s*:\s*none|visibility\s*:\s*hidden)',
+            tag,
+            flags=re.I,
+        )
+        if hidden and "data-accessible-replacement" not in tag:
+            errors.append(
+                "隐藏原生控件没有可访问替代：保留原生控件可聚焦，或在完成等价键盘/ARIA 控件后"
+                "加 data-accessible-replacement 记录该契约"
+            )
+            break
+
+    for match in re.finditer(
+        r"<(div|span|li|section|article|svg|g|path)\b([^>]*)>", markup, flags=re.I
+    ):
+        attrs = match.group(2)
+        if not re.search(r"\bonclick\s*=", attrs, flags=re.I):
+            continue
+        role = re.search(r'\brole=["\'](button|link)["\']', attrs, flags=re.I)
+        focusable = re.search(r'\btabindex=["\']?0["\']?', attrs, flags=re.I)
+        keyboard = re.search(r"\bonkey(?:down|up|press)\s*=", attrs, flags=re.I)
+        if not (role and focusable and keyboard):
+            errors.append(
+                f"非语义元素 <{match.group(1)}> 只有点击路径：改用 button/a，或同时提供"
+                " role、tabindex=0 与键盘处理"
+            )
+            break
 
 
 # ── 在默认浏览器里打开（--open）────────────────────────────────────
@@ -125,6 +166,7 @@ KNOWN_FAMILIES = {
     "Segoe UI", "Helvetica Neue", "Times New Roman", "Iowan Old Style",
     "SF Mono", "SFMono-Regular", "Liberation Mono", "JetBrains Mono",
     "JetBrains Maple Mono", "Cascadia Code", "Fira Code", "IBM Plex Mono",
+    "IBM Plex Sans", "Newsreader",
     # 中文
     "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei",
     "Songti SC", "STSong", "STHeiti", "SimSun", "SimHei",
@@ -146,7 +188,6 @@ FACE_FAMILY_RE = re.compile(r"@font-face\s*\{[^}]*?font-family:\s*[\"\']([^\"\']
 
 
 def check_font_stacks(html, warns, errors):
-    html = VENDOR_CSS_RE.sub("", html)
     declared = set(FACE_FAMILY_RE.findall(html))
 
     # 网络字体：取不到时必须还有得可落。这是「自包含」这条规矩为字体开的口子的代价。
@@ -249,8 +290,8 @@ class MainChildren(HTMLParser):
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.depth = None          # None 还没进 main，负数表示已经出来了
-        self.children = []
+        self.depth: int | None = None  # None 还没进 main，0 表示已经出来了
+        self.children: list[str] = []
 
     def _inside(self):
         return self.depth is not None and self.depth > 0
@@ -272,7 +313,7 @@ class MainChildren(HTMLParser):
             self.children.append(tag)
 
     def handle_endtag(self, tag):
-        if not self._inside() or tag in VOID_TAGS:
+        if self.depth is None or self.depth <= 0 or tag in VOID_TAGS:
             return
         self.depth -= 1
 
@@ -292,7 +333,7 @@ RULE_BLOCK_RE = re.compile(r"([^{}]+)\{([^{}]*)\}")
 
 
 def check_grid_tracks(html, warns):
-    own = VENDOR_STYLE_RE.sub("", html)
+    own = SYSTEM_STYLE_RE.sub("", html)
     seen = set()
     for m in RULE_BLOCK_RE.finditer(own):
         # 先剥 CSS 注释再判断：注释里提到 grid-template-columns 字样不能算写了模板
@@ -318,11 +359,10 @@ def fail(msg):
 
 # ── 合成 ────────────────────────────────────────────────────────────────
 
-def read_css(style):
-    path = VENDOR / "basecoat.min.css" if style == "vega" else VENDOR / "styles" / f"{style}.min.css"
-    if not path.exists():
-        sys.exit(f"ERROR  找不到风格包 {style}：{path}")
-    return path.read_text(encoding="utf-8")
+def read_css():
+    if not CSS_PATH.exists():
+        sys.exit(f"ERROR  找不到自有样式：{CSS_PATH}")
+    return CSS_PATH.read_text(encoding="utf-8")
 
 
 def inline_icons(html, errors):
@@ -400,18 +440,28 @@ def inline_highlight(html, warns):
     return "".join(parts), {n for names in wanted.values() for n in names}
 
 
-def build(html, style, errors):
+def build(html, errors):
     changed = False
 
+    css_tag = f'<style {CSS_MARK}>{read_css()}</style>'
     if CSS_SLOT in html:
-        html = html.replace(CSS_SLOT, f'<style {CSS_MARK}>{read_css(style)}</style>', 1)
+        html = html.replace(CSS_SLOT, css_tag, 1)
         changed = True
     elif CSS_MARK in html:
-        if style != "vega":
-            print(f"注意   页面已内联过 CSS，--style {style} 未生效。"
-                  "换风格要从 assets/shell.html 重新起手。")
+        refreshed, count = re.subn(
+            r'<style\b(?=[^>]*\bdata-show-me=["\']css["\'])[^>]*>.*?</style>',
+            lambda _match: css_tag,
+            html,
+            count=1,
+            flags=re.I | re.S,
+        )
+        if count != 1:
+            errors.append("已内联的 show-me-html CSS 标记无法定位")
+        elif refreshed != html:
+            html = refreshed
+            changed = True
     else:
-        errors.append(f"缺少 {CSS_SLOT} 占位符，也没有已内联的 basecoat CSS")
+        errors.append(f"缺少 {CSS_SLOT} 占位符，也没有已内联的 show-me-html CSS")
 
     html, used = inline_icons(html, errors)
     if used:
@@ -442,7 +492,7 @@ def build(html, style, errors):
 
 # ── 自检 ────────────────────────────────────────────────────────────────
 
-def check(html, path):
+def check(html, path, allow_legacy_recipe=False):
     errors, warns = [], []
     stripped = re.sub(r"<!--.*?-->", "", html, flags=re.S)
 
@@ -469,7 +519,21 @@ def check(html, path):
         if slot in html:
             errors.append(f"占位符 {slot} 未被替换")
     if CSS_MARK not in html:
-        errors.append("页面里没有内联的 basecoat CSS")
+        errors.append("页面里没有内联的 show-me-html CSS")
+
+    body = re.search(r"<body\b([^>]*)>", stripped, re.I)
+    recipe = re.search(r'\bdata-recipe="([a-z0-9-]+)"', body.group(1)) if body else None
+    if not recipe:
+        message = "<body> 缺少 data-recipe，无法选择版式指纹"
+        if allow_legacy_recipe:
+            warns.append(f"历史页面：{message}；仅复检现有契约，不要求回填")
+        else:
+            errors.append(message)
+    elif recipe.group(1) not in RECIPES:
+        errors.append(
+            f"不支持的 data-recipe=\"{recipe.group(1)}\"；"
+            f"可选值：{', '.join(RECIPES)}"
+        )
 
     for m in re.finditer(r'data-lucide="([a-z0-9-]+)"', html):
         errors.append(f"data-lucide=\"{m.group(1)}\" 未被替换成内联 SVG")
@@ -514,10 +578,32 @@ def check(html, path):
                 "骨架的间距节奏写在 `main > section > * + *` 上，不包 section 的内容"
                 "拿不到任何块间距，整页会挤成一团。每个大节包一个 <section id=\"…\">。")
 
+    authored = SYSTEM_SCRIPT_RE.sub("", stripped)
+    for script in re.findall(r"<script\b[^>]*>(.*?)</script>", authored, re.S | re.I):
+        if re.search(r"\.(?:innerHTML|outerHTML)\s*=\s*(?![\"'])", script):
+            errors.append(
+                "页面脚本把动态值写进 innerHTML/outerHTML："
+                "改用 textContent、DOM 构造或经过严格转义的可信片段"
+            )
+            break
+    check_accessible_authored_controls(stripped, errors)
+
     # 一级标题只能有一个：多 h1 会同时搞坏目录语义与 Markdown 导出的 title 拼接规则
     h1s = re.findall(r"<h1\b", stripped)
     if len(h1s) > 1:
         errors.append(f"页面有 {len(h1s)} 个 <h1>：一级标题只能有一个，小节用 h2/h3。")
+
+    eyebrow_count = sum(
+        "eyebrow" in classes.split()
+        for classes in re.findall(
+            r'<[a-z][^>]*\bclass=["\']([^"\']*)["\']', stripped, flags=re.I
+        )
+    )
+    if eyebrow_count > 1:
+        warns.append(
+            f"页面用了 {eyebrow_count} 个 eyebrow：眉标只保留标题没有的范围、状态或来源；"
+            "重复标题时删掉"
+        )
 
     # 行内 MathML 里的堆叠分数会把正文行高撑坏；MathML Core 不支持 bevelled，行内改写线性形式
     for m in re.finditer(r"<(p|li)\b[^>]*>(.*?)</\1>", html, re.S):
@@ -531,7 +617,7 @@ def check(html, path):
         warns.append("页面内联了语法高亮，但没有 .shj-syn-* 的配色规则："
                      "从 assets/shell.html 重新起手，或把那段 CSS 补进来")
 
-    own = VENDOR_STYLE_RE.sub("", stripped)
+    own = SYSTEM_STYLE_RE.sub("", stripped)
     # @media print 块里的字面色是合法的：打印重置的目的就是无视主题强制白纸深字，
     # 用 var() 会循环引用。剥掉 print 块再查。
     own = re.sub(
@@ -545,19 +631,18 @@ def check(html, path):
 
     check_font_stacks(html, warns, errors)
     check_native_controls(html, warns)
-    check_svgs(stripped, warns, errors)
+    authored = SYSTEM_SCRIPT_RE.sub("", stripped)
+    check_svgs(authored, warns, errors)
     check_grid_tracks(stripped, warns)
 
     size = len(html.encode("utf-8"))
-    # 体积预算：basecoat 全量内联就 ~218KB，单文件成品的常态是 250–290KB。
     # 这些页面主要走 IM / 邮件附件转发，分级预警让作者在发送前知情。
     if size > 3_000_000:
         warns.append(f"页面 {size/1e6:.1f} MB，过大：检查是否内联了大图/长代码")
     elif size > 1_000_000:
         warns.append(f"页面 {size/1e6:.1f} MB，超过 1 MB：IM/邮件转发可能被压缩或拒收")
     elif size > 400_000:
-        warns.append(f"页面 {size/1e3:.0f} KB，超过 400 KB（常态 250–290 KB）："
-                     "检查是否有可裁的内联内容")
+        warns.append(f"页面 {size/1e3:.0f} KB，超过 400 KB：检查是否有可裁的内联内容")
     return errors, warns
 
 
@@ -634,7 +719,12 @@ def render_check(page, widths=(500, 1280)):
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
-            sw, cw, who = int(m.group(1)), int(m.group(2)), m.group(3).strip()
+            try:
+                sw, cw = (int(value) for value in m.group(1, 2))
+            except ValueError:
+                issues.append(f"{w}px：探针返回了无效宽度")
+                continue
+            who = m.group(3).strip()
             measured.append(cw)
             if sw > cw + 1:
                 issues.append(f"{cw}px 视口横向溢出：文档宽 {sw}px"
@@ -643,9 +733,12 @@ def render_check(page, widths=(500, 1280)):
 
 
 def main():
+    if any(arg == "--style" or arg.startswith("--style=") for arg in sys.argv[1:]):
+        print("ERROR  --style 已移除；show-me-html 现在只有一套自有视觉系统。", file=sys.stderr)
+        return 2
+
     ap = argparse.ArgumentParser(description="内联资产并自检 show-me-html 页面")
     ap.add_argument("page", type=Path)
-    ap.add_argument("--style", default="vega", choices=STYLES)
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--no-render", action="store_true", help="跳过无头浏览器的溢出检查")
     ap.add_argument(
@@ -661,14 +754,14 @@ def main():
 
     build_errors, build_warns = [], []
     if not args.check_only:
-        html, changed, used, langs, build_warns = build(html, args.style, build_errors)
+        html, changed, used, langs, build_warns = build(html, build_errors)
         if changed:
             args.page.write_text(html, encoding="utf-8")
-            print(f"已合成  {args.page}  风格={args.style}  图标={len(used)} 个"
+            print(f"已合成  {args.page}  图标={len(used)} 个"
                   f"{'  语法=' + ','.join(sorted(langs)) if langs else ''}"
                   f"  体积={len(html.encode('utf-8'))/1024:.0f} KB")
 
-    errors, warns = check(html, args.page)
+    errors, warns = check(html, args.page, allow_legacy_recipe=args.check_only)
     errors = build_errors + errors
     warns = build_warns + warns
 

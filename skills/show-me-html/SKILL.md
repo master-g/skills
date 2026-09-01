@@ -1,15 +1,16 @@
 ---
 name: show-me-html
 license: MIT
-description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设计语言，自带 light/dark/system 主题切换与「复制为 Markdown」按钮，为团队内转发而做。
+description: 把素材做成一个自包含的静态 HTML 页面：编辑式视觉系统，自带 light/dark/system 主题切换与「复制为 Markdown」按钮，为团队内转发而做。
 ---
 
 # show-me-html
 
 一个想法，一个自包含的 `.html`。无构建、无依赖、离线可开、发给谁都能直接看。
 
-设计语言是 **shadcn/ui**：组件来自 basecoat（MIT，框架无关的 shadcn 实现），图标来自 lucide，
-两者都已内置在本 skill 里，页面不联网。每一页固定带两件东西 ——
+视觉层由自有 `show-me.css` 提供：暖灰纸面、深蓝墨色和钴蓝主强调，20 个配方靠几何而不是换色区分。
+组件结构沿用既有契约，需要行为的组件保留 basecoat JS，图标来自 lucide；构建后都内联在页面里。
+每一页固定带两件东西 ——
 
 - **三态主题切换**（浅色 / 跟随系统 / 深色）：页面在谁的屏幕上都成立，不用问对方开没开深色模式。
 - **复制为 Markdown**：一键把整页内容变成 Markdown，能贴进文档、粘进 IM、喂给别的模型。
@@ -131,11 +132,11 @@ description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设
 然后：
 
 1. **拷贝 `assets/shell.html` 作为起点。** 它已含 `<head>`、防闪烁的主题脚本、与版心对齐的顶部工具条、
-   主题三态切换、复制为 Markdown（单图标按钮）、右侧目录（扫描 h2/h3 自动生成，条目 ≥2 且视口 ≥80rem 时出现）、
-   页面级排版 CSS，以及 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->` 两个占位符。
-   改标题（`<title>` 和 `.chrome-title` 两处），内容写进 `<main id="doc">`。
-   **占位符、工具条与目录结构不要删** —— `build.py` 会检查。
-2. **写 markup 前读 `references/components.md`。** 按钮、卡片、徽章、表格、提示块的外观已经在两套主题下调好；
+   主题三态切换、复制为 Markdown（单图标按钮）、右侧目录（扫描 h2/h3 自动生成，条目 ≥2 且视口 ≥80rem 时出现），
+   以及 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->` 两个占位符。
+   改标题（`<title>` 和 `.chrome-title` 两处），在 `<body data-recipe="配方名">` 写入选定配方，内容写进 `<main id="doc">`。
+   **占位符、工具条与目录结构不要删**，`build.py` 会检查。
+2. **先读 `references/visual-system.md`，写 markup 前再读 `references/components.md`。** 前者规定视觉所有权与配方几何，后者规定稳定的 DOM、ARIA 和 `data-*` 契约。按钮、卡片、徽章、表格、提示块的状态已经在两套主题下调好；
    自己写一遍只会得到深色主题下读不了的东西。配色一律用 token
    （`var(--color-*)`、分类色 `data-tone`、图表色 `var(--chart-*)`），不写死颜色。
    **画任何 SVG 图前读 `references/diagrams.md`**：类型路由、连线六条硬规则、节点语义、复杂度预算都在那里。
@@ -146,7 +147,7 @@ description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设
    浏览器底线：Chrome 111+ / Safari 16.2+ / Firefox 113+（2023-03 起，`color-mix()`、`:focus-visible`、`oklab` 全量可用）；
    更旧的浏览器上 tone 卡片面色与 header 背景会静默丢失，不做逐条 fallback。
 
-   例外是**骨架自带的 Google Fonts**（Merriweather / Noto Serif SC / JetBrains Mono）。
+   例外是**骨架自带的 Google Fonts**（Newsreader / IBM Plex Sans / IBM Plex Mono / Noto Serif SC）。
    它异步加载，取不到时静默回退到系统字体栈，页面照常可读 —— 别的外部资源没有这个性质，
    所以只有它被放行。`fonts.googleapis.com` **在中国大陆不可达**，那边的读者看到的就是兜底字体，
    这是已知且接受的降级。骨架的 `<link>` 与 `--font-*` 后半段的兜底一起构成这个保证，
@@ -158,8 +159,8 @@ description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设
    **读多写少的长文（`concept-explainer`、`feature-explainer`、`pr-writeup`、`incident-report`
    这类）一律改 `46rem`** —— 60rem 下中文一行到 55 字，读着累；46rem 落在 35 字左右。
    页里的图也跟着变紧凑，比例才对得上。写在页面自己的 `<style>` 里：`:root { --page: 46rem }`。
-8. **克制就是风格。** 一屏一个强调点，留白给足，层级靠字号、留白和字重，不靠颜色。
-9. **色彩只在三处出现**（调色板来自 `anthropic.design.md`，全部是 token，见 `components.md`）：
+8. **克制就是风格。** 一屏一个强调点，留白给足，层级靠字号、留白和字重，不靠颜色。眉标只在它能提供标题没有的信息时出现。
+9. **色彩只在三处出现**（全部使用自有语义 token，见 `components.md`）：
    - **分类** —— 卡片、徽章、章节写 `data-tone="clay|fig|sky|cactus|olive|heather|kraft|manilla"`，
      同一页不超过 4 个色调。分类只有一种时不上色。
    - **状态** —— `data-variant="destructive"` 等，表达语义，不做装饰。
@@ -180,12 +181,13 @@ description: 把素材做成一个自包含的静态 HTML 页面：shadcn/ui 设
 python3 <skill-path>/scripts/build.py 输出文件.html
 ```
 
-它把 basecoat CSS 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
-页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联 basecoat JS、
+它把自有 `assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
+页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、
 按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
 
 - **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
   `<meta charset>`/viewport/`lang`/`<title>` 齐全、无样例残留、`<main>` 非空、页面没有写死颜色、
+  `body[data-recipe]` 是 20 个受支持配方之一、动态内容不使用 `innerHTML`/`outerHTML` 赋值、
   **`<main>` 的直接子元素全是 `<section>`**（间距节奏挂在 `main > section > * + *` 上，
   不包 section 的内容拿不到任何块间距，整页会挤成一团 —— 这条是 ERROR）。
 - **渲染级**：装了 Chrome/Chromium 就在 500px 与 1280px 下实际渲染，检出横向溢出并点名越界元素。
@@ -194,11 +196,11 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 
 **每个 ERROR 都必须修**；每个 WARN 都要逐条判断，不能一眼带过。
 
-用户明确要求换视觉风格时加 `--style nova|maia|lyra|mira|luma|sera|rhea`，默认 `vega`。
+旧的 `--style` 已移除。要改变视觉方向时统一修改 `assets/show-me.css` 和视觉系统文档，不在单页上叠第二套主题。
 
 **眼睛关** —— 脚本只测几何，读得通不通它不知道：
 
-- 在浏览器里打开，**两种主题都切一遍**。深色下看不清的地方通常是写死了颜色。
+- 在浏览器里打开，**light / dark / system 三种模式都切一遍**。深色下看不清的地方通常是写死了颜色；system 要跟随系统变化。
 - 数一下色调（`data-tone`）用了几种：超过 4 种就分不出组，一种也没用到就检查是不是漏了分类。
 - 每张 SVG 图对照 `diagrams.md` 过一遍：没有斜线、每个标签垫了遮罩且与线有可见间隙、
   交叉处有桥、焦点色节点 ≤2、节点总数 ≤9。图例在图下方横排，不浮在绘图区里。
@@ -223,12 +225,9 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 
 JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 
-**完成判据**：`build.py` 返回 0；两种主题、两种宽度都亲眼看过；Markdown 导出结果贴出来验证过一次。
+**完成判据**：`build.py` 返回 0；light / dark / system、500 / 1280px 和 390px 人工视图都看过；键盘焦点、reduced motion、打印与 Markdown 导出各验证一次。
 
-**已知缺口**：没有自动的对比度检查。骨架调色板里的每一对前景/背景都在两种主题下实测过（最低 4.6:1），
-组件自身的对比度由 basecoat 保证，`build.py` 会对写死的颜色报 WARN ——
-但页面自己搭出来的颜色组合（色调面上再叠一层、自绘 SVG 的填充色）仍然只能靠眼睛关拦。
-截图可以用已装的 `ego-browser` skill。
+**已知缺口**：没有自动的对比度检查。自有 token 的前景/背景组合在 component-state fixture 中统一维护，`build.py` 会对写死的颜色报 WARN；页面自己搭出来的颜色组合（色调面上再叠一层、自绘 SVG 的填充色）仍然需要人工检查。截图可以用已装的 `ego-browser` skill。
 
 ## 第 6 步 · 交付
 
@@ -257,14 +256,15 @@ JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 ## 文件清单
 
 - `assets/shell.html` — 页面骨架（含右侧目录）。每次都从它起手，不要从零手写 `<head>`。
-- `references/components.md` — basecoat 组件词表与精确 markup、设计 token。**写 markup 前必读。**
-- `references/layouts.md` — 20 条配方的章节顺序与组件选择。读选中的那一条。
+- `assets/show-me.css` — 自有 token、主题、组件状态、配方几何、打印和 reduced motion，由 `build.py` 内联。
+- `references/visual-system.md` — 视觉所有权、状态和配方家族约束。**合成前必读。**
+- `references/components.md` — 精确 markup、ARIA / `data-*` 契约与设计 token。**写 markup 前必读。**
+- `references/layouts.md` — 20 条配方的章节顺序、五项视觉契约与组件选择。读选中的那一条。
 - `references/interactions.md` — 拖拽、键盘翻页、旋钮联动、可点 SVG 等现成代码。加交互时读。
 - `references/diagrams.md` — SVG 图的类型路由、连线六规则、节点语义处理、复杂度预算、无障碍契约。**画任何图前必读。**
 - `references/anti-patterns.md` — 页面层与骨架层反模式名册。自检时对照，新失败在这里登记。
 - `MAINTENANCE.md` — 维护规则：纠正路由、毕业规则、版本对齐。**修改本 skill 任何文件前必读，不进页面生成路径。**
 - `scripts/build.py` — 合成（内联 CSS/图标/JS/语法高亮）+ 自检（`--open` 自检通过后用默认浏览器打开）。每次输出都要跑。
 - `scenarios/` — 冻结场景集（五个场景 + 轮次流程）。改骨架或检查后按它跑回归，见 `MAINTENANCE.md` 联动规则。
-- `assets/vendor/` — basecoat CSS（8 套风格包）、basecoat JS、lucide sprite、
-  语法高亮（`shj/`，@speed-highlight/core，CC0）。
+- `assets/vendor/` — basecoat 行为 JS、lucide sprite、语法高亮（`shj/`，@speed-highlight/core，CC0）。
   **不要把这些文件读进上下文**，全部由 `build.py` 拼接。

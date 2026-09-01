@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipe matrix</title>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="design-system-ref">
+    <header class="page-chrome" data-md-skip>
+      <button type="button" class="btn" data-copy-md>复制为 Markdown</button>
+      <div class="button-group" role="group" aria-label="主题">
+        <button type="button" class="btn" data-theme-set="light">浅色</button>
+        <button type="button" class="btn" data-theme-set="system">系统</button>
+        <button type="button" class="btn" data-theme-set="dark">深色</button>
+      </div>
+    </header>
+    <main id="doc">
+      <section>
+        <h1>20 个配方</h1>
+        <div class="recipe-matrix">
+          <article data-recipe="approach-compare">
+            <h2>方案比较</h2>
+            <div class="recipe-stage">
+              <p>比较矩阵</p>
+              <strong>建议</strong>
+            </div>
+          </article>
+          <article data-recipe="visual-directions">
+            <h2>视觉方向</h2>
+            <div class="recipe-stage">
+              <p>样板区</p>
+              <small>理由</small>
+            </div>
+          </article>
+          <article data-recipe="code-review">
+            <h2>代码评审</h2>
+            <div class="recipe-stage">
+              <code>+ diff</code>
+              <aside>风险</aside>
+            </div>
+          </article>
+          <article data-recipe="pr-writeup">
+            <h2>PR 说明</h2>
+            <div class="recipe-stage">
+              <p>为什么</p>
+              <ol>
+                <li>阅读顺序</li>
+              </ol>
+            </div>
+          </article>
+          <article data-recipe="code-understanding">
+            <h2>代码理解</h2>
+            <div class="recipe-stage">
+              <ol>
+                <li>执行路径</li>
+              </ol>
+              <aside>关键文件</aside>
+            </div>
+          </article>
+          <article data-recipe="design-system-ref">
+            <h2>设计系统</h2>
+            <div class="recipe-stage">
+              <span class="swatch"></span><button class="btn">组件</button>
+            </div>
+          </article>
+          <article data-recipe="component-variants">
+            <h2>组件变体</h2>
+            <div class="recipe-stage">
+              <div class="control-rail">控制</div>
+              <div class="specimen">样板</div>
+            </div>
+          </article>
+          <article data-recipe="animation-proto">
+            <h2>动画原型</h2>
+            <div class="recipe-stage">
+              <div class="motion-stage">舞台</div>
+              <div class="timeline">时间轴</div>
+            </div>
+          </article>
+          <article data-recipe="interaction-proto">
+            <h2>交互原型</h2>
+            <div class="recipe-stage">
+              <div class="workbench">工作台</div>
+              <aside>观察</aside>
+            </div>
+          </article>
+          <article data-recipe="status-report">
+            <h2>状态报告</h2>
+            <div class="recipe-stage">
+              <div class="metric-band">指标</div>
+              <p>进展</p>
+            </div>
+          </article>
+          <article data-recipe="incident-report">
+            <h2>故障报告</h2>
+            <div class="recipe-stage">
+              <ol class="timeline">
+                <li>时间线</li>
+              </ol>
+              <strong>行动项</strong>
+            </div>
+          </article>
+          <article data-recipe="implementation-plan">
+            <h2>实施计划</h2>
+            <div class="recipe-stage">
+              <ol class="milestones">
+                <li>里程碑</li>
+              </ol>
+              <aside>风险</aside>
+            </div>
+          </article>
+          <article data-recipe="slide-deck">
+            <h2>幻灯片</h2>
+            <div class="recipe-stage">
+              <div class="slide">01</div>
+              <div class="slide">02</div>
+            </div>
+          </article>
+          <article data-recipe="flowchart">
+            <h2>流程图</h2>
+            <div class="recipe-stage">
+              <div class="diagram-canvas">节点 → 节点</div>
+              <aside>节点详情</aside>
+            </div>
+          </article>
+          <article data-recipe="svg-illustrations">
+            <h2>SVG 图组</h2>
+            <div class="recipe-stage">
+              <figure>
+                <svg
+                  role="img"
+                  aria-labelledby="fixture-svg-title fixture-svg-desc"
+                  viewBox="0 0 10 10"
+                >
+                  <title id="fixture-svg-title">方形示例</title>
+                  <desc id="fixture-svg-desc">
+                    一个居中的方形，用于验证图版布局。
+                  </desc>
+                  <rect x="1" y="1" width="8" height="8" />
+                </svg>
+                <figcaption>图版</figcaption>
+              </figure>
+            </div>
+          </article>
+          <article data-recipe="feature-explainer">
+            <h2>功能解释</h2>
+            <div class="recipe-stage">
+              <ol>
+                <li>请求路径</li>
+              </ol>
+              <details>
+                <summary>配置</summary>
+                <p>示例</p>
+              </details>
+            </div>
+          </article>
+          <article data-recipe="concept-explainer">
+            <h2>概念解释</h2>
+            <div class="recipe-stage">
+              <div class="model-lab">模型实验台</div>
+              <aside>术语</aside>
+            </div>
+          </article>
+          <article data-recipe="triage-board">
+            <h2>分拣看板</h2>
+            <div class="recipe-stage">
+              <div class="lane">待办</div>
+              <div class="lane">进行中</div>
+            </div>
+          </article>
+          <article data-recipe="config-editor">
+            <h2>配置编辑器</h2>
+            <div class="recipe-stage">
+              <form>
+                <label>开关 <input type="checkbox" /></label>
+              </form>
+              <aside>变更</aside>
+            </div>
+          </article>
+          <article data-recipe="text-tuner">
+            <h2>文本调优</h2>
+            <div class="recipe-stage">
+              <div class="editor" contenteditable="true">编辑</div>
+              <aside>预览</aside>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <!--SHOW-ME:JS-->
+  </body>
+</html>

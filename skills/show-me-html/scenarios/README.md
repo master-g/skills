@@ -1,7 +1,7 @@
 # 冻结场景集 — show-me-html 评测环
 
 方法出处：Vercel《How our agents build on-brand pages with design.md》(2026-08-31)。
-七个提示词冻结成场景，指引是轮次之间唯一变化的东西 —— 输出的任何差异都能追溯到指引。
+五个提示词冻结成场景，指引是轮次之间唯一变化的东西，输出的任何差异都能追溯到指引。
 
 本目录是同一机制的最小版：**五个场景 + 一套轮次流程**。不需要模型评委、
 不需要盲评工具，从「一个交付物 + 一次人工对比」起步。
@@ -18,17 +18,15 @@
 
 ## 轮次流程
 
-改 `assets/shell.html` 或 `scripts/build.py` 之后（MAINTENANCE.md 联动规则）：
+改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 之后（MAINTENANCE.md 联动规则）：
 
 1. 记下当前 git 短 SHA：`git rev-parse --short HEAD`。
 2. 让任一 agent 读本目录选中的场景文件，按其冻结材料生成页面，输出到
    `rounds/<日期>-<SHA>/<场景名>.html`（`rounds/` 不进 git，仅本地对比用）。
-3. 每页跑 `python3 scripts/build.py <页面>`，ERROR 必须为零。
-4. 与上一轮同名页面对比：结构、两套主题、名册三条自查（见 `references/anti-patterns.md`）。
-5. 差异只能来自骨架 / 检查 / 指引的改动 —— 若不是，先怀疑场景材料被改过。
-
-最小替代：时间紧时至少跑 `status-report` + `concept-explainer` 两个
-（一个验只读排版，一个验 JS 交互与模型函数）。
+3. 每页跑 `python3 scripts/build.py <页面>`，ERROR 和未处置 WARN 都必须为零。
+4. 验证 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。
+5. 与上一轮同名页面对比：结构、无颜色时的几何指纹和名册自查（见 `references/anti-patterns.md`）。
+6. 差异只能来自视觉系统 / 骨架 / 检查 / 指引的改动；若不是，先检查场景材料是否漂移。
 
 ## 场景文件契约
 

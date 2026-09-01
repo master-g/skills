@@ -1,8 +1,8 @@
 # 交互配方
 
-basecoat 覆盖不到的交互，代码在这里。**照抄，不要重写** —— 这些都已经处理过键盘可达性与边界情况。
+自有组件层覆盖不到的交互，代码在这里。**照抄，不要重写**，这些实现已经处理键盘路径与边界情况。
 
-组件自身的交互（标签页、下拉菜单、对话框、折叠）由 basecoat 或浏览器原生提供，见 `components.md`。
+标签页、下拉菜单继续使用保留的 basecoat JS；对话框、折叠和普通控件使用浏览器原生能力。外观都来自 `assets/show-me.css`，见 `components.md`。
 
 共同约束：
 
@@ -575,14 +575,9 @@ tiers.forEach((el, k) => {
 
 ## 滑块与其它原生控件
 
-**滑块的样式由骨架给，页面不要自己写，也不要靠 basecoat。**
-basecoat 只覆盖 `.field > input[type=range]` 与 `.input[type=range]` 两种包裹；
-页面自造一个 `.knob` 之类的壳把滑块包进去，两个都不命中，滑块就退回操作系统外观 ——
-macOS 上是一条亮蓝色粗轨道，跟任何调色板都不搭。**它不报错，只是难看。**
+**滑块的外观由 `show-me.css` 统一提供，页面不要自己重写。** 自有 CSS 同时覆盖裸 `input[type=range]`、`.field` 和 `.input` 包裹；`build.py` 有一道 WARN 防止裸控件样式被误删。
 
-骨架连裸 `input[type=range]` 一起兜住了，所以随便怎么包都对；`build.py` 有一道 WARN
-守着那段样式别被删掉。轨道的已填充部分由 `--slider-value` 驱动，骨架自带一段事件委托
-在同步它 —— 不要指望 basecoat JS，那份 JS 只有页面用到 tabs / dropdown 时才会被内联。
+轨道的已填充部分由 `--slider-value` 驱动，骨架的事件委托负责同步；这与 basecoat JS 是否内联无关。
 
 旋钮的标签这样写，值靠右、等宽、随拖动实时更新：
 
@@ -675,22 +670,9 @@ macOS 上是一条亮蓝色粗轨道，跟任何调色板都不搭。**它不报
 ```
 
 ```js
-/* ── 缓动。与骨架的 --ease-expo / --ease-spring 是同一条曲线 ── */
+/* ── 缓动。与视觉系统的 --ease-expo 同形；数字反馈不使用过冲。 ── */
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const EASE = {
-  expo: (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-  spring: (t) => {
-    const z = 0.72,
-      w = 2 * Math.PI * 1.7,
-      wd = w * Math.sqrt(1 - z * z);
-    if (t >= 1) return 1;
-    return (
-      1 -
-      Math.exp(-z * w * t) *
-        (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t))
-    );
-  },
-};
+const EASE = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
 /* ── 数字滚动（odometer）───────────────────────────────────────────────
    做法借自 Calligraph 的 Slots（React + Motion），这里是原生实现。三个关键决定：
@@ -710,7 +692,7 @@ const EASE = {
 function odometer(el, format, opts = {}) {
   const dur = REDUCE ? 0 : (opts.duration ?? 420);
   const stag = REDUCE ? 0 : (opts.stagger ?? 18);
-  const ease = EASE[opts.ease || "spring"];
+  const ease = EASE;
   const isDigit = (c) => c >= "0" && c <= "9";
 
   el.classList.add("odo");
@@ -863,15 +845,14 @@ function odometer(el, format, opts = {}) {
 
 ## 缓动
 
-骨架给了两条，`--ease-expo` 与 `--ease-spring`，**别再造第三条**。
+视觉系统给了两条，`--ease-expo` 与 `--ease-physical`，**别再造第三条**。
 
-| token           | 曲线                                             | 用在哪                   |
-| --------------- | ------------------------------------------------ | ------------------------ |
-| `--ease-expo`   | `cubic-bezier(0.19, 1, 0.22, 1)`                 | 位移、淡入淡出、折叠展开 |
-| `--ease-spring` | ζ=0.72 的阻尼弹簧采样成 `linear()`，约 3.8% 过冲 | 数字、尺寸、拖拽落位     |
+| token             | 曲线                             | 用在哪                       |
+| ----------------- | -------------------------------- | ---------------------------- |
+| `--ease-expo`     | `cubic-bezier(0.19, 1, 0.22, 1)` | 位移、淡入淡出、折叠、数字   |
+| `--ease-physical` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | 只用于拖拽释放等物理状态反馈 |
 
-JS 里要一样的手感就用上面 odometer 代码里的 `EASE.expo` / `EASE.spring` ——
-两边是同一条曲线，CSS 动的元素和 JS 动的数字才不会各走各的。
+JS 数字动效使用上面 odometer 代码里的 `EASE`，它与 `--ease-expo` 同形。普通阅读反馈不使用过冲；拖拽释放才消费 `--ease-physical`。
 
 时长：位移与淡入 180–260 ms，数字滚动 400–450 ms，页面级揭示 ≤ 600 ms。
 超过 600 ms 的动效读者会开始等它，那就成了负担。
@@ -917,13 +898,23 @@ svg .node[aria-pressed="true"] rect {
 ```
 
 ```js
-const DETAIL = { ingress: "<h3>ingress</h3><p>TLS 终止与路由。</p>" /* … */ };
+const DETAIL = {
+  ingress: { title: "ingress", body: "TLS 终止与路由。" },
+  // …
+};
 const pick = (g) => {
   document
     .querySelectorAll("svg .node")
     .forEach((n) => n.setAttribute("aria-pressed", String(n === g)));
-  document.getElementById("node-detail").innerHTML =
-    DETAIL[g.dataset.node] || "";
+  const detail = document.getElementById("node-detail");
+  const value = DETAIL[g.dataset.node];
+  detail.replaceChildren();
+  if (!value) return;
+  const title = document.createElement("h3");
+  const body = document.createElement("p");
+  title.textContent = value.title;
+  body.textContent = value.body;
+  detail.append(title, body);
 };
 document.querySelectorAll("svg .node").forEach((g) => {
   g.addEventListener("click", () => pick(g));
@@ -969,10 +960,9 @@ document.querySelectorAll("pre").forEach((pre) => {
   const b = document.createElement("button");
   b.className = "btn";
   b.dataset.variant = "ghost";
-  b.dataset.size = "icon-sm";
-  b.setAttribute("aria-label", "复制代码");
+  b.dataset.size = "sm";
   b.dataset.mdSkip = "";
-  b.innerHTML = '<i data-lucide="copy"></i>';
+  b.textContent = "复制代码";
   b.onclick = () => {
     navigator.clipboard.writeText(pre.textContent);
     b.dataset.variant = "secondary";
@@ -980,9 +970,8 @@ document.querySelectorAll("pre").forEach((pre) => {
   };
   pre.style.position = "relative";
   b.style.cssText = "position:absolute;top:.5rem;right:.5rem";
-  pre.appendChild(b);
+  pre.append(b);
 });
 ```
 
-注意：这段代码在 `build.py` 跑完之后**不会**再被处理，`<i data-lucide>` 是运行时插入的，替换不到。
-需要图标时直接把 SVG 源码写进 `innerHTML`，或者改用文字标签。
+运行时创建的节点不会再经过 `build.py`。因此这里使用文字标签，不要把生成内容写进 `innerHTML`。

@@ -1,18 +1,17 @@
 # 组件词表
 
-basecoat（shadcn/ui 设计语言的框架无关实现）的组件全部由 `assets/vendor/basecoat.min.css` 提供。
-写 markup 前读本文；**不要自己实现按钮、卡片、徽章、表格的外观** —— 它们已经在两套主题下调好了对比度。
+组件外观由 `assets/show-me.css` 统一提供。写 markup 前读本文；**不要在单页里重做按钮、卡片、徽章或表格的外观**，否则主题、焦点状态和打印会分叉。
 
 三条规则：
 
-1. **语义 HTML 优先。** basecoat 靠元素结构选中子元素（`.card > header > h2`），不是靠子类名。结构写错，样式就不生效。
+1. **语义 HTML 优先。** 自有 CSS 靠元素结构选中子元素（`.card > header > h2`），不是靠一串内部子类名。结构写错，样式就不生效。
 2. **变体走 `data-` 属性**，不是 class：`.btn[data-variant]`、`.btn[data-size]`、`.badge[data-variant]`、`.alert[data-variant]`、`.card[data-size]`。
-3. **basecoat 不带 Tailwind 工具类。** 布局（栅格、间距、宽度）写在页面自己的 `<style>` 里，用 `var(--color-border)`、`var(--radius)` 等 token 取值。
+3. **没有 Tailwind 工具类。** 布局使用配方规定的结构类；少量页面级几何可以写在自己的 `<style>` 里，只能取 `var(--color-border)`、`var(--radius)` 等 token。
 
 ## 需要 JS 的组件只有两个
 
 `tabs` 和 `dropdown-menu`（以及少用的 `popover` / `combobox` / `command` / `sidebar` / `drawer` / `chart`）。
-`build.py` 检测到这些 class 时会自动内联 basecoat JS。其余组件全是纯 CSS 或浏览器原生能力。
+`build.py` 检测到这些 class 时会自动内联保留的 basecoat JS。其余组件使用自有 CSS 和浏览器原生能力。
 
 ---
 
@@ -39,7 +38,7 @@ basecoat（shadcn/ui 设计语言的框架无关实现）的组件全部由 `ass
 </button>
 ```
 
-图标写 `<i data-lucide="图标名"></i>`，`build.py` 会替换成内联 SVG。按钮内的图标尺寸由 basecoat 管，不要自己加尺寸。
+图标写 `<i data-lucide="图标名"></i>`，`build.py` 会替换成内联 SVG。按钮内的图标尺寸由自有组件层统一管理，不要自己加尺寸。
 
 **按钮组**（相邻按钮拼成一条）：
 
@@ -373,21 +372,20 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 
 ## 设计 token
 
-主题色全部是 CSS 变量，写自定义样式时用它们，不要写死颜色 —— 写死的颜色在深色主题下必然出错。
-色值来自 `anthropic.design.md`：ink `#141413` 配 canvas `#faf9f5`，主色是 clay `#d97757`。
+主题色全部是 CSS 变量。写自定义样式时用 token，不要写死颜色，写死的颜色在深色主题下不会跟着切换。当前方向是暖灰纸面、深蓝墨色和钴蓝主强调；页面只消费语义角色，不依赖具体色值。
 
-| token                                               | 用途                                |
-| --------------------------------------------------- | ----------------------------------- |
-| `--color-background` / `--color-foreground`         | 页面底色 / 正文色                   |
-| `--color-card` / `--color-card-foreground`          | 卡片面（比页面底深一步，不用阴影）  |
-| `--color-muted` / `--color-muted-foreground`        | 弱化底色 / 次要文字                 |
-| `--color-primary` / `--color-primary-foreground`    | 主色 clay（主按钮、进度条、焦点环） |
-| `--color-secondary` / `--color-accent`              | 次要面 / 悬停面                     |
-| `--color-destructive`                               | 危险、失败、删除                    |
-| `--color-border` / `--color-input` / `--color-ring` | 描边 / 输入框边 / 焦点环            |
-| `--chart-1` … `--chart-5`                           | 图表序列色，浅色与深色各一组        |
-| `--radius`                                          | 圆角基准                            |
-| `--font-sans` / `--font-serif` / `--font-mono`      | 字体栈（骨架里已加中文回退）        |
+| token                                               | 用途                             |
+| --------------------------------------------------- | -------------------------------- |
+| `--color-background` / `--color-foreground`         | 页面底色 / 正文色                |
+| `--color-card` / `--color-card-foreground`          | 抬升面 / 其上文字                |
+| `--color-muted` / `--color-muted-foreground`        | 弱化底色 / 次要文字              |
+| `--color-primary` / `--color-primary-foreground`    | 主强调（主按钮、进度条、焦点环） |
+| `--color-secondary` / `--color-accent`              | 次要面 / 悬停面                  |
+| `--color-destructive`                               | 危险、失败、删除                 |
+| `--color-border` / `--color-input` / `--color-ring` | 描边 / 输入框边 / 焦点环         |
+| `--chart-1` … `--chart-5`                           | 图表序列色，浅色与深色各一组     |
+| `--radius`                                          | 圆角基准                         |
+| `--font-sans` / `--font-serif` / `--font-mono`      | 字体栈（骨架里已加中文回退）     |
 
 图表色写 `var(--chart-1)`，**没有** `--color-chart-1` 这个名字。
 
@@ -395,18 +393,18 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 
 三个栈已经调好，**不要在页面里重写 `--font-*`**，也不要动骨架 `<head>` 里的字体 `<link>`。
 
-| token          | 网络字体                     | 兜底                               |
-| -------------- | ---------------------------- | ---------------------------------- |
-| `--font-sans`  | 无（不值一次请求）           | system-ui → PingFang SC / 微软雅黑 |
-| `--font-serif` | Merriweather + Noto Serif SC | Georgia → 思源宋体 → Songti SC     |
-| `--font-mono`  | JetBrains Mono               | ui-monospace → SF Mono → Menlo     |
+| token          | 网络字体                   | 兜底                               |
+| -------------- | -------------------------- | ---------------------------------- |
+| `--font-sans`  | IBM Plex Sans              | system-ui → PingFang SC / 微软雅黑 |
+| `--font-serif` | Newsreader + Noto Serif SC | Georgia → 思源宋体 → Songti SC     |
+| `--font-mono`  | IBM Plex Mono              | ui-monospace → SF Mono → Menlo     |
 
 **这是本 skill 唯一放行的外部资源。** 骨架用 `media="print" onload="this.media='all'"`
 异步加载 —— `fonts.googleapis.com` 在部分网络下不可达（**中国大陆整体不可达**），
 同步 `<link>` 会把首屏卡在请求超时上。异步写法下首屏立刻用兜底字体渲染，字体取到了再换。
 取不到时页面完全正常，只是落到系统字体。
 
-**中西配平不靠技巧，靠少要一个字重。** 思源宋体的笔画比 Merriweather 细，同一
+**中西配平不靠技巧，靠少要一个字重。** 思源宋体的笔画比 Newsreader 细，同一
 `font-weight` 下并排会显得虚。骨架向 Google 请求 Noto Serif SC 时**只要 500 和 700，
 不要 400**：正文请求 400 时 CSS 的字体匹配会挑最近的可用面，于是落到 500，中文自动重一档。
 `h3` 的 600 同理落到 700 —— 是真字重，不是合成粗体。
@@ -435,8 +433,6 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
   自绘的统计数字要对齐时自己加这一条。
 - `body` 开了 `optimizeLegibility` 与灰度抗锯齿。
 
-## 风格包
+## 单一视觉层
 
-默认 `vega`（即 shadcn 默认观感）。用户明确要求换风格时，`build.py --style <名字>`：
-`nova` / `maia` / `lyra` / `mira` / `luma` / `sera`（直角，零圆角）/ `rhea`。
-class 名与 markup 完全一致，只换视觉。
+`show-me-html` 不再提供 `--style` 风格包。所有页面使用同一套 token、主题和组件状态；20 个配方通过几何、证据载体和交互方式区分。需要改变视觉方向时改 `assets/show-me.css` 与本文，不要在单页上叠一套主题。

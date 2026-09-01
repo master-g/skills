@@ -1,3 +1,9 @@
+# Basecoat license and retained scope
+
+`show-me-html` distributes Basecoat 1.0.2 only as the conditional JavaScript behavior layer for components such as tabs and dropdown menus. Component appearance is owned by `assets/show-me.css`; Basecoat CSS and style packs are not distributed by this skill.
+
+The retained JavaScript remains covered by the following license.
+
 MIT License
 
 Copyright (c) 2025 Ronan Berder
