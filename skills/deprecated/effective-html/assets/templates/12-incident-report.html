@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="effective-html-family" content="incident-report" />
+    <title>INC-0412 — Elevated 502s on task sync</title>
+    <style>
+      :root {
+        --canvas: #faf9f5;
+        --surface-card: #efe9de;
+        --surface-dark: #181715;
+        --coral: #cc785c;
+        --ink: #252320;
+        --muted: #6c6963;
+        --line: #d8d1c6;
+        --paper: #fffdf8;
+        --sage: #68765c;
+        --serif: ui-serif, Georgia, "Times New Roman", serif;
+        --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.62;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      .page {
+        width: min(1080px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 28px 0 90px;
+      }
+      .masthead {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font: 700 11px/1.3 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .incident-state {
+        display: grid;
+        grid-template-columns: 12px minmax(0, 1.35fr) minmax(260px, 0.55fr);
+        gap: 30px;
+        margin: 44px 0 60px;
+      }
+      .severity-rail {
+        background: var(--coral);
+      }
+      .kicker,
+      .section-label {
+        font: 700 11px/1.3 var(--mono);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--coral);
+      }
+      h1 {
+        max-width: 760px;
+        margin: 11px 0 18px;
+        font: 500 clamp(44px, 6.3vw, 72px)/0.98 var(--serif);
+        letter-spacing: -0.045em;
+      }
+      .state-copy {
+        max-width: 730px;
+        margin: 0;
+        font-size: 18px;
+        color: #4c4943;
+      }
+      .state-card {
+        padding: 22px;
+        background: var(--surface-dark);
+        color: #eee8df;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .state-card span {
+        font: 700 10px/1.4 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #aca69c;
+      }
+      .state-card strong {
+        display: block;
+        margin: 26px 0 9px;
+        font: 500 34px/1.05 var(--serif);
+        color: #fff;
+      }
+      .state-card p {
+        margin: 0;
+        font-size: 13px;
+        color: #cfc8be;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        margin-bottom: 66px;
+        border-top: 1px solid var(--ink);
+        border-bottom: 1px solid var(--line);
+      }
+      .fact {
+        padding: 17px 18px 18px 0;
+      }
+      .fact + .fact {
+        padding-left: 18px;
+        border-left: 1px solid var(--line);
+      }
+      .fact span {
+        display: block;
+        font: 10px/1.4 var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .fact strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 14px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 210px;
+        gap: 58px;
+      }
+      nav {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        padding-left: 18px;
+        border-left: 1px solid var(--line);
+      }
+      nav b {
+        display: block;
+        margin-bottom: 9px;
+        font: 700 10px/1.3 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      nav a {
+        display: block;
+        padding: 5px 0;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+      }
+      nav a:hover {
+        color: var(--coral);
+      }
+      section {
+        margin-bottom: 72px;
+        scroll-margin-top: 24px;
+      }
+      h2 {
+        margin: 8px 0 18px;
+        font: 500 36px/1.08 var(--serif);
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        max-width: 730px;
+        margin: 0 0 24px;
+        color: #504c46;
+        font-size: 16px;
+      }
+      .timeline {
+        position: relative;
+        border-top: 1px solid var(--ink);
+      }
+      .event {
+        display: grid;
+        grid-template-columns: 90px 20px minmax(0, 1fr);
+        gap: 14px;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+        align-items: start;
+      }
+      .time {
+        font: 12px/1.5 var(--mono);
+        color: var(--muted);
+      }
+      .dot {
+        width: 11px;
+        height: 11px;
+        margin-top: 4px;
+        border: 2px solid var(--canvas);
+        outline: 1px solid var(--line);
+        background: var(--muted);
+        border-radius: 50%;
+      }
+      .event.impact .dot {
+        background: var(--coral);
+        outline-color: var(--coral);
+      }
+      .event.mitigated .dot {
+        background: var(--sage);
+        outline-color: var(--sage);
+      }
+      .event p {
+        margin: 0;
+        font-size: 14px;
+      }
+      .event p span {
+        color: var(--muted);
+      }
+      .causal-chain {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: var(--surface-dark);
+        color: #eee8df;
+      }
+      .cause {
+        position: relative;
+        min-height: 210px;
+        padding: 22px;
+      }
+      .cause + .cause {
+        border-left: 1px solid #3d3934;
+      }
+      .cause + .cause::before {
+        content: "→";
+        position: absolute;
+        left: -9px;
+        top: 22px;
+        width: 18px;
+        background: var(--surface-dark);
+        color: #db8b72;
+        text-align: center;
+      }
+      .cause .n {
+        font: 11px/1.4 var(--mono);
+        color: #db8b72;
+      }
+      .cause h3 {
+        margin: 34px 0 9px;
+        font: 500 21px/1.15 var(--serif);
+        color: #fff;
+      }
+      .cause p {
+        margin: 0;
+        font-size: 13px;
+        color: #bcb5aa;
+      }
+      .config-evidence {
+        margin-top: 20px;
+        padding: 20px;
+        overflow-x: auto;
+        background: var(--surface-card);
+      }
+      pre {
+        margin: 0;
+        font: 12px/1.7 var(--mono);
+        color: #3e3a35;
+      }
+      .bad {
+        color: #9d4b38;
+      }
+      .good {
+        color: var(--sage);
+      }
+      .impact-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        border: 1px solid var(--line);
+      }
+      .impact-copy {
+        padding: 28px;
+        background: var(--paper);
+      }
+      .impact-copy strong {
+        display: block;
+        font: 500 28px/1.12 var(--serif);
+      }
+      .impact-copy p {
+        margin: 15px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .metrics {
+        padding: 18px 26px;
+        background: var(--surface-card);
+      }
+      .metric {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 11px 0;
+        border-bottom: 1px solid #cbc2b5;
+        font-size: 13px;
+      }
+      .metric:last-child {
+        border-bottom: 0;
+      }
+      .metric span {
+        color: var(--muted);
+      }
+      .metric b {
+        font-family: var(--mono);
+      }
+      .prevention-work {
+        border-top: 1px solid var(--ink);
+      }
+      .work {
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr) 150px 96px;
+        gap: 18px;
+        padding: 19px 0;
+        border-bottom: 1px solid var(--line);
+        align-items: baseline;
+      }
+      .work-state {
+        font: 700 10px/1.4 var(--mono);
+        color: var(--coral);
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .work strong {
+        font-size: 14px;
+      }
+      .work .owner,
+      .work .due {
+        font: 12px/1.45 var(--mono);
+        color: var(--muted);
+      }
+      footer {
+        margin-top: 70px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font: 11px/1.5 var(--mono);
+      }
+      @media (max-width: 860px) {
+        .page {
+          width: min(100% - 32px, 720px);
+        }
+        .incident-state {
+          grid-template-columns: 8px 1fr;
+        }
+        .state-card {
+          grid-column: 2;
+          min-height: 170px;
+        }
+        .facts {
+          grid-template-columns: 1fr 1fr;
+        }
+        .fact:nth-child(3) {
+          border-left: 0;
+        }
+        .fact:nth-child(n + 3) {
+          border-top: 1px solid var(--line);
+        }
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          display: none;
+        }
+        .causal-chain {
+          grid-template-columns: 1fr 1fr;
+        }
+        .cause:nth-child(3) {
+          border-left: 0;
+          border-top: 1px solid #3d3934;
+        }
+        .cause:nth-child(4) {
+          border-top: 1px solid #3d3934;
+        }
+        .impact-grid {
+          grid-template-columns: 1fr;
+        }
+        .work {
+          grid-template-columns: 92px 1fr;
+        }
+        .work .owner,
+        .work .due {
+          grid-column: 2;
+        }
+      }
+      @media (max-width: 560px) {
+        .page {
+          width: calc(100% - 24px);
+          padding-top: 18px;
+        }
+        .masthead {
+          flex-direction: column;
+          gap: 5px;
+        }
+        .incident-state {
+          margin: 34px 0 42px;
+          gap: 16px;
+        }
+        h1 {
+          font-size: 44px;
+        }
+        .facts {
+          grid-template-columns: 1fr;
+        }
+        .fact + .fact {
+          padding-left: 0;
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+        .fact:nth-child(3) {
+          border-top: 1px solid var(--line);
+        }
+        .event {
+          grid-template-columns: 70px 16px 1fr;
+          gap: 9px;
+        }
+        .causal-chain {
+          grid-template-columns: 1fr;
+        }
+        .cause + .cause {
+          border-left: 0;
+          border-top: 1px solid #3d3934;
+        }
+        .cause + .cause::before {
+          left: 18px;
+          top: -10px;
+          transform: rotate(90deg);
+        }
+        .work {
+          grid-template-columns: 1fr;
+          gap: 7px;
+        }
+        .work .owner,
+        .work .due {
+          grid-column: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="masthead">
+        <span>Incident report · INC-0412</span>
+        <span>SEV-2 · April 12 · Final</span>
+      </div>
+
+      <header class="incident-state">
+        <div class="severity-rail" aria-hidden="true"></div>
+        <div>
+          <div class="kicker">Incident state</div>
+          <h1>Task sync recovered after a 47-minute connection shortage.</h1>
+          <p class="state-copy">
+            A worker configuration reduced the database pool from 64 connections
+            to 8. Normal load exhausted the smaller pool, producing elevated
+            latency and 502 responses. Reverting the configuration restored
+            service; no stored data was lost.
+          </p>
+        </div>
+        <aside class="state-card">
+          <span>Current state</span>
+          <strong>Resolved</strong>
+          <p>
+            Error rate returned below 0.2% at 14:47 and remained stable through
+            the observation window.
+          </p>
+        </aside>
+      </header>
+
+      <div class="facts" aria-label="Incident facts">
+        <div class="fact">
+          <span>Impact started</span><strong>14:06</strong>
+        </div>
+        <div class="fact">
+          <span>Detected</span><strong>14:07 · alert</strong>
+        </div>
+        <div class="fact">
+          <span>Mitigated</span><strong>14:44 · revert</strong>
+        </div>
+        <div class="fact">
+          <span>Data loss</span><strong>None observed</strong>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div>
+          <section id="timeline">
+            <div class="section-label">01 · Chronology</div>
+            <h2>What happened, in observed order.</h2>
+            <div class="timeline">
+              <div class="event">
+                <span class="time">14:02</span><span class="dot"></span>
+                <p>
+                  <b>Configuration promoted.</b>
+                  <span
+                    >Worker pool settings moved through the standard
+                    configuration pipeline.</span
+                  >
+                </p>
+              </div>
+              <div class="event impact">
+                <span class="time">14:06</span><span class="dot"></span>
+                <p>
+                  <b>Impact begins.</b>
+                  <span
+                    >Pool checkout waits rise; load balancer starts returning
+                    502 responses.</span
+                  >
+                </p>
+              </div>
+              <div class="event">
+                <span class="time">14:07</span><span class="dot"></span>
+                <p>
+                  <b>Alert acknowledged.</b>
+                  <span
+                    ><code>sync_5xx_rate</code> exceeds 2% for one minute.</span
+                  >
+                </p>
+              </div>
+              <div class="event">
+                <span class="time">14:18</span><span class="dot"></span>
+                <p>
+                  <b>Application rollback attempted.</b>
+                  <span>No effect; recent code deploys were not causal.</span>
+                </p>
+              </div>
+              <div class="event">
+                <span class="time">14:31</span><span class="dot"></span>
+                <p>
+                  <b>Pool saturation identified.</b>
+                  <span
+                    >Investigation shifts from application releases to
+                    configuration history.</span
+                  >
+                </p>
+              </div>
+              <div class="event mitigated">
+                <span class="time">14:44</span><span class="dot"></span>
+                <p>
+                  <b>Configuration reverted.</b>
+                  <span
+                    >Worker fleet cycles; errors fall within three
+                    minutes.</span
+                  >
+                </p>
+              </div>
+              <div class="event">
+                <span class="time">14:49</span><span class="dot"></span>
+                <p>
+                  <b>Incident resolved.</b>
+                  <span
+                    >Monitors remain green through the five-minute observation
+                    window.</span
+                  >
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="cause">
+            <div class="section-label">02 · Causal chain</div>
+            <h2>The failure needed four links.</h2>
+            <p class="lede">
+              The bad value was the trigger, not the complete cause. Validation,
+              rollout visibility, and diagnostic defaults allowed it to become a
+              47-minute incident.
+            </p>
+            <div class="causal-chain">
+              <article class="cause">
+                <span class="n">01</span>
+                <h3>Debug value persisted</h3>
+                <p>
+                  A local pool limit of 8 was committed as the tier default.
+                </p>
+              </article>
+              <article class="cause">
+                <span class="n">02</span>
+                <h3>Validation checked type only</h3>
+                <p>
+                  Configuration CI accepted any positive integer, including
+                  unsafe capacity.
+                </p>
+              </article>
+              <article class="cause">
+                <span class="n">03</span>
+                <h3>Full-fleet promotion</h3>
+                <p>
+                  The value reached every worker without an availability canary.
+                </p>
+              </article>
+              <article class="cause">
+                <span class="n">04</span>
+                <h3>Wrong rollback surface</h3>
+                <p>
+                  Deploy history was visible before configuration history,
+                  delaying mitigation.
+                </p>
+              </article>
+            </div>
+            <div class="config-evidence">
+              <pre>pool:
+  global_max_connections: 64
+  tiers:
+<span class="bad">-   sync-worker: { max_connections: 8 }</span>
+<span class="good">+   sync-worker: { max_connections: 64 }</span></pre>
+            </div>
+          </section>
+
+          <section id="impact">
+            <div class="section-label">03 · Impact</div>
+            <h2>Bounded, visible, recoverable.</h2>
+            <div class="impact-grid">
+              <div class="impact-copy">
+                <strong>Users saw failed or delayed sync requests.</strong>
+                <p>
+                  Clients retried safely, so stored tasks remained intact. The
+                  incident consumed service error budget but did not breach the
+                  monthly objective.
+                </p>
+              </div>
+              <div class="metrics">
+                <div class="metric">
+                  <span>Failed requests</span><b>~41,200</b>
+                </div>
+                <div class="metric">
+                  <span>Peak error rate</span><b>21.4%</b>
+                </div>
+                <div class="metric">
+                  <span>Affected workspaces</span><b>~2,300</b>
+                </div>
+                <div class="metric"><span>Duration</span><b>47 min</b></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="prevention">
+            <div class="section-label">04 · Prevention work</div>
+            <h2>Each action cuts one causal link.</h2>
+            <div class="prevention-work">
+              <div class="work">
+                <span class="work-state">Complete</span
+                ><strong>Restore sync-worker pool limit to 64</strong
+                ><span class="owner">Owner · On-call</span
+                ><span class="due">Apr 12</span>
+              </div>
+              <div class="work">
+                <span class="work-state">In progress</span
+                ><strong
+                  >Add safe ranges and inheritance checks to config CI</strong
+                ><span class="owner">Owner · Runtime</span
+                ><span class="due">Apr 18</span>
+              </div>
+              <div class="work">
+                <span class="work-state">Planned</span
+                ><strong>Show recent config rollouts beside code deploys</strong
+                ><span class="owner">Owner · Reliability</span
+                ><span class="due">Apr 25</span>
+              </div>
+              <div class="work">
+                <span class="work-state">Planned</span
+                ><strong
+                  >Canary worker configuration in one zone for 10
+                  minutes</strong
+                ><span class="owner">Owner · Infrastructure</span
+                ><span class="due">May 02</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <nav aria-label="Incident sections">
+          <b>Incident map</b>
+          <a href="#timeline">Chronology</a>
+          <a href="#cause">Causal chain</a>
+          <a href="#impact">Impact</a>
+          <a href="#prevention">Prevention work</a>
+        </nav>
+      </div>
+
+      <footer>
+        Evidence · alert history · configuration diff · worker metrics · on-call
+        notes · final review completed April 15
+      </footer>
+    </main>
+  </body>
+</html>

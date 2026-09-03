@@ -30,7 +30,7 @@ npx skills add master-g/skills --skill '*' -g
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
-- `effective-html`: create self-contained technical HTML artifacts.
+- `effective-html`: **DEPRECATED** — superseded by `show-me-html`; kept under `skills/deprecated/` for reference.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker CLI, with acceptance gates.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
