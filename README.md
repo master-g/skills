@@ -31,6 +31,7 @@ npx skills add master-g/skills --skill '*' -g
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
 - `effective-html`: create self-contained technical HTML artifacts.
+- `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker CLI, with acceptance gates.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
 - `show-me-html`: create self-contained HTML explanations using a shadcn/ui-inspired design language.

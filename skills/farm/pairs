@@ -1,0 +1,8 @@
+# farm pairs: orchestrator = worker
+# orchestrator(host:model)仅用于匹配选择;worker 为 cli:model,cli 支持 pi / claude / codex。
+# pi 的 model 名以 `pi --list-models` 为准(可用 provider/id 或模糊名);claude/codex 用各自原生模型名。
+# `*` 是兜底:任何 orchestrator 无匹配时用。
+# 用户覆盖:整文件复制到 ~/.config/farm/pairs 后编辑,优先级高于本文件。
+claude:fable = pi:glm-5.3
+pi:k3 = pi:glm-5.3-flash
+* = pi:glm-5.3
