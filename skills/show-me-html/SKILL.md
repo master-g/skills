@@ -233,10 +233,11 @@ JavaScript 不平凡时，顺手看一眼浏览器控制台有没有报错。
 
 - 存成描述性的 kebab-case 文件名（`auth-refactor-review.html`，不是 `output.html`），放在工作目录或用户指定处。
 - 汇报三件事：文件路径、先看哪里、还剩哪些 `[DATA NEEDED]` 缺口。
-- 交付时可以提议：`python3 <skill-path>/scripts/build.py 页面.html --open`，
-  自检通过后会用系统默认浏览器打开（macOS `open` / Windows `os.startfile` /
-  Linux·WSL `wslview`→`xdg-open`，自检有错误时不打开）。
-  是否执行由用户决定 —— 生成过程中不要替用户打开。
+- 交付时直接用默认浏览器打开页面：跑 `python3 <skill-path>/scripts/build.py 页面.html --open`。
+  对已合成的文件它只跑自检，自检通过才打开（macOS `open` / Windows `os.startfile` /
+  Linux·WSL `wslview`→`xdg-open`）；有错误时不打开，先修再重跑。
+  不要把这条命令贴给用户去执行 —— 自己跑。用户明说不用打开时才跳过；
+  环境里没有可用浏览器时脚本会明说，这时把文件路径交给用户。
 
 ## 反馈处理
 
