@@ -160,7 +160,7 @@ class ClaudeDocumentLanguageContractTests(unittest.TestCase):
         self.assertIn("#181715", reference.lower())
 
     def test_skill_activates_overlay_only_for_target_templates(self) -> None:
-        skill = (SKILL_ROOT / "SKILL.md").read_text()
+        skill = (SKILL_ROOT / "ARCHIVE.md").read_text()
         match = re.search(
             r"<!-- claude-document-language:start -->(.*?)"
             r"<!-- claude-document-language:end -->",

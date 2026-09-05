@@ -1,24 +1,24 @@
 # Codebase-to-Book Analysis Prompt
 
-Use this prompt verbatim (with placeholders filled in) to drive the seven-phase analysis.
+Use this guide with placeholders filled in; adapt the depth and structure to the agreed book.
 Output language defaults to Simplified Chinese (`book-zh/`); set `OUTPUT_LANG=en` to write
 English (`book/`) instead.
 
 Inputs the orchestrator must fill before invoking:
 
-| Placeholder | Meaning | Example |
-|---|---|---|
-| `{{SOURCE_PATH}}` | Absolute path to the codebase being analyzed | `/Users/me/code/foo` |
-| `{{OUTPUT_DIR}}` | Output directory (already scaffolded with `web/` template) | `/Users/me/code/foo-from-source` |
-| `{{OUTPUT_LANG}}` | `zh` (default) or `en` | `zh` |
+| Placeholder           | Meaning                                                      | Example                                  |
+| --------------------- | ------------------------------------------------------------ | ---------------------------------------- |
+| `{{SOURCE_PATH}}`     | Absolute path to the codebase being analyzed                 | `/Users/me/code/foo`                     |
+| `{{OUTPUT_DIR}}`      | Output directory (already scaffolded with `web/` template)   | `/Users/me/code/foo-from-source`         |
+| `{{OUTPUT_LANG}}`     | `zh` (default) or `en`                                       | `zh`                                     |
 | `{{OUTPUT_BOOK_DIR}}` | `{{OUTPUT_DIR}}/book-zh` if `zh`, else `{{OUTPUT_DIR}}/book` | `/Users/me/code/foo-from-source/book-zh` |
-| `{{PROJECT_NAME}}` | Display name for the book / siteTitle | `Foo` |
+| `{{PROJECT_NAME}}`    | Display name for the book / siteTitle                        | `Foo`                                    |
 
 ---
 
 ## The Prompt
 
-```
+````
 Analyze the source code at {{SOURCE_PATH}} and produce a comprehensive technical
 book about its architecture, patterns, and internals. Default output language:
 {{OUTPUT_LANG}}. Write chapters as markdown files in {{OUTPUT_BOOK_DIR}}/.
@@ -46,10 +46,9 @@ API names) in English. Keep paragraphs tight; no filler.
 
 ## Phase 1: Exploration
 
-Launch parallel subagents, one per major subsystem, to read the first-party source
-exhaustively. **Cap parallel agents at 4-6.** If the repo has more subsystems than
-that, cluster them (e.g. merge "CLI" + "TUI" into "User Interface") rather than
-spawning more agents.
+Read the first-party source needed to explain the agreed subsystems, following key
+control and data flows. Use subagents only when authorized and useful; otherwise
+research sequentially. Do not impose a fixed agent count or read unrelated files.
 
 **Scope — skip these paths in every agent's reading:**
 
@@ -96,8 +95,8 @@ Organize the book as if the reader were building the system from scratch. Each
 chapter solves one clear problem the next chapter depends on. The reader never
 encounters a concept that requires a later chapter to understand.
 
-- **Parts**: Group chapters into 5-7 thematic parts. Each part has a one-line
-  epigraph that frames the section.
+- **Parts**: Group chapters where the material benefits from it; omit parts for
+  a short book. Do not add sections or epigraphs to satisfy a quota.
 - **Chapter ordering**:
   1. Foundations (startup, state, communication with externals)
   2. Core loop (the main execution cycle)
@@ -106,7 +105,8 @@ encounters a concept that requires a later chapter to understand.
   5. Supporting infrastructure (UI, networking, persistence)
   6. Performance and optimization
   7. Epilogue: synthesis, transferable lessons, forward look
-- **Chapter sizing**: 300-800 lines each. Split if >800. Merge if <200.
+- **Chapter sizing**: Give each chapter enough space to explain its problem and
+  evidence. Split or merge for readability, not to meet a line count.
 
 Present the full outline (part names, chapter titles, 2-3 bullets per chapter)
 and write it into {{OUTPUT_DIR}}/web/src/book.config.ts:
@@ -122,7 +122,8 @@ Also update {{OUTPUT_DIR}}/web/src/i18n/ui.ts: replace the `__PROJECT_NAME__`
 markers in `siteTitle` (en + zh) with {{PROJECT_NAME}}, and rewrite
 `siteTagline` / `heroDescription` / `disclaimer` to fit this codebase.
 
-Get user approval on the outline before writing chapters.
+Resolve substantive outline uncertainty before writing. Reuse an already approved
+outline; when the user authorized choosing a reasonable structure, explain it and continue.
 
 ## Phase 4: Writing
 
@@ -149,7 +150,7 @@ to {{OUTPUT_BOOK_DIR}}/chNN-slug.md with the slug from book.config.ts.
    - Readable independently without losing the chapter narrative
 
 4. **Apply This** (closing)
-   - Exactly 5 transferable patterns
+   - Only transferable patterns actually supported by this chapter
    - Each pattern: name → problem it solves → how to adapt it → pitfall to watch
    - Concrete enough to act on, abstract enough to transfer
 
@@ -177,7 +178,7 @@ to {{OUTPUT_BOOK_DIR}}/chNN-slug.md with the slug from book.config.ts.
 - Diagram types: `graph TD`/`graph LR` (architecture), `sequenceDiagram`
   (request/response), `stateDiagram-v2` (state machines), `flowchart TD`
   (decision trees), `gantt` (timelines).
-- 2-4 diagrams per chapter; more for the core loop and tool subsystems.
+- Add diagrams when they explain a relationship better than prose; no per-chapter quota.
 - **Never hardcode colors** in `style X fill:#XXX` or `classDef ... fill:#XXX`
   directives. They override the Mermaid theme and produce unreadable diagrams
   in dark mode (light fills + light text = near-zero contrast). Let the theme
@@ -196,7 +197,8 @@ to {{OUTPUT_BOOK_DIR}}/chNN-slug.md with the slug from book.config.ts.
 
 ## Phase 5: Editorial Review
 
-Launch 2-3 review subagents, each covering a section. Each evaluates:
+Review the assembled book against the following criteria. Use independent agents
+only when authorized and useful; otherwise perform the review sequentially:
 
 1. Opening quality: hooks? connects to previous chapter?
 2. Flow: sections that drag, repeat, or list facts without building insight
@@ -244,7 +246,7 @@ block as suspect and sweeps for anything that slipped through:
 
 The book teaches patterns and architecture. It must not enable reconstruction
 of the exact source code.
-```
+````
 
 ---
 

@@ -7,6 +7,8 @@ description: 'DEPRECATED — use show-me-html instead. Previously: generate poli
 
 # effective-html (DEPRECATED)
 
+> **历史档案，不是活动技能入口。** 本文件改名后不再作为 SKILL.md 发现。
+
 > **⚠️ This skill is deprecated.** Use [`show-me-html`](../../show-me-html/SKILL.md) instead — it is the successor and covers the same ground (self-contained HTML pages) with a better design system. This directory is kept for reference only and will not receive updates.
 
 One idea, one self-contained `.html` file. No build step, no dependencies, opens anywhere, lives forever.

@@ -1,16 +1,16 @@
 ---
 name: send-to-obsidian
 license: MIT
-description: 抓取 URL、本地路径、目录或一段文本，摘要后存入 Obsidian 的 inbox，登记进台账，并盘点超过 7 天未处理的 entry 与未回收的外部产出。用户要求把链接或内容存进 obsidian / inbox 时使用。
+description: 把链接、本地材料或文本保存到 Obsidian inbox；用户明确要求盘点时执行 --sweep。
 ---
 
 # send-to-obsidian
 
-把参数中的 URL、本地路径、目录或文本抓成 INBOX **entry**，写入 vault，登记台账，再盘点**过期 entry**（捕获日距今超过 7 天）。
+把参数中的 URL、本地路径、目录或文本抓成 INBOX **entry**，写入 vault，供台账查询。盘点过期条目是单独的 `--sweep` 操作。
 
 参数即输入：`/send-to-obsidian <url | path | dir | 文本>`。参数为空时先向用户索取输入。
 
-子命令：`/send-to-obsidian --sweep` 只做盘点，不写入（见第 6 节）。
+子命令：`/send-to-obsidian --sweep` 定位 vault 与现有 inbox 后，只做盘点，不创建目录或台账；读取 [目录与盘点](references/directory-and-sweep.md) 的盘点部分。没有 inbox 时报告无条目。
 
 **intake 只产登记档，不做蒸馏。** 摘要 entry 记录源路径，蒸馏是独立的后续动作，由人看过 entry 后发起。原件在 intake 时不动。
 
@@ -29,10 +29,18 @@ description: 抓取 URL、本地路径、目录或一段文本，摘要后存入
 vault 有两种布局，探测而非假定——2026-08 的重构把顶层 `00 - INBOX/` 改成了 `inbox/`：
 
 ```bash
-if [ -d "$VAULT/inbox" ]; then INBOX="inbox"; else INBOX="00 - INBOX"; fi
+if [ -d "$VAULT/inbox" ]; then
+  INBOX="inbox"
+elif [ -d "$VAULT/00 - INBOX" ]; then
+  INBOX="00 - INBOX"
+else
+  INBOX="inbox"
+fi
 ```
 
-`$VAULT/$INBOX/` 不存在时创建它（两者都不存在时用 `inbox`，新布局是默认）。
+`--sweep` 在探测到这里后直接进入盘点，不执行以下创建、查重或写入步骤。目录不存在时报告无条目并结束。
+
+普通 intake 才在 `$VAULT/$INBOX/` 不存在时创建它（两者都不存在时用 `inbox`，新布局是默认）。
 
 `$VAULT/$INBOX/_inbox.md` 不存在时按下文[台账格式](#台账格式)创建它，其中 dataview 的 `FROM` 用探测到的 `$INBOX`。
 
@@ -50,12 +58,12 @@ if [ -d "$VAULT/inbox" ]; then INBOX="inbox"; else INBOX="00 - INBOX"; fi
 
 按输入类型取内容：
 
-| 输入 | 抓取方式 |
-|---|---|
-| URL | `autocli read <url>`（覆盖 x.com、知乎等登录态与 JS 页面）；失败时回退 WebFetch |
-| 本地路径 | Read 工具 |
-| **目录** | 按第 5 节的类型映射表逐文件处理 |
-| 文本 | 直接使用参数文本 |
+| 输入     | 抓取方式                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------ |
+| URL      | 复用会话中已提取的正文；否则先用可用站点技能，X 用 x-to-markdown；再用通用正文提取或需要登录/JS 的浏览器工具 |
+| 本地路径 | Read 工具                                                                                                    |
+| **目录** | 按 [目录与盘点](references/directory-and-sweep.md) 的目录类型映射处理                                        |
+| 文本     | 直接使用参数文本                                                                                             |
 
 抓取失败时向用户报告失败原因，并问是否只存链接与标题。
 
@@ -63,57 +71,7 @@ if [ -d "$VAULT/inbox" ]; then INBOX="inbox"; else INBOX="00 - INBOX"; fi
 
 `inbox/` **豁免全部必填 frontmatter 字段**——它的职责是零摩擦接住内容，质量门禁在出口而非入口。只保证 `source` 有值。
 
-**完成标准**：文件已落盘，`source` 有值。
-
-## 5. 目录输入的类型映射
-
-teach 一类的工作区是一整个目录。逐文件按此表处理，**不是人工蒸馏清单，是 intake 的处理依据**：
-
-| 文件 | intake 动作 | 最终去向（后续人工发起） |
-|---|---|---|
-| `MISSION.md` | 登记 entry | topic 的 `sections.yaml` 头部与 `_README` |
-| `RESOURCES.md` | 登记 entry | `resources/` 单篇参考 |
-| `GLOSSARY.md` | 跳过 | 留工作区；术语按二次出现门槛逐条抽取 |
-| `NOTES.md` | 跳过 | 不入库 |
-| `learning-records/*.md` | 跳过 | 不入库（面向下一次 teach，不面向重读） |
-| `lessons/*.html` | 登记 entry，标记待蒸馏 | `topics/<topic>/` 词条加 `.quiz` 块 |
-| `reference/*.html` | 登记 entry，标记待蒸馏 | 独立词条 |
-| `assets/*` | 跳过 | 蒸馏时手工迁入 `site/public/assets/` |
-
-标记待蒸馏 = entry 的「去向」段写 `- [ ] 蒸馏为 topics/<topic>/ 词条`。
-
-## 6. 盘点
-
-两部分，都在每次调用末尾做一次（`--sweep` 则只做这一节）。
-
-### 6a. 过期 entry
-
-```bash
-cd "$VAULT/$INBOX" && cutoff=$(date -v-7d +%F) && ls *.md | awk -v c="$cutoff" '
-  substr($0,1,1)=="_" {next}
-  $0 ~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}-/ { if (substr($0,1,10) < c) print substr($0,1,10), $0; next }
-  { print "无日期前缀", $0 }'
-```
-
-把结果列成表给用户，每条给一个去向建议（迁入哪个顶层目录，或删除），依据是 entry 的 tags 与摘要。
-
-### 6b. 未回收的外部产出
-
-外部技能（effective-html / teach）产在自己的工作目录，不改它们的输出路径——技能会升级，路径强改要每次重打。改由这里盘点：
-
-```bash
-# 约定产出根与已 intake 清单取差集；已 intake 按 entry 的 source 字段记录
-for root in ~/Downloads/htmls; do
-  [ -d "$root" ] || continue
-  find "$root" -maxdepth 2 \( -name '*.html' -o -name '*.md' \) -print
-done | while read -r f; do
-  grep -rqF "$f" "$VAULT/$INBOX/" || echo "未 intake: $f"
-done
-```
-
-列出未 intake 项，问用户是否 intake。**漏报不写坏任何东西**——盘点只在实际常用的目录上做。
-
-**完成标准**：每条过期 entry 都有一条去向建议；未回收清单已呈现。用户未表态时保持文件原样。
+**完成标准**：回读已保存条目，`source` 正确，台账查询覆盖此目录。普通保存到此结束，不附带全库盘点。
 
 ## Entry 格式
 
@@ -121,8 +79,9 @@ done
 
 ```markdown
 ---
+title: <标题>
 type: note
-created: 2026-08-15
+created: <今天>
 source: <url | 本地路径 | text>
 tags: [inbox, <topic>]
 ---

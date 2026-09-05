@@ -1,14 +1,14 @@
 # Simulated research conversations (Stage 1b detail)
 
-This is the depth engine of STORM. Read it before spawning per-perspective research
-subagents. Hand each subagent the protocol below, specialized to its perspective.
+Read this protocol for each researched perspective, whether working sequentially
+or using authorized subagents. Delegation is optional and does not change the method.
 
 ## The protocol
 
 Each perspective is researched as a short multi-turn dialogue between two roles played by
-one subagent:
+the current researcher:
 
-- **Writer** — a curious Wikipedia author working *from a specific perspective*. Asks one
+- **Writer** — a curious Wikipedia author working _from a specific perspective_. Asks one
   focused question at a time. Does **not** answer from memory.
 - **Expert** — answers the writer's question, but **only** from search results it fetches
   for that question. Grounds every claim in a source. If sources don't cover it, says so.
@@ -27,14 +27,15 @@ The reaction step is the whole point — it's what makes this deeper than a flat
 
 ## Tools
 
-Use whatever web tools are available in the environment.
-- **Search:** in this user's setup, `tinyfish search query "<query>"` (fall back to native
-  WebSearch only if tinyfish is rate-limited).
+Use the tools available in the current environment, respecting the user's choices.
+
+- **Search:** use the configured search capability. Do not assume tinyfish or any
+  other CLI is installed; if a selected tool fails, use an available permitted fallback.
 - **Read a page:** jina-reader, WebFetch, or `curl -sL` on raw/static pages. Actually read
   the source before citing it — don't cite from a search snippet alone for non-trivial
   claims.
 
-## What each subagent returns
+## Research notes for each perspective
 
 Return structured notes, not prose. A list of findings; each finding is a concrete,
 citable fact with its source(s). Example shape:
@@ -60,7 +61,8 @@ source is useless to a grounded article and should be dropped or flagged.
 
 ## Subagent prompt template
 
-Spawn one per perspective, substituting `{TOPIC}` and `{PERSPECTIVE}`:
+Only when delegation is authorized and useful, pass this prompt to a researcher,
+substituting `{TOPIC}` and `{PERSPECTIVE}`:
 
 ```
 You are researching the topic "{TOPIC}" from one specific perspective: "{PERSPECTIVE}".
@@ -70,7 +72,7 @@ the {PERSPECTIVE} angle) and a topic EXPERT (who answers ONLY from web sources i
 
 Loop 3–5 times:
 1. WRITER asks one focused question from the {PERSPECTIVE} angle.
-2. EXPERT searches the web (use `tinyfish search query "..."`, fall back to WebSearch),
+2. EXPERT searches the web using the currently available, permitted tools,
    opens the best 1–3 results and actually reads them, then answers in 2–4 sentences with
    the source URL(s) behind each claim.
 3. WRITER asks a FOLLOW-UP that reacts to what was just learned — drill into a gap, a
@@ -92,9 +94,8 @@ findings atomic (one fact each); aim for 8–15 solid findings; drop anything yo
 source. Your returned text IS the data — no preamble, no conclusion.
 ```
 
-## If you can't spawn subagents
+## Sequential execution
 
 Run the same protocol yourself, one perspective at a time, keeping a running findings list
-per perspective. Say out loud that you're going sequential — don't quietly skip the
-conversation structure and collapse into a single flat search, which would discard STORM's
-depth mechanism.
+per perspective. No delegation approval is needed for this mode. Preserve the
+conversation structure instead of collapsing it into a single flat search.

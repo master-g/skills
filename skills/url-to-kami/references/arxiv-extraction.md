@@ -4,7 +4,8 @@ arXiv abstract pages (`arxiv.org/abs/XXXX.XXXXX`) present a two-layer content pr
 
 ## The Problem
 
-Jina Reader (and most text extractors) fetch the HTML abstract page, which contains:
+An abstract-page extraction contains:
+
 - Title, authors, arXiv ID, submission dates
 - Abstract text (usually 1-2 paragraphs)
 - Metadata (subjects, DOI, citation tools)
@@ -14,9 +15,9 @@ The actual paper content lives in the PDF at `arxiv.org/pdf/XXXX.XXXXX`.
 
 ## Extraction Strategy
 
-### Step 1: Quick metadata via Jina
+### Step 1: Metadata
 
-Use Jina to get the abstract and metadata for the document header:
+Use the current permitted extraction tool for the document header. If Jina is available, for example:
 
 ```bash
 curl -s "https://r.jina.ai/https://arxiv.org/abs/2407.18384" -H "Accept: text/plain" | head -50
@@ -35,7 +36,7 @@ import fitz
 doc = fitz.open('/tmp/paper.pdf')
 print(f'Total pages: {len(doc)}')
 
-# Extract specific pages
+# Preview only: this displays truncated excerpts, not complete extraction
 for i in range(min(10, len(doc))):
     text = doc[i].get_text()
     print(f'\n--- Page {i+1} ---')
@@ -43,36 +44,21 @@ for i in range(min(10, len(doc))):
 ```
 
 **Notes:**
+
 - `fitz.open()` does **not** accept URLs directly — download first
 - Mathematical notation comes through as LaTeX fragments or Unicode; review before including in prose
 - Figures and equations may need manual description since they are not extracted as images
-- **Batch extraction for long papers**: if `len(doc)` > 15, split into chunks (e.g., pages 0-19, then 20-end) to avoid terminal output limits. Use `doc[i].get_text()` per page and truncate per-page output (`[:1500]`) to keep context manageable
+- For long papers, read the requested pages in batches and record coverage. Truncated output is only a preview; continue through the remaining text before claiming full coverage.
 
-## Content Decisions for Long Documents
+## Scope and document type
 
-arXiv papers (especially books/monographs) are often 100-300+ pages. For Kami conversion:
+Follow the user's requested output: full conversion, selected sections, summary or reader's guide.
+Page count helps estimate work; it does not authorize changing that output or dropping methods,
+references or chapters. If a scope decision is necessary, explain it and wait for the user's answer.
 
-| Source length | Approach |
-|---|---|
-| 10-20 pages (short paper) | Extract and translate full content |
-| 20-40 pages (standard paper, dense) | **Distill into a condensed research guide**: extract key claims, tables, figures, and representative examples; omit methodological minutiae, exhaustive ablation tables, and reference lists. Target ~40-60% of original length. |
-| 100+ pages (book/monograph) | Extract TOC, preface, and 1-2 representative chapters; summarize the rest |
-| Survey/review papers | Extract section headings as a structured overview; include key theorems as callouts |
+- Full conversion: extract all requested pages and check figures, equations and text order. Respect the current environment's reproduction limits.
+- Summary: read the material needed to support each summarized claim. State omitted or unread sections.
+- Reader's guide: use the TOC and introduction to orient the reader, then read the selected chapters. Descriptions inferred from headings are coverage notes, not summaries of unread chapters.
 
-## Document Type Selection
-
-- **Research paper** (≤30 pages, single narrative) → `long-doc` with full translation
-- **Book/monograph** (100+ pages, multiple chapters) → `long-doc` as a **reader's guide / 导读版**: cover, TOC, chapter-by-chapter summaries, key theorems highlighted, full structure overview in the final chapter
-- **Course notes / lecture notes** → `long-doc` with emphasis on pedagogical flow
-
-## Example: Book-length arXiv document
-
-For a 333-page book like arXiv:2407.18384 (*Mathematical Theory of Deep Learning*):
-
-1. Extract TOC pages (usually pages 2-4 of the PDF)
-2. Extract preface/introduction for the book's stated goals and audience
-3. Extract 1-2 key chapters in depth (e.g., universal approximation, optimization theory)
-4. For remaining chapters, create summary tables with chapter number, title, and 1-line description
-5. Structure the Kami document as a **导读** (reader's guide) rather than a full translation
-
-This respects the original work while making it accessible to readers who want to understand the book's scope before diving into the full PDF.
+Use the available Kami template suited to the agreed document, usually `long-doc` for papers
+or guides. Label abridged output explicitly; never present excerpts or a guide as a full translation.

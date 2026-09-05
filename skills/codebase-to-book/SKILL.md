@@ -1,17 +1,7 @@
 ---
 name: codebase-to-book
 license: MIT
-description: >-
-  Turn a codebase into a publication-quality technical book rendered as a
-  bilingual Astro web artifact. Spawn this skill whenever the user wants to
-  "analyze a repo and produce a book", "reverse-engineer a codebase into
-  chapters", "write a 'from-source' book about project X", or any variant
-  ("把这个仓库变成一本书", "为某个 repo 生成架构解析书"). Default output: Simplified
-  Chinese (`book-zh/`). The skill scaffolds a sibling repository whose name ends
-  in `-from-source`, fills it with the Astro template and `book-zh/` markdown,
-  runs the seven-phase
-  analyze-codebase-to-book prompt to produce chapters, then launches the dev
-  server so the user can browse the result.
+description: 将源码仓库写成多章节技术书，并生成可浏览的 Astro 站点；用于明确的源码解析书请求。
 ---
 
 # Codebase-to-Book
@@ -24,7 +14,7 @@ Turns a source repository into a long-form technical book (architecture, pattern
 <source-repo>-from-source/
 ├── book-zh/                # Simplified Chinese chapters (default output)
 ├── book/                   # English chapters (optional; empty by default)
-├── web/                    # Astro 5 + React 19 + Tailwind v4 site
+├── web/                    # Astro + React + Tailwind site
 │   ├── package.json
 │   ├── astro.config.mjs
 │   ├── src/
@@ -54,7 +44,7 @@ If the user only wants short documentation, a README, or a single architecture d
 
 ### Step 1 — Confirm inputs
 
-Required from the user (ask if missing):
+Resolve from the request and workspace. Ask only for missing inputs that cannot use the defaults:
 
 | Input          | Default                                          | Notes                                                                           |
 | -------------- | ------------------------------------------------ | ------------------------------------------------------------------------------- |
@@ -120,17 +110,17 @@ Read `references/prompt.md` (relative to the skill directory) — that file hold
 - `{{OUTPUT_BOOK_DIR}}` → `$OUTPUT_DIR/book-zh` (zh) or `$OUTPUT_DIR/book` (en)
 - `{{PROJECT_NAME}}` → display name
 
-Then execute the seven phases in order. Phase responsibilities:
+Use the phases as a workflow guide, sized to the repository and requested book. Phase responsibilities:
 
-| Phase          | Output                                                    | Notes                                       |
-| -------------- | --------------------------------------------------------- | ------------------------------------------- |
-| 1. Exploration | `OUTPUT_DIR/.reference/phase1-<subsystem>.md`             | Parallel subagents, one per subsystem       |
-| 2. Audience    | `.reference/phase2-positioning.md`                        | Audience + thesis + value                   |
-| 3. Structure   | `web/src/book.config.ts` populated; user-approved outline | **Get user sign-off before Phase 4**        |
-| 4. Writing     | `book-zh/chNN-slug.md` (or `book/`)                       | Each chapter 300-800 lines                  |
-| 5. Review      | `.reference/phase5-review.md`                             | 2-3 review subagents                        |
-| 6. Revision    | Updated chapter files + book.config.ts                    | Apply review feedback                       |
-| 7. Audit       | Sanitized chapter files                                   | Replace any verbatim source with pseudocode |
+| Phase          | Output                                             | Notes                                              |
+| -------------- | -------------------------------------------------- | -------------------------------------------------- |
+| 1. Exploration | `OUTPUT_DIR/.reference/phase1-<subsystem>.md`      | Scoped source reading; delegate only if authorized |
+| 2. Audience    | `.reference/phase2-positioning.md`                 | Audience + thesis + value                          |
+| 3. Structure   | `web/src/book.config.ts` populated; agreed outline | Confirm only an unresolved outline                 |
+| 4. Writing     | `book-zh/chNN-slug.md` (or `book/`)                | Length follows the material                        |
+| 5. Review      | `.reference/phase5-review.md`                      | Review within authorized execution mode            |
+| 6. Revision    | Updated chapter files + book.config.ts             | Apply review feedback                              |
+| 7. Audit       | Sanitized chapter files                            | Replace any verbatim source with pseudocode        |
 
 In Phase 3, also update `web/src/i18n/ui.ts`: replace `__PROJECT_NAME__` markers in `siteTitle.en` / `siteTitle.zh` with `PROJECT_NAME`, and rewrite `siteTagline` / `heroDescription` / `disclaimer` to fit the project. If the user supplied `GITHUB_URL`, set `githubUrl` in both languages.
 
@@ -140,16 +130,19 @@ Slug discipline (critical):
 - Markdown filenames in `book-zh/` (and `book/`) must match exactly: `ch01-intro.md`.
 - Mismatches cause empty pages with no error — verify after Phase 4.
 
-### Step 5 — Launch the dev server
+### Step 5 — Build and inspect the site
 
-After all seven phases finish:
+After writing and revision, use the package manager selected during installation (the example uses bun):
 
 ```bash
 cd "$OUTPUT_DIR/web"
+bun run build
 bun run dev
 ```
 
-The site serves at `http://localhost:4321` by default. English ToC at `/`, Chinese at `/zh/`.
+Read the actual server URL from its output. Open the requested language ToC and representative chapter pages; verify chapter links, content, Mermaid rendering and light/dark readability. Fix failures caused by this output. Build success or starting the server alone is not completion.
+
+The default port is 4321. English ToC is `/`, Chinese is `/zh/`. Report untested behavior explicitly when browser inspection is unavailable.
 
 If the user wants to preview the scaffold mid-way (e.g. after Phase 3 to inspect the outline), `bun run dev` works with empty book directories — the index page renders a "no chapters yet" notice.
 
@@ -174,9 +167,9 @@ If the user wants to preview the scaffold mid-way (e.g. after Phase 3 to inspect
 ## When to stop and ask the user
 
 - Before scaffolding if `OUTPUT_DIR` already exists with content.
-- After Phase 3, with the proposed outline. Do not start Phase 4 (the expensive phase) without sign-off.
-- If the source repo has fewer than ~3 substantial subsystems — the seven-phase format may be overkill. Suggest a shorter structure.
-- If the user asks for output in a language other than Chinese or English — adapt the prompt accordingly and edit `ui.ts` so both `en` and `zh` strings reflect the chosen language.
+- After Phase 3 only if the audience, scope or outline remains unresolved and affects the book. A supplied or already approved outline, or explicit authorization to proceed with a reasonable structure, does not need another sign-off.
+- Adapt the structure to a small repository without filling unnecessary parts or chapters.
+- Other output languages require a corresponding routing/i18n decision; clarify that decision if it cannot be inferred.
 
 ## Reference
 

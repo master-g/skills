@@ -1,6 +1,6 @@
 ---
 name: farm
-description: 把实施任务派发给便宜的 worker 模型:orchestrator 定计划与验收门禁,worker 在 herdr pane 或无头 CLI 里执行,orchestrator 独立复验。用法:/farm
+description: 用户调用 /farm 时，将明确的实施任务交给选定 worker CLI，并独立验证结果。
 disable-model-invocation: true
 ---
 
@@ -28,6 +28,8 @@ worker 只做一件事:按 brief 实施并写报告。
 
 你知道自己是谁(host + 模型名):从 pairs 取匹配项,无匹配取 `*` 兜底项,向用户确认后定案。
 无匹配且无 `*`:列出全部 pairs 让用户选。
+
+每次实际调用外部模型都遵守当前环境与用户的授权边界；pair 选择不代替调用授权，修正轮次需要新进程时也一样。
 
 红线:无头 worker 只允许 **pi**(用户调用本技能即接受 pi 无头改文件)。claude / codex 当 worker 只能在 herdr pane 里跑,审批弹窗必须用户可见。
 
@@ -83,7 +85,7 @@ modelflag(pane 交互 / 无头):
 
 `herdr agent start` 返回 `agent_not_ready`:用 `herdr agent get <task>` 查看,通常是登录或 trust 提示,报告用户处理。
 
-完成标准:worker 进程已启动,brief 已落盘。
+完成标准:此阶段仅确认 worker 已启动且 brief 已落盘；整个任务必须完成第 4 节的独立验收。
 
 ## 4. 门禁循环
 

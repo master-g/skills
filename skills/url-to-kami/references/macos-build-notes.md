@@ -1,76 +1,19 @@
-# macOS Kami Build Notes
+# macOS 构建排错
 
-Session-tested recipes for building Kami documents on macOS, where WeasyPrint's GTK dependencies are blocked by SIP.
+仅在 Kami 构建失败时读取。当前安装版本及真实错误优先于历史经验。
 
-## WeasyPrint Failure Pattern
+## WeasyPrint 库加载失败
 
-On macOS, WeasyPrint fails with:
+遇到 `cannot load library 'libgobject-2.0-0'` 时，记录错误，检查已有可用的 PDF 渲染器。
+库加载失败本身不能证明 SIP 是根因，也不表示永远不可修复；本排版任务不扩展为系统依赖修复。
+有 Chrome 或当前浏览器 PDF 导出能力时可作为回退，参数按本机支持的用法选择。
 
-```
-OSError: cannot load library 'libgobject-2.0-0': dlopen(libgobject-2.0-0, 0x0002): ...
-```
+## 字体与预览
 
-This is **expected and unfixable** — SIP blocks DYLD_LIBRARY_PATH, preventing GTK library loading. Do not attempt to install GTK or fix WeasyPrint. Use Chrome Headless immediately.
+字体脚本失败时检查产物是否有可用中文字体或模板定义的回退；只有实物可读才能接受降级。
+网络字体可能不可用，不因模板含 CDN 就宣称字体验证通过。
 
-## Chrome Headless Build Command
+可用 `pdftoppm -r 150 -f 1 -l 1 -png input.pdf /tmp/cover` 生成检查图片。
+实际文件名以工具输出为准。预览放任务临时目录，不用通配符删除 Downloads 中的文件。
 
-```bash
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --headless --disable-gpu --print-to-pdf="/path/to/output.pdf" \
-  --no-margins --run-all-compositor-stages-before-draw \
-  --virtual-time-budget=5000 \
-  "file:///path/to/your/filled.html"
-```
-
-**Flags explained:**
-- `--no-margins` — removes browser default margins so CSS @page rules control spacing
-- `--run-all-compositor-stages-before-draw` — ensures fonts and images are fully loaded before capture
-- `--virtual-time-budget=5000` — gives 5 seconds for JS/fonts to settle; increase for heavy pages
-
-**Output:** Chrome writes `340357 bytes written to file ...` on success. The "Trying to load the allocator multiple times" and "DEPRECATED_ENDPOINT" warnings are harmless.
-
-## Font Fallback Behavior
-
-The Kami `scripts/ensure-fonts.sh` font downloader may fail with `unbound variable` errors on some shell environments. This **does not block building** because:
-
-1. HTML templates include CDN `@font-face` fallbacks:
-   ```css
-   src: url("../fonts/TsangerJinKai02-W04.ttf") format("truetype"),
-        url("https://cdn.jsdelivr.net/gh/tw93/Kami@main/assets/fonts/TsangerJinKai02-W04.ttf") format("truetype");
-   ```
-2. Chrome Headless can fetch CDN fonts at render time
-3. WeasyPrint (when it works) can also fetch CDN fonts
-
-**Do not** let font script failures stop the build process. Proceed directly to HTML → PDF conversion.
-
-## PNG Preview Generation
-
-After PDF is built, generate a cover preview:
-
-```bash
-# Single page preview (cover page)
-pdftoppm -r 150 -f 1 -l 1 -png input.pdf /tmp/cover
-cp /tmp/cover-01.png output-cover.png
-
-# All pages (for inspection)
-pdftoppm -r 150 -png input.pdf /tmp/pages
-# Produces: /tmp/pages-01.png, /tmp/pages-02.png, ...
-```
-
-Note: `pdftoppm` numbering is zero-padded (`-01`, `-02`), not `-1`, `-2`.
-
-## Cleanup after preview generation
-
-Preview PNGs generated during development should be cleaned up to avoid cluttering `~/Downloads`:
-
-```bash
-rm ~/Downloads/*-preview*.png ~/Downloads/quant-career-preview*.png
-```
-
-**Important:** The user may deny `rm` commands via terminal tool. If cleanup is blocked, do not retry — the files are harmless and the user can remove them manually.
-
-## Verified Environment
-
-- macOS (Apple Silicon and Intel)
-- Google Chrome installed at `/Applications/Google Chrome.app/`
-- `pdftoppm` available via poppler (`brew install poppler`)
+检查分页、溢出、代码、图表和中文。报告实际使用的渲染器及未解决问题。

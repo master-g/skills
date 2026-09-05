@@ -18,7 +18,7 @@ Install one skill globally:
 npx skills add master-g/skills --skill <name> -g
 ```
 
-Install every skill globally:
+Install all active skills globally only if you need them; prefer selecting individual skills:
 
 ```sh
 npx skills add master-g/skills --skill '*' -g
@@ -30,11 +30,11 @@ npx skills add master-g/skills --skill '*' -g
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
-- `effective-html`: **DEPRECATED** — superseded by `show-me-html`; kept under `skills/deprecated/` for reference.
+- `effective-html`: **DEPRECATED** — superseded by `show-me-html`; kept as `skills/deprecated/effective-html/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker CLI, with acceptance gates.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
-- `show-me-html`: create self-contained HTML explanations using a shadcn/ui-inspired design language.
+- `show-me-html`: create offline-readable HTML explanations using an owned editorial visual system.
 - `storm`: research and write citation-grounded articles using the STORM method.
 - `url-to-kami`: extract a URL and typeset it with the Kami design system.
 - `wtf`: re-explain the previous message in clear, unambiguous Simplified Chinese.
