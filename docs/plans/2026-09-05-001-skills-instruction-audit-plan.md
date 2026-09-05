@@ -73,11 +73,11 @@ date: 2026-09-05
 - 两个仓库的本次命名文件 `git diff --check` 通过。未运行视觉回归，CSS、shell、构建器、既有页面均未改。
 - 对照日志：`/tmp/skills-audit-checkpoint-20260905/legacy-baseline-comparison.json`、`before-tests.log`、`after-tests.log`、`archdotfiles-tests.log`。全局原文与哈希见同目录 manifest.json。
 
-### 交付状态
+### 实施阶段结束时的交付状态（历史快照）
 
 本轮计划内修改和检查已完成；改动留在工作区供审阅，未提交或推送。
 全局文件经现有符号链接生效，后续会话读取新版本；本会话已加载的指令不被追溯替换。
-仓库技能尚未同步到安装副本，已安装的 effective-html 也未删除。模型行为与耗时收益尚未做实验。
+当时仓库技能尚未同步到安装副本；未操作任何 effective-html 安装目录。模型行为与耗时收益尚未做实验。
 
 ## 语义复核（用户选择下一步 1）
 
@@ -127,9 +127,19 @@ date: 2026-09-05
 目标：按本次范围提交两个仓库，在本地 main 集成，并同步已安装技能。验收：提交归属准确，原有用户修改保留，安装路径与提交内容一致。
 非目标：远程推送、模型效果实验、无关技能升级或清理。
 
-- [ ] 提交 skills 的实施与复核结果。
-- [ ] 提交 archdotfiles 的本次增量，原有 Claude 写作段落新增与 Pi 风格章节删除继续留在工作区。
-- [ ] 本地 main 快进集成；保留 checkpoint。
-- [ ] 备份并同步已有安装副本，核对入口与引用。
+- [x] 提交 skills 的实施与复核结果：`afd6a2a`。
+- [x] 提交 archdotfiles 的本次增量：`26ad18a`；原有 Claude 写作段落新增与 Pi 风格章节删除继续留在工作区。
+- [x] 两个仓库的本地 main 均快进集成；保留 checkpoint 与审计分支。
+- [x] 备份并同步已有安装副本，核对入口与引用。
 
 安装预检：12 个活动技能均已安装，farm 与 guide-me 直接链接到仓库；其余 10 个副本中，本次目标文件没有独立冲突。仅同步本次改动路径，保留安装器元数据、无关文件及目标特有内容。
+
+### 交付结果与最终验证
+
+- skills 实施提交 `afd6a2a` 包含 30 个文件；现有 Husky/lint-staged/Prettier 通过。格式化仅调整排版，bootstrap 模板与追加规则的空行同步后，再跑 node-app/go-svc 临时副本的生成、幂等和填写后严格校验，全部通过。未填写占位符的第一次严格校验按设计失败，不计为通过。归档入口对应的现有测试再次通过。
+- archdotfiles 提交 `26ad18a` 包含 3 个全局规则文件及项目要求的 2 条交接记录，现有 secrets hook 通过。按 checkpoint 拆分暂存内容；提交后逐项确认 5 个原有未提交文件的增量保留，暂存区为空。此前 `make test` 临时工作副本 107 项通过的结果仍适用；本次交付未改部署实现。
+- 10 个已安装技能的 24 个本次文件已同步；farm 与 guide-me 的仓库直链无需复制。写入前备份并逐文件比较旧版/当前版/目标内容，写入后 SHA-256 一致。没有覆盖目标独立修改或清理无关文件。
+- canonical 下 12 个技能入口均与已提交源码一致；Claude 的 12 个已有入口、Pi 的 11 个已有入口内容均一致。Pi 原本没有 guide-me 指针，Codex 没有逐项镜像，未额外创建指针；此处验证文件内容与路径，不冒称新会话运行测试。Codex 的本会话技能来源包含 canonical 目录。
+- 三个全局入口均解析到 archdotfiles 中的对应文件，共享段落一致。canonical 下 effective-html 入口不存在，本次无需卸载。
+- 备份与安装证据：`/tmp/skills-audit-checkpoint-20260905/installed-before/`、`install-manifest.json`、`installation-verification.json`。备份为本机临时恢复材料，长期依据为两个仓库的提交及保留的 checkpoint。
+- 两个仓库未远程推送。未运行模型效果实验；旧 effective-html 套件的 23 个既有失败断言仍不计为通过。本轮约定的本地交付已完成，没有待用户介入事项。
