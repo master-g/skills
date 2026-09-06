@@ -6,6 +6,8 @@
 所有结构灰都是墨在纸上的明度阶；深色主题只是把墨和纸互换。全页只有一个彩色落点 `--hero`
 （橙），给焦点环、危险、图表主角和关键连线。结构靠版式与留白，卡片靠面色分卡，不靠描边。
 
+首屏 h1 字号取版心宽度的 4.5% ～ 5.5%（`clamp(2rem, 3.5vw, 3.25rem)`），与正文 h1 保持约 1.3 倍层级，不做海报级 hero；比例来自 lieflat 报告模板。
+
 字体分工固定：Newsreader 负责标题，IBM Plex Sans 负责正文和控件，IBM Plex Mono 负责代码、路径、时间和数字，
 数学字体栈负责公式。Google Fonts 异步加载，失败时按 `components.md` 的本地栈回退。
 
@@ -90,7 +92,7 @@
 ## 上游借鉴边界
 
 - `anthropics/html-effectiveness` 固定提交 `58c305be97f47b26b678f2c07dec01d4242268ec`：借鉴任务驱动的宏观结构、可见证据、批注和有限交互，不复制其品牌色、逐模板 CSS/JS、`innerHTML` 更新、鼠标专用操作或缺失的主题/打印/reduced-motion 处理。证据见 `docs/research/2026-09-01-html-effectiveness-template-assessment.md`。
-- `larashero3-dotcom/lieflat-charts`（2026-09-06 读取，提交 `eace082`）：吸收其一致性的来源 —— 两极色板加透明度阶派生、明度即数据、单一落点、无框圆角卡、token 单一正本；图型目录、数据形状决策树、静态优先与动态触发规则进入 `charts.md`，59 张图型以本 skill 的 token、字体与运行时重做为纯 SVG（原 ECharts/Chart.js 图型全部重写，地图与整页报告模板不收）。不复制 Inter 全家、CDN 依赖与联网字体。
+- `larashero3-dotcom/lieflat-charts`（2026-09-06 读取，提交 `eace082`）：吸收其一致性的来源 —— 两极色板加透明度阶派生、明度即数据、单一落点、无框圆角卡、token 单一正本；图型目录、数据形状决策树、静态优先与动态触发规则进入 `charts.md`，59 张图型以本 skill 的 token、字体与运行时重做为纯 SVG（原 ECharts/Chart.js 图型全部重写，地图与整页报告模板不收）。2026-09-06 第二轮从其 12 套报告模板吸收中西混排规则（中文标题不用负字距、行高回正），落在 `show-me.css` 的 `:lang(zh)` 规则；不复制 Inter 全家、CDN 依赖与联网字体。
 
 ## 响应式与打印
 

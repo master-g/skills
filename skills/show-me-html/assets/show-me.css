@@ -1724,14 +1724,30 @@ body[data-recipe="slide-deck"] {
 body[data-recipe] main > section:first-child > :is(h1, .lede) {
   max-width: 44rem;
 }
+/* 首屏 h1 取版心宽度的 4.5% ～ 5.5%（lieflat 报告模板 30 ～ 56px 的比例）：
+         48rem → 35 ～ 42px，60rem → 43 ～ 53px。1280px 视口下约 45px，与正文 h1（34px）
+         保持 1.3 倍左右的层级；旧值 6vw / 4.75rem 在长文版心里一行只装 10 个汉字。 */
 body[data-recipe] main > section:first-child > h1 {
-  font-size: clamp(2.25rem, 6vw, 4.75rem);
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
   line-height: 0.98;
   letter-spacing: -0.035em;
 }
 body[data-recipe] main > section:first-child > .lede {
   color: var(--color-muted-foreground);
   font-size: clamp(1rem, 2vw, 1.25rem);
+}
+/* ── 中文标题不用负字距 ─────────────────────────────────────────
+         上面的 -0.01em / -0.035em 与 0.98 行高是给 Newsreader 的拉丁字形收紧的。
+         汉字是满铺 em 框的方块：负字距只会挤字，0.98 行高让多行标题上下相贴。
+         页面 lang 为中文时整体归正 —— 字距略放、行高回到 1.2。同页的纯英文标题
+         也跟着放开，这是有意的取舍：混排里拉丁与汉字的字距没法各调各的。
+         来源：lieflat-charts 报告模板的中西混排规则（中文标题不用负字距）。 */
+:lang(zh) :is(h1, .fig-title) {
+  letter-spacing: 0.01em;
+}
+:lang(zh) body[data-recipe] main > section:first-child > h1 {
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .recipe-matrix {
@@ -1909,7 +1925,11 @@ body[data-recipe] main > section:first-child > .lede {
 [data-recipe="status-report"] .metric-band strong {
   display: block;
   font-family: var(--font-serif);
-  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-size: clamp(
+    1.75rem,
+    4vw,
+    2.75rem
+  ); /* 上限低于首屏 h1（3.25rem），h1 始终是页面最大字 */
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -2183,9 +2203,6 @@ body[data-recipe] main > section:first-child > .lede {
   }
   [data-recipe="slide-deck"] main {
     scroll-snap-type: none;
-  }
-  body[data-recipe] main > section:first-child > h1 {
-    font-size: clamp(2rem, 13vw, 3.25rem);
   }
 }
 
