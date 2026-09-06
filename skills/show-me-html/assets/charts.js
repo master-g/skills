@@ -72,29 +72,39 @@ window.showMeChart = (function () {
       minimumFractionDigits: d,
     });
 
-  /* reveal：滚入视野才画；figure 里的 .fig-replay 按钮重播。循环定时器与 rAF 登记在 svg 上，重播前清掉。
+  /* reveal：滚入视野才画，滚出视野停；figure 里的 .fig-replay 按钮重播。
+     循环定时器与 rAF 登记在 svg 上，停/重播前清掉 —— 循环图型不停会一直逼出重绘，
+     页面越长越贵（图滚出视口后开销反而更高）。静态图画完即摘掉观察，永不重画。
      reduced-motion 下同样画：CSS 动画为 none，循环图型自己看 motion 决定走静态末帧。 */
   const reveal = (svg, fn) => {
-    const go = () => {
+    const stop = () => {
+      const live = (svg._timers || []).length;
       (svg._timers || []).forEach((t) => {
         clearInterval(t);
         cancelAnimationFrame(t);
       });
       svg._timers = [];
+      svg._live = false;
+      return live;
+    };
+    const go = () => {
+      stop();
       // 只清图形，保留无障碍契约要求的 <title>/<desc>
       [...svg.children].forEach((c) => {
         if (!/^(title|desc)$/i.test(c.tagName)) c.remove();
       });
+      svg._live = true;
       fn(svg, { keep: (t) => svg._timers.push(t), motion });
     };
+    /* 两道阈值：露出 20% 起画，完全离开才停 —— 中间的部分可见不来回切。 */
     const io = new IntersectionObserver(
       (es) => {
-        if (es[0].isIntersecting) {
-          go();
-          io.disconnect();
-        }
+        const r = es[es.length - 1].intersectionRatio;
+        if (r >= 0.2) {
+          if (!svg._live) go();
+        } else if (r === 0 && svg._live && !stop()) io.unobserve(svg);
       },
-      { threshold: 0.2 }
+      { threshold: [0, 0.2] }
     );
     io.observe(svg);
     const btn = svg.closest("figure")?.querySelector(".fig-replay");

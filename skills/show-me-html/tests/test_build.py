@@ -130,6 +130,19 @@ class BuildCliTests(unittest.TestCase):
                     check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
                     self.assertEqual(check.returncode, 0, check.stderr)
 
+    def test_gallery_loops_are_registered_for_pause(self):
+        """循环必须登记进 keep：reveal 靠它在图滚出视口时停表，漏登记的会一直逼出重绘。"""
+        for src in sorted((SKILL / "assets" / "gallery").glob("*.html")):
+            with self.subTest(page=src.name):
+                text = src.read_text(encoding="utf-8")
+                loose = [
+                    text[max(0, m.start() - 40) : m.start()]
+                    for m in re.finditer(r"\bsetInterval\(", text)
+                    if "keep(" not in text[max(0, m.start() - 40) : m.start()]
+                ]
+                # 只认 setInterval：循环 rAF 也走 keep，但一次性的 rAF（入场前一帧对齐）不必
+                self.assertEqual(loose, [], f"{src.name}: setInterval 未登记进 keep()")
+
     def test_check_only_does_not_mutate(self):
         page = self.copy_fixture()
         self.assertEqual(run_build(page).returncode, 0)
