@@ -42,7 +42,7 @@
 - 同步命令（仓库 → 安装副本）：
 
   ```sh
-  rsync -a --delete --exclude .git --exclude agents --exclude README.md \
+  rsync -a --delete --exclude .git --exclude agents --exclude /README.md \
     /Users/mg/github/skills/skills/show-me-html/ ~/.agents/skills/show-me-html/
   ```
 
