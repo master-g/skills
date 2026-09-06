@@ -1164,6 +1164,66 @@ main > section > h3 + * {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+/* ── 报告节律：主栏 + 口径侧栏 ────────────────────────────────────
+         主栏按「编号眉标 → 结论句标题 → 证据 → 来源行」一节一节往下；
+         侧栏放读者随时要查的口径：样本、时间范围、定义、数据来源。
+         侧栏 sticky，900px 以下回到文流；标题加 data-toc-skip 不进目录。 */
+.with-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(13rem, 0.7fr);
+  align-items: start;
+  gap: 2.5rem;
+}
+.with-rail > * {
+  min-width: 0;
+}
+/* 主栏内容不是 section 的直接子元素，间距节奏在这里补一遍 */
+.with-rail > :is(div, aside) > * + * {
+  margin-block-start: 1.25rem;
+}
+.with-rail > :is(div, aside) > * + :is(h2, h3, .eyebrow) {
+  margin-block-start: 3.5rem; /* 新一节开始 */
+}
+.with-rail > :is(div, aside) > .eyebrow + :is(h2, h3) {
+  margin-block-start: 0.5rem;
+}
+.with-rail > :is(div, aside) > :is(h2, h3) + * {
+  margin-block-start: 0.75rem;
+}
+.method-rail {
+  position: sticky;
+  top: 5rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-muted-foreground);
+  /* 卡片面色而不是裸文字：口径栏是内容，不能和右侧目录长成两套导航 */
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.375rem;
+}
+.method-rail :is(h2, h3) {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+.method-rail > * + * {
+  margin-block-start: 0.75rem;
+}
+.method-rail > .eyebrow {
+  margin-block-start: 1.75rem;
+}
+.method-rail > .eyebrow:first-child {
+  margin-block-start: 0;
+}
+@media (max-width: 900px) {
+  .with-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .method-rail {
+    position: static;
+  }
+}
 /* 眉标：mono 大写小字。放在 [data-tone] 里会跟着拿分类色 */
 .eyebrow {
   font-family: var(--font-mono);
@@ -1371,7 +1431,10 @@ math.tml-display {
   font-size: 0.74rem;
   color: var(--color-muted-foreground);
 }
-.fig-src {
+/* .src 是脱离 figure 的来源行：表格、指标带、引文下面也要交代来源 */
+.fig-src,
+.src {
+  font-family: var(--font-mono);
   font-size: 0.64rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1965,16 +2028,13 @@ body[data-recipe] main > section:first-child > .lede {
 .recipe-matrix > [data-recipe="status-report"] .metric-band {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-  gap: 1px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-border);
-  overflow: clip;
+  gap: 0.75rem; /* 面色分格，不画边线；auto-fit 折行后不会留下空格子 */
 }
 [data-recipe="status-report"] .metric-band > * {
   min-width: 0;
   padding: 1rem;
   background: var(--color-card);
+  border-radius: var(--radius);
 }
 [data-recipe="status-report"] .metric-band strong {
   display: block;
@@ -2257,7 +2317,14 @@ body[data-recipe] main > section:first-child > .lede {
     min-height: auto;
     break-after: page;
   }
-  :is(.gotcha-rail, .control-rail, .node-detail, .glossary-rail, .change-rail) {
+  :is(
+    .gotcha-rail,
+    .control-rail,
+    .node-detail,
+    .glossary-rail,
+    .change-rail,
+    .method-rail
+  ) {
     position: static;
     max-height: none;
   }

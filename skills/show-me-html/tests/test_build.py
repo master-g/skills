@@ -276,14 +276,14 @@ class BuildCliTests(unittest.TestCase):
     def test_repeated_eyebrows_warn(self):
         page = self.copy_fixture()
         html = page.read_text(encoding="utf-8").replace(
-            "<h1>", '<p class="eyebrow">周报</p><p class="eyebrow">状态</p><h1>', 1
+            "<h1>", '<p class="eyebrow">周报</p><h2>周报</h2><p class="eyebrow">状态</p><h1>', 1
         )
         page.write_text(html, encoding="utf-8")
 
         result = run_build(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("eyebrow", result.stdout + result.stderr)
+        self.assertIn("眉标口吃", result.stdout + result.stderr)
 
 
     def test_repeated_ink_cards_warn(self):

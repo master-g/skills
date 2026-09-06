@@ -666,16 +666,21 @@ def check(html, path, allow_legacy_recipe=False):
     if len(h1s) > 1:
         errors.append(f"页面有 {len(h1s)} 个 <h1>：一级标题只能有一个，小节用 h2/h3。")
 
-    eyebrow_count = sum(
-        "eyebrow" in classes.split()
-        for classes in re.findall(
-            r'<[a-z][^>]*\bclass=["\']([^"\']*)["\']', stripped, flags=re.I
-        )
-    )
-    if eyebrow_count > 1:
+    # 眉标口吃：眉标文字与紧随其后的标题重复。数量本身不是问题——报告节律里每节一个编号眉标是正当用法
+    stutters = []
+    for m in re.finditer(r'<[a-z][^>]*\bclass=["\'][^"\']*\beyebrow\b[^"\']*["\'][^>]*>(.*?)</[a-z0-9]+>', stripped, flags=re.I | re.S):
+        eyebrow = re.sub(r"<[^>]+>", "", m.group(1)).strip()
+        nxt = re.search(r"<h[1-3]\b[^>]*>(.*?)</h[1-3]>", stripped[m.end():], flags=re.I | re.S)
+        if not eyebrow or not nxt:
+            continue
+        heading = re.sub(r"<[^>]+>", "", nxt.group(1)).strip()
+        norm = lambda t: re.sub(r"[\s·:：,，。.\-–—]+", "", t).lower()
+        a, b = norm(eyebrow), norm(heading)
+        if a and b and (a in b or b in a):
+            stutters.append(eyebrow)
+    if stutters:
         warns.append(
-            f"页面用了 {eyebrow_count} 个 eyebrow：眉标只保留标题没有的范围、状态或来源；"
-            "重复标题时删掉"
+            f"眉标口吃 {len(stutters)} 处（{'、'.join(stutters[:3])}）：眉标只保留标题没有的范围、状态或来源；重复标题时删掉"
         )
 
     ink_cards = len(re.findall(r'<[a-z][^>]*\bdata-variant=["\']ink["\']', stripped, flags=re.I))
