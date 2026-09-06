@@ -69,7 +69,7 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 
 - **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
   `<meta charset>`/viewport/`lang`/`<title>` 齐全、无样例残留、`<main>` 非空、页面没有写死颜色、
-  `body[data-recipe]` 是 20 个受支持配方之一、动态内容不使用 `innerHTML`/`outerHTML` 赋值、
+  `body[data-recipe]` 是 21 个受支持配方之一、动态内容不使用 `innerHTML`/`outerHTML` 赋值、
   **`<main>` 的直接子元素全是 `<section>`**（间距节奏挂在 `main > section > * + *` 上，
   不包 section 的内容拿不到任何块间距，整页会挤成一团 —— 这条是 ERROR）。
 - **渲染级**：装了 Chrome/Chromium 就在 500px 与 1280px 下实际渲染，检出横向溢出并点名越界元素。

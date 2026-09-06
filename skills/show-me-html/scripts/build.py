@@ -30,7 +30,7 @@ RECIPES = (
     "animation-proto", "interaction-proto", "status-report", "incident-report",
     "implementation-plan", "slide-deck", "flowchart", "svg-illustrations",
     "feature-explainer", "concept-explainer", "triage-board", "config-editor",
-    "text-tuner",
+    "text-tuner", "share-card",
 )
 
 CSS_SLOT = "<!--SHOW-ME:CSS-->"
@@ -758,9 +758,72 @@ PROBE = """
       }
     });
   }
+  document.querySelectorAll('.sheet').forEach(function(s){
+    if (s.scrollHeight > s.clientHeight + 1 || s.scrollWidth > s.clientWidth + 1)
+      over.push('定尺卡溢出：内容 ' + s.scrollHeight + 'px > 卡高 ' + s.clientHeight + 'px，换更少的内容或另一张卡，不缩字号');
+  });
   document.title = 'PROBE|' + de.scrollWidth + '|' + de.clientWidth + '|' + over.slice(0, 4).join('  ');
 });</script>
 """
+
+# ── 定尺卡截图（--shot）────────────────────────────────────────────
+SHOT_CSS = """
+<style>
+  .page-chrome, .toc { display: none !important; }
+  body { background: transparent !important; }
+  .layout, main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .sheet-stage { justify-content: flex-start !important; overflow: visible !important; }
+  .sheet { box-shadow: none !important; }
+  main > section { margin: 0 !important; }
+</style>
+"""
+
+
+def sheet_size(html):
+    """页面可在自己的 <style> 里改 --sheet-w / --sheet-h；读不到就用配方默认 600×1000。"""
+    def pick(name, default):
+        found = re.findall(rf"{name}\s*:\s*(\d+)px", html)
+        return int(found[-1]) if found else default
+    return pick("--sheet-w", 600), pick("--sheet-h", 1000)
+
+
+def shoot_sheets(page, theme="light", scale=2):
+    """把每张 .sheet 渲染成 PNG：无头 Chrome 按卡的尺寸开窗，隐藏 chrome 与桌面，两倍像素。
+    返回 (输出文件列表, 错误信息)。"""
+    import subprocess, tempfile
+    chrome = find_chrome()
+    if not chrome:
+        return [], "找不到 Chrome/Chromium"
+    html = page.read_text(encoding="utf-8")
+    # 只数 class 里独立的 sheet 一词：sheet-stage / sheet-body 不算
+    n = len(re.findall(r'class=["\'](?:[^"\']*\s)?sheet(?:\s[^"\']*)?["\']', html))
+    if not n:
+        return [], "页面里没有 .sheet"
+    w, h = sheet_size(html)
+    outs = []
+    with tempfile.TemporaryDirectory() as td:
+        for i in range(n):
+            hide = "".join(
+                f".sheet-stage:nth-of-type({j + 1}){{display:none!important}}" for j in range(n) if j != i
+            )
+            themed = html.replace(
+                "<head>",
+                f'<head><script>try{{localStorage.setItem("show-me-theme","{theme}")}}catch(e){{}}</script>', 1,
+            ) + SHOT_CSS + f"<style>{hide}</style>"
+            probe = Path(td) / f"shot-{i}.html"
+            probe.write_text(themed, encoding="utf-8")
+            suffix = f"-{i + 1}" if n > 1 else ""
+            out = page.with_name(f"{page.stem}{suffix}{'-dark' if theme == 'dark' else ''}.png")
+            try:
+                subprocess.run(
+                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
+                     f"--force-device-scale-factor={scale}", "--virtual-time-budget=4000",
+                     f"--window-size={w},{h}", f"--screenshot={out}", probe.as_uri()],
+                    capture_output=True, text=True, timeout=90, check=True)
+            except Exception as e:
+                return outs, f"截图失败：{e}"
+            outs.append(out)
+    return outs, None
 
 CHROME_PATHS = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -817,6 +880,8 @@ def render_check(page, widths=(500, 1280)):
             if sw > cw + 1:
                 issues.append(f"{cw}px 视口横向溢出：文档宽 {sw}px"
                               + (f"；越界元素：{who}" if who else ""))
+            elif "定尺卡溢出" in who and w == max(widths):
+                issues.append(who)
     return issues, measured, True
 
 
@@ -833,6 +898,13 @@ def main():
         "--open",
         action="store_true",
         help="自检通过后用系统默认浏览器打开（macOS: open / Windows: os.startfile / Linux·WSL: wslview→xdg-open）",
+    )
+    ap.add_argument(
+        "--shot",
+        nargs="?",
+        const="light",
+        choices=("light", "dark", "both"),
+        help="share-card 配方：自检通过后把每张 .sheet 截成 PNG（两倍像素，放在页面旁边）。默认浅色，可选 dark / both",
     )
     args = ap.parse_args()
 
@@ -877,6 +949,14 @@ def main():
     elif not args.no_render:
         print("渲染检查未运行：找不到 Chrome/Chromium。横向溢出没有被验证过，"
               "自己在浏览器里拉一遍窄屏，不要报「已验证」。")
+
+    if args.shot:
+        for theme in (("light", "dark") if args.shot == "both" else (args.shot,)):
+            outs, err = shoot_sheets(args.page, theme)
+            for o in outs:
+                print(f"已截图  {o}")
+            if err:
+                print(f"--shot 未完成：{err}")
 
     if args.open:
         if errors:

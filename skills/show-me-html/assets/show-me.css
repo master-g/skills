@@ -879,6 +879,11 @@ kbd,
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums lining-nums;
 }
+/* 它常写成 <p>：浏览器默认 1em 外边距在 44px 字号下是 44px 空隙。
+   :where 让它零优先级，骨架的 main > section > * + * 节奏仍然压得过它 */
+:where(.stat-num) {
+  margin-block: 0;
+}
 .stat-num > strong {
   font-weight: inherit;
 }
@@ -2117,6 +2122,130 @@ body[data-recipe] main > section:first-child > .lede {
   scroll-snap-type: y proximity;
 }
 
+/* ── share-card：定尺卡，截图转发用 ─────────────────────────────
+   默认 600×1000（lieflat R11 的社媒竖卡）；页面可在自己的 <style> 里改
+   --sheet-w / --sheet-h。卡内 overflow: clip，内容装不下就是装不下：
+   build.py 的渲染探针会报错，正确做法是删内容或拆第二张卡，不是缩字号。
+   窄视口下骨架 JS 按 transform 等比缩小整张卡，卡内几何一个像素不变。 */
+body[data-recipe="share-card"] {
+  --sheet-w: 600px;
+  --sheet-h: 1000px;
+}
+/* 定尺卡的 chrome 退成桌面：不要全宽横栏和重复的标题，只留右上角一簇悬浮按钮；
+   画布用弱化面色当桌面，卡靠阴影浮在上面。主题切换与复制都还在。 */
+body[data-recipe="share-card"] {
+  background: var(--color-muted);
+}
+[data-recipe="share-card"] .page-chrome {
+  position: fixed;
+  inset: 0.75rem 0.75rem auto auto;
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+}
+[data-recipe="share-card"] .chrome-inner {
+  max-width: none;
+  padding: 0;
+}
+[data-recipe="share-card"] .chrome-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+[data-recipe="share-card"] .chrome-actions {
+  gap: 0.125rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-background) 88%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-raised);
+}
+/* 胶囊里的按钮跟着变圆：去描边、去按钮组的拼接边，选中态是一枚实心圆点 */
+[data-recipe="share-card"] .chrome-actions .btn,
+[data-recipe="share-card"] .chrome-actions .button-group > .btn {
+  border-color: transparent;
+  border-radius: 999px;
+  margin-inline-start: 0;
+  background: transparent;
+}
+[data-recipe="share-card"] .chrome-actions .btn:hover {
+  background: var(--color-accent);
+}
+[data-recipe="share-card"]
+  .chrome-actions
+  .theme-switch
+  button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+[data-recipe="share-card"] main {
+  padding-block: 3.5rem 4rem;
+}
+[data-recipe="share-card"] .sheet-stage {
+  display: flex;
+  justify-content: center;
+  overflow: clip;
+}
+[data-recipe="share-card"] .sheet,
+.recipe-matrix > [data-recipe="share-card"] .sheet {
+  width: var(--sheet-w);
+  height: var(--sheet-h);
+  flex: none;
+  overflow: clip;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1.5rem;
+  padding: 2.25rem;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-raised);
+  transform-origin: top left;
+}
+.recipe-matrix > [data-recipe="share-card"] .sheet {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 5;
+}
+[data-recipe="share-card"] .sheet > * {
+  min-width: 0;
+  min-height: 0;
+}
+[data-recipe="share-card"] .sheet-mast,
+[data-recipe="share-card"] .sheet-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+[data-recipe="share-card"] .sheet-mast {
+  border-block-end: 1px solid var(--color-foreground);
+  padding-block-end: 0.6rem;
+}
+[data-recipe="share-card"] .sheet-mast strong {
+  color: var(--color-foreground);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.875rem;
+}
+[data-recipe="share-card"] .sheet-body > * + * {
+  margin-block-start: 1.25rem;
+}
+[data-recipe="share-card"] .sheet-body > h1 {
+  font-size: 2.25rem;
+  line-height: 1.15;
+  max-width: none;
+}
+[data-recipe="share-card"] .sheet-body > .lede {
+  font-size: 1rem;
+}
+
 [data-recipe="flowchart"] .diagram-layout,
 .recipe-matrix > [data-recipe="flowchart"] .recipe-stage {
   display: grid;
@@ -2313,6 +2442,10 @@ body[data-recipe] main > section:first-child > .lede {
 }
 
 @media print {
+  [data-recipe="share-card"] .sheet {
+    box-shadow: none;
+    break-inside: avoid;
+  }
   [data-recipe="slide-deck"] .slide {
     min-height: auto;
     break-after: page;

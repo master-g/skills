@@ -2,7 +2,7 @@
 
 把素材做成一个**自包含的静态 HTML 页面** —— 一个文件，无构建、无依赖、离线可开、发给谁都能直接看。
 
-视觉层由自有 `show-me.css` 提供：一墨一纸，所有灰由墨纸两极派生，一个橙色落点；标题用 Newsreader，正文用 IBM Plex Sans。20 个配方通过几何和证据载体区分，不靠换色。公式写 LaTeX，构建时编译成 MathML。每一页固定带：
+视觉层由自有 `show-me.css` 提供：一墨一纸，所有灰由墨纸两极派生，一个橙色落点；标题用 Newsreader，正文用 IBM Plex Sans。21 个配方通过几何和证据载体区分，不靠换色。公式写 LaTeX，构建时编译成 MathML。每一页固定带：
 
 - **light / dark / system 三态主题切换**，选择记在 localStorage，首屏前生效，不闪。
 - **「复制为 Markdown」按钮**，一键把整页变成 GFM，能贴进文档、粘进 IM、喂给别的模型。
@@ -58,7 +58,7 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 与 effective-html 的关系
 
-两者都输出单文件 HTML，但视觉系统和交互契约独立：effective-html 面向通用可视化交付；本 skill 的页面固定带三态主题切换和 Markdown 导出，并用 20 个任务配方服务团队内转发。
+两者都输出单文件 HTML，但视觉系统和交互契约独立：effective-html 面向通用可视化交付；本 skill 的页面固定带三态主题切换和 Markdown 导出，并用 21 个任务配方服务团队内转发。
 
 两者都装时的分工：effective-html 自动触发，是默认；要主题切换或 Markdown 导出就打 `/show-me-html` 点名。
 

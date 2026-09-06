@@ -121,6 +121,28 @@
 
     <!--SHOW-ME:JS-->
     <script>
+      /* ── 定尺卡（share-card）：视口比卡窄时整张等比缩小，卡内几何不变 ── */
+      (function () {
+        var sheets = document.querySelectorAll(".sheet");
+        if (!sheets.length) return;
+        var fit = function () {
+          sheets.forEach(function (s) {
+            var stage = s.parentElement;
+            s.style.transform = "";
+            stage.style.height = "";
+            var k = Math.min(1, stage.clientWidth / s.offsetWidth);
+            if (k < 1) {
+              s.style.transform = "scale(" + k + ")";
+              stage.style.height = s.offsetHeight * k + "px";
+              stage.style.justifyContent = "flex-start";
+            } else {
+              stage.style.justifyContent = "";
+            }
+          });
+        };
+        fit();
+        addEventListener("resize", fit);
+      })();
       /* ── 滑块填充 ──────────────────────────────────────────────────────
          轨道的已填充部分由 --slider-value 驱动。骨架始终同步这个变量，
          因而只使用滑块的页面不依赖条件内联的组件行为 JS。 */

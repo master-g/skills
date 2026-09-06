@@ -490,4 +490,4 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 
 ## 单一视觉层
 
-`show-me-html` 不再提供 `--style` 风格包。所有页面使用同一套 token、主题和组件状态；20 个配方通过几何、证据载体和交互方式区分。需要改变视觉方向时改 `assets/show-me.css` 与本文，不要在单页上叠一套主题。
+`show-me-html` 不再提供 `--style` 风格包。所有页面使用同一套 token、主题和组件状态；21 个配方通过几何、证据载体和交互方式区分。需要改变视觉方向时改 `assets/show-me.css` 与本文，不要在单页上叠一套主题。

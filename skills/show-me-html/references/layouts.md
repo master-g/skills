@@ -8,6 +8,10 @@
 
 - 每个大节一个 `<section id="...">`，配 `<h2>`；`id` 供 TOC 锚点用。
 - 让 `body[data-recipe]` 选择版心。长文配方默认 46rem，报告/看板/比较默认 60–72rem，页面不要重复覆盖。
+  版心取**正文行长上限与最宽证据载体的较大者**：中文正文一行 35 字左右是上限，但一张 800px 的通栏图或八列表格
+  也决定版心（lieflat R06 选 980 版心的理由就是要整行放下 860px 的大图）。证据比版心宽时局部横滚，不把整页撑宽。
+  报告类配方还按密度与阅读速度二次筛选：窄栏叙事（≤3 图，读 30 秒以上）用长文版心；总览、仪表盘（4 图以上，10 秒扫读）用 60–72rem；
+  要截图转发的用 `share-card` 定尺。
 - 卡片网格：`display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))`。`min(100%, …)` 不能省，否则窄屏溢出。
 - 首屏直接给任务、结论或可操作对象。眉标只放标题里没有的范围、状态或来源。
 - 先用文流和留白分组；卡片只承载可独立移动、比较或操作的单元。
@@ -264,6 +268,43 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码�
 - 每屏一个 `<section class="slide">`，`height:100vh; display:grid; place-content:center`。
 - 翻页代码见 `interactions.md`。
 - **判断一次**：读者会自己慢慢看吗？会的话改用 `status-report` 或 `implementation-plan` —— 幻灯片对细读的人是折磨。
+
+---
+
+### `share-card` · 截图转发的定尺卡
+
+**视觉契约** — 首屏：整张卡就是首屏，一个决定性结论；主要证据：一个大数或一张图；细节：两到四个信号格与一句 takeaway；结束：来源与日期；窄屏：整卡等比缩小，卡内几何不变。
+
+刊头 → 结论句 → 大数或一张图 → 信号格 → takeaway → 脚注。默认 600×1000，页面 `<style>` 里改 `--sheet-w` / `--sheet-h` 换画幅。
+
+```html
+<section>
+  <div class="sheet-stage">
+    <article class="sheet">
+      <div class="sheet-mast">
+        <strong>数据管线周报</strong><span>2026 · W35</span>
+      </div>
+      <div class="sheet-body">
+        <h1>…</h1>
+        <p class="stat-num">9<small>批次</small></p>
+        …
+      </div>
+      <div class="sheet-foot">
+        <span>来源 · 管线监控</span><span>2026-09-06</span>
+      </div>
+    </article>
+  </div>
+</section>
+```
+
+- 卡内 `overflow: clip`，装不下时 `build.py` 渲染探针报 ERROR。正确做法是删内容或拆第二张卡，**不缩字号**。
+- 一张卡一个结论；两个结论就是两张卡（两个 `.sheet-stage`）。
+- 卡内仍用 `.hl`、`.stat-num`、`.src`、暗卡等既有契约；不引入卡内私有字号体系。
+- 出图：`python3 <skill-path>/scripts/build.py 页面.html --shot`（浅色；`--shot dark` / `--shot both`）。
+  构建器按卡的尺寸开无头 Chrome，隐藏工具条与桌面，两倍像素输出 PNG 到页面旁边（600×1000 → 1200×2000），多张卡各出一张。
+  手动截也行：Chrome 开发者工具选中 `.sheet` 节点，右键 Capture node screenshot。
+- 定尺卡页面的 chrome 退成桌面：没有横栏和页头标题，只有右上角一颗悬浮按钮胶囊；主题切换与复制照常。
+  来源：lieflat 报告模板 R11。
 
 ---
 

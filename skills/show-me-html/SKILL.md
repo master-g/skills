@@ -34,6 +34,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 | 查阅设计系统、比较组件 | `design-system-ref` / `component-variants`                       |
 | 体验动效或交互         | `animation-proto` / `interaction-proto`                          |
 | 演讲或拿走示意图       | `slide-deck` / `svg-illustrations`                               |
+| 截图转发一个结论       | `share-card`                                                     |
 | 查看状态、故障、计划   | `status-report` / `incident-report` / `implementation-plan`      |
 | 追踪流程、分拣条目     | `flowchart` / `triage-board`                                     |
 | 编辑配置或文案         | `config-editor` / `text-tuner`                                   |
@@ -66,6 +67,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 
 文件名用可辨认的 kebab-case，存到用户指定位置或工作目录。报告文件路径、先看哪里及材料缺口。
 通过检查后直接运行 `python3 <skill-path>/scripts/build.py 页面.html --open`；用户要求不打开时跳过。
+`share-card` 定尺卡加 `--shot` 出 PNG，把图片路径一并报告。
 这是默认浏览器打开行为，不改变输出格式。浏览器不可用时报告路径与未验证部分。
 
 视觉反馈先定位实际页面问题，说明具体改法后执行；只有会改变结果的歧义才提问。
