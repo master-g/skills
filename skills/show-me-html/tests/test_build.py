@@ -286,6 +286,22 @@ class BuildCliTests(unittest.TestCase):
         self.assertIn("eyebrow", result.stdout + result.stderr)
 
 
+    def test_repeated_ink_cards_warn(self):
+        page = self.copy_fixture()
+        html = page.read_text(encoding="utf-8").replace(
+            "<h1>",
+            '<article class="card" data-variant="ink"><section><p>1</p></section></article>'
+            '<article class="card" data-variant="ink"><section><p>2</p></section></article><h1>',
+            1,
+        )
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("反色暗卡", result.stdout + result.stderr)
+
+
 class VisualContractTests(unittest.TestCase):
     def test_css_covers_every_recipe(self):
         css = CSS.read_text(encoding="utf-8")

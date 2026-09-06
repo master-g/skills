@@ -20,6 +20,9 @@
   --ink: #1c1c1a;
   --paper: #f0efeb;
   --hero: #f5572f; /* 唯一落点：焦点环、关键连线、图表主角、危险 */
+  /* 反色用的两极镜像：暗卡把它们接到自己的 --ink / --paper 上 */
+  --ink-rev: var(--paper);
+  --paper-rev: var(--ink);
   --tone-clay: var(--hero);
   --tone-fig: #b75d82;
   --tone-sky: #4e8ccf;
@@ -28,7 +31,11 @@
   --tone-heather: #7772b5;
   --tone-kraft: #b47a45;
   --tone-manilla: #d5a72f;
+}
 
+/* 派生层挂在 :root 与暗卡两处：暗卡局部换极后，这一整层在卡内重新算一遍 */
+:root,
+.card[data-variant="ink"] {
   /* ── 派生层 · 明度阶（墨在纸上的占比） ── */
   --ink-90: color-mix(in oklab, var(--ink) 90%, var(--paper));
   --ink-70: color-mix(in oklab, var(--ink) 70%, var(--paper));
@@ -96,7 +103,9 @@
   --syn-string: var(--ink-60);
   --syn-type: var(--ink-70);
   --syn-number: color-mix(in oklab, var(--hero) 65%, var(--ink));
+}
 
+:root {
   --radius: 0.75rem;
   --radius-sm: 0.5rem;
   --radius-lg: 1.5rem;
@@ -122,6 +131,17 @@ html.dark,
   --ink: #f0efeb;
   --paper: #1c1c1a;
   --shadow-raised: 0 1px 1px rgb(0 0 0 / 0.18), 0 12px 32px rgb(0 0 0 / 0.2);
+}
+
+/* ── 反色：一页一块暗卡 ────────────────────────────────────────
+   卡内墨纸互换，派生层在同一选择器上重算，所以卡内的次要文字、边界、图表阶
+   和 .hl 全部自动反过来；深色主题下它就是那块亮卡。反色与 --hero 共用一个
+   强调预算：一页最多一块，build.py 超过即 WARN。放唯一的决定性数字或结论。 */
+.card[data-variant="ink"] {
+  --ink: var(--ink-rev);
+  --paper: var(--paper-rev);
+  background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 [data-tone="clay"] {
@@ -336,12 +356,15 @@ textarea:disabled {
 .card > footer {
   padding: 1rem 1.125rem;
 }
+.card > :is(header, section) + :is(section, footer) {
+  padding-block-start: 0.25rem;
+}
 .card > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  border-block-end: 1px solid var(--color-border);
+  /* header / section / footer 之间不画分隔线：卡内靠留白分段，和分卡的原则一致 */
 }
 .card > header > :is(h2, h3, p),
 .card > section > :first-child,
@@ -357,12 +380,12 @@ textarea:disabled {
   align-items: center;
   justify-content: flex-end;
   gap: 0.625rem;
-  border-block-start: 1px solid var(--color-border);
 }
 .card[data-size="sm"] > :is(header, section, footer) {
   padding: 0.75rem 0.875rem;
 }
 .card-action {
+  flex: none; /* 标题组占满剩余宽度时，动作区不能被挤成竖排 */
   margin-inline-start: auto;
 }
 
@@ -1109,6 +1132,17 @@ main > section > h3 + * {
 }
 .alert > section > p + p {
   margin-block-start: 0.5rem;
+}
+/* 行内反色高亮：墨底纸字，换行处每段各自闭合。给标题里的答案词、论点里的关键词；
+         它和暗卡一样花的是强调预算，一个标题里只圈一处。 */
+.hl {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  /* 行内背景取字体的上下伸展区，Newsreader 下伸长、汉字方块偏上：
+     只垫上边不垫下边，汉字才在底色里居中（中英数字混排实测 0.16em）。 */
+  padding: 0.16em 0.35em 0;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 /* 眉标：mono 大写小字。放在 [data-tone] 里会跟着拿分类色 */
 .eyebrow {

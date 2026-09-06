@@ -678,6 +678,12 @@ def check(html, path, allow_legacy_recipe=False):
             "重复标题时删掉"
         )
 
+    ink_cards = len(re.findall(r'<[a-z][^>]*\bdata-variant=["\']ink["\']', stripped, flags=re.I))
+    if ink_cards > 1:
+        warns.append(
+            f"页面有 {ink_cards} 块反色暗卡：反色与 hero 共用强调预算，一页只留一块给决定性的数字或结论"
+        )
+
     if has_math_source(stripped):
         errors.append("正文里还有未编译的 LaTeX 定界符（$…$ / $$…$$ / \\(…\\)）：跑一遍不带 --check-only 的 build，"
                       "或检查定界符是否成对")
