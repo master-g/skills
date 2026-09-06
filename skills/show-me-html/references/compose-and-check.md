@@ -16,7 +16,10 @@
 2. **先读 `visual-system.md`，写 markup 前定位 `components.md` 中实际用到的组件。** 前者规定视觉所有权与配方几何，后者规定稳定的 DOM、ARIA 和 `data-*` 契约。按钮、卡片、徽章、表格、提示块的状态已经在两套主题下调好；
    自己写一遍只会得到深色主题下读不了的东西。配色一律用 token
    （`var(--color-*)`、分类色 `data-tone`、图表色 `var(--chart-*)`），不写死颜色。
-   **画任何 SVG 图前读 `diagrams.md`**：类型路由、连线六条硬规则、节点语义、复杂度预算都在那里。
+   **公式写 LaTeX**（行内 `$…$` 线性形式，块级 `$$…$$`），`build.py` 编译成 MathML，契约见 `components.md`「公式」。
+   **画任何 SVG 示意图前读 `diagrams.md`**：类型路由、连线六条硬规则、节点语义、复杂度预算都在那里。
+   **画数据图前读 `charts.md`**：先判数据形状，按「编辑型 → 基础型 → 快读型」审计候选，锁定编号后从
+   `../assets/gallery/` 复制 figure 与渲染块；页面写了 `data-chart`，`build.py` 才内联 `charts.js`。
 3. **按配方搭结构**，见 `layouts.md`。材料撑不起的章节直接删 —— 短而诚实的页面胜过填满的空壳。
 4. **要加交互时读 `interactions.md`**：拖拽、键盘翻页、旋钮联动、可点 SVG、筛选、滚动高亮都有现成代码。
 5. **自包含是硬约束，只有一个例外。** 不引 CDN、不引外链图片、不引框架。图标写 `<i data-lucide="名字"></i>`
@@ -41,7 +44,8 @@
    - **分类** —— 卡片、徽章、章节写 `data-tone="clay|fig|sky|cactus|olive|heather|kraft|manilla"`，
      同一页不超过 4 个色调。分类只有一种时不上色。
    - **状态** —— `data-variant="destructive"` 等，表达语义，不做装饰。
-   - **数据** —— 图表与示意图的序列色写 `var(--chart-1)` … `var(--chart-5)`。
+   - **数据** —— 图表与示意图的序列色写 `var(--chart-1)` … `var(--chart-5)`，这是明度阶，1 最重；
+     一张图只有一个元素能拿 `var(--chart-hero)`。
 
    其余地方保持 ink 配 canvas。给标题、正文、边框加颜色属于装饰，删掉。
 
@@ -58,8 +62,8 @@
 python3 <skill-path>/scripts/build.py 输出文件.html
 ```
 
-它把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
-页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、
+它先把正文里的 LaTeX 编译成 MathML（需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
+页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、页面有 `data-chart` 时内联图表运行时 `charts.js`、
 按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
 
 - **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
@@ -86,6 +90,7 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 - 承诺的交互都点一遍：折叠能开、拖拽能动、方向键能翻页。
 - **原生控件有没有掉回系统外观**：滑块是不是变成了亮蓝色粗轨道、复选框是不是系统蓝。
   这类问题不报错、只难看，脚本只能 WARN，最终得靠这一眼。
+- 数据图对照 `charts.md` 自检：一张图一个 `--chart-hero`、柱不断轴、面积走 sqrt、单位行说清图例、reduced-motion 有末帧、重播按钮能重来。
 - 图里的动效有没有在承载论点。纯装饰的动效删掉；该有方向的（失效向右流动、数据从旧到新）
   要看得出方向，均匀铺色等于把论点丢了。
 - 中西混排的标题看一眼字重：中文明显比拉丁细，说明配平面没生效（多半是本机没装思源宋体，

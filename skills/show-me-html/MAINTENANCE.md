@@ -29,6 +29,8 @@
 
 改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
+改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，把四个 gallery 页复制到临时目录跑 `build.py`（ERROR/WARN 为零），再无头渲染一遍看没有空 svg 和控制台报错、light/dark 各截一张。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析。
+
 旧页面不会自动获得新的视觉或骨架行为，它们携带的是生成时的 CSS 与 HTML 副本。视觉/骨架修复只影响今后合成的页面；历史页面不动。
 旧页面的回归用 `--check-only` 验证新检查不误报即可。
 
@@ -49,6 +51,12 @@
 
   同步后用 `diff -rq skills/show-me-html ~/.agents/skills/show-me-html` 验证一致
   （`.git`、`agents/`、`README.md` 属仓库侧文件，差异属预期）。
+
+## Vendor 升级
+
+- Temml：`npm pack temml@<版本>`，取 `dist/temml.cjs` 与 `dist/Temml-Local.css` 覆盖 `assets/vendor/temml/`，更新 `README.md` 第三方表的版本。`math.mjs` 在运行时剥掉 CSS 里的 `@font-face`（外链 woff2）和 `math {}` 字体栈，升级后确认这两个正则仍能命中。
+- 图型目录与 lieflat-charts 的对应关系写在 `references/charts.md` 顶部；上游更新时按数据形状对比目录，不整页照搬（上游模板依赖 ECharts/Chart.js 与联网字体，本 skill 全部用 SVG 重做）。
+- 改视觉方向只动 `show-me.css` 原语层（`--ink` / `--paper` / `--hero` / `--tone-*`）；派生层不写字面色。`tests/test_build.py` 有一条测试盯着这个数。
 
 ## 观察名单（复现后编码）
 

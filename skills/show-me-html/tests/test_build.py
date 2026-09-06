@@ -1,6 +1,7 @@
 import hashlib
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -90,6 +91,44 @@ class BuildCliTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('data-show-me="js"', page.read_text(encoding="utf-8"))
+
+    def test_chart_page_inlines_chart_runtime(self):
+        page = self.copy_fixture()
+        html = page.read_text(encoding="utf-8")
+        html = html.replace("</main>", '<section><figure class="fig" data-chart="F1"><div class="fig-box"><svg id="x" viewBox="0 0 4 4" role="img" aria-labelledby="x-t x-d"><title id="x-t">t</title><desc id="x-d">d</desc></svg></div></figure></section></main>')
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertIn('data-show-me="charts"', built)
+        self.assertIn("window.showMeChart", built)
+
+    def test_gallery_pages_build_and_scripts_parse(self):
+        gallery = SKILL / "assets" / "gallery"
+        pages = sorted(gallery.glob("*.html"))
+        self.assertEqual([p.name for p in pages], ["basics.html", "big.html", "editorial.html", "glance.html"])
+        node = shutil.which("node")
+        for src in pages:
+            with self.subTest(page=src.name):
+                tmp = tempfile.TemporaryDirectory()
+                self.addCleanup(tmp.cleanup)
+                page = Path(tmp.name) / src.name
+                page.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+                result = run_build(page)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn("ERROR", result.stdout)
+                self.assertNotIn("WARN", result.stdout)
+                built = page.read_text(encoding="utf-8")
+                self.assertIn('data-show-me="charts"', built)
+                self.assertEqual(built.count("data-chart="), len(re.findall(r"// ════ [A-Z]\d+ · ", built)))
+                if node:
+                    script = re.findall(r"<script>(.*?)</script>", built, re.S)[-1]  # 页尾图型脚本（prettier 可能重排缩进）
+                    js = Path(tmp.name) / "page.js"
+                    js.write_text(script, encoding="utf-8")
+                    check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
+                    self.assertEqual(check.returncode, 0, check.stderr)
 
     def test_check_only_does_not_mutate(self):
         page = self.copy_fixture()
@@ -193,6 +232,34 @@ class BuildCliTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("非语义元素", result.stdout + result.stderr)
 
+    def test_latex_compiles_to_mathml_and_stays_idempotent(self):
+        import shutil
+        if not shutil.which("node"):
+            self.skipTest("需要 node")
+        page = self.copy_fixture()
+        html = page.read_text(encoding="utf-8").replace(
+            "<h1>", "<p>价格 $5 和 $8 不是公式；$E = mc^2$ 是。</p>\n$$\\sum_{k=0}^{n} 2^k$$\n<h1>", 1)
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        out = page.read_text(encoding="utf-8")
+        self.assertEqual(out.count("<math"), 2)
+        self.assertIn("价格 $5 和 $8", out)
+        self.assertIn('display="block"', out)
+        self.assertEqual(out.count('data-show-me="math"'), 1)
+        again = run_build(page)
+        self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+        self.assertEqual(page.read_text(encoding="utf-8"), out)
+
+    def test_uncompiled_latex_is_an_error_in_check_only(self):
+        page = self.copy_fixture()
+        page.write_text(page.read_text(encoding="utf-8").replace("<h1>", "<p>$x^2$</p><h1>", 1), encoding="utf-8")
+        result = run_build(page, "--check-only")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("未编译", result.stdout + result.stderr)
+
     def test_repeated_eyebrows_warn(self):
         page = self.copy_fixture()
         html = page.read_text(encoding="utf-8").replace(
@@ -241,6 +308,16 @@ class VisualContractTests(unittest.TestCase):
         for token in ("--background", "--foreground", "--card", "--muted", "--border"):
             with self.subTest(token=token):
                 self.assertRegex(print_css, rf"{token}:\s*#[0-9a-f]+")
+
+    def test_literal_colors_live_only_in_primitive_layer(self):
+        css = CSS.read_text(encoding="utf-8")
+        body = re.sub(r"@media print\b[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}", "", css)
+        literal = re.findall(r"#[0-9a-fA-F]{3,8}\b", body)
+        # 原语：ink / paper / hero / 7 个 tone / ink-fixed，加深色主题的 ink / paper
+        self.assertLessEqual(len(literal), 13, literal)
+        for token in ("--chart-1", "--chart-hero", "--color-card", "--syn-keyword"):
+            with self.subTest(token=token):
+                self.assertRegex(css, rf"{token}:\s*(?:var|color-mix)\(")
 
     def test_layout_docs_define_every_visual_contract(self):
         layouts = (SKILL / "references" / "layouts.md").read_text(encoding="utf-8")

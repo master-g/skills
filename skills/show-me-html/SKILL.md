@@ -46,12 +46,14 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 新页面从 `assets/shell.html` 开始，说明选定结构后直接继续。
 读取 [合成与验收](references/compose-and-check.md) 中适用部分，以及 [视觉系统](references/visual-system.md)。
 写 markup 时只查 [组件](references/components.md) 中实际需要的 DOM、ARIA 和 `data-*` 契约。
-画图时读 [图示规则](references/diagrams.md)，加交互时读 [交互实现](references/interactions.md)。
+画示意图时读 [图示规则](references/diagrams.md)；材料含数值、占比、分布、网络或流向时读 [数据图规则](references/charts.md)，
+先判数据形状再从图型目录选编号，渲染块从 `assets/gallery/` 复制；加交互时读 [交互实现](references/interactions.md)。
 
 必须保留：
 
 - 未合成源码中的 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->`；合成后占位符由内联资源替代，编辑成品时不重新插入。两种状态都保留工具条和目录，内容位于 `main#doc`，直接子元素为 `section`。
 - `show-me.css` 的语义 token、现有组件契约与可访问的键盘路径；页面只补材料特有几何。
+- 公式写 LaTeX（行内 `$…$` 线性，块级 `$$…$$`），由构建器编译成 MathML；不手写 `<math>`，不引 KaTeX/MathJax。
 - 资源内联，仅允许骨架自带的 Google Fonts 及本地回退。离线可读，不保证字体外观完全一致。
 - 三态主题与 Markdown 复制功能；所有承诺控件实际可用。
 

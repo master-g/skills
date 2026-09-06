@@ -2,33 +2,59 @@
 
 ## 方向
 
-`show-me-html` 是一套编辑式工作台，不是营销页。浅色主题是暖灰纸面和深蓝墨色，深色主题是低亮度蓝黑工作区。钴蓝只标主操作、当前状态和关键连线。结构靠版式与留白，不靠把每块内容都装进卡片。
+`show-me-html` 是一套编辑式工作台，不是营销页。视觉语法来自 **一墨一纸**：纸灰底、炭黑墨，
+所有结构灰都是墨在纸上的明度阶；深色主题只是把墨和纸互换。全页只有一个彩色落点 `--hero`
+（橙），给焦点环、危险、图表主角和关键连线。结构靠版式与留白，卡片靠面色分卡，不靠描边。
 
-字体分工固定：Newsreader 负责标题，IBM Plex Sans 负责正文和控件，IBM Plex Mono 负责代码、路径、时间和数字。Google Fonts 异步加载，失败时按 `components.md` 的本地栈回退。
+字体分工固定：Newsreader 负责标题，IBM Plex Sans 负责正文和控件，IBM Plex Mono 负责代码、路径、时间和数字，
+数学字体栈负责公式。Google Fonts 异步加载，失败时按 `components.md` 的本地栈回退。
 
 ## 所有权
 
 - `assets/show-me.css` 持有 token、两套主题、基础排版、组件状态、chrome、配方几何、打印和 reduced motion。
 - `assets/shell.html` 只持有文档结构与行为：主题初始化、Markdown 导出、TOC 和滑块同步。
+- `scripts/math.mjs` 持有公式编译：LaTeX → MathML，由 `build.py` 调用。
+- `assets/charts.js` 持有数据图运行时（建元素、确定性伪随机、滚入播放与重播），页面出现 `data-chart` 时由 `build.py` 内联；`assets/gallery/*.html` 是 59 张图型的参考实现，页面从中复制渲染块。
 - 页面自己的 `<style>` 只能写材料特有的几何或图形，必须消费语义 token。
 - basecoat CSS 已退出；basecoat JS 只在现有 tabs、dropdown 等组件需要时由 `build.py` 条件内联。
 
-## Token
+## Token 分层
 
-页面使用兼容别名 `--color-*`，不要直接消费原始色值。
+`show-me.css` 的颜色分两层，**只有原语层允许字面色值**：
 
-| 角色             | Token                                                           |
-| ---------------- | --------------------------------------------------------------- |
-| 画布与正文       | `--color-background`, `--color-foreground`                      |
-| 抬升面           | `--color-card`, `--color-card-foreground`                       |
-| 弱化面与次要文字 | `--color-muted`, `--color-muted-foreground`                     |
-| 主操作和焦点     | `--color-primary`, `--color-primary-foreground`, `--color-ring` |
-| 次要与悬停       | `--color-secondary`, `--color-accent`                           |
-| 错误与危险       | `--color-destructive`, `--color-destructive-foreground`         |
-| 边界与输入       | `--color-border`, `--color-input`                               |
-| 分类、图表、语法 | `--tone-*`, `--chart-*`, `--syn-*`                              |
+| 层     | 内容                                                  | 谁能改                           |
+| ------ | ----------------------------------------------------- | -------------------------------- |
+| 原语   | `--ink`、`--paper`、`--hero`、8 个 `--tone-*`         | 只在改视觉方向时改；深色只换墨纸 |
+| 明度阶 | `--ink-90 … --ink-4`，墨在纸上的 `color-mix` 占比     | 不改，加档要说明用途             |
+| 角色   | `--color-*`、`--chart-*`、`--syn-*`，全部由上两层派生 | 页面只消费                       |
+
+换主题 = 换两极；换品牌 = 换 `--hero`。页面使用兼容别名 `--color-*`，不直接消费原语或明度阶。
+
+| 角色             | Token                                                                         |
+| ---------------- | ----------------------------------------------------------------------------- |
+| 画布与正文       | `--color-background`, `--color-foreground`                                    |
+| 抬升面           | `--color-card`, `--color-card-foreground`                                     |
+| 弱化面与次要文字 | `--color-muted`, `--color-muted-foreground`                                   |
+| 主操作和焦点     | `--color-primary`（墨）, `--color-primary-foreground`, `--color-ring`（hero） |
+| 次要与悬停       | `--color-secondary`, `--color-accent`                                         |
+| 错误与危险       | `--color-destructive`（hero）, `--color-destructive-foreground`               |
+| 边界与输入       | `--color-border`, `--color-input`                                             |
+| 分类、图表、语法 | `--tone-*`, `--chart-*`, `--syn-*`                                            |
 
 页面不得用颜色区分配方。关闭颜色后，配方仍应由几何和阅读顺序辨认。
+
+## 明度即数据
+
+图表与示意图的序列色是明度阶，不是色相表：`--chart-1` 最重要（浅色下最黑，深色下最亮），
+`--chart-2 … --chart-5` 依次变浅。多系列按重要性沿阶梯分配，不按出现顺序随手拿。
+`--chart-hero` 只给**一张图里的一个主角元素**（峰值、当前点、改版后）；第二处上 hero 就等于没有主角。
+分类色 `data-tone` 只用于真的有多个平级类目时，同页不超过 4 个。数据图的选型、硬规则与图型目录在 `charts.md`。
+
+## 公式
+
+作者写 LaTeX：行内 `$…$` 或 `\(…\)`，块级 `$$…$$` 或 `\[…\]`。`build.py` 用 vendor 的 Temml 编译成 MathML 内联，
+零运行时 JS；Markdown 导出还原 LaTeX 源。行内公式写线性形式（`a / b`），`\frac` 只用在块级，
+行内堆叠分数会撑坏行高，`build.py` 发 WARN。块级公式居中、可横向滚动。
 
 ## 组件状态
 
@@ -36,7 +62,7 @@
 
 - 焦点环立即出现，不参与动画。
 - 按钮按下使用 `scale(0.96)`；高频交互不加进场动画。
-- 阴影只表达浮层或真正抬升，结构分组用边界和留白。
+- 阴影只表达浮层或真正抬升，结构分组用面色和留白。
 - 原生 input、button、details、dialog 优先于自造控件。
 - hover 不能承载唯一信息。图节点、标签页和重排都必须有键盘路径。
 
@@ -63,9 +89,8 @@
 
 ## 上游借鉴边界
 
-参考 `anthropics/html-effectiveness` 固定提交 `58c305be97f47b26b678f2c07dec01d4242268ec`。借鉴任务驱动的宏观结构、可见证据、批注和有限交互，不复制其象牙白/陶土色品牌、衬线+大写眉标习惯、逐模板 CSS/JS、`innerHTML` 更新、鼠标专用操作或缺失的主题/打印/reduced-motion 处理。
-
-完整证据见 `docs/research/2026-09-01-html-effectiveness-template-assessment.md`。
+- `anthropics/html-effectiveness` 固定提交 `58c305be97f47b26b678f2c07dec01d4242268ec`：借鉴任务驱动的宏观结构、可见证据、批注和有限交互，不复制其品牌色、逐模板 CSS/JS、`innerHTML` 更新、鼠标专用操作或缺失的主题/打印/reduced-motion 处理。证据见 `docs/research/2026-09-01-html-effectiveness-template-assessment.md`。
+- `larashero3-dotcom/lieflat-charts`（2026-09-06 读取，提交 `eace082`）：吸收其一致性的来源 —— 两极色板加透明度阶派生、明度即数据、单一落点、无框圆角卡、token 单一正本；图型目录、数据形状决策树、静态优先与动态触发规则进入 `charts.md`，59 张图型以本 skill 的 token、字体与运行时重做为纯 SVG（原 ECharts/Chart.js 图型全部重写，地图与整页报告模板不收）。不复制 Inter 全家、CDN 依赖与联网字体。
 
 ## 响应式与打印
 

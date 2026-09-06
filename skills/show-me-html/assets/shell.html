@@ -141,6 +141,63 @@
       })();
     </script>
     <script>
+      /* ── 代码工具条：换行 / 复制 ──
+         给每个 pre > code 注入两个按钮。工具条带 data-md-skip，导出 Markdown 时不出现。
+         复制走 navigator.clipboard，失败时退回 execCommand；反馈先行，不等 promise。 */
+      (function () {
+        function mk(label, title) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn";
+          b.setAttribute("data-variant", "outline");
+          b.title = title;
+          b.textContent = label;
+          return b;
+        }
+        function copyText(text) {
+          try {
+            return navigator.clipboard.writeText(text);
+          } catch (e) {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand("copy");
+            } catch (e2) {}
+            ta.remove();
+          }
+        }
+        document.querySelectorAll("pre > code").forEach(function (code) {
+          var pre = code.parentNode;
+          if (pre.querySelector(".code-tools")) return;
+          var bar = document.createElement("div");
+          bar.className = "code-tools";
+          bar.setAttribute("data-md-skip", "");
+          var wrap = mk("换行", "切换自动换行");
+          wrap.setAttribute("aria-pressed", "false");
+          wrap.addEventListener("click", function () {
+            var on = pre.dataset.wrap !== "on";
+            pre.dataset.wrap = on ? "on" : "off";
+            wrap.setAttribute("aria-pressed", String(on));
+          });
+          var copy = mk("复制", "复制代码");
+          copy.addEventListener("click", function () {
+            copy.textContent = "已复制";
+            setTimeout(function () {
+              copy.textContent = "复制";
+            }, 1600);
+            copyText(code.textContent.replace(/\n$/, ""));
+          });
+          bar.appendChild(wrap);
+          bar.appendChild(copy);
+          pre.appendChild(bar);
+        });
+      })();
+    </script>
+    <script>
       /* ── 主题三态切换 ── */
       (function () {
         var root = document.documentElement;
@@ -203,6 +260,7 @@
           "BR",
           "IMG",
           "TIME",
+          "MATH",
           "U",
           "Q",
           "LABEL",
@@ -211,7 +269,7 @@
 
         function skipped(el) {
           return (
-            SKIP.has(el.tagName) ||
+            SKIP.has(el.tagName.toUpperCase()) ||
             el.hasAttribute("data-md-skip") ||
             el.hasAttribute("hidden") ||
             el.getAttribute("aria-hidden") === "true"
@@ -229,8 +287,22 @@
               return;
             }
             if (n.nodeType !== 1 || skipped(n)) return;
-            var t = n.tagName,
+            var t = n.tagName.toUpperCase(),
               inner = inline(n);
+            if (t === "MATH") {
+              /* 公式导出 LaTeX 源：build 编译时留下的 annotation；没有就退回可读文本 */
+              var ann = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              var tex = ann
+                ? ann.textContent.trim()
+                : txt(n.textContent).trim();
+              out +=
+                n.getAttribute("display") === "block"
+                  ? "\n\n$$" + tex + "$$\n\n"
+                  : "$" + tex + "$";
+              return;
+            }
             if (t === "BR") out += "  \n";
             else if (t === "IMG")
               out +=
@@ -327,7 +399,7 @@
           var out = "";
           Array.from(el.children).forEach(function (n) {
             if (skipped(n)) return;
-            var t = n.tagName;
+            var t = n.tagName.toUpperCase();
             if (t === "SUMMARY")
               return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
             if (/^H[1-6]$/.test(t)) {
@@ -347,10 +419,19 @@
                 "```" +
                 lang +
                 "\n" +
-                (n.textContent || "").replace(/\n+$/, "") +
+                /* 取 code 的文本而不是 pre 的：pre 里还有骨架注入的工具条 */
+                ((code || n).textContent || "").replace(/\n+$/, "") +
                 "\n```\n\n";
             } else if (t === "TABLE") {
               out += table(n) + "\n";
+            } else if (t === "MATH") {
+              var ann2 = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              out +=
+                "$$" +
+                (ann2 ? ann2.textContent.trim() : txt(n.textContent).trim()) +
+                "$$\n\n";
             } else if (t === "HR") {
               out += "---\n\n";
             } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {

@@ -38,6 +38,13 @@ JS_SLOT = "<!--SHOW-ME:JS-->"
 CSS_MARK = 'data-show-me="css"'
 JS_MARK = 'data-show-me="js"'
 HL_MARK = 'data-show-me="hl"'
+CHART_MARK = 'data-show-me="charts"'
+CHART_JS = ASSETS / "charts.js"
+MATH_MARK = 'data-show-me="math"'
+MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
+# 作者写 LaTeX：行内 \( … \) 或 $ … $（pandoc 规则），块级 \[ … \] 或 $$ … $$。
+MATH_DELIM_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?:^|[^\\$])\$(?=\S)[^$\n]*?\S\$(?!\d)")
+CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style)\b[\s\S]*?</\1\s*>", re.I)
 
 # 需要 basecoat JS 才能工作的组件。命中任一即内联 JS。
 JS_COMPONENTS = (
@@ -46,9 +53,9 @@ JS_COMPONENTS = (
 )
 
 # 页面自己写死的颜色。show-me-html 自有 CSS 不算。
-SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette)"[^>]*>.*?</style>', re.S)
+SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette|math)"[^>]*>.*?</style>', re.S)
 SYSTEM_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
-SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl)"[^>]*>.*?</script>', re.S)
+SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts)"[^>]*>.*?</script>', re.S)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -167,6 +174,8 @@ KNOWN_FAMILIES = {
     "SF Mono", "SFMono-Regular", "Liberation Mono", "JetBrains Mono",
     "JetBrains Maple Mono", "Cascadia Code", "Fira Code", "IBM Plex Mono",
     "IBM Plex Sans", "Newsreader",
+    # 数学（本机装了哪支用哪支；一支都没有时落到 math 通用族再到衬线）
+    "Latin Modern Math", "STIX Two Math", "Cambria Math", "Noto Sans Math",
     # 中文
     "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei",
     "Songti SC", "STSong", "STHeiti", "SimSun", "SimHei",
@@ -440,6 +449,67 @@ def inline_highlight(html, warns):
     return "".join(parts), {n for names in wanted.values() for n in names}
 
 
+CJK_RE = re.compile(r"[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]")
+BLOCK_MATH_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)")
+
+
+def single_dollar_spans(text):
+    """与 math.mjs 同一套扫描：pandoc 规则，另加「内容含中文（\\text{} 之外）不算公式」。
+    被拒的候选只跳过它的开 $，这样「$8 不是公式；$E = mc^2$」里后一段仍能命中。"""
+    i, n = 0, len(text)
+    while i < n:
+        i = text.find("$", i)
+        if i < 0:
+            return
+        if (i and text[i - 1] in "\\$") or i + 1 >= n or text[i + 1].isspace() or text[i + 1] == "$":
+            i += 1
+            continue
+        j = text.find("$", i + 1)
+        while j > 0 and (text[j - 1].isspace() or text[j - 1] == "\\"):
+            j = text.find("$", j + 1)
+        if j < 0:
+            return
+        inner = text[i + 1 : j]
+        ok = "\n" not in inner and not (j + 1 < n and text[j + 1].isdigit()) \
+            and not CJK_RE.search(re.sub(r"\\text\{[^}]*\}", "", inner))
+        if ok:
+            yield i, j + 1
+            i = j + 1
+        else:
+            i += 1
+
+
+def has_math_source(html):
+    """页面正文里还有没编译的 LaTeX 定界符（代码、脚本、样式内部不算）。"""
+    text = CODE_ISLAND_RE.sub("", html)
+    return bool(BLOCK_MATH_RE.search(text)) or any(True for _ in single_dollar_spans(text))
+
+
+def compile_math(page, errors, warns):
+    """作者写 LaTeX，这里用 vendor 的 Temml 编译成 MathML 内联。返回是否改写了文件。
+
+    需要 node：Temml 是 JS 库，没有 Python 等价物。找不到 node 时这是 ERROR ——
+    留着 $…$ 的页面公式不会显示，不能算合成完成。
+    """
+    import shutil, subprocess
+    html = page.read_text(encoding="utf-8")
+    if not has_math_source(html):
+        return False
+    node = shutil.which("node")
+    if not node:
+        errors.append("页面里有 LaTeX 公式（$…$ / \\(…\\)），但找不到 node 来编译成 MathML；"
+                      "装 Node.js 后重跑，或手写 <math> 标签")
+        return False
+    out = subprocess.run([node, str(MATH_SCRIPT), str(page)], capture_output=True, text=True)
+    if out.returncode != 0:
+        errors.append("公式编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
+        return False
+    for line in out.stdout.splitlines():
+        if line.startswith("WARN"):
+            warns.append(line[4:].strip())
+    return True
+
+
 def build(html, errors):
     changed = False
 
@@ -474,6 +544,9 @@ def build(html, errors):
         if needs_js:
             js = (VENDOR / "basecoat.min.js").read_text(encoding="utf-8")
             slot += f'<script {JS_MARK}>{js}</script>'
+        if re.search(r'\bdata-chart=', html):
+            # 图表运行时：页面用 data-chart 标记图型时内联，图型代码本身由页面自带
+            slot += f'<script {CHART_MARK}>{CHART_JS.read_text(encoding="utf-8")}</script>'
         hl, langs = inline_highlight(html, warns)
         if hl:
             # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
@@ -605,6 +678,10 @@ def check(html, path, allow_legacy_recipe=False):
             "重复标题时删掉"
         )
 
+    if has_math_source(stripped):
+        errors.append("正文里还有未编译的 LaTeX 定界符（$…$ / $$…$$ / \\(…\\)）：跑一遍不带 --check-only 的 build，"
+                      "或检查定界符是否成对")
+
     # 行内 MathML 里的堆叠分数会把正文行高撑坏；MathML Core 不支持 bevelled，行内改写线性形式
     for m in re.finditer(r"<(p|li)\b[^>]*>(.*?)</\1>", html, re.S):
         if "<mfrac" in m.group(2):
@@ -631,7 +708,7 @@ def check(html, path, allow_legacy_recipe=False):
 
     check_font_stacks(html, warns, errors)
     check_native_controls(html, warns)
-    authored = SYSTEM_SCRIPT_RE.sub("", stripped)
+    authored = SYSTEM_STYLE_RE.sub("", SYSTEM_SCRIPT_RE.sub("", stripped))
     check_svgs(authored, warns, errors)
     check_grid_tracks(stripped, warns)
 
@@ -754,7 +831,10 @@ def main():
 
     build_errors, build_warns = [], []
     if not args.check_only:
-        html, changed, used, langs, build_warns = build(html, build_errors)
+        if compile_math(args.page, build_errors, build_warns):
+            html = args.page.read_text(encoding="utf-8")
+        html, changed, used, langs, warns_from_build = build(html, build_errors)
+        build_warns += warns_from_build
         if changed:
             args.page.write_text(html, encoding="utf-8")
             print(f"已合成  {args.page}  图标={len(used)} 个"

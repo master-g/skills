@@ -2,7 +2,7 @@
 
 把素材做成一个**自包含的静态 HTML 页面** —— 一个文件，无构建、无依赖、离线可开、发给谁都能直接看。
 
-视觉层由自有 `show-me.css` 提供：暖灰纸面、深蓝墨色、钴蓝主强调，标题用 Newsreader，正文用 IBM Plex Sans。20 个配方通过几何和证据载体区分，不靠换色。每一页固定带：
+视觉层由自有 `show-me.css` 提供：一墨一纸，所有灰由墨纸两极派生，一个橙色落点；标题用 Newsreader，正文用 IBM Plex Sans。20 个配方通过几何和证据载体区分，不靠换色。公式写 LaTeX，构建时编译成 MathML。每一页固定带：
 
 - **light / dark / system 三态主题切换**，选择记在 localStorage，首屏前生效，不闪。
 - **「复制为 Markdown」按钮**，一键把整页变成 GFM，能贴进文档、粘进 IM、喂给别的模型。
@@ -15,7 +15,7 @@
 npx skills add master-g/skills --skill show-me-html -g
 ```
 
-需要 Python 3（合成脚本用标准库，无第三方包）。项目级共享放 `<repo>/.claude/skills/`。
+需要 Python 3（合成脚本用标准库，无第三方包）；页面含 LaTeX 公式时还需要 Node.js（Temml 已 vendor，不用 npm install）。项目级共享放 `<repo>/.claude/skills/`。
 
 ## 用法
 
@@ -34,18 +34,23 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 目录
 
-| 路径                          | 作用                                                  |
-| ----------------------------- | ----------------------------------------------------- |
-| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付       |
-| `assets/shell.html`           | 页面骨架（工具条、主题切换、Markdown 导出、行为脚本） |
-| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何和打印样式        |
-| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                    |
-| `references/components.md`    | 稳定组件 markup、设计 token、分类色                   |
-| `references/layouts.md`       | 20 条版式配方及五项视觉契约                           |
-| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                    |
-| `scripts/build.py`            | 内联资产 + 自检                                       |
-| `tests/`                      | 构建契约、组件状态和 20 配方 fixture                  |
-| `assets/vendor/`              | basecoat 行为 JS、lucide sprite                       |
+| 路径                          | 作用                                                    |
+| ----------------------------- | ------------------------------------------------------- |
+| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付         |
+| `assets/shell.html`           | 页面骨架（工具条、主题切换、Markdown 导出、行为脚本）   |
+| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何和打印样式          |
+| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                      |
+| `references/components.md`    | 稳定组件 markup、设计 token、分类色                     |
+| `references/layouts.md`       | 20 条版式配方及五项视觉契约                             |
+| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                      |
+| `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录            |
+| `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）              |
+| `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                     |
+| `scripts/build.py`            | 内联资产 + 自检                                         |
+| `tests/`                      | 构建契约、组件状态和 20 配方 fixture                    |
+| `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                            |
+| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml |
+| `assets/show-me.css`          | 也含数据图外壳、入场动画与聚焦态                        |
 
 ## 视觉系统
 
@@ -59,9 +64,11 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 第三方组件
 
-| 组件                                                   | 版本   | 许可                      | 位置                                |
-| ------------------------------------------------------ | ------ | ------------------------- | ----------------------------------- |
-| [basecoat](https://basecoatui.com)（只保留 JS 行为层） | 1.0.2  | MIT © Ronan Berder        | `assets/vendor/LICENSE-basecoat.md` |
-| [lucide](https://lucide.dev) 图标                      | 1.31.0 | ISC © Lucide Contributors | `assets/vendor/LICENSE-lucide.txt`  |
+| 组件                                                                                                           | 版本    | 许可                                                  | 位置                                       |
+| -------------------------------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------- | ------------------------------------------ |
+| [basecoat](https://basecoatui.com)（只保留 JS 行为层）                                                         | 1.0.2   | MIT © Ronan Berder                                    | `assets/vendor/LICENSE-basecoat.md`        |
+| [lucide](https://lucide.dev) 图标                                                                              | 1.31.0  | ISC © Lucide Contributors                             | `assets/vendor/LICENSE-lucide.txt`         |
+| [Temml](https://temml.org) 公式编译                                                                            | 0.13.5  | MIT © Ron Kok                                         | `assets/vendor/LICENSE-temml.txt`          |
+| [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型（`assets/gallery/` 中 37 个衍生块） | eace082 | PolyForm Noncommercial 1.0.0 © 躺在废墟里，**非商用** | `assets/gallery/LICENSE-lieflat-charts.md` |
 
-两者的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用。
+它们的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用。

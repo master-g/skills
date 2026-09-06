@@ -1,0 +1,1548 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>图型参考 · 交互大图 · Big</title>
+    <!-- ── 网络字体：本骨架唯一允许的外部资源 ─────────────────────────────────
+         **异步加载**（media="print" + onload 换回 all）。fonts.googleapis.com 在
+         部分网络下不可达，同步 <link> 会把首屏卡在请求超时上；这样写则首屏立刻用
+         兜底字体渲染，字体取到了再换上去。
+
+         取不到时页面完全正常，只是落到系统字体 —— `--font-serif` / `--font-mono`
+         的后半段就是为这种情况准备的，**别把它们删短**。
+
+         CJK 只请求 500/700，不请求 400：正文请求 400 时 CSS 的字体匹配会挑最近的可用面
+         （400→500），中文因此自动比拉丁重一档 —— 中西配平就这么来的，不用写技巧。
+         少要一个 600 是有意的：Google 把中文切成上百个 unicode-range 分片，每多一个字重
+         就多约 31 KB 的声明（三个字重 93 KB，两个 63 KB）；h3 的 600 会落到 700，是真字重
+         不是合成粗体。详见 references/components.md 的「字体」。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;family=Noto+Serif+SC:wght@500;700&amp;display=swap"
+    />
+    <noscript
+      ><link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;family=Noto+Serif+SC:wght@500;700&amp;display=swap"
+    /></noscript>
+    <script>
+      /* 主题：在首次绘制前决定，避免闪烁。三态 light / dark / system。 */
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("show-me-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") t = "system";
+        var dark =
+          t === "dark" ||
+          (t === "system" &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="design-system-ref">
+    <header class="page-chrome" data-md-skip>
+      <div class="chrome-inner">
+        <span class="chrome-title">图型参考 · 交互大图 · Big</span>
+        <div class="chrome-actions">
+          <button
+            type="button"
+            class="btn"
+            data-variant="outline"
+            data-size="icon-sm"
+            data-copy-md
+            title="复制为 Markdown"
+            aria-label="复制为 Markdown"
+          >
+            <i data-lucide="clipboard"></i><i data-lucide="check" hidden></i>
+          </button>
+          <div class="button-group theme-switch" role="group" aria-label="主题">
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="light"
+              title="浅色"
+              aria-label="浅色"
+            >
+              <i data-lucide="sun"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="system"
+              title="跟随系统"
+              aria-label="跟随系统"
+            >
+              <i data-lucide="monitor"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="dark"
+              title="深色"
+              aria-label="深色"
+            >
+              <i data-lucide="moon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main id="doc">
+        <section id="intro">
+          <p class="eyebrow">show-me-html · 图型参考实现</p>
+          <h1>交互大图 · Big</h1>
+          <p class="lede">
+            B1–B3：一图一卡，整页幅面；节点或路径多到静态读不出时才用，必须
+            hover / 钉住。
+          </p>
+          <p>
+            hover 只留邻接，其余淡出；丝线图下方状态栏读数。 查代码：按
+            <code>data-chart</code> 编号找到 figure，再在页尾脚本里搜同名
+            <code>// ════ 编号 ════</code> 块。颜色只用
+            token，数值与视觉严格成正比。
+          </p>
+        </section>
+        <section id="charts">
+          <h2>3 张</h2>
+          <div class="charts">
+            <figure class="fig wide" data-chart="B1">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-bigcircular-t"
+                    >Six hundred collaborations, one ring</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">B1 · Circular Graph · Dense</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  60 repos · line = shared contributors · hover a repo to light
+                  up its world
+                </p>
+                <svg
+                  id="bigcircular"
+                  viewBox="0 0 800 640"
+                  role="img"
+                  aria-labelledby="bigcircular-title bigcircular-desc"
+                >
+                  <title id="bigcircular-title">
+                    Six hundred collaborations, one ring
+                  </title>
+                  <desc id="bigcircular-desc">
+                    60 repos · line = shared contributors
+                  </desc>
+                </svg>
+                <p class="fig-src">CIRCULAR GRAPH · DENSE · GIT LOG</p>
+              </div>
+            </figure>
+
+            <figure class="fig wide" data-chart="B2">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-bigforce-t"
+                    >A galaxy of one hundred eighty services</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">B2 · Force Graph · Dense</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  8 domains self-organize · node = call volume · drag anything,
+                  the galaxy fights back
+                </p>
+                <svg
+                  id="bigforce"
+                  viewBox="0 0 900 640"
+                  role="img"
+                  aria-labelledby="bigforce-title bigforce-desc"
+                >
+                  <title id="bigforce-title">
+                    A galaxy of one hundred eighty services
+                  </title>
+                  <desc id="bigforce-desc">
+                    8 domains self-organize · node = call volume
+                  </desc>
+                </svg>
+                <p class="fig-src">FORCE GRAPH · DENSE · SERVICE MESH</p>
+              </div>
+            </figure>
+
+            <figure class="fig wide" data-chart="B3">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-bigthreads-t"
+                    >Where the data actually goes — now answerable</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">B3 · Thread Triptych</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  source → processor → destination · one thread per data path ·
+                  hover a thread or a label · click to pin
+                </p>
+                <svg
+                  id="bigthreads"
+                  viewBox="0 0 1140 640"
+                  role="img"
+                  aria-labelledby="bigthreads-title bigthreads-desc"
+                >
+                  <title id="bigthreads-title">
+                    Where the data actually goes — now answerable
+                  </title>
+                  <desc id="bigthreads-desc">
+                    source → processor → destination · one thread per data path
+                  </desc>
+                </svg>
+                <div class="fig-status" data-md-skip>
+                  <span data-text>hover a thread or a label</span
+                  ><span data-pin></span>
+                </div>
+                <p class="fig-src">THREAD TRIPTYCH · INTERACTIVE · DATA MAP</p>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+      <!-- 右侧目录：骨架 JS 自动生成条目；条目不足 2 个时整块不出现，不要手写 -->
+      <aside class="toc" data-md-skip aria-labelledby="toc-title">
+        <nav class="toc-inner">
+          <div class="toc-marker"></div>
+          <div class="toc-title" id="toc-title" role="heading" aria-level="2">
+            本页目录
+          </div>
+          <ul class="toc-list root"></ul>
+        </nav>
+      </aside>
+    </div>
+
+    <!--SHOW-ME:JS-->
+    <script>
+      /* ── 滑块填充 ──────────────────────────────────────────────────────
+         轨道的已填充部分由 --slider-value 驱动。骨架始终同步这个变量，
+         因而只使用滑块的页面不依赖条件内联的组件行为 JS。 */
+      (function () {
+        function sync(el) {
+          var min = Number(el.min || 0),
+            max = Number(el.max === "" ? 100 : el.max);
+          var pct =
+            max === min ? 0 : ((Number(el.value) - min) / (max - min)) * 100;
+          el.style.setProperty("--slider-value", pct + "%");
+        }
+        document.querySelectorAll('input[type="range"]').forEach(sync);
+        /* 事件委托：后插进来的滑块也照样跟着走 */
+        document.addEventListener("input", function (e) {
+          if (e.target.matches && e.target.matches('input[type="range"]'))
+            sync(e.target);
+        });
+      })();
+    </script>
+    <script>
+      /* ── 代码工具条：换行 / 复制 ──
+         给每个 pre > code 注入两个按钮。工具条带 data-md-skip，导出 Markdown 时不出现。
+         复制走 navigator.clipboard，失败时退回 execCommand；反馈先行，不等 promise。 */
+      (function () {
+        function mk(label, title) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn";
+          b.setAttribute("data-variant", "outline");
+          b.title = title;
+          b.textContent = label;
+          return b;
+        }
+        function copyText(text) {
+          try {
+            return navigator.clipboard.writeText(text);
+          } catch (e) {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand("copy");
+            } catch (e2) {}
+            ta.remove();
+          }
+        }
+        document.querySelectorAll("pre > code").forEach(function (code) {
+          var pre = code.parentNode;
+          if (pre.querySelector(".code-tools")) return;
+          var bar = document.createElement("div");
+          bar.className = "code-tools";
+          bar.setAttribute("data-md-skip", "");
+          var wrap = mk("换行", "切换自动换行");
+          wrap.setAttribute("aria-pressed", "false");
+          wrap.addEventListener("click", function () {
+            var on = pre.dataset.wrap !== "on";
+            pre.dataset.wrap = on ? "on" : "off";
+            wrap.setAttribute("aria-pressed", String(on));
+          });
+          var copy = mk("复制", "复制代码");
+          copy.addEventListener("click", function () {
+            copy.textContent = "已复制";
+            setTimeout(function () {
+              copy.textContent = "复制";
+            }, 1600);
+            copyText(code.textContent.replace(/\n$/, ""));
+          });
+          bar.appendChild(wrap);
+          bar.appendChild(copy);
+          pre.appendChild(bar);
+        });
+      })();
+    </script>
+    <script>
+      /* ── 主题三态切换 ── */
+      (function () {
+        var root = document.documentElement;
+        var mq = matchMedia("(prefers-color-scheme: dark)");
+        function apply(t) {
+          root.dataset.theme = t;
+          root.classList.toggle(
+            "dark",
+            t === "dark" || (t === "system" && mq.matches)
+          );
+          document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+          });
+        }
+        document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var t = b.dataset.themeSet;
+            try {
+              t === "system"
+                ? localStorage.removeItem("show-me-theme")
+                : localStorage.setItem("show-me-theme", t);
+            } catch (e) {}
+            apply(t);
+          });
+        });
+        mq.addEventListener("change", function () {
+          if (root.dataset.theme === "system") apply("system");
+        });
+        apply(root.dataset.theme || "system");
+      })();
+
+      /* ── 复制为 Markdown ──
+   遍历 #doc（或 [data-md-root]）生成 GFM。跳过 [data-md-skip] / [hidden] / 脚本 / 弹层。 */
+      (function () {
+        var SKIP = new Set([
+          "SCRIPT",
+          "STYLE",
+          "TEMPLATE",
+          "DIALOG",
+          "NOSCRIPT",
+          "SVG",
+          "CANVAS",
+        ]);
+        var INLINE_ONLY = new Set([
+          "A",
+          "CODE",
+          "STRONG",
+          "B",
+          "EM",
+          "I",
+          "DEL",
+          "S",
+          "SPAN",
+          "KBD",
+          "SMALL",
+          "ABBR",
+          "MARK",
+          "SUP",
+          "SUB",
+          "BR",
+          "IMG",
+          "TIME",
+          "MATH",
+          "U",
+          "Q",
+          "LABEL",
+          "OUTPUT",
+        ]);
+
+        function skipped(el) {
+          return (
+            SKIP.has(el.tagName.toUpperCase()) ||
+            el.hasAttribute("data-md-skip") ||
+            el.hasAttribute("hidden") ||
+            el.getAttribute("aria-hidden") === "true"
+          );
+        }
+        function txt(s) {
+          return (s || "").replace(/\s+/g, " ");
+        }
+
+        function inline(node) {
+          var out = "";
+          node.childNodes.forEach(function (n) {
+            if (n.nodeType === 3) {
+              out += txt(n.nodeValue);
+              return;
+            }
+            if (n.nodeType !== 1 || skipped(n)) return;
+            var t = n.tagName.toUpperCase(),
+              inner = inline(n);
+            if (t === "MATH") {
+              /* 公式导出 LaTeX 源：build 编译时留下的 annotation；没有就退回可读文本 */
+              var ann = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              var tex = ann
+                ? ann.textContent.trim()
+                : txt(n.textContent).trim();
+              out +=
+                n.getAttribute("display") === "block"
+                  ? "\n\n$$" + tex + "$$\n\n"
+                  : "$" + tex + "$";
+              return;
+            }
+            if (t === "BR") out += "  \n";
+            else if (t === "IMG")
+              out +=
+                "![" +
+                (n.alt || "") +
+                "](" +
+                (n.getAttribute("src") || "") +
+                ")";
+            else if (
+              t === "CODE" ||
+              t === "KBD" ||
+              n.classList.contains("badge") ||
+              n.classList.contains("kbd")
+            )
+              out += inner.trim() ? "`" + inner.trim() + "`" : "";
+            else if (t === "A") {
+              var href = n.getAttribute("href") || "";
+              out +=
+                href && !href.startsWith("#")
+                  ? "[" + inner.trim() + "](" + href + ")"
+                  : inner;
+            } else if (t === "STRONG" || t === "B")
+              out += inner.trim() ? "**" + inner.trim() + "**" : "";
+            else if (t === "EM" || t === "I")
+              out += inner.trim() ? "*" + inner.trim() + "*" : "";
+            else if (t === "DEL" || t === "S")
+              out += inner.trim() ? "~~" + inner.trim() + "~~" : "";
+            else out += inner;
+          });
+          return out;
+        }
+
+        function cell(el) {
+          return inline(el).trim().replace(/\|/g, "\\|").replace(/\n/g, " ");
+        }
+
+        function table(el) {
+          var rows = Array.from(el.querySelectorAll("tr")).filter(function (r) {
+            return !skipped(r);
+          });
+          if (!rows.length) return "";
+          /* 没有表头行的表：全部行当数据，列名留空占位 ——
+             否则第一行数据会被当成表头，语义就错了 */
+          var hasTh = !!rows[0].querySelector("th");
+          var head = rows[0],
+            body = hasTh ? rows.slice(1) : rows;
+          var cols = Array.from(head.children).map(function (c, i) {
+            return hasTh ? cell(c) : "列" + (i + 1);
+          });
+          var out =
+            "| " +
+            cols.join(" | ") +
+            " |\n|" +
+            cols
+              .map(function () {
+                return " --- ";
+              })
+              .join("|") +
+            "|\n";
+          body.forEach(function (r) {
+            out += "| " + Array.from(r.children).map(cell).join(" | ") + " |\n";
+          });
+          return out;
+        }
+
+        function list(el, depth) {
+          var ordered = el.tagName === "OL",
+            i = 0,
+            out = "";
+          Array.from(el.children).forEach(function (li) {
+            if (li.tagName !== "LI" || skipped(li)) return;
+            i++;
+            var marker = ordered ? i + ". " : "- ";
+            var pad = "  ".repeat(depth);
+            var sub = "";
+            var own = document.createElement("div");
+            Array.from(li.childNodes).forEach(function (n) {
+              if (
+                n.nodeType === 1 &&
+                (n.tagName === "UL" || n.tagName === "OL")
+              )
+                /* 深层嵌套拍平到本级：GFM 对超过 4–5 层的子列表解析不稳，保内容齐整优先 */
+                sub += list(n, depth < 6 ? depth + 1 : depth);
+              else own.appendChild(n.cloneNode(true));
+            });
+            var text = inline(own).trim();
+            if (text) out += pad + marker + text + "\n";
+            out += sub;
+          });
+          return out;
+        }
+
+        function block(el, depth) {
+          var out = "";
+          Array.from(el.children).forEach(function (n) {
+            if (skipped(n)) return;
+            var t = n.tagName.toUpperCase();
+            if (t === "SUMMARY")
+              return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
+            if (/^H[1-6]$/.test(t)) {
+              out += "\n" + "#".repeat(+t[1]) + " " + inline(n).trim() + "\n\n";
+            } else if (t === "P") {
+              var s = inline(n).trim();
+              if (s) out += s + "\n\n";
+            } else if (t === "UL" || t === "OL") {
+              out += list(n, 0) + "\n";
+            } else if (t === "PRE") {
+              var code = n.querySelector("code");
+              var lang =
+                (code &&
+                  (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
+                "";
+              out +=
+                "```" +
+                lang +
+                "\n" +
+                /* 取 code 的文本而不是 pre 的：pre 里还有骨架注入的工具条 */
+                ((code || n).textContent || "").replace(/\n+$/, "") +
+                "\n```\n\n";
+            } else if (t === "TABLE") {
+              out += table(n) + "\n";
+            } else if (t === "MATH") {
+              var ann2 = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              out +=
+                "$$" +
+                (ann2 ? ann2.textContent.trim() : txt(n.textContent).trim()) +
+                "$$\n\n";
+            } else if (t === "HR") {
+              out += "---\n\n";
+            } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {
+              out +=
+                block(n, depth)
+                  .trim()
+                  .split("\n")
+                  .map(function (l) {
+                    return l ? "> " + l : ">";
+                  })
+                  .join("\n") + "\n\n";
+            } else if (n.classList.contains("tabs")) {
+              /* Markdown 没有标签页：每个标签导出成小标题 + 它的面板，隐藏的面板也要出。 */
+              n.querySelectorAll('[role="tablist"] > [role="tab"]').forEach(
+                function (tab) {
+                  out += "**" + inline(tab).trim() + "**\n\n";
+                  var panel = document.getElementById(
+                    tab.getAttribute("aria-controls")
+                  );
+                  if (panel) out += block(panel, depth);
+                }
+              );
+            } else if (t === "DETAILS") {
+              var sum = n.querySelector("summary");
+              if (sum) out += "**" + inline(sum).trim() + "**\n\n";
+              out += block(n, depth);
+            } else if (t === "DL") {
+              Array.from(n.children).forEach(function (d) {
+                if (d.tagName === "DT")
+                  out += "**" + inline(d).trim() + "** — ";
+                else if (d.tagName === "DD") out += inline(d).trim() + "\n\n";
+              });
+            } else if (
+              n.children.length === 0 ||
+              Array.from(n.children).every(function (c) {
+                return INLINE_ONLY.has(c.tagName);
+              })
+            ) {
+              var s2 = inline(n).trim();
+              if (s2) out += s2 + "\n\n";
+            } else {
+              out += block(n, depth);
+            }
+          });
+          return out;
+        }
+
+        function toMarkdown() {
+          var root =
+            document.querySelector("[data-md-root]") ||
+            document.getElementById("doc") ||
+            document.body;
+          var md = block(root, 0)
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+          var title = document.title;
+          /* 正文里只要有一级标题就不再拼 <title>：否则 eyebrow 段落排在 h1 前时，
+             导出会得到两个「# 」（anti-patterns.md #2）。 */
+          var hasH1 = /^# /m.test(md);
+          return (hasH1 ? "" : "# " + title + "\n\n") + md + "\n";
+        }
+
+        /* 暴露给页面用：需要「下载 .md」之类的额外入口时调用它，不要另写一份转换器。 */
+        window.showMeMarkdown = toMarkdown;
+
+        document.querySelectorAll("[data-copy-md]").forEach(function (btn) {
+          var icons = btn.querySelectorAll("svg, i");
+          btn.addEventListener("click", async function () {
+            var md = toMarkdown();
+            /* 反馈先行：剪贴板图标换成对勾 1.6s。不等待 writeText —— 权限 pending 时它可能永不 settle。
+         SVG 没有 hidden 反射属性，必须操作属性本身 */
+            if (icons.length >= 2) {
+              icons[0].setAttribute("hidden", "");
+              icons[1].removeAttribute("hidden");
+            }
+            btn.setAttribute("data-variant", "secondary");
+            setTimeout(function () {
+              if (icons.length >= 2) {
+                icons[0].removeAttribute("hidden");
+                icons[1].setAttribute("hidden", "");
+              }
+              btn.setAttribute("data-variant", "outline");
+            }, 1600);
+            try {
+              await navigator.clipboard.writeText(md);
+            } catch (e) {
+              var ta = document.createElement("textarea");
+              ta.value = md;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              try {
+                document.execCommand("copy");
+              } catch (e2) {}
+              ta.remove();
+            }
+          });
+        });
+      })();
+
+      /* ── 右侧目录：扫描 #doc 的 h2/h3 生成条目，指示条随滚动滑动到当前节。
+   移植自 VitePress 的 outline：scroll（throttle 100ms）+ 标题绝对位置比较。
+   标题加 data-toc-skip 可豁免；点击时立即定位指示条，平滑滚动途中不跟跳。 ── */
+      (function () {
+        var doc = document.getElementById("doc");
+        var aside = document.querySelector(".toc");
+        if (!doc || !aside) return;
+        var list = aside.querySelector(".toc-list");
+        var marker = aside.querySelector(".toc-marker");
+        var headings = Array.from(doc.querySelectorAll("h2, h3")).filter(
+          function (h) {
+            /* 组件容器内的标题不是节标题：卡片头的 h3、折叠面板的标题都不得进目录。
+               否则统计数字写成标题时会产出「7」「91 → 39」这类孤儿条目（anti-patterns.md #1）。 */
+            return (
+              !h.closest("[data-toc-skip]") &&
+              !h.closest("[data-md-skip]") &&
+              !h.closest(
+                ".card, .fig-box, .alert, .item, .accordion, .dialog, .empty"
+              )
+            );
+          }
+        );
+        if (headings.length < 2) return;
+
+        /* h3 嵌进前一个 h2 的子列表；没有前置 h2 的 h3 按顶层处理 */
+        var n = 0,
+          sub = null;
+        headings.forEach(function (h) {
+          if (!h.id) h.id = "toc-" + ++n;
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.className = "toc-link";
+          a.href = "#" + h.id;
+          a.textContent = a.title = h.textContent.trim();
+          li.appendChild(a);
+          if (h.tagName === "H2" || !sub) {
+            list.appendChild(li);
+            sub = null;
+            if (h.tagName === "H2") {
+              sub = document.createElement("ul");
+              sub.className = "toc-list nested";
+              li.appendChild(sub);
+            }
+          } else {
+            sub.appendChild(li);
+          }
+        });
+        document.body.classList.add("has-toc");
+
+        var mq = matchMedia("(min-width: 80rem)");
+        var prev = null,
+          skipOnce = false;
+
+        function topOf(el) {
+          var t = 0;
+          while (el !== document.body) {
+            if (el === null)
+              return NaN; /* display:none 的元素拿不到位置，自然被过滤 */
+            t += el.offsetTop;
+            el = el.offsetParent;
+          }
+          return t;
+        }
+
+        function activate(hash) {
+          if (prev) prev.classList.remove("active");
+          prev = null;
+          if (hash) {
+            var links = list.querySelectorAll("a");
+            for (var i = 0; i < links.length; i++) {
+              if (links[i].getAttribute("href") === hash) {
+                prev = links[i];
+                break;
+              }
+            }
+          }
+          if (prev) {
+            prev.classList.add("active");
+            /* 链接的 offsetParent 是 .toc-list，指示条的参照是 .toc-inner，两者原点要补齐 */
+            marker.style.top =
+              prev.offsetTop +
+              (prev.offsetParent ? prev.offsetParent.offsetTop : 0) +
+              (prev.offsetHeight - marker.offsetHeight) / 2 +
+              "px";
+            marker.style.opacity = "1";
+          } else {
+            marker.style.top = "";
+            marker.style.opacity = "0";
+          }
+        }
+
+        var geom =
+          null; /* 缓存的标题几何：resize 后失效，滚动时不再逐个读 offsetTop */
+        function measure() {
+          geom = headings
+            .map(function (h) {
+              return {
+                id: h.id,
+                top: topOf(h),
+                sm: parseFloat(getComputedStyle(h).scrollMarginTop) || 0,
+              };
+            })
+            .filter(function (x) {
+              return !isNaN(x.top);
+            })
+            .sort(function (a, b) {
+              return a.top - b.top;
+            });
+        }
+
+        function setActive() {
+          if (!mq.matches) return;
+          if (skipOnce) {
+            skipOnce = false;
+            return;
+          }
+          if (!geom) measure();
+          var items = geom;
+          if (!items.length) return activate(null);
+          if (scrollY < 1) return activate(null); /* 页顶：无激活项 */
+          if (
+            Math.ceil(scrollY + innerHeight) >=
+            document.documentElement.scrollHeight
+          )
+            return activate(
+              "#" + items[items.length - 1].id
+            ); /* 页底：激活最后一项 */
+          var active = null;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].top > scrollY + items[i].sm + 4) break;
+            active = items[i].id;
+          }
+          activate(active ? "#" + active : null);
+        }
+
+        aside.addEventListener("click", function (e) {
+          var a = e.target instanceof Element ? e.target.closest("a") : null;
+          if (a && a.hash) {
+            skipOnce = true;
+            activate(a.hash);
+          }
+        });
+        var ticking = false;
+        addEventListener(
+          "scroll",
+          function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+              ticking = false;
+              setActive();
+            });
+          },
+          { passive: true }
+        );
+        addEventListener("resize", function () {
+          geom = null;
+          setActive();
+        });
+        addEventListener(
+          "load",
+          setActive
+        ); /* 等浏览器恢复滚动位置后再定位一次 */
+        mq.addEventListener("change", setActive);
+        setActive();
+      })();
+    </script>
+    <script>
+      (() => {
+        const { el, txt, tip, rnd, pol, sect, blob, reveal, fmt } = showMeChart;
+        const $ = (id) => document.getElementById(id);
+        const INK = "var(--ink)",
+          PAPER = "var(--paper)",
+          HERO = "var(--chart-hero)";
+        const I90 = "var(--ink-90)",
+          I70 = "var(--ink-70)",
+          I60 = "var(--ink-60)",
+          I45 = "var(--ink-45)",
+          I30 = "var(--ink-30)",
+          I22 = "var(--ink-22)",
+          I14 = "var(--ink-14)",
+          I8 = "var(--ink-8)";
+        const MUTED = I45,
+          GRID = I14,
+          FAINT = I22;
+        const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
+        const L = [INK, I90, I70, I60, I45, I30, I22]; // 7 级：多系列
+        const D2R = Math.PI / 180;
+        const dl = (s) => `animation-delay:${s.toFixed(3)}s`; // 交错入场延迟
+        const halo =
+          "paint-order:stroke;stroke:var(--paper);stroke-width:3px;stroke-linejoin:round"; // 文字描边遮线
+
+        // ════ B1 · Circular Graph · Dense ════
+        (() => {
+          // 环形弦膜：60 个仓库按 5 个组织排成环，弦 = 共享贡献者。hover 一个仓库只留它的邻接，其余淡出；重播按钮重来。
+          const ORGS = [
+            ["platform", 16, INK],
+            ["product", 14, I70],
+            ["data", 12, I60],
+            ["infra", 10, I45],
+            ["labs", 8, I30],
+          ];
+          const nodes = [];
+          ORGS.forEach(([org, count], oi) => {
+            for (let i = 0; i < count; i++) {
+              const heavy =
+                i < 2
+                  ? 30 + rnd(oi + 1, i + 2) * 45
+                  : 4 + rnd(oi + 3, i + 7) * 16;
+              nodes.push({
+                name:
+                  org +
+                  "/" +
+                  org.slice(0, 2) +
+                  "-" +
+                  String(i + 1).padStart(2, "0"),
+                org: oi,
+                value: Math.round(heavy),
+              });
+            }
+          });
+          const links = [];
+          nodes.forEach((a, i) =>
+            nodes.forEach((b, j) => {
+              if (j <= i) return;
+              const same = a.org === b.org;
+              if (rnd(i + 1, j + 2) < (same ? 0.16 : 0.045))
+                links.push({
+                  s: i,
+                  t: j,
+                  w: 1 + Math.round(rnd(i + 2, j + 3) * 6),
+                  same,
+                });
+            })
+          );
+          reveal($("bigcircular"), (s) => {
+            const cx = 400,
+              cy = 320,
+              R = 232,
+              N = nodes.length,
+              P = nodes.map((n, i) => pol(cx, cy, R, -90 + (i * 360) / N));
+            const gl = el(s, "g", {}),
+              gn = el(s, "g", {});
+            const les = links.map((l, k) => {
+              const [xa, ya] = P[l.s],
+                [xb, yb] = P[l.t];
+              const p = el(gl, "path", {
+                d: `M${xa} ${ya} Q${cx} ${cy} ${xb} ${yb}`,
+                fill: "none",
+                stroke: l.same ? I45 : I30,
+                "stroke-width": 0.4 + l.w * 0.28,
+                opacity: l.same ? 0.5 : 0.32,
+                pathLength: 1,
+                class: "draw net-link",
+                style: `animation-delay:${0.2 + k * 0.006}s;animation-duration:1.2s`,
+              });
+              p.dataset.a = l.s;
+              p.dataset.b = l.t;
+              return p;
+            });
+            nodes.forEach((n, i) => {
+              const [x, y] = P[i],
+                a = -90 + (i * 360) / N,
+                r = 2.5 + Math.sqrt(n.value) * 1.3;
+              const g = el(gn, "g", { class: "net-node", tabindex: 0 });
+              g.dataset.i = i;
+              el(g, "circle", {
+                cx: x,
+                cy: y,
+                r,
+                fill: ORGS[n.org][2],
+                class: "pop",
+                style: `animation-delay:${i * 0.015}s`,
+              });
+              tip(g, `${n.name} — ${n.value} contributors`);
+              if (n.value >= 26) {
+                const [lx, ly] = pol(cx, cy, R + r + 6, a),
+                  flip = Math.cos(a * D2R) < 0;
+                txt(
+                  g,
+                  {
+                    x: lx,
+                    y: ly,
+                    "font-size": 8.5,
+                    "font-weight": 600,
+                    fill: I60,
+                    "text-anchor": flip ? "end" : "start",
+                    "dominant-baseline": "middle",
+                    transform: `rotate(${flip ? a + 180 : a} ${lx} ${ly})`,
+                    class: "fade",
+                    style: `animation-delay:${0.5 + i * 0.015}s`,
+                  },
+                  n.name
+                );
+              }
+              const focus = () => {
+                s.classList.add("focused");
+                const adj = new Set([i]);
+                les.forEach((p) => {
+                  const hot = +p.dataset.a === i || +p.dataset.b === i;
+                  p.classList.toggle("hot", hot);
+                  if (hot) {
+                    adj.add(+p.dataset.a);
+                    adj.add(+p.dataset.b);
+                  }
+                });
+                gn.querySelectorAll(".net-node").forEach((o) =>
+                  o.classList.toggle("hot", adj.has(+o.dataset.i))
+                );
+              };
+              const blur = () => {
+                s.classList.remove("focused");
+                s.querySelectorAll(".hot").forEach((o) =>
+                  o.classList.remove("hot")
+                );
+              };
+              g.addEventListener("mouseenter", focus);
+              g.addEventListener("focus", focus);
+              g.addEventListener("mouseleave", blur);
+              g.addEventListener("blur", blur);
+            });
+            ORGS.forEach(([org, , shade], oi) => {
+              el(s, "circle", { cx: 24, cy: 24 + oi * 16, r: 4, fill: shade });
+              txt(
+                s,
+                {
+                  x: 34,
+                  y: 27 + oi * 16,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: I60,
+                },
+                org
+              );
+            });
+          });
+        })();
+
+        // ════ B2 · Force Graph · Dense ════
+        (() => {
+          // 力导向星系：8 个域中心各带一群服务，弹簧 + 斥力 + 向心，rAF 松弛；拖任何节点，星系会反抗。
+          const DOMAINS = [
+            ["auth", 26, INK],
+            ["billing", 24, I90],
+            ["content", 28, I70],
+            ["search", 20, I60],
+            ["notify", 22, I45],
+            ["media", 20, I45],
+            ["analytics", 18, I30],
+            ["edge", 14, I30],
+          ];
+          const nodes = [],
+            links = [];
+          DOMAINS.forEach(([dom, count, shade], di) => {
+            const hi = nodes.length;
+            nodes.push({
+              name: dom,
+              value: 60 + Math.round(rnd(di + 1, 3) * 50),
+              hub: true,
+              shade,
+              dom: di,
+            });
+            for (let i = 0; i < count; i++) {
+              const v =
+                i < 3
+                  ? 14 + rnd(di + 2, i + 4) * 18
+                  : 2 + rnd(di + 5, i + 9) * 9;
+              const idx = nodes.length;
+              nodes.push({
+                name: dom + "-" + String(i + 1).padStart(2, "0"),
+                value: Math.round(v),
+                hub: false,
+                shade,
+                dom: di,
+              });
+              links.push([idx, hi, 0.5 + v * 0.05, I22, 0.5, 30]);
+              if (i > 1 && rnd(di + 3, i + 11) < 0.22)
+                links.push([
+                  idx,
+                  hi + 1 + Math.floor(rnd(di + 4, i + 13) * i),
+                  0.5,
+                  I14,
+                  0.4,
+                  26,
+                ]);
+            }
+          });
+          const H = DOMAINS.length,
+            hubIdx = [];
+          nodes.forEach((n, i) => {
+            if (n.hub) hubIdx.push(i);
+          });
+          for (let a = 0; a < H; a++)
+            for (let b = a + 1; b < H; b++)
+              if (rnd(a + 7, b + 9) < 0.42)
+                links.push([
+                  hubIdx[a],
+                  hubIdx[b],
+                  1.6 + rnd(a + 2, b + 3) * 2.2,
+                  I30,
+                  0.65,
+                  150,
+                ]);
+          for (let k = 0; k < 26; k++) {
+            const a = 1 + Math.floor(rnd(k + 1, 17) * (nodes.length - 1)),
+              b = 1 + Math.floor(rnd(k + 3, 23) * (nodes.length - 1));
+            if (
+              a !== b &&
+              nodes[a].dom !== nodes[b].dom &&
+              !nodes[a].hub &&
+              !nodes[b].hub
+            )
+              links.push([a, b, 0.5, I14, 0.38, 120]);
+          }
+          reveal($("bigforce"), (s, { keep, motion }) => {
+            const W = 900,
+              H2 = 640;
+            nodes.forEach((n, i) => {
+              const [x, y] = pol(
+                W / 2,
+                H2 / 2,
+                n.hub ? 170 : 190 + rnd(i, 5) * 60,
+                n.dom * 45 + rnd(i, 9) * 40
+              );
+              n.x = x;
+              n.y = y;
+              n.vx = 0;
+              n.vy = 0;
+              n.r = n.hub
+                ? 15 + Math.sqrt(n.value) * 0.9
+                : 1.2 + Math.sqrt(n.value) * 0.75;
+            });
+            const gl = el(s, "g", {}),
+              gn = el(s, "g", {});
+            const les = links.map(([a, b, w, shade, op]) =>
+              el(gl, "line", { stroke: shade, "stroke-width": w, opacity: op })
+            );
+            const ns = nodes.map((n) => {
+              const g = el(gn, "g", {
+                class: "force-node",
+                tabindex: n.hub ? 0 : -1,
+              });
+              el(g, "circle", {
+                r: n.r,
+                fill: n.shade,
+                stroke: n.hub ? PAPER : "none",
+                "stroke-width": n.hub ? 2 : 0,
+              });
+              tip(g, `${n.name} — ${n.value}k calls/day`);
+              if (n.hub)
+                txt(
+                  g,
+                  {
+                    y: 3.5,
+                    "font-size": 9.5,
+                    "font-weight": 600,
+                    fill: PAPER,
+                    "text-anchor": "middle",
+                  },
+                  n.name
+                );
+              return g;
+            });
+            const step = () => {
+              // 斥力 ∝ 1/d²（沿单位向量），软化半径 30px，300px 外不算；中心节点斥力更大；向心 + 弹簧；限速防爆
+              for (let i = 0; i < nodes.length; i++) {
+                const a = nodes[i];
+                for (let j = i + 1; j < nodes.length; j++) {
+                  const b = nodes[j];
+                  let dx = b.x - a.x,
+                    dy = b.y - a.y;
+                  const d2 = dx * dx + dy * dy + 900;
+                  if (d2 > 90000) continue;
+                  const f =
+                    (a.hub || b.hub ? 20000 : 2000) / (d2 * Math.sqrt(d2));
+                  dx *= f;
+                  dy *= f;
+                  a.vx -= dx;
+                  a.vy -= dy;
+                  b.vx += dx;
+                  b.vy += dy;
+                }
+                a.vx += (W / 2 - a.x) * 0.012;
+                a.vy += (H2 / 2 - a.y) * 0.012;
+              }
+              links.forEach(([a, b, , , , len]) => {
+                const A = nodes[a],
+                  B = nodes[b],
+                  dx = B.x - A.x,
+                  dy = B.y - A.y,
+                  d = Math.hypot(dx, dy) || 1,
+                  f = (d - len) * 0.02;
+                A.vx += (dx / d) * f;
+                A.vy += (dy / d) * f;
+                B.vx -= (dx / d) * f;
+                B.vy -= (dy / d) * f;
+              });
+              nodes.forEach((n) => {
+                if (n.drag) return;
+                n.vx *= 0.7;
+                n.vy *= 0.7;
+                const sp = Math.hypot(n.vx, n.vy);
+                if (sp > 12) {
+                  n.vx *= 12 / sp;
+                  n.vy *= 12 / sp;
+                }
+                n.x = Math.min(W - 12, Math.max(12, n.x + n.vx));
+                n.y = Math.min(H2 - 12, Math.max(12, n.y + n.vy));
+              });
+            };
+            const draw = () => {
+              les.forEach((l, k) => {
+                const [a, b] = links[k];
+                l.setAttribute("x1", nodes[a].x);
+                l.setAttribute("y1", nodes[a].y);
+                l.setAttribute("x2", nodes[b].x);
+                l.setAttribute("y2", nodes[b].y);
+              });
+              ns.forEach((g, i) =>
+                g.setAttribute(
+                  "transform",
+                  `translate(${nodes[i].x.toFixed(1)} ${nodes[i].y.toFixed(1)})`
+                )
+              );
+            };
+            let it = 0;
+            const loop = () => {
+              step();
+              draw();
+              if (++it < 320 || nodes.some((n) => n.drag))
+                keep(requestAnimationFrame(loop));
+            };
+            if (motion) keep(requestAnimationFrame(loop));
+            else {
+              for (let k = 0; k < 320; k++) step();
+              draw();
+            }
+            const pt = s.createSVGPoint();
+            const toSvg = (e) => {
+              pt.x = e.clientX;
+              pt.y = e.clientY;
+              return pt.matrixTransform(s.getScreenCTM().inverse());
+            };
+            ns.forEach((g, i) => {
+              g.style.cursor = "grab";
+              g.addEventListener("pointerdown", (e) => {
+                nodes[i].drag = true;
+                g.setPointerCapture(e.pointerId);
+                it = 0;
+                const mv = (ev) => {
+                  const p = toSvg(ev);
+                  nodes[i].x = p.x;
+                  nodes[i].y = p.y;
+                  if (!motion) draw();
+                };
+                const up = () => {
+                  nodes[i].drag = false;
+                  g.removeEventListener("pointermove", mv);
+                  g.removeEventListener("pointerup", up);
+                  if (motion) keep(requestAnimationFrame(loop));
+                };
+                g.addEventListener("pointermove", mv);
+                g.addEventListener("pointerup", up);
+                if (motion) keep(requestAnimationFrame(loop));
+              });
+            });
+          });
+        })();
+
+        // ════ B3 · Thread Triptych ════
+        (() => {
+          // 丝线三联：来源 → 处理器 → 目的地，一条数据路径一根丝。可见线下垫 9px 透明孪生线当热区；hover 单线亮整条，hover 标签拉整束，点击钉住，点空白释放。
+          const SRC = [
+            "web-app",
+            "ios-app",
+            "android",
+            "desktop",
+            "cli",
+            "public-api",
+            "webhooks",
+            "forms",
+            "email-in",
+            "chat-widget",
+            "billing-ev",
+            "auth-ev",
+            "search-log",
+            "audit-ev",
+            "crash-rep",
+            "perf-beacon",
+            "cdn-log",
+            "edge-log",
+            "job-ev",
+            "sync-ev",
+            "import",
+            "export-req",
+            "admin-ui",
+            "partner-api",
+            "iot-ping",
+            "backfill",
+          ];
+          const MIDV = [
+            "parse",
+            "validate",
+            "dedupe",
+            "enrich",
+            "geoip",
+            "sessionize",
+            "pii-mask",
+            "score",
+            "sample",
+            "route",
+            "batch",
+            "window",
+            "join",
+            "flatten",
+            "filter",
+            "hash",
+            "encrypt",
+            "compact",
+            "index",
+            "tag",
+          ];
+          const MID = MIDV.flatMap((v) => [v + "-a", v + "-b"]);
+          const DST = [
+            "WAREHOUSE",
+            "ANALYTICS",
+            "CRM",
+            "ADS",
+            "BILLING",
+            "SEARCH",
+            "ML PIPE",
+            "ARCHIVE",
+            "AUDIT",
+            "EXPORTS",
+          ];
+          const routes = [];
+          SRC.forEach((s, i) => {
+            const n = 2 + Math.floor(rnd(i + 1, 5) * 2);
+            for (let k = 0; k < n; k++) {
+              routes.push({
+                s: i,
+                m: Math.floor(rnd(i * 3 + k + 2, 13) * MID.length),
+                d: Math.min(9, Math.floor(rnd(i * 5 + k + 4, 19) ** 2 * 11)),
+                v: Math.round(1 + rnd(i * 7 + k + 6, 29) ** 2 * 30),
+              });
+            }
+          });
+          reveal($("bigthreads"), (svg) => {
+            const X1 = 180,
+              X2 = 560,
+              X3 = 930,
+              sy = (i) => 36 + i * 22.6,
+              my = (i) => 30 + i * 14.6,
+              dy = (i) => 60 + i * 57;
+            const path = (r) =>
+              `M${X1 + 6} ${sy(r.s)} C${(X1 + X2) / 2} ${sy(r.s)} ${(X1 + X2) / 2} ${my(r.m)} ${X2} ${my(r.m)} C${(X2 + X3) / 2} ${my(r.m)} ${(X2 + X3) / 2} ${dy(r.d)} ${X3 - 6} ${dy(r.d)}`;
+            const status = svg.closest("figure").querySelector(".fig-status"),
+              stext = status.querySelector("[data-text]"),
+              spin = status.querySelector("[data-pin]");
+            const fmtv = (v) => v + "k ev/day";
+            let pinned = null;
+            [
+              [X1, "① SOURCE"],
+              [X2, "② PROCESSOR"],
+              [X3, "③ DESTINATION"],
+            ].forEach(([x, t]) =>
+              txt(
+                svg,
+                {
+                  x,
+                  y: 14,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: INK,
+                  "letter-spacing": ".14em",
+                  "text-anchor": "middle",
+                },
+                t
+              )
+            );
+            const gT = el(svg, "g", {});
+            routes.forEach((r, ri) => {
+              r.el = el(gT, "path", {
+                d: path(r),
+                fill: "none",
+                stroke: INK,
+                "stroke-width": Math.max(0.6, r.v * 0.14),
+                class: "thread",
+                opacity: 0.06 + Math.min(0.2, r.v * 0.012),
+                "stroke-linecap": "round",
+              });
+              r.hit = el(gT, "path", {
+                d: path(r),
+                fill: "none",
+                stroke: "#000",
+                "stroke-opacity": 0,
+                "stroke-width": 9,
+                class: "hit",
+              });
+              r.hit.dataset.route = ri;
+            });
+            const mkNode = (x, y, label, anchor, meta, size, fill) => {
+              const g = el(svg, "g", { class: "nodelab" });
+              g.dataset.kind = meta.kind;
+              g.dataset.idx = meta.idx;
+              el(g, "rect", {
+                x: x - 3,
+                y: y - 1.6,
+                width: 6,
+                height: 3.2,
+                fill: INK,
+                opacity: 0.85,
+              });
+              txt(
+                g,
+                {
+                  x: anchor === "end" ? x - 9 : x + 9,
+                  y: y + 2.6,
+                  "font-size": size,
+                  "font-weight": 600,
+                  fill,
+                  "text-anchor": anchor,
+                },
+                label
+              );
+              el(g, "rect", {
+                x: anchor === "end" ? x - 92 : x - 6,
+                y: y - 6.5,
+                width: 98,
+                height: 13,
+                fill: "#000",
+                "fill-opacity": 0,
+                class: "hit",
+              });
+              return g;
+            };
+            SRC.forEach((s, i) =>
+              mkNode(X1, sy(i), s, "end", { kind: "s", idx: i }, 7.5, I60)
+            );
+            MID.forEach((m, i) =>
+              mkNode(X2, my(i), m, "start", { kind: "m", idx: i }, 5.4, I45)
+            );
+            DST.forEach((d, i) => {
+              const g = el(svg, "g", { class: "nodelab" });
+              g.dataset.kind = "d";
+              g.dataset.idx = i;
+              el(g, "circle", { cx: X3, cy: dy(i), r: 3.4, fill: INK });
+              txt(
+                g,
+                {
+                  x: X3 + 12,
+                  y: dy(i) + 3,
+                  "font-size": 8.5,
+                  "font-weight": 600,
+                  fill: I60,
+                  "letter-spacing": ".08em",
+                },
+                d
+              );
+              el(g, "rect", {
+                x: X3 - 8,
+                y: dy(i) - 10,
+                width: 120,
+                height: 20,
+                fill: "#000",
+                "fill-opacity": 0,
+                class: "hit",
+              });
+            });
+            const nodeLabs = [...svg.querySelectorAll(".nodelab")];
+            const clear = () => {
+              svg.classList.remove("focused");
+              routes.forEach((r) => r.el.classList.remove("hot"));
+              nodeLabs.forEach((n) => n.classList.remove("hot"));
+              stext.textContent = "hover a thread or a label";
+              spin.textContent = "";
+            };
+            const focusRoutes = (rs, label) => {
+              svg.classList.add("focused");
+              routes.forEach((r) =>
+                r.el.classList.toggle("hot", rs.includes(r))
+              );
+              nodeLabs.forEach((n) => {
+                const k = n.dataset.kind,
+                  ix = +n.dataset.idx;
+                n.classList.toggle(
+                  "hot",
+                  rs.some(
+                    (r) =>
+                      (k === "s" && r.s === ix) ||
+                      (k === "m" && r.m === ix) ||
+                      (k === "d" && r.d === ix)
+                  )
+                );
+              });
+              setStatus(label);
+            };
+            // 状态栏用 DOM 构造：[文本, 是否加粗] 片段，不走 innerHTML
+            const setStatus = (parts) => {
+              stext.replaceChildren(
+                ...parts.map(([t, b]) => {
+                  const n = document.createElement(b ? "b" : "span");
+                  n.textContent = t;
+                  return n;
+                })
+              );
+            };
+            const routeLabel = (r) => [
+              [SRC[r.s], 1],
+              [" → " + MID[r.m] + " → ", 0],
+              [DST[r.d], 1],
+              [" · " + fmtv(r.v), 0],
+            ];
+            const nodeSel = (kind, idx) => {
+              const rs = routes.filter(
+                (r) =>
+                  (kind === "s" && r.s === idx) ||
+                  (kind === "m" && r.m === idx) ||
+                  (kind === "d" && r.d === idx)
+              );
+              const total = rs.reduce((a, r) => a + r.v, 0);
+              const name =
+                kind === "s" ? SRC[idx] : kind === "m" ? MID[idx] : DST[idx];
+              return [
+                rs,
+                [
+                  [name, 1],
+                  [
+                    ` · ${rs.length} path${rs.length > 1 ? "s" : ""} · ${fmtv(total)} total`,
+                    0,
+                  ],
+                ],
+              ];
+            };
+            const apply = (t) => {
+              const hit = t.closest?.(".hit");
+              if (!hit) return null;
+              const rg = hit.dataset.route,
+                ng = hit.closest(".nodelab");
+              if (rg != null) {
+                const r = routes[+rg];
+                return () => focusRoutes([r], routeLabel(r));
+              }
+              if (ng) {
+                const [rs, lab] = nodeSel(ng.dataset.kind, +ng.dataset.idx);
+                return () => focusRoutes(rs, lab);
+              }
+              return null;
+            };
+            svg.onmousemove = (e) => {
+              if (pinned) return;
+              const f = apply(e.target);
+              f ? f() : clear();
+            };
+            svg.onmouseleave = () => {
+              if (!pinned) clear();
+            };
+            svg.onclick = (e) => {
+              const f = apply(e.target);
+              if (f) {
+                pinned = f;
+                f();
+                spin.textContent = "PINNED · CLICK EMPTY SPACE TO RELEASE";
+              } else {
+                pinned = null;
+                clear();
+              }
+            };
+            clear();
+          });
+        })();
+      })();
+    </script>
+  </body>
+</html>

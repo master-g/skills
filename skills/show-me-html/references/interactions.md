@@ -179,13 +179,14 @@ document.querySelectorAll("[data-bind]").forEach((inp) => {
 
 ## 图（figure）的固定外壳
 
-一页里出现两张以上交互图时，全部套同一个外壳：**编号 + 标题 + 操作提示 + 内容 + 图注**。
+一页里出现两张以上图时，全部套同一个外壳：**标题 + 单位行 / 操作提示 + 内容 + 来源 + 图注**。
+CSS 已在 `show-me.css`（`.fig*`、`.charts` 栅格、入场动画类），页面不再复制；完整契约与数据图版本见 `charts.md`「五件套外壳」。
 
 ```html
 <figure class="fig">
   <div class="fig-box">
     <div class="fig-head">
-      <span class="fig-title">图 2 — 钱花到哪儿去了</span>
+      <span class="fig-title">钱花到哪儿去了</span>
       <span class="fig-hint" data-md-skip>拖动这个循环</span>
     </div>
     <!-- 控件与画面。所有控件加 data-md-skip -->
@@ -197,56 +198,13 @@ document.querySelectorAll("[data-bind]").forEach((inp) => {
 </figure>
 ```
 
-```css
-.fig {
-  margin: 2.25rem 0;
-}
-.fig-box {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-card);
-  padding: 1rem 1rem 1.25rem;
-}
-.fig-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.25rem 0.75rem;
-  margin-bottom: 1rem;
-}
-.fig-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.fig-hint,
-.fig figcaption {
-  color: var(--color-muted-foreground);
-}
-.fig-hint {
-  font-size: 0.72rem;
-}
-.fig figcaption {
-  margin-top: 0.6rem;
-  padding: 0 0.25rem;
-  font-size: 0.78rem;
-  line-height: 1.7;
-}
-```
-
 **图内也要有间距节奏，不要让每个元素自己声明 margin。**
-和骨架的 `main > section > * + *` 同一套思路 —— 间距由「谁排在谁后面」决定：
+和骨架的 `main > section > * + *` 同一套思路 —— 间距由「谁排在谁后面」决定，`show-me.css` 已给 `.fig-box > * + *` 默认 0.5rem，
+页面只补紧耦合的对子：
 
 ```css
-.fig-box > * + * {
-  margin-top: 1rem;
-}
 /* 紧耦合的一对：后者是前者的标签或刻度，贴紧才读得出从属 */
 .fig-axis + .bars {
-  margin-top: 0.5rem;
-}
-.strip + .strip-legend {
   margin-top: 0.25rem;
 }
 /* 角标溢出 svg 上下缘时，后面那块要让开 */
@@ -262,7 +220,7 @@ document.querySelectorAll("[data-bind]").forEach((inp) => {
 
 三条硬要求：
 
-- **`fig-hint` 不能省。**「挑一个改动」「拖动这个循环」「拖动切换点」—— 没有它，一半读者不会发现图能动。
+- **`fig-hint` 不能省。**「挑一个改动」「拖动这个循环」「拖动切换点」—— 没有它，一半读者不会发现图能动。数据图用 `fig-sub` 写单位与图例，动态图型把操作提示接在同一行。
 - **图注承载论点，不重复标题。** 每条 `figcaption` 单独拎出来也要是一句成立的结论。
 - 图头、控件、旋钮全部 `data-md-skip`；标题与图注**不加**，它们要进 Markdown 导出。
 

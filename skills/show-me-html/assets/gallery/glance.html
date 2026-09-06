@@ -1,0 +1,3747 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>图型参考 · 快读型 · Glance</title>
+    <!-- ── 网络字体：本骨架唯一允许的外部资源 ─────────────────────────────────
+         **异步加载**（media="print" + onload 换回 all）。fonts.googleapis.com 在
+         部分网络下不可达，同步 <link> 会把首屏卡在请求超时上；这样写则首屏立刻用
+         兜底字体渲染，字体取到了再换上去。
+
+         取不到时页面完全正常，只是落到系统字体 —— `--font-serif` / `--font-mono`
+         的后半段就是为这种情况准备的，**别把它们删短**。
+
+         CJK 只请求 500/700，不请求 400：正文请求 400 时 CSS 的字体匹配会挑最近的可用面
+         （400→500），中文因此自动比拉丁重一档 —— 中西配平就这么来的，不用写技巧。
+         少要一个 600 是有意的：Google 把中文切成上百个 unicode-range 分片，每多一个字重
+         就多约 31 KB 的声明（三个字重 93 KB，两个 63 KB）；h3 的 600 会落到 700，是真字重
+         不是合成粗体。详见 references/components.md 的「字体」。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;family=Noto+Serif+SC:wght@500;700&amp;display=swap"
+    />
+    <noscript
+      ><link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;family=Noto+Serif+SC:wght@500;700&amp;display=swap"
+    /></noscript>
+    <script>
+      /* 主题：在首次绘制前决定，避免闪烁。三态 light / dark / system。 */
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("show-me-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") t = "system";
+        var dark =
+          t === "dark" ||
+          (t === "system" &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="design-system-ref">
+    <header class="page-chrome" data-md-skip>
+      <div class="chrome-inner">
+        <span class="chrome-title">图型参考 · 快读型 · Glance</span>
+        <div class="chrome-actions">
+          <button
+            type="button"
+            class="btn"
+            data-variant="outline"
+            data-size="icon-sm"
+            data-copy-md
+            title="复制为 Markdown"
+            aria-label="复制为 Markdown"
+          >
+            <i data-lucide="clipboard"></i><i data-lucide="check" hidden></i>
+          </button>
+          <div class="button-group theme-switch" role="group" aria-label="主题">
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="light"
+              title="浅色"
+              aria-label="浅色"
+            >
+              <i data-lucide="sun"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="system"
+              title="跟随系统"
+              aria-label="跟随系统"
+            >
+              <i data-lucide="monitor"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-variant="outline"
+              data-size="icon-sm"
+              data-theme-set="dark"
+              title="深色"
+              aria-label="深色"
+            >
+              <i data-lucide="moon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main id="doc">
+        <section id="intro">
+          <p class="eyebrow">show-me-html · 图型参考实现</p>
+          <h1>快读型 · Glance</h1>
+          <p class="lede">
+            G3–G22：提前聚合，粗笔画，三秒读完。只在用户明确要
+            dashboard、周报、监控、演示时使用。
+          </p>
+          <p>
+            含四种动态图型（G9、G12、G16、G17、G18）：滚入播放，重播按钮重来，reduced-motion
+            落到末帧。 查代码：按 <code>data-chart</code> 编号找到
+            figure，再在页尾脚本里搜同名
+            <code>// ════ 编号 ════</code> 块。颜色只用
+            token，数值与视觉严格成正比。
+          </p>
+        </section>
+        <section id="charts">
+          <h2>20 张</h2>
+          <div class="charts">
+            <figure class="fig" data-chart="G3">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-c3-t">Revenue by plan</span>
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G3 · Chunky Bars</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">Q2 2026 · MRR, $K</p>
+                <svg
+                  id="c3"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="c3-title c3-desc"
+                >
+                  <title id="c3-title">Revenue by plan</title>
+                  <desc id="c3-desc">Q2 2026 · MRR, $K</desc>
+                </svg>
+                <p class="fig-src">CHUNKY BARS · BILLING</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G4">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-waffle-t"
+                    >Where sign-ups come from</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G4 · Dot Waffle</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">Q2 2026 · every dot = 1% of new accounts</p>
+                <svg
+                  id="waffle"
+                  viewBox="0 0 380 300"
+                  role="img"
+                  aria-labelledby="waffle-title waffle-desc"
+                >
+                  <title id="waffle-title">Where sign-ups come from</title>
+                  <desc id="waffle-desc">
+                    Q2 2026 · every dot = 1% of new accounts
+                  </desc>
+                </svg>
+                <p class="fig-src">DONUT, REDESIGNED · ATTRIBUTION</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G5">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-forest-t"
+                    >Trees planted, year by year</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G5 · Pictorial Bar</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  reforestation program · thousands of trees
+                </p>
+                <svg
+                  id="forest"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="forest-title forest-desc"
+                >
+                  <title id="forest-title">Trees planted, year by year</title>
+                  <desc id="forest-desc">
+                    reforestation program · thousands of trees
+                  </desc>
+                </svg>
+                <p class="fig-src">PICTORIAL BAR · GREEN OPS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G6">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-circular-t"
+                    >Who works with whom</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G6 · Circular Graph</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  cross-team collaborations · Q2 2026 · line = shared project ·
+                  hover a team to keep only its links
+                </p>
+                <svg
+                  id="circular"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="circular-title circular-desc"
+                >
+                  <title id="circular-title">Who works with whom</title>
+                  <desc id="circular-desc">
+                    cross-team collaborations · Q2 2026 · line = shared project
+                  </desc>
+                </svg>
+                <p class="fig-src">CIRCULAR GRAPH · PROJECT DB</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G7">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-tree-t"
+                    >Everything the platform ships</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G7 · Tree LR</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">product areas and capabilities · Jun 2026</p>
+                <svg
+                  id="tree"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="tree-title tree-desc"
+                >
+                  <title id="tree-title">Everything the platform ships</title>
+                  <desc id="tree-desc">
+                    product areas and capabilities · Jun 2026
+                  </desc>
+                </svg>
+                <p class="fig-src">TREE · PRODUCT CATALOG</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G8">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-rainfall-t"
+                    >Campaigns rain down, sign-ups flow</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G8 · Rainfall Dual Area</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  daily ad spend (from top, $K) vs sign-ups (flow, hundreds) ·
+                  30 days
+                </p>
+                <svg
+                  id="rainfall"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="rainfall-title rainfall-desc"
+                >
+                  <title id="rainfall-title">
+                    Campaigns rain down, sign-ups flow
+                  </title>
+                  <desc id="rainfall-desc">
+                    daily ad spend (from top, $K) vs sign-ups (flow, hundreds) ·
+                    30 days
+                  </desc>
+                </svg>
+                <p class="fig-src">DUAL AREA · GROWTH + ADS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G9">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-morph-t"
+                    >One dataset, three views</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G9 · Scatter Morph</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  watch the same 12 products fly between views · every 3s ·
+                  three views, every 3 s
+                </p>
+                <svg
+                  id="morph"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="morph-title morph-desc"
+                >
+                  <title id="morph-title">One dataset, three views</title>
+                  <desc id="morph-desc">
+                    watch the same 12 products fly between views · every 3s
+                  </desc>
+                </svg>
+                <p class="fig-src">SCATTER MORPH · COHORTS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G10">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-negbar-t"
+                    >Where we gained, where we bled</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G10 · Diverging Bar</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  net accounts per segment · Q2 2026 · churn left, growth right
+                </p>
+                <svg
+                  id="negbar"
+                  viewBox="0 0 400 300"
+                  role="img"
+                  aria-labelledby="negbar-title negbar-desc"
+                >
+                  <title id="negbar-title">
+                    Where we gained, where we bled
+                  </title>
+                  <desc id="negbar-desc">
+                    net accounts per segment · Q2 2026 · churn left, growth
+                    right
+                  </desc>
+                </svg>
+                <p class="fig-src">DIVERGING BAR · CRM</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G11">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-force-t"
+                    >Integrations, pulled into orbit</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G11 · Force Graph</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  force layout · node = monthly syncs · drag a node, the web
+                  fights back · drag a node, the web fights back
+                </p>
+                <svg
+                  id="force"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="force-title force-desc"
+                >
+                  <title id="force-title">
+                    Integrations, pulled into orbit
+                  </title>
+                  <desc id="force-desc">
+                    force layout · node = monthly syncs · drag a node, the web
+                    fights back
+                  </desc>
+                </svg>
+                <p class="fig-src">FORCE GRAPH · NEW · INTEGRATION HUB</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G12">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-wave-t"
+                    >Fifty markets, one wave</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G12 · Stagger Wave</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  sign-ups per market · bars cascade in · click to replay
+                </p>
+                <svg
+                  id="wave"
+                  viewBox="0 0 400 260"
+                  role="img"
+                  aria-labelledby="wave-title wave-desc"
+                >
+                  <title id="wave-title">Fifty markets, one wave</title>
+                  <desc id="wave-desc">
+                    sign-ups per market · bars cascade in · click to replay
+                  </desc>
+                </svg>
+                <p class="fig-src">STAGGER DELAY · GROWTH</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G13">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-custompie-t"
+                    >Big slice, deep engagement</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G13 · Big Slice</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  angle = share of users · radius = minutes per day · dotted
+                  rings at 15 / 30 / 45 min
+                </p>
+                <svg
+                  id="custompie"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="custompie-title custompie-desc"
+                >
+                  <title id="custompie-title">Big slice, deep engagement</title>
+                  <desc id="custompie-desc">
+                    angle = share of users · radius = minutes per day · dotted
+                    rings at 15 / 30 / 45 min
+                  </desc>
+                </svg>
+                <p class="fig-src">CUSTOM PIE · PRODUCT ANALYTICS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G14">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-singleaxis-t"
+                    >Support load, day by day</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G14 · Single Axis</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  tickets per hour · each row is its own axis · dot = volume
+                </p>
+                <svg
+                  id="singleaxis"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="singleaxis-title singleaxis-desc"
+                >
+                  <title id="singleaxis-title">Support load, day by day</title>
+                  <desc id="singleaxis-desc">
+                    tickets per hour · each row is its own axis · dot = volume
+                  </desc>
+                </svg>
+                <p class="fig-src">SINGLE AXIS · SUPPORT DESK</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G15">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-jitter-t"
+                    >Response times, spread out</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G15 · Jitter Strip</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  every dot = one ticket · jitter reveals the pile-up · by
+                  priority
+                </p>
+                <svg
+                  id="jitter"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="jitter-title jitter-desc"
+                >
+                  <title id="jitter-title">Response times, spread out</title>
+                  <desc id="jitter-desc">
+                    every dot = one ticket · jitter reveals the pile-up · by
+                    priority
+                  </desc>
+                </svg>
+                <p class="fig-src">JITTER STRIP · SUPPORT DESK</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G16">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-race-t"
+                    >Eight products race for revenue</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G16 · Bar Race</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  MRR by product, $K · 2019 → 2026 · leader wears black · click
+                  to replay · one year every 1.2 s
+                </p>
+                <svg
+                  id="race"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="race-title race-desc"
+                >
+                  <title id="race-title">Eight products race for revenue</title>
+                  <desc id="race-desc">
+                    MRR by product, $K · 2019 → 2026 · leader wears black ·
+                    click to replay
+                  </desc>
+                </svg>
+                <p class="fig-src">BAR RACE · BILLING</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G17">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-gstream-t"
+                    >Concurrent users, streaming</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G17 · Dynamic Stream</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  one new reading every 300ms · window of 50 · click to restart
+                  · live window, 300 ms
+                </p>
+                <svg
+                  id="gstream"
+                  viewBox="0 0 400 240"
+                  role="img"
+                  aria-labelledby="gstream-title gstream-desc"
+                >
+                  <title id="gstream-title">Concurrent users, streaming</title>
+                  <desc id="gstream-desc">
+                    one new reading every 300ms · window of 50 · click to
+                    restart
+                  </desc>
+                </svg>
+                <p class="fig-src">DYNAMIC DATA · LIVE OPS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G18">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-stroke-t"
+                    >H1 revenue, drawn in one stroke</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G18 · Draw-in + Counter</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  cumulative ARR · the line draws, the number counts · click to
+                  replay · line and counter, 2.6 s
+                </p>
+                <svg
+                  id="stroke"
+                  viewBox="0 0 400 260"
+                  role="img"
+                  aria-labelledby="stroke-title stroke-desc"
+                >
+                  <title id="stroke-title">
+                    H1 revenue, drawn in one stroke
+                  </title>
+                  <desc id="stroke-desc">
+                    cumulative ARR · the line draws, the number counts · click
+                    to replay
+                  </desc>
+                </svg>
+                <p class="fig-src">DRAW-IN + COUNTER · FINANCE</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G19">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-violin-t"
+                    >How fast each plan gets an answer</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G19 · Violin</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  hours to first reply · silhouette = where tickets pile up ·
+                  paper tick = median
+                </p>
+                <svg
+                  id="violin"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="violin-title violin-desc"
+                >
+                  <title id="violin-title">
+                    How fast each plan gets an answer
+                  </title>
+                  <desc id="violin-desc">
+                    hours to first reply · silhouette = where tickets pile up ·
+                    paper tick = median
+                  </desc>
+                </svg>
+                <p class="fig-src">VIOLIN · SUPPORT DESK</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G20">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-gheat-t"
+                    >Adoption runs hot on the new versions</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G20 · Matrix Heat</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  5 versions × 6 features · shade = % of accounts using it ·
+                  every cell carries its number
+                </p>
+                <svg
+                  id="gheat"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="gheat-title gheat-desc"
+                >
+                  <title id="gheat-title">
+                    Adoption runs hot on the new versions
+                  </title>
+                  <desc id="gheat-desc">
+                    5 versions × 6 features · shade = % of accounts using it ·
+                    every cell carries its number
+                  </desc>
+                </svg>
+                <p class="fig-src">MATRIX HEAT (GLANCE) · PRODUCT ANALYTICS</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G21">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-rankstrip-t"
+                    >Flows climbs to the top</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G21 · Rank Strip</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  one row per product, one cell per quarter · darker = higher
+                  rank · a bar race you can print
+                </p>
+                <svg
+                  id="rankstrip"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="rankstrip-title rankstrip-desc"
+                >
+                  <title id="rankstrip-title">Flows climbs to the top</title>
+                  <desc id="rankstrip-desc">
+                    one row per product, one cell per quarter · darker = higher
+                    rank · a bar race you can print
+                  </desc>
+                </svg>
+                <p class="fig-src">RANK STRIP · BILLING</p>
+              </div>
+            </figure>
+
+            <figure class="fig" data-chart="G22">
+              <div class="fig-box">
+                <div class="fig-head">
+                  <span class="fig-title" id="fig-sankey-t"
+                    >Channels pour into plans</span
+                  >
+                  <span class="fig-tools" data-md-skip
+                    ><span class="fig-id">G22 · Aggregate Sankey</span
+                    ><button
+                      type="button"
+                      class="fig-replay btn"
+                      data-variant="outline"
+                      data-size="sm"
+                    >
+                      重播
+                    </button></span
+                  >
+                </div>
+                <p class="fig-sub">
+                  ribbon width = accounts · channels on the left, the plans they
+                  land in on the right
+                </p>
+                <svg
+                  id="sankey"
+                  viewBox="0 0 400 320"
+                  role="img"
+                  aria-labelledby="sankey-title sankey-desc"
+                >
+                  <title id="sankey-title">Channels pour into plans</title>
+                  <desc id="sankey-desc">
+                    ribbon width = accounts · channels on the left, the plans
+                    they land in on the right
+                  </desc>
+                </svg>
+                <p class="fig-src">AGGREGATE SANKEY · ATTRIBUTION</p>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+      <!-- 右侧目录：骨架 JS 自动生成条目；条目不足 2 个时整块不出现，不要手写 -->
+      <aside class="toc" data-md-skip aria-labelledby="toc-title">
+        <nav class="toc-inner">
+          <div class="toc-marker"></div>
+          <div class="toc-title" id="toc-title" role="heading" aria-level="2">
+            本页目录
+          </div>
+          <ul class="toc-list root"></ul>
+        </nav>
+      </aside>
+    </div>
+
+    <!--SHOW-ME:JS-->
+    <script>
+      /* ── 滑块填充 ──────────────────────────────────────────────────────
+         轨道的已填充部分由 --slider-value 驱动。骨架始终同步这个变量，
+         因而只使用滑块的页面不依赖条件内联的组件行为 JS。 */
+      (function () {
+        function sync(el) {
+          var min = Number(el.min || 0),
+            max = Number(el.max === "" ? 100 : el.max);
+          var pct =
+            max === min ? 0 : ((Number(el.value) - min) / (max - min)) * 100;
+          el.style.setProperty("--slider-value", pct + "%");
+        }
+        document.querySelectorAll('input[type="range"]').forEach(sync);
+        /* 事件委托：后插进来的滑块也照样跟着走 */
+        document.addEventListener("input", function (e) {
+          if (e.target.matches && e.target.matches('input[type="range"]'))
+            sync(e.target);
+        });
+      })();
+    </script>
+    <script>
+      /* ── 代码工具条：换行 / 复制 ──
+         给每个 pre > code 注入两个按钮。工具条带 data-md-skip，导出 Markdown 时不出现。
+         复制走 navigator.clipboard，失败时退回 execCommand；反馈先行，不等 promise。 */
+      (function () {
+        function mk(label, title) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn";
+          b.setAttribute("data-variant", "outline");
+          b.title = title;
+          b.textContent = label;
+          return b;
+        }
+        function copyText(text) {
+          try {
+            return navigator.clipboard.writeText(text);
+          } catch (e) {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand("copy");
+            } catch (e2) {}
+            ta.remove();
+          }
+        }
+        document.querySelectorAll("pre > code").forEach(function (code) {
+          var pre = code.parentNode;
+          if (pre.querySelector(".code-tools")) return;
+          var bar = document.createElement("div");
+          bar.className = "code-tools";
+          bar.setAttribute("data-md-skip", "");
+          var wrap = mk("换行", "切换自动换行");
+          wrap.setAttribute("aria-pressed", "false");
+          wrap.addEventListener("click", function () {
+            var on = pre.dataset.wrap !== "on";
+            pre.dataset.wrap = on ? "on" : "off";
+            wrap.setAttribute("aria-pressed", String(on));
+          });
+          var copy = mk("复制", "复制代码");
+          copy.addEventListener("click", function () {
+            copy.textContent = "已复制";
+            setTimeout(function () {
+              copy.textContent = "复制";
+            }, 1600);
+            copyText(code.textContent.replace(/\n$/, ""));
+          });
+          bar.appendChild(wrap);
+          bar.appendChild(copy);
+          pre.appendChild(bar);
+        });
+      })();
+    </script>
+    <script>
+      /* ── 主题三态切换 ── */
+      (function () {
+        var root = document.documentElement;
+        var mq = matchMedia("(prefers-color-scheme: dark)");
+        function apply(t) {
+          root.dataset.theme = t;
+          root.classList.toggle(
+            "dark",
+            t === "dark" || (t === "system" && mq.matches)
+          );
+          document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+          });
+        }
+        document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var t = b.dataset.themeSet;
+            try {
+              t === "system"
+                ? localStorage.removeItem("show-me-theme")
+                : localStorage.setItem("show-me-theme", t);
+            } catch (e) {}
+            apply(t);
+          });
+        });
+        mq.addEventListener("change", function () {
+          if (root.dataset.theme === "system") apply("system");
+        });
+        apply(root.dataset.theme || "system");
+      })();
+
+      /* ── 复制为 Markdown ──
+   遍历 #doc（或 [data-md-root]）生成 GFM。跳过 [data-md-skip] / [hidden] / 脚本 / 弹层。 */
+      (function () {
+        var SKIP = new Set([
+          "SCRIPT",
+          "STYLE",
+          "TEMPLATE",
+          "DIALOG",
+          "NOSCRIPT",
+          "SVG",
+          "CANVAS",
+        ]);
+        var INLINE_ONLY = new Set([
+          "A",
+          "CODE",
+          "STRONG",
+          "B",
+          "EM",
+          "I",
+          "DEL",
+          "S",
+          "SPAN",
+          "KBD",
+          "SMALL",
+          "ABBR",
+          "MARK",
+          "SUP",
+          "SUB",
+          "BR",
+          "IMG",
+          "TIME",
+          "MATH",
+          "U",
+          "Q",
+          "LABEL",
+          "OUTPUT",
+        ]);
+
+        function skipped(el) {
+          return (
+            SKIP.has(el.tagName.toUpperCase()) ||
+            el.hasAttribute("data-md-skip") ||
+            el.hasAttribute("hidden") ||
+            el.getAttribute("aria-hidden") === "true"
+          );
+        }
+        function txt(s) {
+          return (s || "").replace(/\s+/g, " ");
+        }
+
+        function inline(node) {
+          var out = "";
+          node.childNodes.forEach(function (n) {
+            if (n.nodeType === 3) {
+              out += txt(n.nodeValue);
+              return;
+            }
+            if (n.nodeType !== 1 || skipped(n)) return;
+            var t = n.tagName.toUpperCase(),
+              inner = inline(n);
+            if (t === "MATH") {
+              /* 公式导出 LaTeX 源：build 编译时留下的 annotation；没有就退回可读文本 */
+              var ann = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              var tex = ann
+                ? ann.textContent.trim()
+                : txt(n.textContent).trim();
+              out +=
+                n.getAttribute("display") === "block"
+                  ? "\n\n$$" + tex + "$$\n\n"
+                  : "$" + tex + "$";
+              return;
+            }
+            if (t === "BR") out += "  \n";
+            else if (t === "IMG")
+              out +=
+                "![" +
+                (n.alt || "") +
+                "](" +
+                (n.getAttribute("src") || "") +
+                ")";
+            else if (
+              t === "CODE" ||
+              t === "KBD" ||
+              n.classList.contains("badge") ||
+              n.classList.contains("kbd")
+            )
+              out += inner.trim() ? "`" + inner.trim() + "`" : "";
+            else if (t === "A") {
+              var href = n.getAttribute("href") || "";
+              out +=
+                href && !href.startsWith("#")
+                  ? "[" + inner.trim() + "](" + href + ")"
+                  : inner;
+            } else if (t === "STRONG" || t === "B")
+              out += inner.trim() ? "**" + inner.trim() + "**" : "";
+            else if (t === "EM" || t === "I")
+              out += inner.trim() ? "*" + inner.trim() + "*" : "";
+            else if (t === "DEL" || t === "S")
+              out += inner.trim() ? "~~" + inner.trim() + "~~" : "";
+            else out += inner;
+          });
+          return out;
+        }
+
+        function cell(el) {
+          return inline(el).trim().replace(/\|/g, "\\|").replace(/\n/g, " ");
+        }
+
+        function table(el) {
+          var rows = Array.from(el.querySelectorAll("tr")).filter(function (r) {
+            return !skipped(r);
+          });
+          if (!rows.length) return "";
+          /* 没有表头行的表：全部行当数据，列名留空占位 ——
+             否则第一行数据会被当成表头，语义就错了 */
+          var hasTh = !!rows[0].querySelector("th");
+          var head = rows[0],
+            body = hasTh ? rows.slice(1) : rows;
+          var cols = Array.from(head.children).map(function (c, i) {
+            return hasTh ? cell(c) : "列" + (i + 1);
+          });
+          var out =
+            "| " +
+            cols.join(" | ") +
+            " |\n|" +
+            cols
+              .map(function () {
+                return " --- ";
+              })
+              .join("|") +
+            "|\n";
+          body.forEach(function (r) {
+            out += "| " + Array.from(r.children).map(cell).join(" | ") + " |\n";
+          });
+          return out;
+        }
+
+        function list(el, depth) {
+          var ordered = el.tagName === "OL",
+            i = 0,
+            out = "";
+          Array.from(el.children).forEach(function (li) {
+            if (li.tagName !== "LI" || skipped(li)) return;
+            i++;
+            var marker = ordered ? i + ". " : "- ";
+            var pad = "  ".repeat(depth);
+            var sub = "";
+            var own = document.createElement("div");
+            Array.from(li.childNodes).forEach(function (n) {
+              if (
+                n.nodeType === 1 &&
+                (n.tagName === "UL" || n.tagName === "OL")
+              )
+                /* 深层嵌套拍平到本级：GFM 对超过 4–5 层的子列表解析不稳，保内容齐整优先 */
+                sub += list(n, depth < 6 ? depth + 1 : depth);
+              else own.appendChild(n.cloneNode(true));
+            });
+            var text = inline(own).trim();
+            if (text) out += pad + marker + text + "\n";
+            out += sub;
+          });
+          return out;
+        }
+
+        function block(el, depth) {
+          var out = "";
+          Array.from(el.children).forEach(function (n) {
+            if (skipped(n)) return;
+            var t = n.tagName.toUpperCase();
+            if (t === "SUMMARY")
+              return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
+            if (/^H[1-6]$/.test(t)) {
+              out += "\n" + "#".repeat(+t[1]) + " " + inline(n).trim() + "\n\n";
+            } else if (t === "P") {
+              var s = inline(n).trim();
+              if (s) out += s + "\n\n";
+            } else if (t === "UL" || t === "OL") {
+              out += list(n, 0) + "\n";
+            } else if (t === "PRE") {
+              var code = n.querySelector("code");
+              var lang =
+                (code &&
+                  (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
+                "";
+              out +=
+                "```" +
+                lang +
+                "\n" +
+                /* 取 code 的文本而不是 pre 的：pre 里还有骨架注入的工具条 */
+                ((code || n).textContent || "").replace(/\n+$/, "") +
+                "\n```\n\n";
+            } else if (t === "TABLE") {
+              out += table(n) + "\n";
+            } else if (t === "MATH") {
+              var ann2 = n.querySelector(
+                'annotation[encoding="application/x-tex"]'
+              );
+              out +=
+                "$$" +
+                (ann2 ? ann2.textContent.trim() : txt(n.textContent).trim()) +
+                "$$\n\n";
+            } else if (t === "HR") {
+              out += "---\n\n";
+            } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {
+              out +=
+                block(n, depth)
+                  .trim()
+                  .split("\n")
+                  .map(function (l) {
+                    return l ? "> " + l : ">";
+                  })
+                  .join("\n") + "\n\n";
+            } else if (n.classList.contains("tabs")) {
+              /* Markdown 没有标签页：每个标签导出成小标题 + 它的面板，隐藏的面板也要出。 */
+              n.querySelectorAll('[role="tablist"] > [role="tab"]').forEach(
+                function (tab) {
+                  out += "**" + inline(tab).trim() + "**\n\n";
+                  var panel = document.getElementById(
+                    tab.getAttribute("aria-controls")
+                  );
+                  if (panel) out += block(panel, depth);
+                }
+              );
+            } else if (t === "DETAILS") {
+              var sum = n.querySelector("summary");
+              if (sum) out += "**" + inline(sum).trim() + "**\n\n";
+              out += block(n, depth);
+            } else if (t === "DL") {
+              Array.from(n.children).forEach(function (d) {
+                if (d.tagName === "DT")
+                  out += "**" + inline(d).trim() + "** — ";
+                else if (d.tagName === "DD") out += inline(d).trim() + "\n\n";
+              });
+            } else if (
+              n.children.length === 0 ||
+              Array.from(n.children).every(function (c) {
+                return INLINE_ONLY.has(c.tagName);
+              })
+            ) {
+              var s2 = inline(n).trim();
+              if (s2) out += s2 + "\n\n";
+            } else {
+              out += block(n, depth);
+            }
+          });
+          return out;
+        }
+
+        function toMarkdown() {
+          var root =
+            document.querySelector("[data-md-root]") ||
+            document.getElementById("doc") ||
+            document.body;
+          var md = block(root, 0)
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+          var title = document.title;
+          /* 正文里只要有一级标题就不再拼 <title>：否则 eyebrow 段落排在 h1 前时，
+             导出会得到两个「# 」（anti-patterns.md #2）。 */
+          var hasH1 = /^# /m.test(md);
+          return (hasH1 ? "" : "# " + title + "\n\n") + md + "\n";
+        }
+
+        /* 暴露给页面用：需要「下载 .md」之类的额外入口时调用它，不要另写一份转换器。 */
+        window.showMeMarkdown = toMarkdown;
+
+        document.querySelectorAll("[data-copy-md]").forEach(function (btn) {
+          var icons = btn.querySelectorAll("svg, i");
+          btn.addEventListener("click", async function () {
+            var md = toMarkdown();
+            /* 反馈先行：剪贴板图标换成对勾 1.6s。不等待 writeText —— 权限 pending 时它可能永不 settle。
+         SVG 没有 hidden 反射属性，必须操作属性本身 */
+            if (icons.length >= 2) {
+              icons[0].setAttribute("hidden", "");
+              icons[1].removeAttribute("hidden");
+            }
+            btn.setAttribute("data-variant", "secondary");
+            setTimeout(function () {
+              if (icons.length >= 2) {
+                icons[0].removeAttribute("hidden");
+                icons[1].setAttribute("hidden", "");
+              }
+              btn.setAttribute("data-variant", "outline");
+            }, 1600);
+            try {
+              await navigator.clipboard.writeText(md);
+            } catch (e) {
+              var ta = document.createElement("textarea");
+              ta.value = md;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              try {
+                document.execCommand("copy");
+              } catch (e2) {}
+              ta.remove();
+            }
+          });
+        });
+      })();
+
+      /* ── 右侧目录：扫描 #doc 的 h2/h3 生成条目，指示条随滚动滑动到当前节。
+   移植自 VitePress 的 outline：scroll（throttle 100ms）+ 标题绝对位置比较。
+   标题加 data-toc-skip 可豁免；点击时立即定位指示条，平滑滚动途中不跟跳。 ── */
+      (function () {
+        var doc = document.getElementById("doc");
+        var aside = document.querySelector(".toc");
+        if (!doc || !aside) return;
+        var list = aside.querySelector(".toc-list");
+        var marker = aside.querySelector(".toc-marker");
+        var headings = Array.from(doc.querySelectorAll("h2, h3")).filter(
+          function (h) {
+            /* 组件容器内的标题不是节标题：卡片头的 h3、折叠面板的标题都不得进目录。
+               否则统计数字写成标题时会产出「7」「91 → 39」这类孤儿条目（anti-patterns.md #1）。 */
+            return (
+              !h.closest("[data-toc-skip]") &&
+              !h.closest("[data-md-skip]") &&
+              !h.closest(
+                ".card, .fig-box, .alert, .item, .accordion, .dialog, .empty"
+              )
+            );
+          }
+        );
+        if (headings.length < 2) return;
+
+        /* h3 嵌进前一个 h2 的子列表；没有前置 h2 的 h3 按顶层处理 */
+        var n = 0,
+          sub = null;
+        headings.forEach(function (h) {
+          if (!h.id) h.id = "toc-" + ++n;
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.className = "toc-link";
+          a.href = "#" + h.id;
+          a.textContent = a.title = h.textContent.trim();
+          li.appendChild(a);
+          if (h.tagName === "H2" || !sub) {
+            list.appendChild(li);
+            sub = null;
+            if (h.tagName === "H2") {
+              sub = document.createElement("ul");
+              sub.className = "toc-list nested";
+              li.appendChild(sub);
+            }
+          } else {
+            sub.appendChild(li);
+          }
+        });
+        document.body.classList.add("has-toc");
+
+        var mq = matchMedia("(min-width: 80rem)");
+        var prev = null,
+          skipOnce = false;
+
+        function topOf(el) {
+          var t = 0;
+          while (el !== document.body) {
+            if (el === null)
+              return NaN; /* display:none 的元素拿不到位置，自然被过滤 */
+            t += el.offsetTop;
+            el = el.offsetParent;
+          }
+          return t;
+        }
+
+        function activate(hash) {
+          if (prev) prev.classList.remove("active");
+          prev = null;
+          if (hash) {
+            var links = list.querySelectorAll("a");
+            for (var i = 0; i < links.length; i++) {
+              if (links[i].getAttribute("href") === hash) {
+                prev = links[i];
+                break;
+              }
+            }
+          }
+          if (prev) {
+            prev.classList.add("active");
+            /* 链接的 offsetParent 是 .toc-list，指示条的参照是 .toc-inner，两者原点要补齐 */
+            marker.style.top =
+              prev.offsetTop +
+              (prev.offsetParent ? prev.offsetParent.offsetTop : 0) +
+              (prev.offsetHeight - marker.offsetHeight) / 2 +
+              "px";
+            marker.style.opacity = "1";
+          } else {
+            marker.style.top = "";
+            marker.style.opacity = "0";
+          }
+        }
+
+        var geom =
+          null; /* 缓存的标题几何：resize 后失效，滚动时不再逐个读 offsetTop */
+        function measure() {
+          geom = headings
+            .map(function (h) {
+              return {
+                id: h.id,
+                top: topOf(h),
+                sm: parseFloat(getComputedStyle(h).scrollMarginTop) || 0,
+              };
+            })
+            .filter(function (x) {
+              return !isNaN(x.top);
+            })
+            .sort(function (a, b) {
+              return a.top - b.top;
+            });
+        }
+
+        function setActive() {
+          if (!mq.matches) return;
+          if (skipOnce) {
+            skipOnce = false;
+            return;
+          }
+          if (!geom) measure();
+          var items = geom;
+          if (!items.length) return activate(null);
+          if (scrollY < 1) return activate(null); /* 页顶：无激活项 */
+          if (
+            Math.ceil(scrollY + innerHeight) >=
+            document.documentElement.scrollHeight
+          )
+            return activate(
+              "#" + items[items.length - 1].id
+            ); /* 页底：激活最后一项 */
+          var active = null;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].top > scrollY + items[i].sm + 4) break;
+            active = items[i].id;
+          }
+          activate(active ? "#" + active : null);
+        }
+
+        aside.addEventListener("click", function (e) {
+          var a = e.target instanceof Element ? e.target.closest("a") : null;
+          if (a && a.hash) {
+            skipOnce = true;
+            activate(a.hash);
+          }
+        });
+        var ticking = false;
+        addEventListener(
+          "scroll",
+          function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+              ticking = false;
+              setActive();
+            });
+          },
+          { passive: true }
+        );
+        addEventListener("resize", function () {
+          geom = null;
+          setActive();
+        });
+        addEventListener(
+          "load",
+          setActive
+        ); /* 等浏览器恢复滚动位置后再定位一次 */
+        mq.addEventListener("change", setActive);
+        setActive();
+      })();
+    </script>
+    <script>
+      (() => {
+        const { el, txt, tip, rnd, pol, sect, blob, reveal, fmt } = showMeChart;
+        const $ = (id) => document.getElementById(id);
+        const INK = "var(--ink)",
+          PAPER = "var(--paper)",
+          HERO = "var(--chart-hero)";
+        const I90 = "var(--ink-90)",
+          I70 = "var(--ink-70)",
+          I60 = "var(--ink-60)",
+          I45 = "var(--ink-45)",
+          I30 = "var(--ink-30)",
+          I22 = "var(--ink-22)",
+          I14 = "var(--ink-14)",
+          I8 = "var(--ink-8)";
+        const MUTED = I45,
+          GRID = I14,
+          FAINT = I22;
+        const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
+        const L = [INK, I90, I70, I60, I45, I30, I22]; // 7 级：多系列
+        const D2R = Math.PI / 180;
+        const dl = (s) => `animation-delay:${s.toFixed(3)}s`; // 交错入场延迟
+        const halo =
+          "paint-order:stroke;stroke:var(--paper);stroke-width:3px;stroke-linejoin:round"; // 文字描边遮线
+
+        // ════ G3 · Chunky Bars ════
+        (() => {
+          // 粗柱：四根胶囊柱，值写在柱顶。明度按排名，主角 = 最高一根。
+          const D = [
+            ["STARTER", 182],
+            ["PRO", 486],
+            ["TEAM", 391],
+            ["ENT", 274],
+          ];
+          reveal($("c3"), (s) => {
+            const max = Math.max(...D.map((d) => d[1])),
+              base = 270,
+              x0 = (i) => 70 + i * 88,
+              W = 44;
+            const rank = [...D].sort((a, b) => b[1] - a[1]).map((d) => d[0]);
+            el(s, "line", {
+              x1: 30,
+              y1: base + 0.5,
+              x2: 370,
+              y2: base + 0.5,
+              stroke: GRID,
+              "stroke-width": 0.8,
+            });
+            D.forEach(([name, v], i) => {
+              const h = (v / max) * 210,
+                x = x0(i),
+                ri = rank.indexOf(name);
+              const r = el(s, "rect", {
+                x: x - W / 2,
+                y: base - h,
+                width: W,
+                height: h,
+                rx: W / 2,
+                fill: ri === 0 ? HERO : LAD[ri],
+                class: "rise",
+                style: `transform-origin:${x}px ${base}px;animation-delay:${i * 0.11}s`,
+              });
+              tip(r, `${name} — $${v}K MRR`);
+              txt(
+                s,
+                {
+                  x,
+                  y: base - h - 12,
+                  "font-size": 13,
+                  "font-weight": 600,
+                  fill: ri === 0 ? HERO : INK,
+                  "text-anchor": "middle",
+                  class: "fade",
+                  style: `animation-delay:${0.4 + i * 0.11}s`,
+                },
+                "$" + v + "K"
+              );
+              txt(
+                s,
+                {
+                  x,
+                  y: base + 18,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                  "letter-spacing": ".08em",
+                  class: "fade",
+                },
+                name
+              );
+            });
+          });
+        })();
+
+        // ════ G4 · Dot Waffle ════
+        (() => {
+          // 点阵华夫：一点 = 1%，从左上读起；饼图的默认替代。主角 = 最大来源。
+          const D = [
+            ["Search", 34],
+            ["Referral", 27],
+            ["Social", 18],
+            ["Partners", 12],
+            ["Paid", 9],
+          ];
+          reveal($("waffle"), (s) => {
+            const COLS = 10,
+              CELL = 21,
+              R = 7.5,
+              X0 = 8,
+              Y0 = 10;
+            let idx = 0;
+            D.forEach(([name, v], g) => {
+              for (let k = 0; k < v; k++) {
+                const c = idx + k,
+                  row = Math.floor(c / COLS),
+                  col = c % COLS;
+                el(s, "circle", {
+                  cx: X0 + col * CELL + R,
+                  cy: Y0 + row * CELL + R,
+                  r: R,
+                  fill: g === 0 ? HERO : LAD[g],
+                  class: "pop",
+                  style: `animation-delay:${c * 0.008 + g * 0.05}s`,
+                });
+              }
+              idx += v;
+            });
+            D.forEach(([name, v], g) => {
+              const y = 26 + g * 40;
+              el(s, "circle", { cx: 246, cy: y, r: 6, fill: LAD[g] });
+              const n = el(s, "text", {
+                x: 260,
+                y: y - 1,
+                "font-size": 10.5,
+                "font-weight": 600,
+                fill: INK,
+              });
+              n.textContent = name;
+              const val = el(s, "text", {
+                x: 260,
+                y: y + 13,
+                "font-size": 15,
+                "font-weight": 600,
+                fill: g === 0 ? HERO : g < 2 ? INK : I45,
+              });
+              val.textContent = v + "%";
+            });
+          });
+        })();
+
+        // ════ G5 · Pictorial Bar ════
+        (() => {
+          // 象形柱：一棵树 = 一万棵。整树可数，末尾按余数裁一棵；淡树 = 尚未种到的容量。
+          const TREE =
+            "M20,0 L38,28 L29,28 L40,46 L26,46 L26,58 L14,58 L14,46 L0,46 L11,28 L2,28 Z";
+          const years = ["2022", "2023", "2024", "2025", "2026"],
+            vals = [26, 41, 63, 88, 117],
+            CAP = 13;
+          reveal($("forest"), (s) => {
+            const defs = el(s, "defs", {});
+            const sym = el(defs, "symbol", {
+              id: "tree-sym",
+              viewBox: "0 0 40 58",
+            });
+            el(sym, "path", { d: TREE });
+            const x0 = 56,
+              SW = 19,
+              SH = 24,
+              y0 = (i) => 18 + i * 58;
+            years.forEach((yr, i) => {
+              const y = y0(i),
+                n = vals[i] / 10,
+                full = Math.floor(n),
+                frac = n - full,
+                shade = L[Math.max(0, 4 - i)];
+              txt(
+                s,
+                {
+                  x: 44,
+                  y: y + SH / 2 + 4,
+                  "font-size": 10.5,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "end",
+                  class: "fade",
+                },
+                yr
+              );
+              for (let k = 0; k < CAP; k++)
+                el(s, "use", {
+                  href: "#tree-sym",
+                  x: x0 + k * (SW + 3),
+                  y,
+                  width: SW,
+                  height: SH,
+                  fill: I14,
+                  class: "fade",
+                  style: `animation-delay:${i * 0.12}s`,
+                });
+              for (let k = 0; k < full; k++)
+                el(s, "use", {
+                  href: "#tree-sym",
+                  x: x0 + k * (SW + 3),
+                  y,
+                  width: SW,
+                  height: SH,
+                  fill: i === years.length - 1 ? HERO : shade,
+                  class: "pop",
+                  style: `animation-delay:${i * 0.12 + k * 0.03}s`,
+                });
+              if (frac > 0) {
+                const cp = el(defs, "clipPath", { id: "tree-clip" + i });
+                el(cp, "rect", {
+                  x: x0 + full * (SW + 3),
+                  y,
+                  width: SW * frac,
+                  height: SH,
+                });
+                el(s, "use", {
+                  href: "#tree-sym",
+                  x: x0 + full * (SW + 3),
+                  y,
+                  width: SW,
+                  height: SH,
+                  fill: i === years.length - 1 ? HERO : shade,
+                  "clip-path": `url(#tree-clip${i})`,
+                  class: "pop",
+                  style: `animation-delay:${i * 0.12 + full * 0.03}s`,
+                });
+              }
+              const lab = txt(
+                s,
+                {
+                  x: x0 + CAP * (SW + 3) + 8,
+                  y: y + SH / 2 + 4,
+                  "font-size": 12,
+                  "font-weight": 600,
+                  fill: i === years.length - 1 ? HERO : INK,
+                  class: "fade",
+                  style: `animation-delay:${0.5 + i * 0.12}s`,
+                },
+                vals[i] + "k"
+              );
+              tip(lab, `${yr} — ${vals[i]}k trees`);
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 312,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: "animation-delay:1s",
+              },
+              "ONE TREE = 10K PLANTED · FAINT = ROOM TO GROW"
+            );
+          });
+        })();
+
+        // ════ G6 · Circular Graph ════
+        (() => {
+          // 小环形网络：十个团队围成环，弧线 = 共享项目，线宽 = 数量。hover 一个节点只留它的邻接。
+          const teams = [
+            ["Product", 52],
+            ["Design", 38],
+            ["Frontend", 46],
+            ["Backend", 44],
+            ["Data", 30],
+            ["Growth", 34],
+            ["Support", 22],
+            ["Ops", 18],
+            ["Legal", 9],
+            ["Finance", 12],
+          ];
+          const links = [
+            [0, 1, 9],
+            [0, 2, 8],
+            [0, 3, 7],
+            [1, 2, 9],
+            [2, 3, 6],
+            [3, 4, 7],
+            [0, 5, 6],
+            [5, 4, 5],
+            [5, 6, 4],
+            [6, 2, 3],
+            [7, 3, 4],
+            [7, 9, 3],
+            [8, 9, 2],
+            [0, 8, 2],
+            [4, 2, 4],
+            [1, 5, 3],
+          ];
+          reveal($("circular"), (s) => {
+            const cx = 200,
+              cy = 160,
+              R = 112,
+              P = teams.map((t, i) => pol(cx, cy, R, -90 + i * 36));
+            const gl = el(s, "g", {}),
+              gn = el(s, "g", {});
+            const les = links.map(([a, b, w], k) => {
+              const [xa, ya] = P[a],
+                [xb, yb] = P[b];
+              const p = el(gl, "path", {
+                d: `M${xa} ${ya} Q${cx} ${cy} ${xb} ${yb}`,
+                fill: "none",
+                stroke: I45,
+                "stroke-width": w * 0.5,
+                opacity: 0.55,
+                pathLength: 1,
+                class: "draw net-link",
+                style: `animation-delay:${0.3 + k * 0.04}s`,
+              });
+              p.dataset.a = a;
+              p.dataset.b = b;
+              return p;
+            });
+            teams.forEach(([n, v], i) => {
+              const [x, y] = P[i];
+              const g = el(gn, "g", { class: "net-node", tabindex: 0 });
+              g.dataset.i = i;
+              el(g, "circle", {
+                cx: x,
+                cy: y,
+                r: Math.sqrt(v) * 1.6,
+                fill: i < 4 ? INK : i < 8 ? I45 : I22,
+                class: "pop",
+                style: `animation-delay:${i * 0.06}s`,
+              });
+              const c = Math.cos((-90 + i * 36) * D2R);
+              txt(
+                g,
+                {
+                  x: x + c * (Math.sqrt(v) * 1.6 + 6),
+                  y:
+                    y +
+                    Math.sin((-90 + i * 36) * D2R) * (Math.sqrt(v) * 1.6 + 6) +
+                    3,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: I60,
+                  "text-anchor":
+                    Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end",
+                  class: "fade",
+                  style: `animation-delay:${0.2 + i * 0.06}s`,
+                },
+                n
+              );
+              tip(g, `${n} — ${v} people`);
+              const focus = () => {
+                s.classList.add("focused");
+                les.forEach((p) =>
+                  p.classList.toggle(
+                    "hot",
+                    +p.dataset.a === i || +p.dataset.b === i
+                  )
+                );
+                gn.querySelectorAll(".net-node").forEach((o) =>
+                  o.classList.toggle(
+                    "hot",
+                    +o.dataset.i === i ||
+                      links.some(
+                        ([a, b]) =>
+                          (a === i && b === +o.dataset.i) ||
+                          (b === i && a === +o.dataset.i)
+                      )
+                  )
+                );
+              };
+              const blur = () => {
+                s.classList.remove("focused");
+                s.querySelectorAll(".hot").forEach((o) =>
+                  o.classList.remove("hot")
+                );
+              };
+              g.addEventListener("mouseenter", focus);
+              g.addEventListener("focus", focus);
+              g.addEventListener("mouseleave", blur);
+              g.addEventListener("blur", blur);
+            });
+          });
+        })();
+
+        // ════ G7 · Tree LR ════
+        (() => {
+          // 左右树：根在左，四个分支，十三片叶。曲线连接，同分支同明度。
+          const ROOT = {
+            name: "Platform",
+            kids: [
+              ["Editor", ["Blocks", "Tables", "Comments", "History"], L[0]],
+              ["Automate", ["Workflows", "Triggers", "Webhooks"], L[2]],
+              ["Collaborate", ["Spaces", "Guests", "Mentions"], L[3]],
+              ["Integrate", ["API", "Slack", "GitHub"], L[4]],
+            ],
+          };
+          reveal($("tree"), (s) => {
+            const X0 = 82,
+              X1 = 200,
+              X2 = 312,
+              leafN = ROOT.kids.reduce((a, k) => a + k[1].length, 0),
+              LH = (300 - 20) / leafN;
+            const link = (xa, ya, xb, yb, shade, d) =>
+              el(s, "path", {
+                d: `M${xa} ${ya} C${(xa + xb) / 2} ${ya} ${(xa + xb) / 2} ${yb} ${xb} ${yb}`,
+                fill: "none",
+                stroke: shade,
+                "stroke-width": 1.3,
+                pathLength: 1,
+                class: "draw",
+                style: `animation-delay:${d}s;animation-duration:.7s`,
+              });
+            let li = 0;
+            const branchY = [];
+            ROOT.kids.forEach(([name, leaves, shade], bi) => {
+              const ys = leaves.map(() => 20 + li++ * LH + LH / 2),
+                by = ys.reduce((a, b) => a + b, 0) / ys.length;
+              branchY.push(by);
+              leaves.forEach((leaf, k) => {
+                link(X1, by, X2, ys[k], shade, 0.5 + bi * 0.15 + k * 0.05);
+                el(s, "circle", {
+                  cx: X2,
+                  cy: ys[k],
+                  r: 3.2,
+                  fill: shade,
+                  class: "pop",
+                  style: `animation-delay:${0.9 + bi * 0.15 + k * 0.05}s`,
+                });
+                txt(
+                  s,
+                  {
+                    x: X2 + 9,
+                    y: ys[k] + 3.2,
+                    "font-size": 9.5,
+                    fill: MUTED,
+                    class: "fade",
+                    style: `animation-delay:${1 + bi * 0.15 + k * 0.05}s`,
+                  },
+                  leaf
+                );
+              });
+              el(s, "circle", {
+                cx: X1,
+                cy: by,
+                r: 4,
+                fill: shade,
+                class: "pop",
+                style: `animation-delay:${0.4 + bi * 0.15}s`,
+              });
+              txt(
+                s,
+                {
+                  x: X1 - 9,
+                  y: by + 3.5,
+                  "font-size": 10,
+                  "font-weight": 600,
+                  fill: I60,
+                  "text-anchor": "end",
+                  class: "fade",
+                  style: `animation-delay:${0.45 + bi * 0.15}s`,
+                },
+                name
+              );
+            });
+            const ry = 160;
+            branchY.forEach((by, bi) =>
+              link(X0, ry, X1, by, I22, 0.1 + bi * 0.1)
+            );
+            el(s, "circle", {
+              cx: X0,
+              cy: ry,
+              r: 5.5,
+              fill: INK,
+              class: "pop",
+            });
+            txt(
+              s,
+              {
+                x: X0 - 11,
+                y: ry + 4,
+                "font-size": 11.5,
+                "font-weight": 600,
+                fill: INK,
+                "text-anchor": "end",
+                class: "fade",
+              },
+              ROOT.name
+            );
+          });
+        })();
+
+        // ════ G8 · Rainfall Dual Area ════
+        (() => {
+          // 雨落双面积：上半从顶往下落的是投放（因），下半从底往上长的是注册（果）。同一根时间轴。
+          const flow = [
+            42, 45, 44, 48, 52, 55, 53, 58, 64, 62, 66, 71, 69, 75, 82, 79, 84,
+            80, 86, 92, 88, 95, 91, 97, 104, 101, 108, 105, 112, 118,
+          ];
+          const rain = [
+            2, 0, 4, 8, 3, 0, 6, 12, 7, 3, 9, 15, 6, 2, 11, 5, 8, 14, 4, 9, 6,
+            13, 3, 7, 10, 5, 12, 8, 15, 6,
+          ];
+          reveal($("rainfall"), (s) => {
+            const X0 = 44,
+              X1 = 386,
+              x = (i) => X0 + (i / 29) * (X1 - X0),
+              TOP = 14,
+              RH = 80,
+              BOT = 290,
+              FH = 150;
+            const peak = flow.indexOf(Math.max(...flow));
+            [0, 6, 12, 18].forEach((v) => {
+              const y = TOP + (v / 18) * RH;
+              el(s, "line", {
+                x1: X0,
+                y1: y,
+                x2: X1,
+                y2: y,
+                stroke: GRID,
+                "stroke-width": 0.6,
+                "stroke-dasharray": "2 3",
+              });
+              txt(
+                s,
+                {
+                  x: X0 - 6,
+                  y: y + 3,
+                  "font-size": 8,
+                  fill: I30,
+                  "text-anchor": "end",
+                },
+                "$" + v + "K"
+              );
+            });
+            rain.forEach((v, i) => {
+              const h = (v / 18) * RH;
+              if (!v) return;
+              el(s, "rect", {
+                x: x(i) - 4,
+                y: TOP,
+                width: 8,
+                height: h,
+                rx: 2,
+                fill: I30,
+                class: "rise",
+                style: `transform-origin:${x(i)}px ${TOP}px;animation-delay:${i * 0.03}s`,
+              });
+            });
+            const fy = (v) => BOT - (v / 120) * FH;
+            const d = flow
+              .map(
+                (v, i) =>
+                  (i ? "L" : "M") + x(i).toFixed(1) + " " + fy(v).toFixed(1)
+              )
+              .join(" ");
+            el(s, "path", {
+              d: d + ` L${X1} ${BOT} L${X0} ${BOT} Z`,
+              fill: I14,
+              class: "fade",
+              style: "animation-delay:.4s",
+            });
+            el(s, "path", {
+              d,
+              fill: "none",
+              stroke: INK,
+              "stroke-width": 2,
+              pathLength: 1,
+              class: "draw",
+              style: "animation-delay:.3s;animation-duration:1.2s",
+            });
+            [40, 80, 120].forEach((v) => {
+              el(s, "line", {
+                x1: X0,
+                y1: fy(v),
+                x2: X1,
+                y2: fy(v),
+                stroke: GRID,
+                "stroke-width": 0.6,
+              });
+              txt(
+                s,
+                {
+                  x: X0 - 6,
+                  y: fy(v) + 3,
+                  "font-size": 8,
+                  fill: MUTED,
+                  "text-anchor": "end",
+                },
+                v
+              );
+            });
+            const pk = el(s, "circle", {
+              cx: x(peak),
+              cy: fy(flow[peak]),
+              r: 4,
+              fill: HERO,
+              class: "pop",
+              style: "animation-delay:1.4s",
+            });
+            tip(pk, `Day ${peak + 1} — ${flow[peak]} sign-ups`);
+            txt(
+              s,
+              {
+                x: x(peak),
+                y: fy(flow[peak]) - 10,
+                "font-size": 9.5,
+                "font-weight": 600,
+                fill: HERO,
+                "text-anchor": "middle",
+                class: "fade",
+                style: "animation-delay:1.5s",
+              },
+              flow[peak]
+            );
+            [0, 7, 14, 21, 28].forEach((i) =>
+              txt(
+                s,
+                {
+                  x: x(i),
+                  y: BOT + 14,
+                  "font-size": 8,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                },
+                "D" + (i + 1)
+              )
+            );
+            txt(
+              s,
+              {
+                x: X0,
+                y: TOP + RH + 14,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "letter-spacing": ".12em",
+              },
+              "SPEND FALLS FROM THE TOP"
+            );
+            txt(
+              s,
+              {
+                x: X0,
+                y: BOT - FH - 8,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "letter-spacing": ".12em",
+              },
+              "SIGN-UPS RISE FROM THE FLOOR"
+            );
+          });
+        })();
+
+        // ════ G9 · Scatter Morph ════
+        (() => {
+          // 同一批点三种视图轮播：散点（价格 × 满意度）→ 排名（收入）→ 环（份额）。点靠 transform 过渡飞行。
+          const P12 = [
+            ["Editor", 12, 9.1, 486],
+            ["Boards", 18, 8.4, 391],
+            ["Forms", 9, 8.8, 274],
+            ["Docs", 15, 8.0, 318],
+            ["Chat", 7, 7.2, 182],
+            ["Vault", 24, 7.8, 226],
+            ["Flows", 21, 8.6, 352],
+            ["Views", 11, 7.5, 198],
+            ["Sync", 16, 6.9, 141],
+            ["Pages", 8, 8.2, 243],
+            ["Grid", 19, 7.1, 167],
+            ["Hub", 13, 6.6, 118],
+          ];
+          reveal($("morph"), (s, { keep, motion }) => {
+            const order = [...P12]
+              .map((d, i) => [d[3], i])
+              .sort((a, b) => b[0] - a[0])
+              .map((d) => d[1]);
+            const shade = (i) =>
+              L[Math.min(5, Math.floor(order.indexOf(i) / 2))];
+            const total = P12.reduce((a, d) => a + d[3], 0);
+            const guides = el(s, "g", { class: "morph-guides" });
+            const items = P12.map((d, i) => {
+              const g = el(s, "g", { class: "morph-item" });
+              const c = el(g, "circle", {
+                r: Math.sqrt(d[3]) * 0.7,
+                fill: shade(i),
+              });
+              tip(c, `${d[0]} — $${d[1]} · CSAT ${d[2]} · $${d[3]}K`);
+              const t = txt(
+                g,
+                {
+                  y: -Math.sqrt(d[3]) * 0.7 - 5,
+                  "font-size": 8.5,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                },
+                d[0]
+              );
+              return { g, c, t };
+            });
+            const VIEWS = [
+              {
+                name: "PRICE × CSAT",
+                place: (i) => {
+                  const d = P12[i];
+                  return [
+                    40 + ((d[1] - 5) / 21) * 320,
+                    270 - ((d[2] - 6) / 3.6) * 220,
+                  ];
+                },
+                guide: () => {
+                  el(guides, "line", {
+                    x1: 40,
+                    y1: 270,
+                    x2: 360,
+                    y2: 270,
+                    stroke: GRID,
+                  });
+                  el(guides, "line", {
+                    x1: 40,
+                    y1: 270,
+                    x2: 40,
+                    y2: 50,
+                    stroke: GRID,
+                  });
+                  txt(
+                    guides,
+                    {
+                      x: 360,
+                      y: 284,
+                      "font-size": 8,
+                      fill: I30,
+                      "text-anchor": "end",
+                    },
+                    "PRICE $ →"
+                  );
+                  txt(
+                    guides,
+                    {
+                      x: 34,
+                      y: 52,
+                      "font-size": 8,
+                      fill: I30,
+                      "text-anchor": "end",
+                    },
+                    "CSAT ↑"
+                  );
+                },
+              },
+              {
+                name: "REVENUE, RANKED",
+                place: (i) => [
+                  40 + order.indexOf(i) * 29 + 14,
+                  270 - (P12[i][3] / 520) * 220,
+                ],
+                guide: () => {
+                  el(guides, "line", {
+                    x1: 30,
+                    y1: 270,
+                    x2: 370,
+                    y2: 270,
+                    stroke: GRID,
+                  });
+                  P12.forEach((d, i) => {
+                    const x = 40 + order.indexOf(i) * 29 + 14,
+                      y = 270 - (d[3] / 520) * 220;
+                    el(guides, "line", {
+                      x1: x,
+                      y1: 270,
+                      x2: x,
+                      y2: y,
+                      stroke: I22,
+                      "stroke-width": 1,
+                    });
+                  });
+                },
+              },
+              {
+                name: "SHARE OF REVENUE",
+                place: (i) => {
+                  let acc = 0;
+                  for (const j of order) {
+                    if (j === i) break;
+                    acc += P12[j][3];
+                  }
+                  const a = -90 + ((acc + P12[i][3] / 2) / total) * 360;
+                  return pol(200, 160, 105, a);
+                },
+                guide: () => {
+                  el(guides, "circle", {
+                    cx: 200,
+                    cy: 160,
+                    r: 105,
+                    fill: "none",
+                    stroke: GRID,
+                    "stroke-dasharray": "2 4",
+                  });
+                  txt(
+                    guides,
+                    {
+                      x: 200,
+                      y: 164,
+                      "font-size": 12,
+                      "font-weight": 600,
+                      fill: INK,
+                      "text-anchor": "middle",
+                    },
+                    "$" + fmt(total) + "K"
+                  );
+                },
+              },
+            ];
+            const label = txt(
+              s,
+              {
+                x: 200,
+                y: 306,
+                "font-size": 8,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+              },
+              ""
+            );
+            const show = (vi) => {
+              guides.replaceChildren();
+              VIEWS[vi].guide();
+              label.textContent = VIEWS[vi].name;
+              items.forEach((it, i) => {
+                const [x, y] = VIEWS[vi].place(i);
+                it.g.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+              });
+            };
+            let vi = 0;
+            show(0);
+            if (!motion) return;
+            keep(
+              setInterval(() => {
+                vi = (vi + 1) % VIEWS.length;
+                show(vi);
+              }, 3000)
+            );
+          });
+        })();
+
+        // ════ G10 · Diverging Bar ════
+        (() => {
+          // 正负条：中轴分左右，右为增。明度：正为墨，负为中灰；主角 = 最大增幅。
+          reveal($("negbar"), (s) => {
+            const D = [
+              ["JAPAN", 34],
+              ["GERMANY", 18],
+              ["BRAZIL", 9],
+              ["FRANCE", -6],
+              ["INDIA", -11],
+              ["UK", -14],
+            ];
+            const cx = 210,
+              y0 = (i) => 44 + i * 40,
+              k = 4.2,
+              heroI = D.reduce((a, b, i) => (b[1] > D[a][1] ? i : a), 0);
+            el(s, "line", {
+              x1: cx,
+              y1: 24,
+              x2: cx,
+              y2: 268,
+              stroke: I22,
+              "stroke-width": 0.8,
+              class: "fade",
+            });
+            D.forEach(([name, v], i) => {
+              const y = y0(i),
+                w = Math.abs(v) * k,
+                pos = v > 0,
+                hero = i === heroI;
+              const r = el(s, "rect", {
+                x: pos ? cx : cx - w,
+                y: y - 9,
+                width: w,
+                height: 18,
+                rx: 9,
+                fill: hero ? HERO : pos ? INK : I45,
+                class: "grow",
+                style: `transform-origin:${cx}px ${y}px;${dl(i * 0.1)}`,
+              });
+              tip(r, `${name} — ${v > 0 ? "+" : ""}${v}% QoQ`);
+              txt(
+                s,
+                {
+                  x: pos ? cx - 10 : cx + 10,
+                  y: y + 3.5,
+                  "font-size": 8.5,
+                  "font-weight": 600,
+                  fill: I70,
+                  "text-anchor": pos ? "end" : "start",
+                  class: "fade",
+                  style: dl(i * 0.1),
+                },
+                name
+              );
+              txt(
+                s,
+                {
+                  x: pos ? cx + w + 8 : cx - w - 8,
+                  y: y + 3.5,
+                  "font-size": 10,
+                  "font-weight": 600,
+                  fill: hero ? HERO : pos ? INK : I45,
+                  "text-anchor": pos ? "start" : "end",
+                  class: "fade",
+                  style: dl(0.4 + i * 0.1),
+                },
+                (pos ? "+" : "−") + Math.abs(v) + "%"
+              );
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 292,
+                "font-size": 7,
+                fill: I45,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: dl(1),
+              },
+              "BAR LENGTH = QOQ CHANGE · RIGHT = GAIN"
+            );
+          });
+        })();
+
+        // ════ G11 · Force Graph ════
+        (() => {
+          // 小力导向：一个中心加十二颗卫星，弹簧 + 斥力 + 向心，rAF 收敛；节点可拖。
+          const hubs = [["Core API", 52, 0]];
+          const apps = [
+            ["Slack", 34, 1],
+            ["GitHub", 30, 1],
+            ["Figma", 22, 1],
+            ["Notion", 26, 1],
+            ["Linear", 18, 1],
+            ["Drive", 16, 1],
+            ["Zoom", 10, 2],
+            ["Jira", 14, 2],
+            ["Sheets", 12, 2],
+            ["Intercom", 8, 2],
+            ["Stripe", 20, 1],
+            ["Segment", 9, 2],
+          ];
+          reveal($("force"), (s, { keep, motion }) => {
+            const W = 400,
+              H = 320,
+              nodes = [...hubs, ...apps].map(([n, v, t], i) => ({
+                n,
+                v,
+                t,
+                r: 4 + Math.sqrt(v) * 1.4,
+                x: W / 2 + Math.cos(i) * (i ? 90 : 0),
+                y: H / 2 + Math.sin(i) * (i ? 90 : 0),
+                vx: 0,
+                vy: 0,
+              }));
+            const L2 = [
+              ...apps.map((a, i) => [i + 1, 0, 60 + (2 - a[2]) * 10]),
+              [1, 2, 70],
+              [2, 5, 70],
+              [3, 4, 70],
+              [11, 9, 70],
+            ];
+            const gl = el(s, "g", {}),
+              gn = el(s, "g", {});
+            const les = L2.map(([a, b]) =>
+              el(gl, "line", {
+                stroke: I30,
+                "stroke-width": b === 0 ? Math.max(0.8, nodes[a].v * 0.06) : 1,
+                opacity: 0.6,
+              })
+            );
+            const ns = nodes.map((d, i) => {
+              const g = el(gn, "g", { class: "force-node", tabindex: 0 });
+              el(g, "circle", {
+                r: d.r,
+                fill: d.t === 0 ? HERO : d.t === 1 ? INK : I45,
+              });
+              tip(g, `${d.n} — ${d.v}k syncs/mo`);
+              txt(
+                g,
+                {
+                  x: d.r + 5,
+                  y: 3.5,
+                  "font-size": d.t === 0 ? 10.5 : 9,
+                  "font-weight": 600,
+                  fill: d.t === 0 ? INK : I60,
+                },
+                d.n
+              );
+              return g;
+            });
+            const step = () => {
+              // 斥力 ∝ 1/d²（沿单位向量），软化半径 20px；向心 + 弹簧；限速防爆
+              nodes.forEach((a, i) => {
+                nodes.forEach((b, j) => {
+                  if (j <= i) return;
+                  let dx = b.x - a.x,
+                    dy = b.y - a.y;
+                  const d2 = dx * dx + dy * dy + 400,
+                    f = 8000 / (d2 * Math.sqrt(d2));
+                  dx *= f;
+                  dy *= f;
+                  a.vx -= dx;
+                  a.vy -= dy;
+                  b.vx += dx;
+                  b.vy += dy;
+                });
+                a.vx += (W / 2 - a.x) * 0.02;
+                a.vy += (H / 2 - a.y) * 0.02;
+              });
+              L2.forEach(([a, b, len]) => {
+                const A = nodes[a],
+                  B = nodes[b],
+                  dx = B.x - A.x,
+                  dy = B.y - A.y,
+                  d = Math.hypot(dx, dy) || 1,
+                  f = (d - len) * 0.03;
+                A.vx += (dx / d) * f;
+                A.vy += (dy / d) * f;
+                B.vx -= (dx / d) * f;
+                B.vy -= (dy / d) * f;
+              });
+              nodes.forEach((n) => {
+                if (n.drag) return;
+                n.vx *= 0.8;
+                n.vy *= 0.8;
+                const sp = Math.hypot(n.vx, n.vy);
+                if (sp > 10) {
+                  n.vx *= 10 / sp;
+                  n.vy *= 10 / sp;
+                }
+                n.x = Math.min(W - 20, Math.max(20, n.x + n.vx));
+                n.y = Math.min(H - 20, Math.max(20, n.y + n.vy));
+              });
+            };
+            const draw = () => {
+              les.forEach((l, k) => {
+                const [a, b] = L2[k];
+                l.setAttribute("x1", nodes[a].x);
+                l.setAttribute("y1", nodes[a].y);
+                l.setAttribute("x2", nodes[b].x);
+                l.setAttribute("y2", nodes[b].y);
+              });
+              ns.forEach((g, i) =>
+                g.setAttribute(
+                  "transform",
+                  `translate(${nodes[i].x.toFixed(1)} ${nodes[i].y.toFixed(1)})`
+                )
+              );
+            };
+            let it = 0;
+            const loop = () => {
+              step();
+              draw();
+              if (++it < 240 || nodes.some((n) => n.drag))
+                keep(requestAnimationFrame(loop));
+            };
+            if (motion) keep(requestAnimationFrame(loop));
+            else {
+              for (let k = 0; k < 300; k++) step();
+              draw();
+            }
+            // 拖拽：pointer 事件，拖动中冻结该节点，松手继续松弛
+            const pt = s.createSVGPoint();
+            const toSvg = (e) => {
+              pt.x = e.clientX;
+              pt.y = e.clientY;
+              return pt.matrixTransform(s.getScreenCTM().inverse());
+            };
+            ns.forEach((g, i) => {
+              g.style.cursor = "grab";
+              g.addEventListener("pointerdown", (e) => {
+                nodes[i].drag = true;
+                g.setPointerCapture(e.pointerId);
+                it = 0;
+                const mv = (ev) => {
+                  const p = toSvg(ev);
+                  nodes[i].x = p.x;
+                  nodes[i].y = p.y;
+                  if (!motion) draw();
+                };
+                const up = () => {
+                  nodes[i].drag = false;
+                  g.removeEventListener("pointermove", mv);
+                  g.removeEventListener("pointerup", up);
+                  if (motion) keep(requestAnimationFrame(loop));
+                };
+                g.addEventListener("pointermove", mv);
+                g.addEventListener("pointerup", up);
+                if (motion) keep(requestAnimationFrame(loop));
+              });
+            });
+          });
+        })();
+
+        // ════ G12 · Stagger Wave ════
+        (() => {
+          // 交错波：五十根柱按 36ms 逐根弹入，明度按分档，主角 = 最高一根。入场节奏本身是信息。
+          reveal($("wave"), (s) => {
+            const n = 50,
+              vals = Array.from({ length: n }, (_, i) =>
+                Math.round(
+                  30 +
+                    55 * Math.sin(i / 7.5) +
+                    18 * Math.sin(i / 2.6) +
+                    (i % 5) * 3 +
+                    28
+                )
+              );
+            const X0 = 30,
+              X1 = 386,
+              base = 220,
+              bw = (X1 - X0) / n,
+              max = Math.max(...vals),
+              heroI = vals.indexOf(max);
+            [40, 80, 120].forEach((g) => {
+              const y = base - (g / 130) * 190;
+              el(s, "line", {
+                x1: X0,
+                y1: y,
+                x2: X1,
+                y2: y,
+                stroke: I14,
+                "stroke-width": 0.7,
+              });
+              txt(
+                s,
+                {
+                  x: X0 - 4,
+                  y: y + 3,
+                  "font-size": 7.5,
+                  fill: I45,
+                  "text-anchor": "end",
+                },
+                g
+              );
+            });
+            vals.forEach((v, i) => {
+              const h = (v / 130) * 190,
+                x = X0 + i * bw + bw * 0.15;
+              const r = el(s, "rect", {
+                x,
+                y: base - h,
+                width: bw * 0.7,
+                height: h,
+                rx: 2.5,
+                fill:
+                  i === heroI
+                    ? HERO
+                    : LAD[Math.min(4, Math.floor((130 - v) / 22))],
+                class: "rise",
+                style: `transform-origin:${x}px ${base}px;animation-delay:${(i * 36) / 1000}s`,
+              });
+              tip(r, `Market ${i + 1} — ${v}`);
+              if (i % 10 === 9)
+                txt(
+                  s,
+                  {
+                    x: x + bw * 0.35,
+                    y: base + 12,
+                    "font-size": 7.5,
+                    fill: I45,
+                    "text-anchor": "middle",
+                  },
+                  i + 1
+                );
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 250,
+                "font-size": 7,
+                fill: I45,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: dl(1.9),
+              },
+              "BAR = ACTIVITY INDEX · SHADE = TIER · ORANGE = THE PEAK"
+            );
+          });
+        })();
+
+        // ════ G13 · Big Slice ════
+        (() => {
+          // 双编码扇形：角 = 用户占比，径 = 每日分钟数。虚线环是 15/30/45 分钟刻度。主角 = 最深的那片。
+          const D = [
+            ["Editor", 34, 42],
+            ["Boards", 22, 31],
+            ["Docs", 18, 38],
+            ["Chat", 12, 11],
+            ["Automations", 8, 24],
+            ["Other", 6, 7],
+          ];
+          reveal($("custompie"), (s) => {
+            const cx = 186,
+              cy = 166,
+              R = 108,
+              r0 = 26,
+              SCALE = 45,
+              rOf = (m) => r0 + ((R - r0) * m) / SCALE;
+            const byShare = [...D].sort((a, b) => b[1] - a[1]),
+              minsDesc = D.map((d) => d[2]).sort((a, b) => b - a);
+            [15, 30, 45].forEach((m) => {
+              el(s, "circle", {
+                cx,
+                cy,
+                r: rOf(m),
+                fill: "none",
+                stroke: I14,
+                "stroke-width": 1,
+                "stroke-dasharray": "3 4",
+              });
+              txt(
+                s,
+                { x: cx + 4, y: cy - rOf(m) - 3, "font-size": 7, fill: I30 },
+                m + "m"
+              );
+            });
+            let acc = 0;
+            byShare.forEach(([n, share, mins], i) => {
+              const a0 = -90 + (acc / 100) * 360,
+                a1 = -90 + ((acc + share) / 100) * 360;
+              acc += share;
+              const rank = minsDesc.indexOf(mins);
+              const p = el(s, "path", {
+                d: sect(cx, cy, r0, rOf(mins), a0 + 1.2, a1 - 1.2),
+                fill: rank === 0 ? HERO : L[rank],
+                stroke: PAPER,
+                "stroke-width": 2,
+                class: "pop",
+                style: `transform-origin:${cx}px ${cy}px;animation-delay:${i * 0.13}s`,
+              });
+              tip(p, `${n} — ${share}% of users · ${mins} min/day`);
+              const mid = (a0 + a1) / 2,
+                [lx, ly] = pol(cx, cy, R + 14, mid),
+                c = Math.cos(mid * D2R);
+              txt(
+                s,
+                {
+                  x: lx,
+                  y: ly + 3,
+                  "font-size": 8.5,
+                  "font-weight": 600,
+                  fill: I70,
+                  "text-anchor":
+                    Math.abs(c) < 0.25 ? "middle" : c > 0 ? "start" : "end",
+                  class: "fade",
+                  style: `animation-delay:${0.5 + i * 0.13}s`,
+                },
+                `${n}  ${share}% · ${mins}m`
+              );
+            });
+          });
+        })();
+
+        // ════ G14 · Single Axis ════
+        (() => {
+          // 单轴小多图：每一天一根轴，点面积 = 该小时工单量。工作日按明度阶，周末淡。
+          const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+          reveal($("singleaxis"), (s) => {
+            const X0 = 56,
+              X1 = 386,
+              x = (h) => X0 + (h / 23) * (X1 - X0),
+              y0 = (i) => 26 + i * 40;
+            let max = 0,
+              mh = 0,
+              md = 0;
+            const rows = days.map((d, di) =>
+              Array.from({ length: 24 }, (_, h) => {
+                const core = di < 5 && h >= 9 && h <= 17;
+                const v = Math.round(
+                  (core ? 6 + 5 * Math.sin(((h - 9) / 8) * Math.PI) : 0) +
+                    ((h + di) % 5 === 0 ? 2 : 0) +
+                    (h >= 22 || h <= 5 ? 0 : 1)
+                );
+                if (v > max) {
+                  max = v;
+                  mh = h;
+                  md = di;
+                }
+                return v;
+              })
+            );
+            rows.forEach((row, di) => {
+              const y = y0(di);
+              txt(
+                s,
+                {
+                  x: X0 - 12,
+                  y: y + 3,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "end",
+                  class: "fade",
+                },
+                days[di]
+              );
+              el(s, "line", {
+                x1: X0,
+                y1: y,
+                x2: X1,
+                y2: y,
+                stroke: GRID,
+                "stroke-width": 0.6,
+              });
+              row.forEach((v, h) => {
+                if (!v) return;
+                const hero = di === md && h === mh;
+                const c = el(s, "circle", {
+                  cx: x(h),
+                  cy: y,
+                  r: v * 1.3,
+                  fill: hero ? HERO : di < 5 ? L[Math.min(4, di)] : I22,
+                  class: "pop",
+                  style: `animation-delay:${di * 0.16 + h * 0.014}s`,
+                });
+                tip(
+                  c,
+                  `${days[di]} ${String(h).padStart(2, "0")}:00 — ${v} tickets`
+                );
+              });
+            });
+            for (let h = 0; h < 24; h += 3)
+              txt(
+                s,
+                {
+                  x: x(h),
+                  y: y0(6) + 24,
+                  "font-size": 8.5,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                },
+                String(h).padStart(2, "0")
+              );
+          });
+        })();
+
+        // ════ G15 · Jitter Strip ════
+        (() => {
+          // 抖动条带：一点 = 一张工单，纵向随机抖开看堆积。按优先级分四行，明度阶。
+          const cats = ["P0 CRITICAL", "P1 HIGH", "P2 NORMAL", "P3 LOW"];
+          const mkPts = (ci, n, median, spread, outliers) => {
+            const pts = [];
+            for (let i = 0; i < n; i++) {
+              const u = rnd(i + 1, ci + 1),
+                v = rnd(i + 7, ci + 3);
+              let xv =
+                median +
+                (u - 0.5) * spread * 2 +
+                (v > 0.5 ? u * spread * 0.6 : 0);
+              if (i < outliers) xv = median + spread * 2.2 + u * spread * 3;
+              pts.push([Math.max(0.2, xv), (rnd(i + 13, ci + 5) - 0.5) * 0.58]);
+            }
+            return pts;
+          };
+          const groups = [
+            mkPts(0, 38, 0.8, 0.5, 2),
+            mkPts(1, 64, 2.4, 1.1, 3),
+            mkPts(2, 110, 6.5, 2.4, 4),
+            mkPts(3, 72, 14, 4.5, 3),
+          ];
+          reveal($("jitter"), (s) => {
+            const X0 = 90,
+              X1 = 386,
+              MAX = 34,
+              x = (v) => X0 + (v / MAX) * (X1 - X0),
+              y0 = (i) => 44 + i * 66;
+            [0, 8, 16, 24, 32].forEach((v) => {
+              el(s, "line", {
+                x1: x(v),
+                y1: 20,
+                x2: x(v),
+                y2: 280,
+                stroke: GRID,
+                "stroke-width": 0.6,
+              });
+              txt(
+                s,
+                {
+                  x: x(v),
+                  y: 296,
+                  "font-size": 8.5,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                },
+                v + "h"
+              );
+            });
+            groups.forEach((pts, ci) => {
+              txt(
+                s,
+                {
+                  x: X0 - 10,
+                  y: y0(ci) + 3,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: I60,
+                  "text-anchor": "end",
+                  class: "fade",
+                },
+                cats[ci]
+              );
+              pts.forEach(([v, jy], i) => {
+                const c = el(s, "circle", {
+                  cx: x(v),
+                  cy: y0(ci) + jy * 60,
+                  r: 3.4,
+                  fill: L[ci],
+                  opacity: 0.62,
+                  class: "pop",
+                  style: `animation-delay:${ci * 0.26 + (i % 37) * 0.009}s`,
+                });
+                tip(c, `${cats[ci]} — ${v.toFixed(1)}h to resolve`);
+              });
+            });
+            txt(
+              s,
+              {
+                x: X1,
+                y: 312,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "end",
+                "letter-spacing": ".12em",
+              },
+              "HOURS TO RESOLVE →"
+            );
+          });
+        })();
+
+        // ════ G16 · Bar Race ════
+        (() => {
+          // 条形赛跑：每 1.2s 推进一年，行位置与条长走 CSS transition。reduced-motion 直接停在末年。
+          reveal($("race"), (s, { keep, motion }) => {
+            const P = [
+                "Editor",
+                "Boards",
+                "Docs",
+                "Chat",
+                "Flows",
+                "Vault",
+                "Pages",
+                "Sync",
+              ],
+              HERO_I = 4;
+            const YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+            const vals = [[42, 38, 30, 26, 18, 14, 10, 8]];
+            for (let y = 1; y < YEARS.length; y++)
+              vals.push(
+                vals[y - 1].map(
+                  (v, i) =>
+                    v *
+                    (1.04 + rnd(i + 1, y + 1) * 0.5 + (i === HERO_I ? 0.26 : 0))
+                )
+              );
+            const X0 = 70,
+              W = 250,
+              rowH = 34,
+              y0 = 22;
+            const g = P.map((name, i) => {
+              const grp = el(s, "g", {
+                class: "race-row",
+                style: `transform:translateY(${y0 + i * rowH}px)`,
+              });
+              txt(
+                grp,
+                {
+                  x: X0 - 8,
+                  y: 15,
+                  "font-size": 9,
+                  "font-weight": 600,
+                  fill: I70,
+                  "text-anchor": "end",
+                  class: "name",
+                },
+                name
+              );
+              const bar = el(grp, "rect", {
+                x: X0,
+                y: 4,
+                height: 22,
+                width: 0,
+                rx: 11,
+                fill: i === HERO_I ? HERO : INK,
+                class: "race-bar",
+              });
+              const num = txt(
+                grp,
+                {
+                  x: X0 + 6,
+                  y: 19,
+                  "font-size": 10,
+                  "font-weight": 600,
+                  fill: INK,
+                  class: "race-num",
+                },
+                ""
+              );
+              return { grp, bar, num };
+            });
+            const year = txt(
+              s,
+              {
+                x: 392,
+                y: 306,
+                "font-size": 40,
+                "font-weight": 600,
+                fill: I14,
+                "text-anchor": "end",
+              },
+              ""
+            );
+            const frame = (step) => {
+              const row = vals[step],
+                max = Math.max(...row);
+              const rank = [...row]
+                .map((v, i) => [v, i])
+                .sort((a, b) => b[0] - a[0])
+                .map((d) => d[1]);
+              P.forEach((_, i) => {
+                const pos = rank.indexOf(i),
+                  w = (row[i] / max) * W;
+                g[i].grp.style.transform = `translateY(${y0 + pos * rowH}px)`;
+                g[i].bar.style.width = w + "px";
+                if (i !== HERO_I) g[i].bar.style.fill = LAD[Math.min(4, pos)];
+                g[i].num.setAttribute("x", X0 + w + 6);
+                g[i].num.textContent = "$" + Math.round(row[i]) + "K";
+              });
+              year.textContent = YEARS[step];
+            };
+            if (!motion) {
+              frame(YEARS.length - 1);
+              return;
+            }
+            let step = 0;
+            frame(0);
+            keep(
+              setInterval(() => {
+                step = (step + 1) % YEARS.length;
+                frame(step);
+              }, 1200)
+            );
+          });
+        })();
+
+        // ════ G17 · Dynamic Stream ════
+        (() => {
+          // 实时流：50 个采样的滑动窗口，每 300ms 推进重绘；主角 = 当前值。reduced-motion 显示静态窗口。
+          reveal($("gstream"), (s, { keep, motion }) => {
+            const WIN = 50,
+              X0 = 16,
+              X1 = 330,
+              Y0 = 200,
+              H = 150,
+              MIN = 20,
+              MAX = 130;
+            let t = 0,
+              v = 64;
+            const data = [];
+            for (; t < WIN; t++) {
+              v = Math.max(30, v + (rnd(t + 1, 7) - 0.48) * 9);
+              data.push(Math.round(v));
+            }
+            const area = el(s, "path", { fill: I14 }),
+              line = el(s, "path", {
+                fill: "none",
+                stroke: INK,
+                "stroke-width": 2,
+              });
+            const dot = el(s, "circle", { r: 4, fill: HERO }),
+              lab = txt(
+                s,
+                { "font-size": 14, "font-weight": 600, fill: HERO },
+                ""
+              );
+            el(s, "circle", {
+              cx: 22,
+              cy: 24,
+              r: 4,
+              fill: HERO,
+              class: motion ? "blink" : "",
+            });
+            txt(
+              s,
+              {
+                x: 32,
+                y: 28,
+                "font-size": 10,
+                "font-weight": 600,
+                fill: INK,
+                "letter-spacing": ".1em",
+              },
+              motion ? "LIVE" : "PAUSED"
+            );
+            const draw = () => {
+              const pts = data.map((d, i) => [
+                X0 + (i / (WIN - 1)) * (X1 - X0),
+                Y0 - ((d - MIN) / (MAX - MIN)) * H,
+              ]);
+              const path = pts
+                .map(
+                  (p, i) =>
+                    (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)
+                )
+                .join(" ");
+              line.setAttribute("d", path);
+              area.setAttribute("d", path + ` L${X1} ${Y0} L${X0} ${Y0} Z`);
+              const [lx, ly] = pts[pts.length - 1];
+              dot.setAttribute("cx", lx);
+              dot.setAttribute("cy", ly);
+              lab.setAttribute("x", lx + 10);
+              lab.setAttribute("y", ly + 5);
+              lab.textContent = data[data.length - 1] + "k";
+            };
+            draw();
+            if (!motion) return;
+            keep(
+              setInterval(() => {
+                v = Math.max(30, Math.min(125, v + (rnd(t + 1, 7) - 0.48) * 9));
+                data.push(Math.round(v));
+                data.shift();
+                t++;
+                draw();
+              }, 300)
+            );
+          });
+        })();
+
+        // ════ G18 · Draw-in + Counter ════
+        (() => {
+          // 一笔画 + 计数器：描线、面积裁切与大数由同一个 rAF 驱动，2.6s 同步走完；主角 = 终点。
+          reveal($("stroke"), (s, { keep, motion }) => {
+            const N = 180,
+              daily = Array.from(
+                { length: N },
+                (_, i) =>
+                  14 +
+                  10 * Math.sin(i / 29) +
+                  i * 0.12 +
+                  rnd(i + 1, 3) * 6 +
+                  (i > 120 ? 8 : 0)
+              );
+            const cum = [];
+            daily.reduce((a, b, i) => (cum[i] = a + b), 0);
+            const TOTAL = cum[N - 1],
+              DUR = 2600,
+              X0 = 16,
+              X1 = 384,
+              Y0 = 232,
+              H = 140;
+            const pts = cum.map((c, i) => [
+              X0 + (i / (N - 1)) * (X1 - X0),
+              Y0 - (c / TOTAL) * H,
+            ]);
+            const d = pts
+              .map(
+                (p, i) =>
+                  (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)
+              )
+              .join(" ");
+            ["JAN", "FEB", "MAR", "APR", "MAY", "JUN"].forEach((m, i) =>
+              txt(
+                s,
+                {
+                  x: X0 + ((i * 30) / (N - 1)) * (X1 - X0),
+                  y: 250,
+                  "font-size": 8,
+                  fill: I45,
+                },
+                m
+              )
+            );
+            const area = el(s, "path", {
+              d: d + ` L${X1} ${Y0} L${X0} ${Y0} Z`,
+              fill: I14,
+            });
+            const line = el(s, "path", {
+              d,
+              fill: "none",
+              stroke: INK,
+              "stroke-width": 2.2,
+              pathLength: 1,
+              "stroke-dasharray": 1,
+              "stroke-dashoffset": motion ? 1 : 0,
+            });
+            const end = el(s, "circle", {
+              cx: pts[N - 1][0],
+              cy: pts[N - 1][1],
+              r: 4.5,
+              fill: HERO,
+              opacity: motion ? 0 : 1,
+            });
+            const kpi = txt(
+              s,
+              { x: 16, y: 44, "font-size": 30, "font-weight": 600, fill: INK },
+              "$0.00M"
+            );
+            txt(
+              s,
+              {
+                x: 16,
+                y: 62,
+                "font-size": 9,
+                fill: I70,
+                "letter-spacing": ".1em",
+              },
+              "ARR · H1 2026"
+            );
+            if (!motion) {
+              kpi.textContent = "$" + (TOTAL / 1000).toFixed(2) + "M";
+              return;
+            }
+            const clip = el(s, "clipPath", { id: "g18clip" }),
+              cr = el(clip, "rect", { x: 0, y: 0, width: 0, height: 260 });
+            area.setAttribute("clip-path", "url(#g18clip)");
+            const t0 = performance.now();
+            const tick = () => {
+              const p = Math.min(1, (performance.now() - t0) / DUR),
+                e = 1 - Math.pow(1 - p, 3);
+              line.setAttribute("stroke-dashoffset", 1 - e);
+              cr.setAttribute("width", X0 + e * (X1 - X0));
+              kpi.textContent = "$" + ((TOTAL * e) / 1000).toFixed(2) + "M";
+              if (p < 1) keep(requestAnimationFrame(tick));
+              else end.setAttribute("opacity", 1);
+            };
+            keep(requestAnimationFrame(tick));
+          });
+        })();
+
+        // ════ G19 · Violin ════
+        (() => {
+          // 小提琴：提前聚合的密度剪影，Glance 世界观。
+          // 四个 plan 各一把琴，宽度 = 该时长的工单密度（KDE），
+          // 明度按中位数快慢排：越快越黑。纸色横档 = 中位数。
+          const G = [
+            ["ENT", 1.6, 0.8],
+            ["PRO", 3.4, 1.6],
+            ["STARTER", 6.2, 2.6],
+            ["FREE", 9.5, 4.2],
+          ];
+          const M = 64;
+          const samples = (g) =>
+            Array.from({ length: M }, (_, i) => {
+              const [, c, s] = G[g];
+              const v =
+                c +
+                s *
+                  (rnd(i + 1, g * 3 + 1) +
+                    rnd(i + 7, g * 3 + 2) +
+                    rnd(i + 13, g * 3 + 3) -
+                    1.5);
+              return Math.max(0.2, v);
+            });
+          reveal($("violin"), (s) => {
+            const TOP = 40,
+              BASE = 262,
+              HMAX = 17;
+            const mapY = (h) => BASE - (h / HMAX) * (BASE - TOP);
+            const colX = (g) => 76 + g * 84;
+            // hour grid
+            [0, 4, 8, 12, 16].forEach((h) => {
+              el(s, "line", {
+                x1: 34,
+                y1: mapY(h),
+                x2: 378,
+                y2: mapY(h),
+                stroke: I8,
+                "stroke-width": 0.8,
+                class: "fade",
+                style: `animation-delay:${h * 0.01}s`,
+              });
+              txt(
+                s,
+                {
+                  x: 28,
+                  y: mapY(h) + 3,
+                  "font-size": 7.5,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "end",
+                  class: "fade",
+                  style: `animation-delay:${h * 0.01}s`,
+                },
+                h + "h"
+              );
+            });
+            const SHADE = [INK, I70, I45, I30];
+            G.forEach(([name], g) => {
+              const vs = samples(g).sort((a, b) => a - b);
+              const med = vs[Math.floor(M / 2)];
+              // fuller bandwidth = the classic rounded violin belly, not a spindle
+              const bw = Math.max(0.9, G[g][2] * 0.72);
+              // pad past the data by 1.6 bandwidths so the density decays to ~0 and the
+              // ends taper naturally — clipping tighter gives flat-cut lantern ends
+              const lo = Math.max(0, vs[0] - bw * 1.6),
+                hi = Math.min(HMAX, vs[M - 1] + bw * 1.6);
+              const NPTS = 44;
+              const grid = Array.from(
+                { length: NPTS },
+                (_, k) => lo + (k / (NPTS - 1)) * (hi - lo)
+              );
+              const dens = grid.map((h) =>
+                vs.reduce(
+                  (a, v) => a + Math.exp(-((h - v) ** 2) / (2 * bw * bw)),
+                  0
+                )
+              );
+              const dmax = Math.max(...dens);
+              const W = 30;
+              const x = colX(g);
+              // smooth closed outline through the mirrored density — quadratic
+              // midpoint smoothing, same trick as almanac's blob
+              const pts = [];
+              grid.forEach((h, k) =>
+                pts.push([x + (dens[k] / dmax) * W, mapY(h)])
+              );
+              for (let k = NPTS - 1; k >= 0; k--)
+                pts.push([x - (dens[k] / dmax) * W, mapY(grid[k])]);
+              let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+              for (let t = 0; t < pts.length; t++) {
+                const p = pts[t],
+                  q = pts[(t + 1) % pts.length];
+                d += ` Q${p[0].toFixed(1)} ${p[1].toFixed(1)} ${((p[0] + q[0]) / 2).toFixed(1)} ${((p[1] + q[1]) / 2).toFixed(1)}`;
+              }
+              const body = el(s, "path", {
+                d: d + " Z",
+                fill: SHADE[g],
+                class: "fade",
+                style: `animation-delay:${g * 0.14}s`,
+              });
+              tip(body, `${name} — median ${med.toFixed(1)}h to first reply`);
+              // median: paper tick across the body, value parked right
+              const mk = Math.round(((med - lo) / (hi - lo)) * (NPTS - 1));
+              const wAtMed =
+                (dens[Math.max(0, Math.min(NPTS - 1, mk))] / dmax) * W;
+              el(s, "line", {
+                x1: x - wAtMed,
+                y1: mapY(med),
+                x2: x + wAtMed,
+                y2: mapY(med),
+                stroke: PAPER,
+                "stroke-width": 2.2,
+                class: "fade",
+                style: `animation-delay:${0.5 + g * 0.14}s`,
+              });
+              txt(
+                s,
+                {
+                  x: x + W + 5,
+                  y: mapY(med) + 3,
+                  "font-size": 9.5,
+                  "font-weight": 600,
+                  fill: INK,
+                  class: "fade",
+                  style: `animation-delay:${0.6 + g * 0.14}s`,
+                },
+                med.toFixed(1) + "h"
+              );
+              txt(
+                s,
+                {
+                  x,
+                  y: BASE + 18,
+                  "font-size": 7.5,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                  "letter-spacing": ".08em",
+                  class: "fade",
+                  style: `animation-delay:${g * 0.14}s`,
+                },
+                name
+              );
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 306,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: "animation-delay:1.1s",
+              },
+              "WIDTH = HOW MANY TICKETS WAIT THAT LONG · PAPER TICK = MEDIAN · DARKEST = FASTEST"
+            );
+          });
+        })();
+
+        // ════ G20 · Matrix Heat ════
+        (() => {
+          // 矩阵热力的 Glance 皮：粗笔画版本。大圆角色块、每格标数、3 秒读出
+          // 「新版本跑得黑」的对角线。和 P1 Lupi 皮同数据形状，读者时间不同。
+          const FEAT = ["EDITOR", "BOARDS", "DOCS", "CHAT", "FLOWS", "VAULT"];
+          const VER = ["v2.0", "v1.9", "v1.8", "v1.7", "v1.6"];
+          const BASEV = [88, 74, 61, 42, 35, 27];
+          const v = (r, c) =>
+            Math.max(
+              2,
+              Math.round(
+                BASEV[c] -
+                  r * (6 + c * 0.8) +
+                  (rnd(r * 6 + c + 1, c + 3) - 0.5) * 10
+              )
+            );
+          const shade = (t) =>
+            t > 64 ? INK : t > 46 ? I70 : t > 30 ? I45 : t > 15 ? I30 : I14;
+          reveal($("gheat"), (s) => {
+            const X0 = 92,
+              Y0 = 58,
+              PX = 48,
+              PY = 42,
+              W = 42,
+              H = 36;
+            FEAT.forEach((f, c) => {
+              txt(
+                s,
+                {
+                  x: X0 + c * PX + W / 2,
+                  y: Y0 - 12,
+                  "font-size": 6.5,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                  "letter-spacing": ".04em",
+                  class: "fade",
+                  style: `animation-delay:${c * 0.04}s`,
+                },
+                f
+              );
+            });
+            VER.forEach((ver, r) => {
+              txt(
+                s,
+                {
+                  x: X0 - 10,
+                  y: Y0 + r * PY + H / 2 + 3,
+                  "font-size": 8.5,
+                  "font-weight": 600,
+                  fill: I60,
+                  "text-anchor": "end",
+                  class: "fade",
+                  style: `animation-delay:${r * 0.05}s`,
+                },
+                ver
+              );
+              FEAT.forEach((f, c) => {
+                const t = v(r, c),
+                  x = X0 + c * PX,
+                  y = Y0 + r * PY,
+                  dark = t > 46;
+                const cell = el(s, "rect", {
+                  x,
+                  y,
+                  width: W,
+                  height: H,
+                  rx: 9,
+                  fill: shade(t),
+                  class: "pop",
+                  style: `animation-delay:${(r * 6 + c) * 0.022}s`,
+                });
+                tip(cell, `${f} on ${ver} — ${t}% of accounts`);
+                txt(
+                  s,
+                  {
+                    x: x + W / 2,
+                    y: y + H / 2 + 4,
+                    "font-size": 10.5,
+                    "font-weight": 600,
+                    fill: dark ? PAPER : INK,
+                    "text-anchor": "middle",
+                    class: "fade",
+                    style: `animation-delay:${0.15 + (r * 6 + c) * 0.022}s`,
+                  },
+                  t
+                );
+              });
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 300,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: "animation-delay:1s",
+              },
+              "SHADE = ADOPTION · NEWER VERSIONS RUN DARKER"
+            );
+          });
+        })();
+
+        // ════ G21 · Rank Strip ════
+        (() => {
+          // 排名随时间变的静态版，第二稿。第一稿是泳道 bump——灰线 X 交叉，
+          // 和 slope 同一种丑（catalog 实测三连败那条），废弃。
+          // 这版不画线：一行一个产品，一格一个季度，明度 = 名次（#1 最黑）。
+          // 攀升者的行自己从浅变黑，故事读行内渐变，不读交叉。
+          const RANKS = [
+            ["Flows", [5, 3, 2, 1, 1, 1]],
+            ["Editor", [1, 1, 1, 2, 2, 2]],
+            ["Boards", [2, 2, 3, 3, 3, 4]],
+            ["Vault", [4, 5, 5, 4, 4, 3]],
+            ["Docs", [3, 4, 4, 5, 5, 5]],
+          ];
+          const SHADE = [INK, I70, I45, I30, I14]; // rank 1 → 5
+          reveal($("rankstrip"), (s) => {
+            // rows sorted by final rank, the climber lands on top
+            const rows = [...RANKS].sort((a, b) => a[1][5] - b[1][5]);
+            const X0 = 110,
+              PX = 38,
+              Y0 = 64,
+              PY = 42,
+              C = 32;
+            ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"].forEach((q, k) =>
+              txt(
+                s,
+                {
+                  x: X0 + k * PX + C / 2,
+                  y: Y0 - 12,
+                  "font-size": 7.5,
+                  "font-weight": 600,
+                  fill: MUTED,
+                  "text-anchor": "middle",
+                  "letter-spacing": ".08em",
+                  class: "fade",
+                  style: `animation-delay:${k * 0.04}s`,
+                },
+                q
+              )
+            );
+            rows.forEach(([p, rk], i) => {
+              const y = Y0 + i * PY,
+                hero = p === "Flows";
+              txt(
+                s,
+                {
+                  x: X0 - 12,
+                  y: y + C / 2 + 3,
+                  "font-size": 8.5,
+                  "font-weight": hero ? 800 : 600,
+                  fill: hero ? INK : I60,
+                  "text-anchor": "end",
+                  class: "fade",
+                  style: `animation-delay:${i * 0.07}s`,
+                },
+                p
+              );
+              rk.forEach((r, q) => {
+                const dark = r <= 2;
+                const cell = el(s, "rect", {
+                  x: X0 + q * PX,
+                  y,
+                  width: C,
+                  height: C,
+                  rx: 8,
+                  fill: SHADE[r - 1],
+                  stroke: I14,
+                  "stroke-width": 0.5,
+                  class: "pop",
+                  style: `animation-delay:${i * 0.07 + q * 0.035}s`,
+                });
+                tip(cell, `${p} — #${r} in Q${q + 1}`);
+                txt(
+                  s,
+                  {
+                    x: X0 + q * PX + C / 2,
+                    y: y + C / 2 + 3.5,
+                    "font-size": 9.5,
+                    "font-weight": 600,
+                    fill: dark ? PAPER : I70,
+                    "text-anchor": "middle",
+                    class: "fade",
+                    style: `animation-delay:${0.1 + i * 0.07 + q * 0.035}s`,
+                  },
+                  r
+                );
+              });
+              // arrival flag: climbed / fell / held, told at the row's end
+              const d = rk[0] - rk[5];
+              txt(
+                s,
+                {
+                  x: X0 + 6 * PX + 8,
+                  y: y + C / 2 + 3,
+                  "font-size": 8,
+                  "font-weight": 600,
+                  fill: d > 0 ? INK : d < 0 ? I30 : I22,
+                  class: "fade",
+                  style: `animation-delay:${0.5 + i * 0.07}s`,
+                },
+                d > 0 ? "▲" + d : d < 0 ? "▼" + -d : "—"
+              );
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 308,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: "animation-delay:1.1s",
+              },
+              "CELL = RANK THAT QUARTER · #1 WEARS BLACK · READ EACH ROW LIKE A FILMSTRIP"
+            );
+          });
+        })();
+
+        // ════ G22 · Aggregate Sankey ════
+        (() => {
+          // B3 Threads 是逐条丝线（每线一条记录）；这张是聚合版——
+          // 缎带宽度∝账号数。左渠道右套餐，缎带按渠道明度分。
+          // 交叉处必须读得清，缎带走 .5 透明度（同 convergence 连线的处理）。
+          const SRC = [
+            ["SEARCH", [20, 10, 4]],
+            ["REFERRAL", [12, 9, 6]],
+            ["SOCIAL", [12, 4, 2]],
+            ["PAID", [6, 3, 3]],
+            ["OTHER", [5, 2, 2]],
+          ];
+          const DST = ["FREE", "PRO", "TEAM"];
+          const SH = [INK, I70, I45, I30, I22];
+          reveal($("sankey"), (s) => {
+            const XL = 104,
+              XR = 298,
+              Y0 = 34,
+              SC = 1.9,
+              GAPL = 8,
+              GAPR = 22,
+              MID = (XL + XR) / 2;
+            const srcTot = SRC.map((d) => d[1].reduce((a, b) => a + b, 0));
+            const dstTot = DST.map((_, j) =>
+              SRC.reduce((a, d) => a + d[1][j], 0)
+            );
+            const sy = [],
+              dy = [];
+            let y = Y0;
+            srcTot.forEach((t, i) => {
+              sy[i] = y;
+              y += t * SC + GAPL;
+            });
+            y = Y0 + 2;
+            dstTot.forEach((t, j) => {
+              dy[j] = y;
+              y += t * SC + GAPR;
+            });
+            const syc = [...sy],
+              dyc = [...dy];
+            SRC.forEach((d, i) => {
+              d[1].forEach((v, j) => {
+                if (!v) return;
+                const sa = syc[i],
+                  sb = sa + v * SC,
+                  da = dyc[j],
+                  db = da + v * SC;
+                syc[i] = sb;
+                dyc[j] = db;
+                const rib = el(s, "path", {
+                  d: `M${XL} ${sa} C${MID} ${sa} ${MID} ${da} ${XR} ${da} L${XR} ${db} C${MID} ${db} ${MID} ${sb} ${XL} ${sb} Z`,
+                  fill: SH[i],
+                  opacity: 0.5,
+                  class: "fade",
+                  style: `animation-delay:${0.2 + (i * 3 + j) * 0.06}s`,
+                });
+                tip(rib, `${SRC[i][0]} → ${DST[j]} — ${v} accounts of 100`);
+              });
+            });
+            SRC.forEach((d, i) => {
+              el(s, "rect", {
+                x: XL - 9,
+                y: sy[i],
+                width: 9,
+                height: srcTot[i] * SC,
+                rx: 4,
+                fill: SH[i],
+                class: "fade",
+                style: `animation-delay:${i * 0.06}s`,
+              });
+              txt(
+                s,
+                {
+                  x: XL - 16,
+                  y: sy[i] + (srcTot[i] * SC) / 2 + 2.5,
+                  "font-size": 7.5,
+                  "font-weight": 600,
+                  fill: I70,
+                  "text-anchor": "end",
+                  "letter-spacing": ".05em",
+                  class: "fade",
+                  style: `animation-delay:${i * 0.06}s`,
+                },
+                `${d[0]} · ${srcTot[i]}`
+              );
+            });
+            DST.forEach((n, j) => {
+              el(s, "rect", {
+                x: XR,
+                y: dy[j],
+                width: 9,
+                height: dstTot[j] * SC,
+                rx: 4,
+                fill: I14,
+                class: "fade",
+                style: `animation-delay:${0.1 + j * 0.06}s`,
+              });
+              txt(
+                s,
+                {
+                  x: XR + 16,
+                  y: dy[j] + (dstTot[j] * SC) / 2 - 3,
+                  "font-size": 7.5,
+                  "font-weight": 600,
+                  fill: I70,
+                  "letter-spacing": ".05em",
+                  class: "fade",
+                  style: `animation-delay:${0.15 + j * 0.06}s`,
+                },
+                n
+              );
+              txt(
+                s,
+                {
+                  x: XR + 16,
+                  y: dy[j] + (dstTot[j] * SC) / 2 + 9,
+                  "font-size": 10,
+                  "font-weight": 600,
+                  fill: INK,
+                  class: "fade",
+                  style: `animation-delay:${0.2 + j * 0.06}s`,
+                },
+                dstTot[j]
+              );
+            });
+            txt(
+              s,
+              {
+                x: 200,
+                y: 302,
+                "font-size": 7,
+                "font-weight": 600,
+                fill: I30,
+                "text-anchor": "middle",
+                "letter-spacing": ".12em",
+                class: "fade",
+                style: "animation-delay:1.1s",
+              },
+              "RIBBON WIDTH = ACCOUNTS OF 100 · SHADE = CHANNEL"
+            );
+          });
+        })();
+      })();
+    </script>
+  </body>
+</html>

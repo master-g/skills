@@ -342,6 +342,8 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 - 配色走 `--syn-comment` / `--syn-keyword` / `--syn-string` / `--syn-type` / `--syn-number`
   五个 token（骨架已给，两套主题各一组，在代码块底上实测 4.6:1 以上）。
   运算符和变量刻意不上色 —— 全上会花。想改配色就改这五个 token，不要去写 `.shj-syn-*` 规则。
+- **换行 / 复制工具条是骨架给的**：每个 `pre > code` 右上角自动带「换行」「复制」两个按钮，hover 或键盘焦点进入时出现，
+  触屏常显，打印隐藏，不进 Markdown 导出。页面不要自己再做复制按钮；不想让某块换行就别管它，默认关。
 
 ## 其余
 
@@ -372,7 +374,7 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 
 ## 设计 token
 
-主题色全部是 CSS 变量。写自定义样式时用 token，不要写死颜色，写死的颜色在深色主题下不会跟着切换。当前方向是暖灰纸面、深蓝墨色和钴蓝主强调；页面只消费语义角色，不依赖具体色值。
+主题色全部是 CSS 变量。写自定义样式时用 token，不要写死颜色，写死的颜色在深色主题下不会跟着切换。当前方向是一墨一纸：所有灰都是墨在纸上的明度阶，深色只换两极，唯一彩色落点是 `--hero`。页面只消费下表的语义角色，不直接取原语（`--ink` / `--paper` / `--hero`）或明度阶（`--ink-*`），分层见 `visual-system.md`。
 
 | token                                               | 用途                             |
 | --------------------------------------------------- | -------------------------------- |
@@ -383,21 +385,34 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 | `--color-secondary` / `--color-accent`              | 次要面 / 悬停面                  |
 | `--color-destructive`                               | 危险、失败、删除                 |
 | `--color-border` / `--color-input` / `--color-ring` | 描边 / 输入框边 / 焦点环         |
-| `--chart-1` … `--chart-5`                           | 图表序列色，浅色与深色各一组     |
+| `--chart-1` … `--chart-5`                           | 图表序列色：明度阶，1 最重       |
+| `--chart-hero`                                      | 一张图里唯一的主角元素           |
 | `--radius`                                          | 圆角基准                         |
 | `--font-sans` / `--font-serif` / `--font-mono`      | 字体栈（骨架里已加中文回退）     |
 
-图表色写 `var(--chart-1)`，**没有** `--color-chart-1` 这个名字。
+图表色写 `var(--chart-1)`，**没有** `--color-chart-1` 这个名字。数据图的五件套外壳（`.fig` / `.fig-box` / `.fig-head` / `.fig-sub` / `.fig-src` / `figcaption`）、`.charts` 栅格与入场动画类在 `show-me.css`，契约见 `charts.md`「五件套外壳」。
+
+## 公式
+
+直接写 LaTeX，`build.py` 编译成 MathML 内联（Temml，零运行时）：
+
+- 行内 `$E[W_k] = \min(c, b\cdot 2^k)/2$` 或 `\( … \)`。写线性形式；行内 `\frac` 会撑坏行高，`build.py` 发 WARN。
+- 块级单独一行 `$$ … $$` 或 `\[ … \]`，直接放在 `section` 里，不包 `<p>`。堆叠分数、求和号只在这里用。
+- `$5 和 $8` 这类价格不会被当成公式（开 `$` 后与闭 `$` 前不能有空白，闭 `$` 后不能紧跟数字）；要写字面 `$` 用 `\$`。
+- 代码块、`<code>`、脚本和样式内部的 `$` 不会被碰。
+- 编译需要本机有 `node`；没有时 `build.py` 报 ERROR，页面不能带着未编译的 `$…$` 交付。
+- 「复制为 Markdown」把公式还原成 LaTeX 源。
 
 ## 字体
 
 三个栈已经调好，**不要在页面里重写 `--font-*`**，也不要动骨架 `<head>` 里的字体 `<link>`。
 
-| token          | 网络字体                   | 兜底                               |
-| -------------- | -------------------------- | ---------------------------------- |
-| `--font-sans`  | IBM Plex Sans              | system-ui → PingFang SC / 微软雅黑 |
-| `--font-serif` | Newsreader + Noto Serif SC | Georgia → 思源宋体 → Songti SC     |
-| `--font-mono`  | IBM Plex Mono              | ui-monospace → SF Mono → Menlo     |
+| token          | 网络字体                   | 兜底                                                             |
+| -------------- | -------------------------- | ---------------------------------------------------------------- |
+| `--font-sans`  | IBM Plex Sans              | system-ui → PingFang SC / 微软雅黑                               |
+| `--font-serif` | Newsreader + Noto Serif SC | Georgia → 思源宋体 → Songti SC                                   |
+| `--font-mono`  | IBM Plex Mono              | ui-monospace → SF Mono → Menlo                                   |
+| 公式（`math`） | 无网络字体                 | Latin Modern Math → STIX Two Math → Cambria Math → `math` 通用族 |
 
 **这是本 skill 唯一放行的外部资源。** 骨架用 `media="print" onload="this.media='all'"`
 异步加载 —— `fonts.googleapis.com` 在部分网络下不可达（**中国大陆整体不可达**），

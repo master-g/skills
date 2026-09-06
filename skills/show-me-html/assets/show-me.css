@@ -13,27 +13,55 @@
     "IBM Plex Mono", "SF Mono", SFMono-Regular, Menlo, Consolas, "PingFang SC",
     "Microsoft YaHei", ui-monospace, monospace;
 
-  --background: #f6f3ed;
-  --foreground: #172033;
-  --card: #fffdf9;
-  --card-foreground: #172033;
-  --popover: #fffdf9;
-  --popover-foreground: #172033;
-  --primary: #1f63d7;
-  --primary-foreground: #ffffff;
-  --secondary: #e8edf5;
-  --secondary-foreground: #172033;
-  --muted: #ece8e1;
-  --muted-foreground: #5d6470;
-  --accent: #dde7f8;
-  --accent-foreground: #143b7d;
-  --destructive: #b4232f;
-  --destructive-foreground: #ffffff;
-  --border: #d5d0c8;
-  --input: #b9b5ae;
-  --ring: #1f63d7;
-  --link-accent: #174fae;
-  --ink-fixed: #172033;
+  /* ── Design tokens · 原语层 ─────────────────────────────────────
+     只有这一层允许字面色值。深色主题只重定义 --ink / --paper，
+     其余所有角色色都由下面的派生层用 color-mix 从两极算出。
+     换主题 = 换两极；换品牌 = 换 --hero。 */
+  --ink: #1c1c1a;
+  --paper: #f0efeb;
+  --hero: #f5572f; /* 唯一落点：焦点环、关键连线、图表主角、危险 */
+  --tone-clay: var(--hero);
+  --tone-fig: #b75d82;
+  --tone-sky: #4e8ccf;
+  --tone-cactus: #5c9d91;
+  --tone-olive: #6f8f45;
+  --tone-heather: #7772b5;
+  --tone-kraft: #b47a45;
+  --tone-manilla: #d5a72f;
+
+  /* ── 派生层 · 明度阶（墨在纸上的占比） ── */
+  --ink-90: color-mix(in oklab, var(--ink) 90%, var(--paper));
+  --ink-70: color-mix(in oklab, var(--ink) 70%, var(--paper));
+  --ink-60: color-mix(in oklab, var(--ink) 60%, var(--paper));
+  --ink-45: color-mix(in oklab, var(--ink) 45%, var(--paper));
+  --ink-30: color-mix(in oklab, var(--ink) 30%, var(--paper));
+  --ink-22: color-mix(in oklab, var(--ink) 22%, var(--paper));
+  --ink-14: color-mix(in oklab, var(--ink) 14%, var(--paper));
+  --ink-8: color-mix(in oklab, var(--ink) 8%, var(--paper));
+  --ink-4: color-mix(in oklab, var(--ink) 4%, var(--paper));
+
+  /* ── 派生层 · 角色 ── */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--ink-4);
+  --card-foreground: var(--ink);
+  --popover: var(--ink-8);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--ink-8);
+  --secondary-foreground: var(--ink);
+  --muted: var(--ink-8);
+  --muted-foreground: var(--ink-60);
+  --accent: var(--ink-14);
+  --accent-foreground: var(--ink);
+  --destructive: var(--hero);
+  --destructive-foreground: var(--paper);
+  --border: var(--ink-14);
+  --input: var(--ink-30);
+  --ring: var(--hero);
+  --link-accent: color-mix(in oklab, var(--hero) 70%, var(--ink));
+  --ink-fixed: #1c1c1a;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -55,29 +83,23 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --tone-clay: #e36f4f;
-  --tone-fig: #b75d82;
-  --tone-sky: #4e8ccf;
-  --tone-cactus: #5c9d91;
-  --tone-olive: #6f8f45;
-  --tone-heather: #7772b5;
-  --tone-kraft: #b47a45;
-  --tone-manilla: #d5a72f;
+  /* 图表：明度即数据。--chart-1 最重要（最黑，深色下最亮），依次变浅；
+     --chart-hero 只给一张图里的一个主角元素。 */
+  --chart-1: var(--ink);
+  --chart-2: var(--ink-70);
+  --chart-3: var(--ink-45);
+  --chart-4: var(--ink-30);
+  --chart-5: var(--ink-22);
+  --chart-hero: var(--hero);
+  --syn-comment: var(--ink-45);
+  --syn-keyword: var(--ink);
+  --syn-string: var(--ink-60);
+  --syn-type: var(--ink-70);
+  --syn-number: color-mix(in oklab, var(--hero) 65%, var(--ink));
 
-  --chart-1: #1f63d7;
-  --chart-2: #198778;
-  --chart-3: #7b6db7;
-  --chart-4: #bd5d3a;
-  --chart-5: #6a7180;
-  --syn-comment: #646b77;
-  --syn-keyword: #174fae;
-  --syn-string: #47772f;
-  --syn-type: #7760aa;
-  --syn-number: #a04465;
-
-  --radius: 0.625rem;
-  --radius-sm: 0.375rem;
-  --radius-lg: 0.875rem;
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-lg: 1.5rem;
   --page: 60rem;
   --gutter: clamp(1rem, 3vw, 2rem);
   --toc-w: 13rem;
@@ -97,36 +119,8 @@
 html.dark,
 .dark {
   color-scheme: dark;
-  --background: #111722;
-  --foreground: #f3f5f8;
-  --card: #182131;
-  --card-foreground: #f3f5f8;
-  --popover: #1d2738;
-  --popover-foreground: #f3f5f8;
-  --primary: #8bb6ff;
-  --primary-foreground: #0d2449;
-  --secondary: #242f41;
-  --secondary-foreground: #f3f5f8;
-  --muted: #202a3a;
-  --muted-foreground: #aeb8c8;
-  --accent: #263d63;
-  --accent-foreground: #dce8ff;
-  --destructive: #ff9ba4;
-  --destructive-foreground: #471117;
-  --border: #ffffff24;
-  --input: #ffffff38;
-  --ring: #8bb6ff;
-  --link-accent: #a9c8ff;
-  --chart-1: #8bb6ff;
-  --chart-2: #66c7b7;
-  --chart-3: #b9a8f0;
-  --chart-4: #f29a79;
-  --chart-5: #aeb8c8;
-  --syn-comment: #aeb8c8;
-  --syn-keyword: #9fc1ff;
-  --syn-string: #a8cf8c;
-  --syn-type: #c2b3f2;
-  --syn-number: #f0a2bc;
+  --ink: #f0efeb;
+  --paper: #1c1c1a;
   --shadow-raised: 0 1px 1px rgb(0 0 0 / 0.18), 0 12px 32px rgb(0 0 0 / 0.2);
 }
 
@@ -156,12 +150,12 @@ html.dark,
 }
 [data-tone] {
   --tone-surface: color-mix(in oklab, var(--tone) 13%, var(--color-card));
-  --tone-edge: color-mix(in oklab, var(--tone) 38%, var(--color-border));
+  --tone-edge: transparent;
   --tone-ink: color-mix(in oklab, var(--tone) 58%, var(--color-foreground));
 }
 .dark [data-tone] {
   --tone-surface: color-mix(in oklab, var(--tone) 18%, var(--color-card));
-  --tone-edge: color-mix(in oklab, var(--tone) 42%, var(--color-border));
+  --tone-edge: transparent;
   --tone-ink: color-mix(in oklab, var(--tone) 72%, var(--color-foreground));
 }
 
@@ -325,7 +319,7 @@ textarea:disabled {
 
 .card {
   min-width: 0;
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent; /* 卡片靠面色与留白分卡，不靠描边 */
   border-radius: var(--radius-lg);
   background: var(--color-card);
   color: var(--color-card-foreground);
@@ -950,16 +944,31 @@ main {
 main {
   padding-block: 2.5rem 6rem;
 }
-/* ≥80rem 且目录存在（body.has-toc，由骨架 JS 开门）时：版心向右扩出目录列，内容列宽度不变 */
+/* ≥80rem 且目录存在（body.has-toc，由骨架 JS 开门）时：三列栅格，内容列仍是 --page 宽并居中于视口，
+   目录住在右侧页边。右列保底 --toc-w + 3rem；视口不够宽时左列先让，内容只偏移必要的量。 */
 @media (min-width: 80rem) {
   body.has-toc .chrome-inner,
   body.has-toc .layout {
-    max-width: calc(var(--page) + var(--toc-w) + 3rem);
-  }
-  body.has-toc .layout {
+    max-width: none;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--toc-w);
-    gap: 3rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--page)) minmax(
+        calc(var(--toc-w) + 3rem),
+        1fr
+      );
+    column-gap: 0;
+  }
+  body.has-toc .chrome-title,
+  body.has-toc main {
+    grid-column: 2;
+  }
+  body.has-toc .chrome-actions,
+  body.has-toc .toc {
+    grid-column: 3;
+    padding-inline-start: 3rem;
+    width: calc(var(--toc-w) + 3rem);
+  }
+  body.has-toc .chrome-actions {
+    margin-inline-start: 0;
   }
 }
 main > section {
@@ -1113,7 +1122,7 @@ main > section > h3 + * {
 main a:not(.btn):not(.item) {
   color: var(--color-foreground);
   text-decoration: underline;
-  text-decoration-color: var(--tone-clay);
+  text-decoration-color: var(--hero);
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
 }
@@ -1140,6 +1149,7 @@ li + li {
   margin-block-start: 0.25rem;
 }
 pre {
+  position: relative; /* 代码工具条的定位锚 */
   overflow-x: auto;
   padding: 1rem;
   border-radius: var(--radius);
@@ -1149,6 +1159,50 @@ pre {
 }
 pre code {
   font-family: var(--font-mono);
+}
+/* ── 代码工具条：换行 / 复制。骨架 JS 注入，平时隐藏，hover 或键盘焦点进入时出现；
+     无 hover 的触屏设备常显。参考 VitePress / Expressive Code 的做法：按钮压在右上角，不占正文宽度。 */
+pre[data-wrap="on"] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.code-tools {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 140ms var(--ease-expo);
+}
+.code-tools .btn {
+  min-height: 1.625rem;
+  padding: 0.125rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-muted-foreground);
+}
+.code-tools .btn[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border-color: var(--color-primary);
+}
+pre:hover .code-tools,
+pre:focus-within .code-tools {
+  opacity: 1;
+}
+@media (hover: none) {
+  .code-tools {
+    opacity: 1;
+  }
+}
+@media print {
+  .code-tools {
+    display: none;
+  }
 }
 /* 语法高亮：class 由 build.py 内联的分词器在运行时发，配色在这里给。
          运算符（shj-syn-oper）和变量（shj-syn-var）刻意不上色 —— 全上会花。 */
@@ -1181,13 +1235,280 @@ pre code {
 :not(pre) > code {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  background: color-mix(
-    in oklab,
-    var(--tone-manilla) 30%,
-    var(--color-background)
-  );
+  background: var(--ink-8);
   padding: 0.125rem 0.375rem;
   border-radius: calc(var(--radius) - 2px);
+}
+/* ── 公式：作者写 LaTeX，build 编译为 MathML。行内线性、块级堆叠。 ── */
+math {
+  font-family:
+    "Latin Modern Math", "STIX Two Math", "Cambria Math", "Noto Sans Math",
+    math, var(--font-serif);
+}
+math[display="block"],
+math.tml-display {
+  display: block;
+  margin-block: 1.25rem;
+  padding-block: 0.25rem;
+  overflow-x: auto;
+  font-size: 1.125rem;
+}
+/* ── 图（figure）五件套：结论标题 + 单位行 + 图 + 来源 + 论点图注。
+   数据图与示意图共用；图型代码见 assets/gallery/，运行时 assets/charts.js 由 build 内联。
+   卡面靠面色分卡不描边；重播按钮和代码工具条同一套隐藏逻辑。 ── */
+.charts {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+.charts > .fig,
+.charts > .fig.wide {
+  margin: 0;
+}
+.charts > .fig.wide {
+  grid-column: 1 / -1;
+}
+.fig {
+  margin: 2.25rem 0;
+}
+.fig-box {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.25rem 1rem;
+}
+.fig-box > * + * {
+  margin-top: 0.5rem;
+}
+.fig-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+.fig-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.fig-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.fig-id,
+.fig-sub,
+.fig-src,
+.fig-hint,
+.fig-status {
+  font-family: var(--font-mono);
+}
+.fig-id {
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-45);
+}
+.fig-sub,
+.fig-hint {
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+}
+.fig-src {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-45);
+  margin-top: 0.75rem;
+}
+.fig-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2rem;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ink-8);
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+}
+.fig-status b {
+  color: var(--color-foreground);
+  font-weight: 600;
+}
+.fig-status [data-pin] {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-45);
+}
+.fig figcaption {
+  margin-top: 0.6rem;
+  padding: 0 0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--color-muted-foreground);
+}
+.fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.75rem;
+}
+.fig svg text {
+  font-family: var(--font-mono);
+  user-select: none;
+}
+.fig svg text.name {
+  font-family: var(--font-sans);
+}
+.fig-replay {
+  opacity: 0;
+  transition: opacity 140ms var(--ease-expo);
+}
+.fig:hover .fig-replay,
+.fig:focus-within .fig-replay {
+  opacity: 1;
+}
+@media (hover: none) {
+  .fig-replay {
+    opacity: 1;
+  }
+}
+/* 图内入场动画：pop 缩放、fade 淡入、draw 描线、rise 自底长高、grow 自中轴伸出、blink 实时点 */
+.pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-pop 0.5s cubic-bezier(0.2, 0.7, 0.3, 1.3) both;
+}
+@keyframes chart-pop {
+  from {
+    transform: scale(0);
+  }
+}
+.fade {
+  animation: chart-fade 0.9s ease both;
+}
+@keyframes chart-fade {
+  from {
+    opacity: 0;
+  }
+}
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chart-draw 1s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.rise {
+  animation: chart-rise 0.64s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes chart-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+.grow {
+  animation: chart-grow 0.7s var(--ease-expo) both;
+}
+@keyframes chart-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.blink {
+  animation: chart-blink 1.2s steps(2, jump-none) infinite;
+}
+@keyframes chart-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+.race-row {
+  transition: transform 950ms linear;
+}
+.race-bar {
+  transition:
+    width 950ms linear,
+    fill 950ms linear;
+}
+.morph-item {
+  transition: transform 1100ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+/* 网络与丝线的聚焦态：hover / focus 一个节点，只留它的邻接 */
+.net-link,
+.net-node,
+.thread,
+.nodelab {
+  transition: opacity 180ms ease;
+}
+svg.focused .net-link:not(.hot) {
+  opacity: 0.06;
+}
+svg.focused .net-node:not(.hot) {
+  opacity: 0.25;
+}
+svg.focused .net-link.hot {
+  opacity: 0.95;
+  stroke: var(--chart-hero);
+}
+svg.focused .thread:not(.hot) {
+  opacity: 0.035;
+}
+svg.focused .thread.hot {
+  opacity: 0.95;
+  stroke: var(--chart-hero);
+}
+svg.focused .nodelab:not(.hot) {
+  opacity: 0.25;
+}
+.net-node,
+.nodelab,
+.hit {
+  cursor: pointer;
+}
+.net-node:focus-visible,
+.force-node:focus-visible {
+  outline: none;
+}
+.net-node:focus-visible > circle,
+.force-node:focus-visible > circle {
+  stroke: var(--chart-hero);
+  stroke-width: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .fade,
+  .rise,
+  .grow,
+  .blink {
+    animation: none;
+  }
+  .draw {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .race-row,
+  .race-bar,
+  .morph-item {
+    transition: none;
+  }
+}
+@media print {
+  .fig-replay,
+  .fig-status {
+    display: none;
+  }
+  .fig-box {
+    break-inside: avoid;
+  }
 }
 /* 只管正文里的分隔线；组件内部的 hr（.item-group、菜单、按钮组）交给自有组件层 */
 main > section > hr {
