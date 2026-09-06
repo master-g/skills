@@ -319,6 +319,17 @@ class VisualContractTests(unittest.TestCase):
             with self.subTest(step=step):
                 self.assertRegex(css, rf"--space-{step}:\s*[\d.]+rem")
 
+    def test_card_padding_lives_on_the_card(self):
+        """三段可选，所以内边距不能只挂在 header/section/footer 上：
+        挂在三段上时，卡里直接写 <p> 会四边贴边，而且不报错、只难看。"""
+        css = CSS.read_text(encoding="utf-8")
+        block = re.search(r"\n\.card \{(.*?)\n\}", css, re.S)
+        self.assertIsNotNone(block, ".card 规则块找不到了")
+        self.assertRegex(block.group(1), r"padding:\s*[\d.]+rem")
+        self.assertNotRegex(
+            css, r"\.card > header,\n\.card > section,\n\.card > footer \{\n  padding:"
+        )
+
     def test_recipe_matrix_lists_every_recipe(self):
         html = (FIXTURES / "recipe-matrix.html").read_text(encoding="utf-8")
         for recipe in RECIPES:

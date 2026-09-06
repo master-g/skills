@@ -344,6 +344,13 @@ textarea:disabled {
   background: var(--color-card);
   color: var(--color-card-foreground);
   overflow: clip;
+  /* 内边距住在卡本身，不住在 header / section / footer 上 ——
+     三段都是可选的（components.md），内边距挂在三段上时，卡里直接写 <p>
+     就四条边都贴边，而且不报错、只难看。 */
+  padding: 1rem 1.125rem;
+}
+.card[data-size="sm"] {
+  padding: 0.75rem 0.875rem;
 }
 .card[data-tone],
 .alert[data-tone],
@@ -351,13 +358,14 @@ textarea:disabled {
   background: var(--tone-surface);
   border-color: var(--tone-edge);
 }
-.card > header,
-.card > section,
-.card > footer {
-  padding: 1rem 1.125rem;
+/* 段与段的间隔：原来由上一段的下内边距加下一段的上内边距凑出，现在写成一个外边距 */
+.card > :is(header, section, footer) + :is(header, section, footer) {
+  margin-block-start: 1.25rem;
 }
-.card > :is(header, section) + :is(section, footer) {
-  padding-block-start: 0.25rem;
+.card[data-size="sm"]
+  > :is(header, section, footer)
+  + :is(header, section, footer) {
+  margin-block-start: 1rem;
 }
 .card > header {
   display: flex;
@@ -366,13 +374,15 @@ textarea:disabled {
   gap: 1rem;
   /* header / section / footer 之间不画分隔线：卡内靠留白分段，和分卡的原则一致 */
 }
+/* 首尾元素的浏览器默认外边距不再叠在内边距上：卡的内边距就是全部留白。
+   直接子元素也吃这条 —— 裸 <p> 的卡靠它拿到干净的上下边距。 */
+.card > :first-child,
 .card > header > :is(h2, h3, p),
-.card > section > :first-child,
-.card > footer > :first-child {
+.card > :is(section, footer) > :first-child {
   margin-block-start: 0;
 }
-.card > section > :last-child,
-.card > footer > :last-child {
+.card > :last-child,
+.card > :is(section, footer) > :last-child {
   margin-block-end: 0;
 }
 .card > footer {
@@ -380,9 +390,6 @@ textarea:disabled {
   align-items: center;
   justify-content: flex-end;
   gap: 0.625rem;
-}
-.card[data-size="sm"] > :is(header, section, footer) {
-  padding: 0.75rem 0.875rem;
 }
 .card-action {
   flex: none; /* 标题组占满剩余宽度时，动作区不能被挤成竖排 */

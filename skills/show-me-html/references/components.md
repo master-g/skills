@@ -69,7 +69,7 @@
 </article>
 ```
 
-`header` / `section` / `footer` 三段都可选。`header` 内的 `h2`/`h3`/`p` 自动拿到标题与描述样式；
+`header` / `section` / `footer` 三段都可选 —— 内边距挂在 `.card` 自己身上，卡里直接写 `<p>` 也不会贴边。`header` 内的 `h2`/`h3`/`p` 自动拿到标题与描述样式；
 `.card-action` 会靠右上角。紧凑版加 `data-size="sm"`。
 
 **反色暗卡** `data-variant="ink"`：卡内墨纸互换，次要文字、边界、图表阶和按钮全部自动反过来，
