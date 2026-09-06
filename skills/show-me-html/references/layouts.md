@@ -200,7 +200,7 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码�
 
 一行结论 → 指标块一排 → 分组进展（每组一个 `.item-group`）→ 风险 → 下一步。
 
-- 指标块：`.card[data-size=sm]`，大数字 + 变化量（涨跌用 `.badge[data-variant]`）。
+- 指标块：`.card[data-size=sm]` 或 `.metric-band`，大数写 `.stat-num`（单位进 `<small>`，见 components.md「大数」）+ 变化量（涨跌用 `.badge[data-variant]`）。
 - 全页只读，不要放假按钮。
 
 ### `incident-report` · 复盘一次故障
