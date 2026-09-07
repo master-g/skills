@@ -2,9 +2,9 @@
 """Bootstrap & reconcile a project's Claude context files.
 
 Idempotent — safe to run on every invocation. It guarantees that:
-  1. A single *source-of-truth* context file exists with the five required
-     sections (技术栈 / 命令 / 代码风格 / 禁止文件 / 审查规则), the 启动流程 /
-     完成判定 boilerplate sections, plus a PROJECT_MEMORY writeback section.
+  1. A single *source-of-truth* context file exists with every `## ` section
+     of assets/CLAUDE.template.md (the template is the only place section text
+     lives); the five REQUIRED_SECTIONS must be filled with real facts.
   2. Both CLAUDE.md (Claude Code) and AGENTS.md (other agents) resolve to that
      same content — whichever isn't the real file becomes a symlink to it.
   3. PROJECT_MEMORY.md exists with its four sections.
@@ -30,23 +30,7 @@ ASSETS = SCRIPT_DIR.parent / "assets"
 REQUIRED_SECTIONS = ["技术栈", "命令", "代码风格", "禁止文件", "审查规则"]
 PLACEHOLDER = "_待填写_"
 
-# Boilerplate sections appended with full content (no placeholder to fill) when
-# missing — like the 项目记忆 block. Keep in sync with CLAUDE.template.md.
-BOILERPLATE_SECTIONS = {
-    "启动流程": (
-        "\n## 启动流程\n\n"
-        "1. 按当前任务需要读取本文件及 PROJECT_MEMORY.md 中相关的决策或交接记录。\n"
-        "2. 需要基线对照时运行相关检查；记录既有失败，不自动修复与本次任务无关的问题。\n"
-        "3. 需要理解近期变更时查看相关 Git 历史。\n"
-    ),
-    "完成判定": (
-        "\n## 完成判定\n\n"
-        "- 已交付本次约定的结果。\n"
-        "- 与本次改动相关的检查有实际结果；修复本次引入的失败并重跑受影响检查。\n"
-        "- 有必要的交接信息时，按项目回写约定记录验证命令、结果和停留位置。\n"
-        "- 明确说明未运行的检查、既有失败及仍影响完成的限制。\n"
-    ),
-}
+MEMORY_LINK = "PROJECT_MEMORY.md"
 
 
 def load_template(name: str) -> str:
@@ -75,16 +59,28 @@ def render(template_name: str, project_name: str) -> str:
     return load_template(template_name).replace("{{PROJECT_NAME}}", project_name)
 
 
-def make_symlink(link: Path, target_name: str, actions: list):
-    """Point `link` at sibling `target_name`, replacing any existing symlink."""
-    if link.is_symlink() or (not link.exists() and link.is_symlink()):
-        link.unlink()
-    elif link.exists():
-        # A real file here would be the CONFLICT case, handled before we get
-        # here. Guard anyway so we never clobber real content.
-        return
-    os.symlink(target_name, link)
-    actions.append(f"symlink: {link.name} -> {target_name}")
+def template_sections() -> dict:
+    """Ordered {title: block} for every `## ` section of CLAUDE.template.md.
+    The template is the single source of truth for section text."""
+    blocks, title, buf = {}, None, []
+    for line in load_template("CLAUDE.template.md").splitlines():
+        m = re.match(r"^##\s+(.*)$", line)
+        if m:
+            if title:
+                blocks[title] = "\n".join(buf).rstrip("\n") + "\n"
+            title, buf = m.group(1).strip(), [line]
+        elif title:
+            buf.append(line)
+    if title:
+        blocks[title] = "\n".join(buf).rstrip("\n") + "\n"
+    return blocks
+
+
+def section_present(text: str, title: str) -> bool:
+    """The memory-writeback section is identified by its link, others by heading keyword."""
+    if MEMORY_LINK in title or "项目记忆" in title:
+        return MEMORY_LINK in text
+    return heading_present(text, title)
 
 
 def ensure_partner_symlinks(root: Path, truth: Path, actions: list):
@@ -110,26 +106,11 @@ def ensure_sections(truth: Path, project_name: str, actions: list):
         actions.append(f"wrote template into {truth.name} (was empty)")
         return
 
-    appended = []
-    additions = []
-    for section in REQUIRED_SECTIONS:
-        if not heading_present(text, section):
-            additions.append(f"\n## {section}\n- {PLACEHOLDER}\n")
-            appended.append(section)
-    for section, block in BOILERPLATE_SECTIONS.items():
-        if not heading_present(text, section):
-            additions.append(block)
-            appended.append(section)
-    if "PROJECT_MEMORY.md" not in text:
-        additions.append(
-            "\n## 项目记忆 (回写约定)\n"
-            "跨会话的持久信息记录在 [PROJECT_MEMORY.md](./PROJECT_MEMORY.md)。\n"
-            "**完成每个重要任务后务必回写**: 把确认的决策写入「已验证的事实」、"
-            "踩的坑写入「失败尝试」、用进展更新「上次会话」、把计划写入「下次运行」。\n"
-            "保持 PROJECT_MEMORY.md 在 300~400 行,超长时用 `scripts/memory.py compact` "
-            "压缩(保留事实与计划,淘汰最旧日志)。\n"
-        )
-        appended.append("项目记忆")
+    appended, additions = [], []
+    for title, block in template_sections().items():
+        if not section_present(text, title):
+            additions.append("\n" + block)
+            appended.append(title)
     if additions:
         if not text.endswith("\n"):
             text += "\n"
@@ -208,10 +189,11 @@ def cmd_validate(root: Path, max_lines: int) -> int:
             else:
                 state = section_state(bodies[section])
                 checks.append((state == "已填写", f"{section}: {state}"))
-        for section in BOILERPLATE_SECTIONS:
-            checks.append((section in bodies, f"{section}: {'存在' if section in bodies else '缺失'}"))
-        checks.append(("PROJECT_MEMORY.md" in text, "项目记忆回写约定: "
-                       + ("存在" if "PROJECT_MEMORY.md" in text else "缺失")))
+        for title in template_sections():
+            if title in REQUIRED_SECTIONS:
+                continue
+            ok = section_present(text, title)
+            checks.append((ok, f"{title}: {'存在' if ok else '缺失'}"))
 
     memory = root / "PROJECT_MEMORY.md"
     if ultimate(memory) is None:

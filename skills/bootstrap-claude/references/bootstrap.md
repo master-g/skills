@@ -10,8 +10,8 @@
 python3 <skill>/scripts/setup_context.py --dir <workspace>
 ```
 
-It ensures the context file has all five required sections, creates
-PROJECT_MEMORY.md, and reconciles the CLAUDE.md / AGENTS.md naming so both point
+It ensures the context file has the five required sections and the memory
+writeback section from `assets/CLAUDE.template.md`, creates PROJECT_MEMORY.md, and reconciles the CLAUDE.md / AGENTS.md naming so both point
 at one source of truth (see [Compatibility](#compatibility) below). It **never
 overwrites** existing real content — it only appends missing sections and prints
 exactly what it changed. Read that output so you know which file is the source of
@@ -45,11 +45,6 @@ something true. Silent placeholders read as "covered" when they aren't.
 
 Don't invent commands you haven't verified. If unsure whether `npm test` works,
 check that it's defined before writing it down.
-
-The template also carries **启动流程** and **完成判定**. Read relevant context
-and run checks proportional to the requested change. Existing unrelated baseline
-failures are recorded, not automatically repaired. Preserve project-specific
-policies; do not silently replace existing sections during bootstrap.
 
 ### Step 3: validate the result
 
