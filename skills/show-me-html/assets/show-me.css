@@ -1276,14 +1276,18 @@ li + li {
 }
 pre {
   position: relative; /* 代码工具条的定位锚 */
-  overflow-x: auto;
+  overflow-x: auto; /* 只兜没有 code 子元素的裸 pre */
   padding: 1rem;
   border-radius: var(--radius);
   background: var(--color-muted);
   font-size: 0.8125rem;
   line-height: 1.6;
 }
-pre code {
+/* 滚动交给 code 而不是 pre：绝对定位的工具条挂在 pre 上，pre 不滚，
+     按钮就不会随代码横向滑走（VitePress / Docusaurus 同一做法，只是它们多包了一层 div）。 */
+pre > code {
+  display: block;
+  overflow-x: auto;
   font-family: var(--font-mono);
 }
 /* ── 代码工具条：换行 / 复制。骨架 JS 注入，平时隐藏，hover 或键盘焦点进入时出现；
