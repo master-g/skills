@@ -26,6 +26,7 @@ npx skills add master-g/skills --skill '*' -g
 
 ## Included skills
 
+- `autopilot`: keep pushing toward a stated goal until its acceptance checks pass or the user needs to take over.
 - `bootstrap-claude`: bootstrap and maintain project instructions and memory files.
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.

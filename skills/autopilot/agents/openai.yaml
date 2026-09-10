@@ -1,0 +1,5 @@
+interface:
+  display_name: "autopilot"
+  short_description: "连续推进到目标完成或需要用户接管"
+policy:
+  allow_implicit_invocation: false
