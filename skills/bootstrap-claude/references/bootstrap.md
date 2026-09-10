@@ -17,6 +17,9 @@ overwrites** existing real content — it only appends missing sections and prin
 exactly what it changed. Read that output so you know which file is the source of
 truth and what's still a placeholder.
 
+「项目记忆 (回写约定)」一节的文字归本技能所有，脚本只检查它是否存在。已有项目里该节与
+`assets/CLAUDE.template.md` 不一致时，把模板版本定点替换进真源文件。
+
 If it exits with a `CONFLICT` (both CLAUDE.md and AGENTS.md are independent real
 files), don't force it — show the user both and ask which should win, then re-run
 with `--resolve-conflict claude` or `--resolve-conflict agents`.
