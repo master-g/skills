@@ -8,6 +8,9 @@ Idempotent — safe to run on every invocation. It guarantees that:
   2. Both CLAUDE.md (Claude Code) and AGENTS.md (other agents) resolve to that
      same content — whichever isn't the real file becomes a symlink to it.
   3. PROJECT_MEMORY.md exists with its four sections.
+  4. The 「项目记忆 (回写约定)」 block matches the template (the skill owns that text):
+     missing -> appended; same text -> end marker added; bounded/prefixed block -> upgraded
+     losslessly; a diverged legacy block -> reported, replaced only with --upgrade-convention.
 
 Compatibility rules (from the user's spec), resolved automatically:
   - AGENTS.md is a real file and CLAUDE.md is a symlink  -> truth = AGENTS.md
@@ -26,11 +29,15 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+from memory import check_memory, DEFAULT_MAX_BYTES  # noqa: E402
 ASSETS = SCRIPT_DIR.parent / "assets"
 REQUIRED_SECTIONS = ["技术栈", "命令", "代码风格", "禁止文件", "审查规则"]
 PLACEHOLDER = "_待填写_"
 
 MEMORY_LINK = "PROJECT_MEMORY.md"
+CONV_HEADING_RE = re.compile(r"^##\s+.*(项目记忆|回写约定).*$", re.M)
+CONV_MARKER_RE = re.compile(r"^<!-- bootstrap-claude convention v\d+ -->[ \t]*$", re.M)
 
 
 def load_template(name: str) -> str:
@@ -83,6 +90,88 @@ def section_present(text: str, title: str) -> bool:
     return heading_present(text, title)
 
 
+def template_convention() -> str:
+    """The skill-owned writeback block: heading line through the end marker."""
+    for title, block in template_sections().items():
+        if "项目记忆" in title or "回写约定" in title:
+            return block
+    raise RuntimeError("CLAUDE.template.md has no 项目记忆 section")
+
+
+def _norm_body(block: str) -> str:
+    lines = block.split("\n")[1:]  # drop heading; marker lines are boundary, not content
+    lines = [l.rstrip() for l in lines if not CONV_MARKER_RE.match(l)]
+    return "\n".join(lines).strip("\n")
+
+
+def convention_state(text: str) -> dict:
+    """{state, start, end, marked}. state in
+    missing   - no memory link and no heading: append the block
+    unmanaged - memory link present but no writeback heading: report only
+    latest    - body equals the template
+    outdated  - body differs; marked=True means the block is bounded by the end
+                marker (lossless auto-upgrade), else legacy (whole section)"""
+    m = CONV_HEADING_RE.search(text)
+    if not m:
+        return {"state": "unmanaged" if MEMORY_LINK in text else "missing"}
+    start = m.start()
+    after = text[m.end():]
+    mk = CONV_MARKER_RE.search(after)
+    nh = re.search(r"^## ", after, re.M)
+    if mk and (not nh or mk.start() < nh.start()):
+        end, marked = m.end() + mk.end(), True
+    else:
+        end, marked = (m.end() + nh.start()) if nh else len(text), False
+    old = text[start:end]
+    tpl = template_convention()
+    state = "latest" if _norm_body(old) == _norm_body(tpl) else "outdated"
+    return {"state": state, "start": start, "end": end, "marked": marked, "old": old}
+
+
+def ensure_convention(truth: Path, actions: list, upgrade: bool):
+    """Keep the writeback block current. Marked or template-prefixed blocks upgrade
+    losslessly (custom text after the block survives); a legacy block that diverged
+    is replaced only with --upgrade-convention, and the old text is printed."""
+    text = truth.read_text(encoding="utf-8")
+    st = convention_state(text)
+    tpl = template_convention()
+    if st["state"] == "missing":
+        text = text.rstrip("\n") + "\n\n" + tpl
+        truth.write_text(text, encoding="utf-8")
+        actions.append(f"convention: appended to {truth.name}")
+        return
+    if st["state"] == "unmanaged":
+        actions.append(f"convention: unmanaged — {truth.name} mentions {MEMORY_LINK} but has no "
+                       "「项目记忆 (回写约定)」 heading; add the template block by hand if wanted")
+        return
+    if st["state"] == "latest":
+        if st["marked"]:
+            actions.append("convention: latest")
+            return
+        # same text, no marker yet: insert the marker so future upgrades are bounded
+        new = text[:st["start"]] + tpl.rstrip("\n") + "\n" + text[st["end"]:]
+        truth.write_text(new, encoding="utf-8")
+        actions.append("convention: latest (end marker added)")
+        return
+    old_body, tpl_body = _norm_body(st["old"]), _norm_body(tpl)
+    if st["marked"] or old_body.startswith(tpl_body):
+        # bounded, or an old template copy with custom text appended after it
+        rem = "" if st["marked"] else old_body[len(tpl_body):].strip("\n")
+        custom = ("\n" + rem + "\n") if rem else ""  # one blank line, then the project's own text
+        new = text[:st["start"]] + tpl.rstrip("\n") + "\n" + custom + text[st["end"]:]
+        truth.write_text(new, encoding="utf-8")
+        actions.append("convention: upgraded (custom text after the block preserved)")
+        return
+    if not upgrade:
+        actions.append("convention: OUTDATED (legacy block, not marked) — read the section, then "
+                       "re-run with --upgrade-convention; the old text is printed on replacement")
+        return
+    new = text[:st["start"]] + tpl + text[st["end"]:]
+    truth.write_text(new, encoding="utf-8")
+    actions.append("convention: upgraded (legacy block replaced; old text below — re-add any "
+                   "custom lines AFTER the end marker)\n" + st["old"].rstrip("\n"))
+
+
 def ensure_partner_symlinks(root: Path, truth: Path, actions: list):
     """Make whichever of CLAUDE.md / AGENTS.md is not the truth file a symlink
     pointing at the truth file's name."""
@@ -108,6 +197,8 @@ def ensure_sections(truth: Path, project_name: str, actions: list):
 
     appended, additions = [], []
     for title, block in template_sections().items():
+        if "项目记忆" in title or "回写约定" in title:
+            continue  # owned by ensure_convention
         if not section_present(text, title):
             additions.append("\n" + block)
             appended.append(title)
@@ -158,7 +249,7 @@ def section_state(body: list) -> str:
     return "已填写"
 
 
-def cmd_validate(root: Path, max_lines: int) -> int:
+def cmd_validate(root: Path, max_bytes: int) -> int:
     """Read-only quality check. Returns the number of FAILs."""
     checks = []  # (ok: bool, message: str)
     claude, agents = root / "CLAUDE.md", root / "AGENTS.md"
@@ -189,18 +280,16 @@ def cmd_validate(root: Path, max_lines: int) -> int:
             else:
                 state = section_state(bodies[section])
                 checks.append((state == "已填写", f"{section}: {state}"))
-        for title in template_sections():
-            if title in REQUIRED_SECTIONS:
-                continue
-            ok = section_present(text, title)
-            checks.append((ok, f"{title}: {'存在' if ok else '缺失'}"))
+        st = convention_state(text)
+        label = st["state"] + ("" if st["state"] != "outdated" else (" (marked)" if st["marked"] else " (legacy)"))
+        checks.append((st["state"] == "latest", f"项目记忆 (回写约定): {label}"))
 
     memory = root / "PROJECT_MEMORY.md"
     if ultimate(memory) is None:
         checks.append((False, "PROJECT_MEMORY.md: 缺失"))
     else:
-        n = len(memory.read_text(encoding="utf-8").rstrip("\n").split("\n"))
-        checks.append((n <= max_lines, f"PROJECT_MEMORY.md: {n} 行 (max {max_lines})"))
+        for ok, msg in check_memory(memory.read_text(encoding="utf-8"), max_bytes):
+            checks.append((ok, f"PROJECT_MEMORY.md: {msg.strip()}"))
 
     fails = sum(1 for ok, _ in checks if not ok)
     print(f"validate: {root}")
@@ -219,11 +308,14 @@ def main():
                     help="when both CLAUDE.md and AGENTS.md are independent real "
                          "files, pick which becomes the source of truth; the other "
                          "is backed up to *.bak and replaced with a symlink")
+    ap.add_argument("--upgrade-convention", action="store_true",
+                    help="replace a legacy (unmarked, diverged) 回写约定 block with the template "
+                         "version; marked blocks upgrade automatically without this flag")
     ap.add_argument("--validate", action="store_true",
                     help="read-only quality check: section fill state, symlink "
-                         "consistency, PROJECT_MEMORY.md length; exits 1 on any FAIL")
-    ap.add_argument("--max", type=int, default=400,
-                    help="PROJECT_MEMORY.md line limit used by --validate (default 400)")
+                         "consistency, PROJECT_MEMORY.md size gate; exits 1 on any FAIL")
+    ap.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES,
+                    help=f"PROJECT_MEMORY.md byte limit used by --validate (default {DEFAULT_MAX_BYTES})")
     args = ap.parse_args()
 
     root = Path(args.dir).resolve()
@@ -231,7 +323,7 @@ def main():
         print(f"ERROR: not a directory: {root}", file=sys.stderr)
         sys.exit(1)
     if args.validate:
-        sys.exit(1 if cmd_validate(root, args.max) else 0)
+        sys.exit(1 if cmd_validate(root, args.max_bytes) else 0)
     project_name = args.project_name or root.name
     claude = root / "CLAUDE.md"
     agents = root / "AGENTS.md"
@@ -273,6 +365,7 @@ def main():
 
     ensure_partner_symlinks(root, truth, actions)
     ensure_sections(truth, project_name, actions)
+    ensure_convention(truth, actions, args.upgrade_convention)
     ensure_memory(root, project_name, actions)
 
     print(f"source of truth: {truth.name}")

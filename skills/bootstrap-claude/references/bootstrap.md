@@ -17,8 +17,12 @@ overwrites** existing real content — it only appends missing sections and prin
 exactly what it changed. Read that output so you know which file is the source of
 truth and what's still a placeholder.
 
-「项目记忆 (回写约定)」一节的文字归本技能所有，脚本只检查它是否存在。已有项目里该节与
-`assets/CLAUDE.template.md` 不一致时，把模板版本定点替换进真源文件。
+「项目记忆 (回写约定)」一节的文字归本技能所有，以节末 `<!-- bootstrap-claude convention vN -->`
+标记为边界。脚本每次运行都把它和 `assets/CLAUDE.template.md` 比对并按状态处理：缺失就追加；
+文字相同但无标记就补标记；有标记或以模板正文开头的块直接升级，标记之后的项目自定义行保留；
+无标记且已分叉的旧块只报告 `OUTDATED (legacy)`，加 `--upgrade-convention` 才替换并打印旧文，
+被替换掉的自定义行由你补回标记之后；`unmanaged`（只提到 PROJECT_MEMORY 而无该节标题）不改。
+升级模板时改正文并把标记版本号加一。
 
 If it exits with a `CONFLICT` (both CLAUDE.md and AGENTS.md are independent real
 files), don't force it — show the user both and ask which should win, then re-run
@@ -56,7 +60,7 @@ python3 <skill>/scripts/setup_context.py --dir <workspace> --validate
 ```
 
 Read-only. It reports each required section as 已填写 / 占位符 / 空, checks
-CLAUDE.md/AGENTS.md link consistency, and checks PROJECT_MEMORY.md's length.
+CLAUDE.md/AGENTS.md link consistency, and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
 Fix every FAIL before calling the bootstrap done — a surviving placeholder
 reads as "covered" when it isn't. Exit code 1 means at least one FAIL.
 

@@ -39,7 +39,7 @@
       "id": 3,
       "name": "writeback",
       "prompt": "Quick update before I close out: we ended up migrating textkit off poetry onto uv this session, because poetry's lockfile kept conflicting on the team and resolves were painfully slow. The build commands changed too (uv sync / uv run pytest). Can you record this in the project memory so the next session has it, and update the context file's commands?",
-      "expected_output": "PROJECT_MEMORY.md updated: a 失败尝试 entry about poetry's lockfile conflicts, and/or a 已验证的事实 entry that the project now uses uv. Entries are dated with today's date (2026-06-18) in the - [YYYY-MM-DD] format and appended without destroying the existing entries. CLAUDE.md/命令 updated to uv sync / uv run pytest. File stays well under 400 lines.",
+      "expected_output": "PROJECT_MEMORY.md updated: a 失败尝试 entry about poetry's lockfile conflicts, and/or a 已验证的事实 entry that the project now uses uv. Entries are dated with today's date (2026-06-18) in the - [YYYY-MM-DD] format and appended without destroying the existing entries. CLAUDE.md/命令 updated to uv sync / uv run pytest. `memory.py check` still passes (≤24 KB, no line over 300 chars, 上次会话/下次运行 single block).",
       "files": ["evals/files/py-lib"],
       "expectations": [
         "PROJECT_MEMORY.md gained a new entry capturing the poetry→uv migration and the reason (lockfile conflicts / slow resolves)",
@@ -47,7 +47,21 @@
         "The new entry carries today's date 2026-06-18",
         "All pre-existing PROJECT_MEMORY.md entries (slugify Unicode fact, str.translate failure, etc.) are still present",
         "CLAUDE.md (or the source-of-truth context file) 命令 section now references uv (uv sync / uv run pytest) instead of poetry",
-        "PROJECT_MEMORY.md is still under 400 lines"
+        "PROJECT_MEMORY.md still passes `scripts/memory.py check` (under 24 KB, no line over 300 chars, 上次会话 and 下次运行 each hold one block)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "convention-upgrade",
+      "prompt": "This repo was bootstrapped a while ago and I think the Claude setup is stale. Bring it up to the current convention without losing anything we wrote ourselves.",
+      "expected_output": "setup_context.py reports the 回写约定 block as outdated (legacy). After --upgrade-convention the section matches the template (byte gate, single-block 上次会话/下次运行, memory.py check command, end marker), while 技术栈/命令/代码风格/禁止文件/审查规则 keep their existing real content. --validate passes for the convention line.",
+      "files": ["evals/files/py-lib"],
+      "expectations": [
+        "The agent ran scripts/setup_context.py first rather than editing the file by hand",
+        "CLAUDE.md's 「项目记忆 (回写约定)」 section now ends with the '<!-- bootstrap-claude convention v' end marker",
+        "The section mentions `memory.py check` and the 24 KB / 300-character limits, and no longer says 完成任务后回写 only",
+        "The pre-existing 技术栈 (Python 3.11 / poetry / ruff), 命令, 代码风格, 禁止文件, 审查规则 content is unchanged",
+        "`setup_context.py --validate` reports the convention as latest"
       ]
     }
   ]
