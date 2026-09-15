@@ -1,0 +1,5 @@
+interface:
+  display_name: "office-hours"
+  short_description: "一次会话讲透一个概念"
+policy:
+  allow_implicit_invocation: false
