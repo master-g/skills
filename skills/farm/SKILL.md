@@ -69,11 +69,28 @@ worker 的 prompt 永远是同一句:`读 <$PWD/.farm/<task>-brief.md> 并执行
 
 按 mux 选一行执行( `<cli>` `<model>` 来自选定 pair):
 
-| mux   | 派发                                                                                                                                                                                                                                                                |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| herdr | `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag>` → `herdr agent prompt <task> "<prompt>" --wait --timeout 1800000` |
-| tmux  | `tmux new-window -n farm-<task> "cd '$PWD' && <cli> <modelflag-headless> '<prompt>' 2>&1 \| tee .farm/<task>.log"`                                                                                                                                                  |
-| none  | `cd "$PWD" && <cli> <modelflag-headless> '<prompt>' > .farm/<task>.log 2>&1 &`,轮询 log                                                                                                                                                                             |
+| mux   | 派发                                                                                                                   |
+| ----- | ---------------------------------------------------------------------------------------------------------------------- |
+| herdr | 先按下文「herdr pane 复用」拿到 agent 名(复用或新开)→ `herdr agent prompt <agent> "<prompt>" --wait --timeout 1800000` |
+| tmux  | `tmux new-window -n farm-<task> "cd '$PWD' && <cli> <modelflag-headless> '<prompt>' 2>&1 \| tee .farm/<task>.log"`     |
+| none  | `cd "$PWD" && <cli> <modelflag-headless> '<prompt>' > .farm/<task>.log 2>&1 &`,轮询 log                                |
+
+**herdr pane 复用**(一个 farm 会话只维护一个 worker pane):
+
+1. `herdr agent list`,筛 `tab_id == $HERDR_TAB_ID` 且 `agent == <cli>` 且 `cwd == $PWD` 且 `agent_status` 为 `idle`/`done` 的 agent(排除 `pane_id == $HERDR_PANE_ID` 即自己)。
+2. 命中 → 问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <agent> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
+3. 未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
+4. 后续 `agent prompt` 一律用 pane_id 做目标(复用的 pane 名字是旧任务名,不可靠);记住 pane_id,收尾要用。
+
+worker CLI 通用斜杠命令(用 `agent prompt` 发送,等价于用户在 pane 里输入):
+
+| 动作              | pi         | claude     | codex      |
+| ----------------- | ---------- | ---------- | ---------- |
+| 清空上下文/新会话 | `/new`     | `/clear`   | `/new`     |
+| 压缩上下文        | `/compact` | `/compact` | `/compact` |
+| 退出              | `/exit`    | `/exit`    | `/exit`    |
+
+修正轮次上下文太长时,先发 `/compact` 再发修正 brief,不用重开 pane。
 
 modelflag(pane 交互 / 无头):
 
@@ -93,7 +110,7 @@ worker 结束(herdr:`agent prompt` 返回;tmux/none:log 出现报告路径且进
 
 1. 读 `.farm/<task>-report.md`。报告缺失:抓 worker 输出(log,或 `herdr agent read <task> --source recent-unwrapped --lines 120`),判断 worker 是死了还是违约,显式报告给用户。
 2. **独立重跑验收命令**,不信 worker 自述。
-3. 通过 → 向用户汇报:改动摘要(git 仓库用 `git diff --stat`)+ 门禁输出。
+3. 通过 → 向用户汇报:改动摘要(git 仓库用 `git diff --stat`)+ 门禁输出。herdr:汇报时问用户是否关闭 worker pane(`herdr pane close <pane-id>`);用户不回应则保留,但下次 /farm 新开 pane 前必关(见「herdr pane 复用」第 3 步)。
    不过 → 把失败输出写成修正 brief 再派一轮(herdr:对同一 agent 再 `agent prompt`;无头:`pi -p -c` 继续会话)。**最多 3 轮**;仍失败则保留现场,带报告与门禁输出升级给用户。
 
 ## 失败处理
