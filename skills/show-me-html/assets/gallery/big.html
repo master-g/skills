@@ -203,11 +203,11 @@
             <figure class="fig wide" data-chart="B3">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-bigthreads-t"
-                    >Where the data actually goes — now answerable</span
+                  <span class="fig-title" id="fig-threads-t"
+                    >24 个服务，没有一个绕得开没人维护的 legacy-auth</span
                   >
                   <span class="fig-tools" data-md-skip
-                    ><span class="fig-id">B3 · Thread Triptych</span
+                    ><span class="fig-id">B3 · Threads</span
                     ><button
                       type="button"
                       class="fig-replay btn"
@@ -219,28 +219,37 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  source → processor → destination · one thread per data path ·
-                  hover a thread or a label · click to pin
+                  一线 = 一条依赖路径 · 服务 → 内部库 → 基础设施 · 结高 =
+                  经过的路径数 · 主角 = 经过 legacy-auth
+                </p>
+                <p class="fig-hint" data-md-skip>
+                  悬停一条线看这条路径，悬停或 Tab
+                  到节点看整束，点击钉住，点空白或 Esc 释放
                 </p>
                 <svg
-                  id="bigthreads"
-                  viewBox="0 0 1140 640"
+                  id="threads"
+                  viewBox="0 0 800 560"
                   role="img"
-                  aria-labelledby="bigthreads-title bigthreads-desc"
+                  aria-labelledby="threads-title threads-desc"
                 >
-                  <title id="bigthreads-title">
-                    Where the data actually goes — now answerable
+                  <title id="threads-title">
+                    24 个服务经内部库落到基础设施的 148 条依赖路径
                   </title>
-                  <desc id="bigthreads-desc">
-                    source → processor → destination · one thread per data path
+                  <desc id="threads-desc">
+                    24 个服务全部经过 legacy-auth，这 24 条路径里 20 条落到
+                    MySQL 旧库
                   </desc>
                 </svg>
                 <div class="fig-status" data-md-skip>
-                  <span data-text>hover a thread or a label</span
-                  ><span data-pin></span>
+                  <span data-text></span><span data-pin></span>
                 </div>
-                <p class="fig-src">THREAD TRIPTYCH · INTERACTIVE · DATA MAP</p>
+                <p class="fig-src">演示数据 · 内部依赖扫描</p>
               </div>
+              <figcaption>
+                legacy-auth
+                是整张依赖网里唯一一个所有服务都经过的库，而它背后大多是 MySQL
+                旧库。
+              </figcaption>
             </figure>
           </div>
         </section>
@@ -1240,306 +1249,338 @@
           });
         })();
 
-        // ════ B3 · Thread Triptych ════
+        // ════ B3 · Threads ════
         (() => {
-          // 丝线三联：来源 → 处理器 → 目的地，一条数据路径一根丝。可见线下垫 9px 透明孪生线当热区；hover 单线亮整条，hover 标签拉整束，点击钉住，点空白释放。
-          const SRC = [
-            "web-app",
-            "ios-app",
-            "android",
-            "desktop",
-            "cli",
-            "public-api",
-            "webhooks",
-            "forms",
-            "email-in",
-            "chat-widget",
-            "billing-ev",
-            "auth-ev",
-            "search-log",
-            "audit-ev",
-            "crash-rep",
-            "perf-beacon",
-            "cdn-log",
-            "edge-log",
-            "job-ev",
-            "sync-ev",
-            "import",
-            "export-req",
-            "admin-ui",
-            "partner-api",
-            "iot-ping",
-            "backfill",
+          // 丝线三联：一线 = 一条依赖路径（服务 → 内部库 → 基础设施）。每列节点等距排开，节点是一根发丝宽的竖结，
+          // 高 ∝ 经过的路径数；线在结里按相邻一列的顺序排好再收拢，两列之间散开。主角 = 经过 legacy-auth 的一束。
+          // 悬停单线看路径，悬停 / Tab 节点看整束，点击钉住，点空白或 Esc 释放；读数写在状态栏。
+          const { G, jit, tick, label } = showMeChart;
+          const SVC =
+            "web ios android admin checkout cart search reco feed notify mail sms billing invoice report export import partner-api open-api webhook cron etl ml-train audit".split(
+              " "
+            );
+          const INFRA = [
+            "Postgres",
+            "MySQL 旧库",
+            "Redis",
+            "Kafka",
+            "S3",
+            "Elasticsearch",
+            "ClickHouse",
+            "KMS",
+            "SMTP",
+            "推送网关",
           ];
-          const MIDV = [
-            "parse",
-            "validate",
-            "dedupe",
-            "enrich",
-            "geoip",
-            "sessionize",
-            "pii-mask",
-            "score",
-            "sample",
-            "route",
-            "batch",
-            "window",
-            "join",
-            "flatten",
-            "filter",
-            "hash",
-            "encrypt",
-            "compact",
-            "index",
-            "tag",
+          // [库名, 主落点, 次落点]，落点是 INFRA 序号；按主落点分组排列
+          const LIB = [
+            ["config", 0, 2],
+            ["feature-flag", 2, 0],
+            ["id-gen", 0, 2],
+            ["orm", 0, 1],
+            ["migrate", 0, 1],
+            ["query-builder", 0, 6],
+            ["money", 0, 1],
+            ["tax", 0, 1],
+            ["http-client", 2, 3],
+            ["retry", 2, 3],
+            ["rate-limit", 2, 2],
+            ["cache", 2, 0],
+            ["redis-wrap", 2, 2],
+            ["auth-sdk", 0, 7],
+            ["legacy-auth", 1, 2],
+            ["session", 2, 1],
+            ["rbac", 0, 1],
+            ["crypto", 7, 0],
+            ["kms-client", 7, 7],
+            ["queue", 3, 2],
+            ["event-bus", 3, 3],
+            ["scheduler", 3, 0],
+            ["logger", 3, 4],
+            ["metrics", 6, 3],
+            ["tracing", 6, 3],
+            ["search-sdk", 5, 0],
+            ["vector", 5, 4],
+            ["geo", 5, 0],
+            ["i18n", 4, 0],
+            ["pdf", 4, 4],
+            ["csv", 4, 6],
+            ["image", 4, 4],
+            ["s3-client", 4, 4],
+            ["mailer", 8, 3],
+            ["sms-gw", 9, 3],
+            ["push", 9, 3],
           ];
-          const MID = MIDV.flatMap((v) => [v + "-a", v + "-b"]);
-          const DST = [
-            "WAREHOUSE",
-            "ANALYTICS",
-            "CRM",
-            "ADS",
-            "BILLING",
-            "SEARCH",
-            "ML PIPE",
-            "ARCHIVE",
-            "AUDIT",
-            "EXPORTS",
-          ];
-          const routes = [];
-          SRC.forEach((s, i) => {
-            const n = 2 + Math.floor(rnd(i + 1, 5) * 2);
-            for (let k = 0; k < n; k++) {
-              routes.push({
-                s: i,
-                m: Math.floor(rnd(i * 3 + k + 2, 13) * MID.length),
-                d: Math.min(9, Math.floor(rnd(i * 5 + k + 4, 19) ** 2 * 11)),
-                v: Math.round(1 + rnd(i * 7 + k + 6, 29) ** 2 * 30),
-              });
+          const LEG = LIB.findIndex((l) => l[0] === "legacy-auth");
+          // 路径 = [服务, 库, 基础设施]。每个服务 4–8 条：27% 走 legacy-auth，否则落在按序号比例映射的就近库（±8），
+          // 同一服务不重走同一个库；库到基础设施 72% 走主落点。种子选过：每个服务都经过 legacy-auth、没有空节点
+          const paths = [];
+          SVC.forEach((_, si) => {
+            const n = 4 + Math.floor(rnd(si + 1, 60) * 5),
+              near = Math.round((si / (SVC.length - 1)) * (LIB.length - 1)),
+              used = new Set();
+            for (let t = 0; used.size < n && t < 40; t++) {
+              const li =
+                rnd(si + 2, t + 61) < 0.27
+                  ? LEG
+                  : Math.max(
+                      0,
+                      Math.min(
+                        LIB.length - 1,
+                        near + Math.round((rnd(si + 3, t + 62) - 0.5) * 16)
+                      )
+                    );
+              if (used.has(li)) continue;
+              used.add(li);
+              paths.push([si, li, LIB[li][rnd(si + 4, t + 63) < 0.72 ? 1 : 2]]);
             }
           });
-          reveal($("bigthreads"), (svg) => {
-            const X1 = 180,
-              X2 = 560,
-              X3 = 930,
-              sy = (i) => 36 + i * 22.6,
-              my = (i) => 30 + i * 14.6,
-              dy = (i) => 60 + i * 57;
-            const path = (r) =>
-              `M${X1 + 6} ${sy(r.s)} C${(X1 + X2) / 2} ${sy(r.s)} ${(X1 + X2) / 2} ${my(r.m)} ${X2} ${my(r.m)} C${(X2 + X3) / 2} ${my(r.m)} ${(X2 + X3) / 2} ${dy(r.d)} ${X3 - 6} ${dy(r.d)}`;
-            const status = svg.closest("figure").querySelector(".fig-status"),
-              stext = status.querySelector("[data-text]"),
-              spin = status.querySelector("[data-pin]");
-            const fmtv = (v) => v + "k ev/day";
-            let pinned = null;
-            [
-              [X1, "① SOURCE"],
-              [X2, "② PROCESSOR"],
-              [X3, "③ DESTINATION"],
-            ].forEach(([x, t]) =>
-              txt(
-                svg,
+          const COLS = [SVC, LIB.map((l) => l[0]), INFRA],
+            HEADS = ["服务", "内部库", "基础设施"];
+          // via[列][节点] = 经过该节点的路径下标
+          const via = COLS.map((names) => names.map(() => []));
+          paths.forEach((p, i) => p.forEach((j, c) => via[c][j].push(i)));
+          const legPaths = via[1][LEG],
+            legSvc = new Set(legPaths.map((i) => paths[i][0])).size,
+            legMysql = legPaths.filter((i) => paths[i][2] === 1).length;
+          const halo =
+            "paint-order:stroke;stroke:var(--color-card);stroke-width:2px;stroke-linejoin:round";
+          // Esc 释放钉住；监听只挂一次，reveal 重画时换掉 release
+          let release = () => {};
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") release();
+          });
+          reveal($("threads"), (s) => {
+            const X = [130, 400, 670],
+              Y0 = 40,
+              Y1 = 540,
+              STEP = 0.3; // 每条路径在结里占的高度
+            // 每列等距排开，首尾各留半步；不按人数堆叠
+            const yAt = (c, j) => Y0 + ((j + 0.5) * (Y1 - Y0)) / COLS[c].length;
+            // 结内槽位：[左端, 中列入, 中列出, 右端]。线按相邻一列的顺序排，交叉少
+            const slot = paths.map(() => [0, 0, 0, 0]);
+            const place = (c, key, at) =>
+              via[c].forEach((ids, j) => {
+                const top = yAt(c, j) - (ids.length * STEP) / 2;
+                [...ids]
+                  .sort((a, b) => key(a) - key(b))
+                  .forEach((i, r) => (slot[i][at] = top + (r + 0.5) * STEP));
+              });
+            place(0, (i) => paths[i][1] * 10 + paths[i][2], 0);
+            place(1, (i) => paths[i][0], 1);
+            place(1, (i) => paths[i][2] * 100 + paths[i][0], 2);
+            place(2, (i) => paths[i][1] * 100 + paths[i][0], 3);
+            // 控制点水平偏移 = 半个列距，±28% 抖动让每条弯得略有不同；端点落在结上，不抖
+            const half = (X[1] - X[0]) / 2,
+              bend = (i, k) => half * (1 + jit(i, k, G.jitter.bend * 2)),
+              f = (v) => v.toFixed(2);
+            const ds = paths.map((p, i) => {
+              const [a, b, c, e] = slot[i],
+                h1 = bend(i, 1),
+                h2 = bend(i, 2);
+              return (
+                `M${X[0]} ${f(a)}C${f(X[0] + h1)} ${f(a)} ${f(X[1] - h1)} ${f(b)} ${X[1]} ${f(b)}` +
+                `L${X[1]} ${f(c)}C${f(X[1] + h2)} ${f(c)} ${f(X[2] - h2)} ${f(e)} ${X[2]} ${f(e)}`
+              );
+            });
+            // 线色放在分组上：路径自己不带 stroke，.thread.hot 的主角色才盖得上
+            const layer = (stroke, w) =>
+              el(s, "g", {
+                fill: "none",
+                stroke,
+                "stroke-width": w,
+                "pointer-events": "none",
+              });
+            const gMass = layer(G.ink.mass, G.line.thread),
+              gQuiet = layer(G.ink.quiet, G.line.thread),
+              gHero = layer(HERO, G.line.heroThread);
+            // 热区：不画出来，只接指针
+            const gHit = el(s, "g", {
+              fill: "none",
+              stroke: "none",
+              "stroke-width": 8,
+              "pointer-events": "stroke",
+            });
+            const threads = paths.map((p, i) =>
+              el(
+                p[1] === LEG
+                  ? gHero
+                  : rnd(i + 5, 71) < G.jitter.accent
+                    ? gQuiet
+                    : gMass,
+                "path",
                 {
-                  x,
-                  y: 14,
-                  "font-size": 9,
-                  "font-weight": 600,
-                  fill: INK,
-                  "letter-spacing": ".14em",
-                  "text-anchor": "middle",
-                },
-                t
+                  d: ds[i],
+                  pathLength: 1,
+                  class: "draw thread",
+                  style: dl(0.1 + i * 0.004),
+                }
               )
             );
-            const gT = el(svg, "g", {});
-            routes.forEach((r, ri) => {
-              r.el = el(gT, "path", {
-                d: path(r),
-                fill: "none",
-                stroke: INK,
-                "stroke-width": Math.max(0.6, r.v * 0.14),
-                class: "thread",
-                opacity: 0.06 + Math.min(0.2, r.v * 0.012),
-                "stroke-linecap": "round",
-              });
-              r.hit = el(gT, "path", {
-                d: path(r),
-                fill: "none",
-                stroke: "#000",
-                "stroke-opacity": 0,
-                "stroke-width": 9,
-                class: "hit",
-              });
-              r.hit.dataset.route = ri;
-            });
-            const mkNode = (x, y, label, anchor, meta, size, fill) => {
-              const g = el(svg, "g", { class: "nodelab" });
-              g.dataset.kind = meta.kind;
-              g.dataset.idx = meta.idx;
-              el(g, "rect", {
-                x: x - 3,
-                y: y - 1.6,
-                width: 6,
-                height: 3.2,
-                fill: INK,
-                opacity: 0.85,
-              });
-              txt(
-                g,
-                {
-                  x: anchor === "end" ? x - 9 : x + 9,
-                  y: y + 2.6,
-                  "font-size": size,
-                  "font-weight": 600,
-                  fill,
-                  "text-anchor": anchor,
-                },
-                label
-              );
-              el(g, "rect", {
-                x: anchor === "end" ? x - 92 : x - 6,
-                y: y - 6.5,
-                width: 98,
-                height: 13,
-                fill: "#000",
-                "fill-opacity": 0,
-                class: "hit",
-              });
-              return g;
-            };
-            SRC.forEach((s, i) =>
-              mkNode(X1, sy(i), s, "end", { kind: "s", idx: i }, 7.5, I60)
+            const hits = ds.map((d) => el(gHit, "path", { d, class: "hit" }));
+            const nodes = COLS.map((names, c) =>
+              names.map((name, j) => {
+                const x = X[c],
+                  y = yAt(c, j),
+                  n = via[c][j].length,
+                  h = Math.max(n * STEP, G.line.hero),
+                  hero = c === 1 && j === LEG,
+                  side = c === 0 ? -1 : 1;
+                const node = el(s, "g", { class: "nodelab", tabindex: 0 });
+                // 入场淡入放在内层：动画的 opacity 会盖过聚焦态的淡出
+                const g = el(node, "g", {
+                  class: "fade",
+                  style: dl(0.3 + c * 0.1),
+                });
+                el(g, "line", {
+                  x1: x,
+                  x2: x,
+                  y1: y - h / 2,
+                  y2: y + h / 2,
+                  stroke: G.ink.strong,
+                  "stroke-width": G.line.hero,
+                });
+                const at = {
+                  x: x + side * 5,
+                  "text-anchor": side < 0 ? "end" : "start",
+                };
+                if (names.length > 12) {
+                  // 单行「名字 数量」，下垫卡片色小块，穿过的线不会像连字符
+                  const bg = el(g, "rect", {
+                    rx: 1.5,
+                    fill: "var(--color-card)",
+                  });
+                  const t = txt(
+                    g,
+                    tick({
+                      ...at,
+                      y,
+                      "dominant-baseline": "central",
+                      fill: hero ? HERO : G.ink.quiet,
+                      style: halo,
+                    }),
+                    name
+                  );
+                  el(t, "tspan", {
+                    dx: 3,
+                    fill: hero ? HERO : G.ink.mass,
+                  }).textContent = n;
+                  const b = t.getBBox();
+                  bg.setAttribute("x", b.x - 1.5);
+                  bg.setAttribute("y", b.y - 1);
+                  bg.setAttribute("width", b.width + 3);
+                  bg.setAttribute("height", b.height + 2);
+                } else {
+                  txt(g, label({ ...at, y: y + 1, style: halo }), name);
+                  txt(g, tick({ ...at, y: y + 9, style: halo }), n);
+                }
+                return node;
+              })
             );
-            MID.forEach((m, i) =>
-              mkNode(X2, my(i), m, "start", { kind: "m", idx: i }, 5.4, I45)
-            );
-            DST.forEach((d, i) => {
-              const g = el(svg, "g", { class: "nodelab" });
-              g.dataset.kind = "d";
-              g.dataset.idx = i;
-              el(g, "circle", { cx: X3, cy: dy(i), r: 3.4, fill: INK });
+            COLS.forEach((names, c) =>
               txt(
-                g,
-                {
-                  x: X3 + 12,
-                  y: dy(i) + 3,
-                  "font-size": 8.5,
-                  "font-weight": 600,
-                  fill: I60,
-                  "letter-spacing": ".08em",
-                },
-                d
+                s,
+                tick({
+                  x: X[c],
+                  y: 16,
+                  "text-anchor": "middle",
+                  "letter-spacing": G.type.track * 4,
+                }),
+                `${HEADS[c]} · ${names.length}`
+              )
+            );
+
+            // ── 交互：cur = 钉住优先，其次悬停；["p", 路径] 或 ["n", 列, 节点]
+            const bar = s.closest("figure").querySelector(".fig-status"),
+              sText = bar.querySelector("[data-text]"),
+              sPin = bar.querySelector("[data-pin]");
+            // 状态栏用 DOM 构造：数字加粗，其余是文本
+            const put = (...parts) =>
+              sText.replaceChildren(
+                ...parts.map((v) =>
+                  typeof v === "number"
+                    ? Object.assign(document.createElement("b"), {
+                        textContent: v,
+                      })
+                    : v
+                )
               );
-              el(g, "rect", {
-                x: X3 - 8,
-                y: dy(i) - 10,
-                width: 120,
-                height: 20,
-                fill: "#000",
-                "fill-opacity": 0,
-                class: "hit",
-              });
-            });
-            const nodeLabs = [...svg.querySelectorAll(".nodelab")];
-            const clear = () => {
-              svg.classList.remove("focused");
-              routes.forEach((r) => r.el.classList.remove("hot"));
-              nodeLabs.forEach((n) => n.classList.remove("hot"));
-              stext.textContent = "hover a thread or a label";
-              spin.textContent = "";
+            // 某列计数前三名：「MySQL 旧库 20、Redis 3、Postgres 1」
+            const top3 = (ids, c) => {
+              const m = new Map();
+              ids.forEach((i) =>
+                m.set(paths[i][c], (m.get(paths[i][c]) || 0) + 1)
+              );
+              return [...m]
+                .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+                .slice(0, 3)
+                .map(([j, k]) => `${COLS[c][j]} ${k}`)
+                .join("、");
             };
-            const focusRoutes = (rs, label) => {
-              svg.classList.add("focused");
-              routes.forEach((r) =>
-                r.el.classList.toggle("hot", rs.includes(r))
+            let hov = null,
+              pin = null;
+            const show = () => {
+              const cur = pin || hov;
+              s.classList.toggle("focused", !!cur);
+              sPin.textContent = pin ? "已钉住 · 点空白或 Esc 释放" : "";
+              const ids = !cur
+                ? []
+                : cur[0] === "p"
+                  ? [cur[1]]
+                  : via[cur[1]][cur[2]];
+              const lit = COLS.map(() => new Set());
+              ids.forEach((i) => paths[i].forEach((j, c) => lit[c].add(j)));
+              threads.forEach((t, i) =>
+                t.classList.toggle("hot", ids.includes(i))
               );
-              nodeLabs.forEach((n) => {
-                const k = n.dataset.kind,
-                  ix = +n.dataset.idx;
-                n.classList.toggle(
-                  "hot",
-                  rs.some(
-                    (r) =>
-                      (k === "s" && r.s === ix) ||
-                      (k === "m" && r.m === ix) ||
-                      (k === "d" && r.d === ix)
-                  )
+              nodes.forEach((col, c) =>
+                col.forEach((g, j) => g.classList.toggle("hot", lit[c].has(j)))
+              );
+              if (!cur)
+                put(
+                  legSvc,
+                  " 个服务全部经过 legacy-auth · 其中 ",
+                  legMysql,
+                  ` 条路径最后落到 MySQL 旧库 · 共 ${paths.length} 条路径`
                 );
+              else if (cur[0] === "p")
+                put(paths[cur[1]].map((j, c) => COLS[c][j]).join(" → "));
+              else
+                put(
+                  `${COLS[cur[1]][cur[2]]} `,
+                  ids.length,
+                  ` 条路径 · ${cur[1] === 2 ? "经由" : "落到"}：${top3(ids, cur[1] === 2 ? 1 : 2)}`
+                );
+            };
+            const bind = (node, key) => {
+              node.addEventListener("mouseenter", () => ((hov = key), show()));
+              node.addEventListener("mouseleave", () => ((hov = null), show()));
+              node.addEventListener("click", (e) => {
+                e.stopPropagation();
+                pin = key;
+                show();
               });
-              setStatus(label);
             };
-            // 状态栏用 DOM 构造：[文本, 是否加粗] 片段，不走 innerHTML
-            const setStatus = (parts) => {
-              stext.replaceChildren(
-                ...parts.map(([t, b]) => {
-                  const n = document.createElement(b ? "b" : "span");
-                  n.textContent = t;
-                  return n;
-                })
-              );
+            hits.forEach((p, i) => bind(p, ["p", i]));
+            nodes.forEach((col, c) =>
+              col.forEach((g, j) => {
+                const key = ["n", c, j];
+                bind(g, key);
+                g.addEventListener("focus", () => ((hov = key), show()));
+                g.addEventListener("blur", () => ((hov = null), show()));
+                g.addEventListener("keydown", (e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  pin = key;
+                  show();
+                });
+              })
+            );
+            release = () => {
+              pin = null;
+              show();
             };
-            const routeLabel = (r) => [
-              [SRC[r.s], 1],
-              [" → " + MID[r.m] + " → ", 0],
-              [DST[r.d], 1],
-              [" · " + fmtv(r.v), 0],
-            ];
-            const nodeSel = (kind, idx) => {
-              const rs = routes.filter(
-                (r) =>
-                  (kind === "s" && r.s === idx) ||
-                  (kind === "m" && r.m === idx) ||
-                  (kind === "d" && r.d === idx)
-              );
-              const total = rs.reduce((a, r) => a + r.v, 0);
-              const name =
-                kind === "s" ? SRC[idx] : kind === "m" ? MID[idx] : DST[idx];
-              return [
-                rs,
-                [
-                  [name, 1],
-                  [
-                    ` · ${rs.length} path${rs.length > 1 ? "s" : ""} · ${fmtv(total)} total`,
-                    0,
-                  ],
-                ],
-              ];
-            };
-            const apply = (t) => {
-              const hit = t.closest?.(".hit");
-              if (!hit) return null;
-              const rg = hit.dataset.route,
-                ng = hit.closest(".nodelab");
-              if (rg != null) {
-                const r = routes[+rg];
-                return () => focusRoutes([r], routeLabel(r));
-              }
-              if (ng) {
-                const [rs, lab] = nodeSel(ng.dataset.kind, +ng.dataset.idx);
-                return () => focusRoutes(rs, lab);
-              }
-              return null;
-            };
-            svg.onmousemove = (e) => {
-              if (pinned) return;
-              const f = apply(e.target);
-              f ? f() : clear();
-            };
-            svg.onmouseleave = () => {
-              if (!pinned) clear();
-            };
-            svg.onclick = (e) => {
-              const f = apply(e.target);
-              if (f) {
-                pinned = f;
-                f();
-                spin.textContent = "PINNED · CLICK EMPTY SPACE TO RELEASE";
-              } else {
-                pinned = null;
-                clear();
-              }
-            };
-            clear();
+            s.onclick = release; // 点空白释放；重画时覆盖，不叠监听
+            show();
           });
         })();
       })();
