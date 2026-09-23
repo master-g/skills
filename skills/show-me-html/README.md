@@ -19,7 +19,7 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 用法
 
-**只能手动调用** —— 打 `/show-me-html`，后面跟想看到什么：
+**点名调用** —— 打 `/show-me-html`，后面跟想看到什么（Claude Code 也可能在你明确要一个页面或可视化交付时自动调用）：
 
 ```
 /show-me-html 把这个分支的改动做成一个评审页
@@ -34,24 +34,23 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 目录
 
-| 路径                          | 作用                                                    |
-| ----------------------------- | ------------------------------------------------------- |
-| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付         |
-| `assets/shell.html`           | 页面骨架（工具条、主题切换、Markdown 导出、行为脚本）   |
-| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何和打印样式          |
-| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                      |
-| `references/components.md`    | 稳定组件 markup、设计 token、分类色                     |
-| `references/layouts.md`       | 20 条版式配方及五项视觉契约                             |
-| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                      |
-| `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录            |
-| `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）              |
-| `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                     |
-| `scripts/build.py`            | 内联资产 + 自检                                         |
-| `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估           |
-| `tests/`                      | 构建契约、组件状态和 20 配方 fixture                    |
-| `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                            |
-| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml |
-| `assets/show-me.css`          | 也含数据图外壳、入场动画与聚焦态                        |
+| 路径                          | 作用                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付                          |
+| `assets/shell.html`           | 页面骨架（工具条、主题切换、Markdown 导出、行为脚本）                    |
+| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何、打印样式，以及数据图外壳与入场动画 |
+| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                                       |
+| `references/components.md`    | 稳定组件 markup、设计 token、分类色                                      |
+| `references/layouts.md`       | 21 条版式配方及五项视觉契约                                              |
+| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                                       |
+| `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录                             |
+| `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）                               |
+| `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                                      |
+| `scripts/build.py`            | 内联资产 + 自检                                                          |
+| `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                            |
+| `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                     |
+| `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                             |
+| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                  |
 
 ## 视觉系统
 
@@ -59,9 +58,7 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 与 effective-html 的关系
 
-两者都输出单文件 HTML，但视觉系统和交互契约独立：effective-html 面向通用可视化交付；本 skill 的页面固定带三态主题切换和 Markdown 导出，并用 21 个任务配方服务团队内转发。
-
-两者都装时的分工：effective-html 自动触发，是默认；要主题切换或 Markdown 导出就打 `/show-me-html` 点名。
+effective-html 已弃用并由本 skill 取代，历史内容存于仓库的 `skills/deprecated/effective-html/ARCHIVE.md`。
 
 ## 第三方组件
 
