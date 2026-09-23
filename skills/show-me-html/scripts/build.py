@@ -765,7 +765,23 @@ PROBE = """
     if (s.scrollHeight > s.clientHeight + 1 || s.scrollWidth > s.clientWidth + 1)
       over.push('定尺卡溢出：内容 ' + s.scrollHeight + 'px > 卡高 ' + s.clientHeight + 'px，换更少的内容或另一张卡，不缩字号');
   });
-  document.title = 'PROBE|' + de.scrollWidth + '|' + de.clientWidth + '|' + over.slice(0, 4).join('  ');
+  var sw = de.scrollWidth, cw = de.clientWidth;
+  // 字号下限（charts.md「文字」，viewBox 单位）：图只在滚入视野时才画，先强制全画，等入场定时器跑完再量
+  document.querySelectorAll('figure[data-chart] svg').forEach(function(s){ if (s._replay) s._replay(); });
+  setTimeout(function(){
+    var small = [];
+    document.querySelectorAll('figure[data-chart]').forEach(function(f){
+      var wide = f.classList.contains('wide'), floor = wide ? 5.5 : 6.5, min = Infinity;
+      f.querySelectorAll('svg text, svg tspan').forEach(function(t){
+        if (t.textContent.trim()) min = Math.min(min, parseFloat(getComputedStyle(t).fontSize));
+      });
+      if (min < floor) {
+        var svg = f.querySelector('svg[id]');
+        small.push(f.dataset.chart + (svg ? '（#' + svg.id + '）' : '') + ' 最小 ' + min + ' < ' + (wide ? '通栏' : '半宽') + '下限 ' + floor);
+      }
+    });
+    document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；');
+  }, 1500);
 });</script>
 """
 
@@ -850,7 +866,7 @@ def find_chrome():
 # 无头 Chrome 把窗口宽度钳在 500px，比这更窄的视口测不到 —— 390px 只能人眼验。
 def render_check(page, widths=(500, 1280)):
     """返回 (issues, measured, ran)。ran=False 表示没有浏览器，这道关没跑。"""
-    import subprocess, tempfile
+    import html as htmllib, subprocess, tempfile
     chrome = find_chrome()
     if not chrome:
         return [], [], False
@@ -869,7 +885,7 @@ def render_check(page, widths=(500, 1280)):
                     capture_output=True, text=True, timeout=90).stdout
             except Exception as e:
                 return [f"渲染检查跑不起来：{e}"], [], False
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
@@ -885,6 +901,9 @@ def render_check(page, widths=(500, 1280)):
                               + (f"；越界元素：{who}" if who else ""))
             elif "定尺卡溢出" in who and w == max(widths):
                 issues.append(who)
+            small = htmllib.unescape(m.group(4).strip())  # --dump-dom 把 <title> 里的 < 转义了
+            if small and w == max(widths):  # viewBox 单位与视口宽度无关，报一次
+                issues.append(f"图内字号低于下限：{small}。装不下改 <title> hover 出，不缩字号硬塞（charts.md「文字」）")
     return issues, measured, True
 
 

@@ -84,7 +84,7 @@ window.showMeChart = (function () {
       heroThread: 0.8,
     },
     dot: { tick: 0.9, mark: 2.1, head: 3.1 },
-    type: { tick: 6.2, label: 7.6, value: 7.6, track: 0.5 },
+    type: { tick: 6.5, label: 7.6, value: 7.6, track: 0.5 },
     ink: {
       strong: "var(--ink)",
       data: "var(--ink-70)",

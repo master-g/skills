@@ -144,7 +144,7 @@ gallery 里 40 个块是上游代码的衍生（PolyForm Noncommercial 1.0.0）�
 **文字**
 
 - 图内数值、轴标签、单位行、来源行走等宽字体（`.fig svg text` 默认）；类目名可加 `class="name"` 用正文字体。数值字重 600，不用 700/800。
-- SVG 最小字号：半宽卡 6.5px、通栏 5.5px。装不下改 `<title>` hover 出，不缩字号硬塞。
+- SVG 最小字号（viewBox 单位）：半宽卡 6.5、通栏 5.5，`tick()` 默认 6.5 两种卡都达标。装不下改 `<title>` hover 出，不缩字号硬塞；有 Chrome 时 `build.py` 的渲染检查会逐张核对。
 - 标题写结论不写图型名：「免费档撑起一半月收入」可以，「柱状图」不行。
 - 单位行把图例说清（「一档 = $1k · 空心 = 周末」，用了主角再加「主角 = 峰值」），读者不看代码只看这一行。
 
@@ -165,7 +165,7 @@ gallery 里 40 个块是上游代码的衍生（PolyForm Noncommercial 1.0.0）�
 | `G.line.heroData` / `hero`       | 0.95 / 1.2                     | 主角系列整体 / 主角本身或每列顶端                                                   |
 | `G.line.thread` / `heroThread`   | 0.45 / 0.8                     | 大量叠加的线（丝线）及其主角束，配 `G.ink.mass`                                     |
 | `G.dot.tick` / `mark` / `head`   | 0.9 / 2.1 / 3.1                | 点标 / 数据点 / 主角或强调点；主角系列的点整体放大一档                              |
-| `tick()` / `value()` / `label()` | 6.2 / 7.6 / 7.6                | 刻度与单位（等宽、加字距、quiet 墨）/ 数值（600、主角时 hero 色）/ 类目名（正文字） |
+| `tick()` / `value()` / `label()` | 6.5 / 7.6 / 7.6                | 刻度与单位（等宽、加字距、quiet 墨）/ 数值（600、主角时 hero 色）/ 类目名（正文字） |
 | `G.jitter.len` / `size` / `bend` | ±8% / ±14% / ±14%              | 线段长度、点径、曲线控制点的相对抖动，用 `jit(i, k, amp)` 取值                      |
 | `G.jitter.pos` / `accent`        | ±0.4 / 20%                     | 点与线的绝对位移（viewBox 单位）/ 改用 `G.ink.strong` 的比例                        |
 | `G.jitter.cluster`               | spread ±0.28 / size 0.72–1.32× | 成簇的点：位移按点距的比例；点径取 `lo + (hi - lo) * rnd ** 1.8`，多数偏小、少数大  |

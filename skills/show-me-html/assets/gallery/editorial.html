@@ -1976,7 +1976,8 @@
                 class: "pop",
                 style: `animation-delay:${i * 0.018}s`,
               });
-              // tiny rim code, flipped on the left half so it stays readable
+              // tiny rim code, flipped on the left half so it stays readable；
+              // 只写序号：6.5 的「R-01」在径向上太长，会撞上主题标签
               const flip = deg > 90 && deg < 270,
                 [lx, ly] = pol(CX, CY, R + 7, deg);
               txt(
@@ -1984,7 +1985,7 @@
                 {
                   x: lx,
                   y: ly,
-                  "font-size": 5.5,
+                  "font-size": 6.5,
                   fill: MUTED,
                   "text-anchor": flip ? "end" : "start",
                   "dominant-baseline": "middle",
@@ -1992,7 +1993,7 @@
                   class: "fade",
                   style: `animation-delay:${0.2 + i * 0.01}s`,
                 },
-                "R-" + String(i + 1).padStart(2, "0")
+                String(i + 1).padStart(2, "0")
               );
             }
             THEME.forEach(([name, , deg], h) => {
@@ -2007,6 +2008,7 @@
               });
               tip(hub, `${name} — ${counts[h]} requests`);
               // theme label parked outside the rim, past the code ring
+              // 左侧标签向外对齐，居中会压住编号；右侧的落在两枚编号之间，居中正好
               const [tx, ty] = pol(CX, CY, R + 34, deg);
               txt(
                 s,
@@ -2016,7 +2018,7 @@
                   "font-size": 8,
                   "font-weight": 600,
                   fill: INK,
-                  "text-anchor": "middle",
+                  "text-anchor": Math.cos(deg * D2R) < -0.5 ? "end" : "middle",
                   "dominant-baseline": "middle",
                   "letter-spacing": ".08em",
                   style: `animation-delay:${0.6 + h * 0.08}s`,
@@ -3016,12 +3018,28 @@
               const yi = repoY(i),
                 j = owner(i),
                 yj = teamY(j);
+              // 两列交错：每列行距翻倍，6.5 的字才放得下；远列用点线引回自己的刻度
+              const far = i % 2 === 1,
+                nx = far ? 58 : 112;
+              if (far)
+                el(s, "line", {
+                  x1: nx + 3,
+                  x2: 115,
+                  y1: yi,
+                  y2: yi,
+                  stroke: I22,
+                  "stroke-width": 0.5,
+                  "stroke-dasharray": "1 2",
+                  class: "fade",
+                  style: `animation-delay:${i * 0.012}s`,
+                });
               txt(
                 s,
                 {
-                  x: 112,
-                  y: yi + 2,
-                  "font-size": 5,
+                  x: nx,
+                  y: yi,
+                  "font-size": 6.5,
+                  "dominant-baseline": "central",
                   fill: I45,
                   "text-anchor": "end",
                   class: "fade",
@@ -3152,7 +3170,7 @@
                   {
                     x: 26,
                     y: (y + sy(k + 1)) / 2 + 13,
-                    "font-size": 6,
+                    "font-size": 6.5,
                     "font-weight": 600,
                     fill: I22,
                     "letter-spacing": ".08em",
