@@ -920,6 +920,71 @@ def shoot_sheets(page, theme="light", scale=2):
             outs.append(out)
     return outs, None
 
+# ── 整页快照（--snap）──────────────────────────────────────────────
+# 眼睛关的替身：agent 没有交互浏览器，但能读图。light/dark × 500/1280 各一张整页 PNG，
+# 外加页面自带导出器的 Markdown。探针只用于量高度和取 Markdown；截图用不带探针的另一份文件，
+# 否则探针插入的节点会出现在图里。
+SNAP_PROBE = """
+<script>addEventListener('load', function(){ setTimeout(function(){
+  var p = document.createElement('pre'); p.id = '__snap';
+  p.textContent = JSON.stringify({h: document.documentElement.scrollHeight,
+    md: window.showMeMarkdown ? window.showMeMarkdown() : null});
+  document.body.appendChild(p);
+}, 0); });</script>
+"""
+SNAP_MAX_H = 16000  # Chrome 截图的高度上限附近；超长页截断并在输出里说明
+
+
+def snap_page(page, out_dir, widths=(500, 1280)):
+    """返回 (输出文件列表, 提示信息列表, 错误信息或 None)。"""
+    import html as htmllib, json, subprocess, tempfile
+    chrome = find_chrome()
+    if not chrome:
+        return [], [], "找不到 Chrome/Chromium"
+    src = page.read_text(encoding="utf-8")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    outs, notes = [], []
+    base = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=4000"]
+    with tempfile.TemporaryDirectory() as td:
+        for theme in ("light", "dark"):
+            themed = src.replace(
+                "<head>",
+                f'<head><script>try{{localStorage.setItem("show-me-theme","{theme}")}}catch(e){{}}</script>', 1)
+            shot_src = Path(td) / f"{theme}.html"
+            shot_src.write_text(themed, encoding="utf-8")
+            probe = Path(td) / f"{theme}-probe.html"
+            probe.write_text(themed + SNAP_PROBE, encoding="utf-8")
+            for w in widths:
+                try:
+                    dom = subprocess.run(base + [f"--window-size={w},900", "--dump-dom", probe.as_uri()],
+                                         capture_output=True, text=True, timeout=90).stdout
+                except Exception as e:
+                    return outs, notes, f"快照探针失败：{e}"
+                m = re.search(r'<pre id="__snap">(.*?)</pre>', dom, re.S)
+                if not m:
+                    return outs, notes, f"{theme} {w}px：探针没返回结果（页面 JS 可能报错）"
+                data = json.loads(htmllib.unescape(m.group(1)))
+                h = int(data["h"])
+                if h > SNAP_MAX_H:
+                    notes.append(f"{theme}-{w}：页面高 {h}px，截图截断到 {SNAP_MAX_H}px")
+                    h = SNAP_MAX_H
+                out = out_dir / f"{theme}-{w}.png"
+                try:
+                    subprocess.run(base + ["--force-prefers-reduced-motion", f"--window-size={w},{h}",
+                                           f"--screenshot={out}", shot_src.as_uri()],
+                                   capture_output=True, text=True, timeout=90, check=True)
+                except Exception as e:
+                    return outs, notes, f"截图失败：{e}"
+                outs.append(out)
+                if theme == "light" and w == max(widths):
+                    md = out_dir / "export.md"
+                    md.write_text(data["md"] or "", encoding="utf-8")
+                    outs.append(md)
+                    if data["md"] is None:
+                        notes.append("页面没有 window.showMeMarkdown：导出器缺失，export.md 为空")
+    return outs, notes, None
+
+
 CHROME_PATHS = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -1004,6 +1069,14 @@ def main():
         choices=("light", "dark", "both"),
         help="share-card 配方：自检通过后把每张 .sheet 截成 PNG（两倍像素，放在页面旁边）。默认浅色，可选 dark / both",
     )
+    ap.add_argument(
+        "--snap",
+        nargs="?",
+        const="",
+        metavar="DIR",
+        help="自检通过后在 light/dark × 500/1280px 下各截一张整页 PNG，并导出 Markdown 到 export.md；"
+             "不给 DIR 时写到新建的临时目录。供眼睛关读图用",
+    )
     args = ap.parse_args()
 
     if not args.page.exists():
@@ -1047,6 +1120,17 @@ def main():
     elif not args.no_render:
         print("渲染检查未运行：找不到 Chrome/Chromium。横向溢出没有被验证过，"
               "自己在浏览器里拉一遍窄屏，不要报「已验证」。")
+
+    if args.snap is not None:
+        import tempfile
+        out_dir = Path(args.snap) if args.snap else Path(tempfile.mkdtemp(prefix=f"show-me-snap-{args.page.stem}-"))
+        outs, notes, err = snap_page(args.page, out_dir)
+        for o in outs:
+            print(f"已快照  {o}")
+        for n in notes:
+            print(f"注意    {n}")
+        if err:
+            print(f"--snap 未完成：{err}")
 
     if args.shot:
         for theme in (("light", "dark") if args.shot == "both" else (args.shot,)):

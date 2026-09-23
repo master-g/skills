@@ -82,6 +82,9 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 
 **眼睛关** —— 脚本只测几何，读得通不通它不知道：
 
+没有交互浏览器时，先跑 `python3 <skill-path>/scripts/build.py 页面.html --snap`，逐张读取打印出的 4 张 PNG（light/dark × 500/1280）
+和 `export.md`，用它们完成下列与主题、窄屏、版式、Markdown 相关的检查；交互（拖拽、键盘、折叠）与 390px 仍需真实浏览器，没跑就写「未验证」。
+
 - 在浏览器里打开，**light / dark / system 三种模式都切一遍**。深色下看不清的地方通常是写死了颜色；system 要跟随系统变化。
 - 数一下色调（`data-tone`）用了几种：超过 4 种就分不出组，一种也没用到就检查是不是漏了分类。
 - 每张 SVG 图对照 `diagrams.md` 过一遍：没有斜线、每个标签垫了遮罩且与线有可见间隙、

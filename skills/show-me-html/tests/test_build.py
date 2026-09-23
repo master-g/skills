@@ -15,6 +15,13 @@ FIXTURES = Path(__file__).parent / "fixtures"
 CSS = SKILL / "assets" / "show-me.css"
 
 RECIPES = runpy.run_path(str(BUILD))["RECIPES"]
+FIND_CHROME = runpy.run_path(str(BUILD))["find_chrome"]
+SHELL = SKILL / "assets" / "shell.html"
+
+
+def png_size(path):
+    data = Path(path).read_bytes()
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
 def run_build(page, *args):
@@ -245,6 +252,31 @@ class BuildCliTests(unittest.TestCase):
         result = run_build(page, "--check-only")
 
         self.assertIn("PolyForm", result.stdout)
+
+    @unittest.skipUnless(FIND_CHROME(), "需要本机 Chrome/Chromium")
+    def test_snap_renders_both_themes_and_exports_markdown(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        page = Path(tmp.name) / "page.html"
+        html = SHELL.read_text(encoding="utf-8").replace("PAGE TITLE", "快照测试").replace("choose-a-recipe", "status-report")
+        html = re.sub(r'<main id="doc">.*?</main>',
+                      '<main id="doc"><section><h1>快照测试</h1><p>正文一段。</p><h2>第二节</h2><p>内容</p></section></main>',
+                      html, count=1, flags=re.S)
+        page.write_text(html, encoding="utf-8")
+        out = Path(tmp.name) / "snap"
+
+        result = run_build(page, "--snap", str(out))
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for name, width in (("light-500", 500), ("dark-500", 500), ("light-1280", 1280), ("dark-1280", 1280)):
+            png = out / f"{name}.png"
+            self.assertTrue(png.exists(), name)
+            self.assertEqual(png_size(png)[0], width, name)
+        self.assertNotEqual((out / "light-1280.png").read_bytes(), (out / "dark-1280.png").read_bytes())
+        md = (out / "export.md").read_text(encoding="utf-8")
+        self.assertIn("# 快照测试", md)
+        self.assertIn("## 第二节", md)
+        self.assertNotIn("__snap", md)
 
     def test_gallery_pages_build_and_scripts_parse(self):
         gallery = SKILL / "assets" / "gallery"
