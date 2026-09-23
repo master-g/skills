@@ -29,9 +29,9 @@
 
 改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
-改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，把四个 gallery 页复制到临时目录跑 `build.py`（ERROR/WARN 为零），再无头渲染一遍看没有空 svg 和控制台报错、light/dark 各截一张。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析，外加 `setInterval` 都登记进了 `keep`。
+改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，跑 `python3 scripts/gallery.py --shots`：它把四个 gallery 页拼成 `all-charts.html` 构建一遍（只该有「超过 400 KB」这一条 WARN），再给每张图截 light/dark 两张 PNG，`index.md` 开头列出空图、控制台报错和低于下限的字号。逐张看改到的图，人也可以直接打开 `all-charts.html`，`#fig-编号` 直达、`?only=编号` 单看。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析，外加 `setInterval` 都登记进了 `keep`。
 
-改 `reveal` 的生命周期时另测常驻开销：把四个 gallery 拼成一页（约 59 图、20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
+改 `reveal` 的生命周期时另测常驻开销：用 `scripts/gallery.py` 拼好的 `all-charts.html`（59 图、约 20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
 
 旧页面不会自动获得新的视觉或骨架行为，它们携带的是生成时的 CSS 与 HTML 副本。视觉/骨架修复只影响今后合成的页面；历史页面不动。
 旧页面的回归用 `--check-only` 验证新检查不误报即可。

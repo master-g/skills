@@ -131,6 +131,31 @@ class BuildCliTests(unittest.TestCase):
                     check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
                     self.assertEqual(check.returncode, 0, check.stderr)
 
+    def test_gallery_overview_page_has_every_chart(self):
+        """scripts/gallery.py 拼出的总览页：59 张图各有唯一 id，构建只剩体积这一条 WARN，拼接后的脚本能解析。"""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        result = subprocess.run(
+            [sys.executable, str(SKILL / "scripts" / "gallery.py"), "--out", tmp.name, "--no-render"],
+            text=True, capture_output=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("ERROR", result.stdout)
+        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        self.assertTrue(all("超过 400 KB" in w for w in warns), warns)
+        built = (Path(tmp.name) / "all-charts.html").read_text(encoding="utf-8")
+        ids = re.findall(r'<figure id="fig-([A-Z]\d+)"', built)
+        total = sum(p.read_text(encoding="utf-8").count("data-chart=")
+                    for p in (SKILL / "assets" / "gallery").glob("*.html"))
+        self.assertEqual(len(ids), total)
+        self.assertEqual(len(set(ids)), total)
+        node = shutil.which("node")
+        if node:
+            js = Path(tmp.name) / "page.js"
+            js.write_text(re.findall(r"<script>(.*?)</script>", built, re.S)[-1], encoding="utf-8")
+            check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
+            self.assertEqual(check.returncode, 0, check.stderr)
+
     def test_gallery_loops_are_registered_for_pause(self):
         """循环必须登记进 keep：reveal 靠它在图滚出视口时停表，漏登记的会一直逼出重绘。"""
         for src in sorted((SKILL / "assets" / "gallery").glob("*.html")):

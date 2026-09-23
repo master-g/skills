@@ -47,6 +47,7 @@ npx skills add master-g/skills --skill show-me-html -g
 | `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）              |
 | `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                     |
 | `scripts/build.py`            | 内联资产 + 自检                                         |
+| `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估           |
 | `tests/`                      | 构建契约、组件状态和 20 配方 fixture                    |
 | `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                            |
 | `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml |
