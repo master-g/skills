@@ -402,6 +402,7 @@ textarea:disabled {
   align-items: center;
   gap: 0.3rem;
   max-width: 100%;
+  justify-self: start; /* 直接放进 grid 容器时别被拉成整格宽：它是标签，宽度跟着文字走 */
   border: 1px solid
     color-mix(in oklab, var(--color-primary) 35%, var(--color-border));
   border-radius: 999px;
@@ -512,6 +513,13 @@ textarea:disabled {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  word-break: keep-all;
+}
+/* 中文的最小内容宽度只有一个字：不加约束时，窄屏下表头被挤成一字一行、格内 badge 折成多行药丸，
+   表格永远不比容器宽，.table-container 的横向滚动也就不会出现。表头只在空格和标点处断行，
+   badge 不断行；放不下时整表横向滚动，正文格照常折行。 */
+.table .badge {
+  white-space: nowrap;
 }
 .table tr:last-child > * {
   border-block-end: 0;
@@ -962,6 +970,9 @@ kbd,
 
 html {
   scroll-behavior: smooth;
+  /* sticky 工具条下方留出位置：锚点跳转与 Tab 聚焦时的自动滚动都会参考它，
+     否则向上 Tab 到的元素会被顶到视口顶端、藏在工具条下面 */
+  scroll-padding-top: 5rem;
 }
 /* 运动敏感用户：关掉平滑滚动与所有骨架过渡（页面自己的动效由 interactions.md 管） */
 @media (prefers-reduced-motion: reduce) {
@@ -1028,15 +1039,10 @@ main {
 }
 main > section {
   margin-block-start: 3.5rem;
-  scroll-margin-top: 5rem;
 }
 main > section:first-of-type {
   margin-block-start: 0;
 }
-#doc h2,
-#doc h3 {
-  scroll-margin-top: 5rem;
-} /* 目录锚点跳转别被 sticky 工具条盖住 */
 
 /* 标题用字号、字形与留白分层，不用堆叠字重。 */
 /* balance：标题不许出现一个字单独占一行。pretty：段末不许留孤字。

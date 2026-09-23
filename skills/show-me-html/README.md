@@ -51,6 +51,7 @@ npx skills add master-g/skills --skill show-me-html -g
 | `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                            |
 | `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                     |
 | `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                             |
+| `scripts/probe390.mjs`        | 冻结场景轮次的 390px 截图与真实键盘 Tab 探针                             |
 | `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                  |
 
 ## 视觉系统

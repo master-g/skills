@@ -27,7 +27,7 @@
 
 ## 联动规则
 
-改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
+改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 截图与键盘（`node scripts/probe390.mjs <轮次目录>`，截图仍要人眼看）、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
 改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，跑 `python3 scripts/gallery.py --shots`：它把四个 gallery 页拼成 `all-charts.html` 构建一遍（只该有「超过 400 KB」与 PolyForm 非商用许可两条 WARN），再给每张图截 light/dark 两张 PNG，`index.md` 开头列出空图、控制台报错和低于下限的字号。逐张看改到的图，人也可以直接打开 `all-charts.html`，`#fig-编号` 直达、`?only=编号` 单看。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析，外加 `setInterval` 都登记进了 `keep`。
 
