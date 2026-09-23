@@ -170,8 +170,8 @@
             <figure class="fig" data-chart="L2">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-cascade-t"
-                    >What breaks, stacked and ranked</span
+                  <span class="fig-title" id="fig-returns-t"
+                    >退货里四成是尺码不合，比后面三项加起来还多</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L2 · Dot Cascade</span
@@ -186,32 +186,36 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  incidents by root cause · 2019 → 2026 · one dot = 2 incidents
-                  · sorted ascending
+                  一行 = 一个退货原因 · 一点 = 5 单 · 每十点深一枚 ·
+                  从多到少往下排
                 </p>
                 <svg
-                  id="cascade"
+                  id="returns"
                   viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="cascade-title cascade-desc"
+                  aria-labelledby="returns-title returns-desc"
                 >
-                  <title id="cascade-title">
-                    What breaks, stacked and ranked
+                  <title id="returns-title">
+                    2026 年 8 月 575 单退货按原因分布
                   </title>
-                  <desc id="cascade-desc">
-                    incidents by root cause · 2019 → 2026 · one dot = 2
-                    incidents · sorted ascending
+                  <desc id="returns-desc">
+                    尺码不合 240 单最多，其次不喜欢 95 单、色差 70 单
                   </desc>
                 </svg>
-                <p class="fig-src">DOT CASCADE · INCIDENT LOG</p>
+                <p class="fig-src">
+                  演示数据 · 售后系统退货登记 · 2026 年 8 月
+                </p>
               </div>
+              <figcaption>
+                尺码一项抵得上后面三项之和：先改详情页的尺码表，收益比优化退货入口大。
+              </figcaption>
             </figure>
 
             <figure class="fig wide" data-chart="L3">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-barcode-t"
-                    >Ninety days as a barcode</span
+                  <span class="fig-title" id="fig-summer-t"
+                    >今夏 21 天最高温过 35 ℃，16 天挤在 7 月</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L3 · Barcode Lollipop</span
@@ -226,28 +230,35 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  peak concurrent users, daily · Apr – Jun 2026
+                  一根 = 一天 · 棒头 = 最高温，棒底 = 最低温 · 空心 = 有降雨 ·
+                  长虚线 = 35 度 · 6 月 1 日—8 月 29 日
                 </p>
                 <svg
-                  id="barcode"
-                  viewBox="0 0 800 300"
+                  id="summer"
+                  viewBox="0 0 800 262"
                   role="img"
-                  aria-labelledby="barcode-title barcode-desc"
+                  aria-labelledby="summer-title summer-desc"
                 >
-                  <title id="barcode-title">Ninety days as a barcode</title>
-                  <desc id="barcode-desc">
-                    peak concurrent users, daily · Apr – Jun 2026
+                  <title id="summer-title">
+                    2026 年夏季 90 天的逐日最高与最低气温
+                  </title>
+                  <desc id="summer-desc">
+                    7 月 9 日与 7 月 18 日最高 37.1 ℃；6 月有一半日子下雨
                   </desc>
                 </svg>
-                <p class="fig-src">BARCODE LOLLIPOP · LIVE OPS</p>
+                <p class="fig-src">演示数据 · 城市气象站日值</p>
               </div>
+              <figcaption>
+                六月一半日子在下雨，最高温多在 30 ℃
+                出头；进了七月雨少了，一半日子过 35 ℃。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L4">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-arcmatrix-t"
-                    >Eight products land in twelve cities</span
+                  <span class="fig-title" id="fig-classes-t"
+                    >瑜伽在九家店都是报名第一，搏击只有两家撑得起来</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L4 · Arc Matrix</span
@@ -262,30 +273,35 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  bubble = paying accounts · each row bows like a horizon
+                  圆面积 = 当月报名人次，深浅同序 ·
+                  一行一种团课，像吊床一样中间下垂 · 2026 年 8 月
                 </p>
                 <svg
-                  id="arcmatrix"
-                  viewBox="0 0 430 320"
+                  id="classes"
+                  viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="arcmatrix-title arcmatrix-desc"
+                  aria-labelledby="classes-title classes-desc"
                 >
-                  <title id="arcmatrix-title">
-                    Eight products land in twelve cities
+                  <title id="classes-title">
+                    8 种团课在 9 家门店的月报名人次
                   </title>
-                  <desc id="arcmatrix-desc">
-                    bubble = paying accounts · each row bows like a horizon
+                  <desc id="classes-desc">
+                    瑜伽在每家店都最多，浦东 102 人次最高；搏击只有静安 72、浦东
+                    58
                   </desc>
                 </svg>
-                <p class="fig-src">ARC MATRIX · SALES GEO</p>
+                <p class="fig-src">演示数据 · 会员约课系统</p>
               </div>
+              <figcaption>
+                搏击除了静安和浦东，其余七家一个月都不到十人报名，可以把课收拢到这两家。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L5">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-converge-t"
-                    >48 requests pull toward five themes</span
+                  <span class="fig-title" id="fig-interviews-t"
+                    >42 条原话里，三分之一在抱怨开票慢</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L5 · Radial Convergence</span
@@ -300,32 +316,34 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  every rim node = a feature request · lines bundle into the
-                  theme that claimed it
+                  外圈一点 = 一条访谈原话，按访谈先后排 · 线收进它归属的痛点 ·
+                  痛点面积 = 条数
                 </p>
                 <svg
-                  id="converge"
+                  id="interviews"
                   viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="converge-title converge-desc"
+                  aria-labelledby="interviews-title interviews-desc"
                 >
-                  <title id="converge-title">
-                    48 requests pull toward five themes
+                  <title id="interviews-title">
+                    42 条用户访谈原话归入五个痛点
                   </title>
-                  <desc id="converge-desc">
-                    every rim node = a feature request · lines bundle into the
-                    theme that claimed it
+                  <desc id="interviews-desc">
+                    开票慢 14 条最多，其次找不到入口 9 条、价格看不懂 8 条
                   </desc>
                 </svg>
-                <p class="fig-src">RADIAL CONVERGENCE · FEEDBACK BOARD</p>
+                <p class="fig-src">演示数据 · 2026 年 9 月用户访谈</p>
               </div>
+              <figcaption>
+                开票慢的原话多出在前 14 场访谈，后半程的抱怨换成了价格和客服。
+              </figcaption>
             </figure>
 
             <figure class="fig wide" data-chart="L6">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-clusters-t"
-                    >The contributor field</span
+                  <span class="fig-title" id="fig-wiki-t"
+                    >专题空间和主库几乎不来往，只有数据组 6 个人两头都写</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L6 · Cluster Field</span
@@ -340,30 +358,35 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  80 core contributors orbit the main repo · satellite islands
-                  keep their own gravity · dotted paths = cross-contribution
+                  一点 = 一位编辑者，面积 = 本季度编辑次数 · 每团一个空间 ·
+                  一道弧 = 一个两边都写的人 · 主角 = 数据组的 6 位
                 </p>
                 <svg
-                  id="clusters"
-                  viewBox="0 0 840 320"
+                  id="wiki"
+                  viewBox="0 0 800 320"
                   role="img"
-                  aria-labelledby="clusters-title clusters-desc"
+                  aria-labelledby="wiki-title wiki-desc"
                 >
-                  <title id="clusters-title">The contributor field</title>
-                  <desc id="clusters-desc">
-                    80 core contributors orbit the main repo · satellite islands
-                    keep their own gravity · dotted paths = cross-contribution
+                  <title id="wiki-title">
+                    知识库主库与五个专题空间的编辑者
+                  </title>
+                  <desc id="wiki-desc">
+                    主库 72 人，专题空间 6 到 17 人；跨空间编辑的 9 人里 6
+                    人在数据组
                   </desc>
                 </svg>
-                <p class="fig-src">CLUSTER FIELD · CONTRIBUTOR GRAPH</p>
+                <p class="fig-src">演示数据 · 知识库编辑日志 · 2026 Q3</p>
               </div>
+              <figcaption>
+                设计和客服之间有两个人来回写，其余空间各写各的，主库的规范很难流进专题空间。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L7">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-spectrum-t"
-                    >Where the brand sits</span
+                  <span class="fig-title" id="fig-persona-t"
+                    >在用户眼里，我们比三个对手都更简单、更私密</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L7 · Brand Spectrum</span
@@ -378,30 +401,34 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  panel of 120 customers placed us between opposing traits · big
-                  dot = us · small dots = competitors
+                  一行 = 一组对立特质，两端都是正当定位 · 位置 = 平均分（-3 到
+                  +3）· 大点 = 我们 · 小点 = 对手，越深份额越大
                 </p>
                 <svg
-                  id="spectrum"
-                  viewBox="0 0 460 300"
+                  id="persona"
+                  viewBox="0 0 400 300"
                   role="img"
-                  aria-labelledby="spectrum-title spectrum-desc"
+                  aria-labelledby="persona-title persona-desc"
                 >
-                  <title id="spectrum-title">Where the brand sits</title>
-                  <desc id="spectrum-desc">
-                    panel of 120 customers placed us between opposing traits ·
-                    big dot = us · small dots = competitors
+                  <title id="persona-title">
+                    我们与三个对手在五组特质上的用户打分
+                  </title>
+                  <desc id="persona-desc">
+                    简单—强大一行我们 -2.1，私密—协作一行 -1.7，都是四家里最靠左
                   </desc>
                 </svg>
-                <p class="fig-src">BRAND SPECTRUM · BRAND SURVEY</p>
+                <p class="fig-src">演示数据 · 用户认知调研 · 360 份问卷</p>
               </div>
+              <figcaption>
+                「本地」一格也只有我们站在左边，三个对手都往云端靠，这个位置没人抢。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L8">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-dotty-t"
-                    >Four squads, stacked in space</span
+                  <span class="fig-title" id="fig-warehouses-t"
+                    >只有华南仓周末不减单，另外三个仓周末只剩一半</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L8 · Dotty Matrix</span
@@ -416,30 +443,34 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  each plane = one squad · 6 × 6 weeks of activity · dot area =
-                  tasks closed
+                  一层 = 一个仓库 · 列 = 周一到周日，行 = 8 月 3 日起五周 ·
+                  点面积 = 当天发货单数 · 浅带 = 周末
                 </p>
                 <svg
-                  id="dotty"
-                  viewBox="0 0 400 372"
+                  id="warehouses"
+                  viewBox="0 0 400 290"
                   role="img"
-                  aria-labelledby="dotty-title dotty-desc"
+                  aria-labelledby="warehouses-title warehouses-desc"
                 >
-                  <title id="dotty-title">Four squads, stacked in space</title>
-                  <desc id="dotty-desc">
-                    each plane = one squad · 6 × 6 weeks of activity · dot area
-                    = tasks closed
+                  <title id="warehouses-title">
+                    四个仓库五周的逐日发货单数
+                  </title>
+                  <desc id="warehouses-desc">
+                    华东、华北、西南三仓周末单量约为工作日一半，华南仓周末反而略高
                   </desc>
                 </svg>
-                <p class="fig-src">DOTTY MATRIX · SPRINT BOARD</p>
+                <p class="fig-src">演示数据 · 仓储系统出库记录</p>
               </div>
+              <figcaption>
+                华南仓周末的单子没有少，排班却和其他三个仓一样按工作日排，周末人手是缺口。
+              </figcaption>
             </figure>
 
             <figure class="fig wide" data-chart="L9">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-almanac-t"
-                    >Eight years of tickets, one almanac</span
+                  <span class="fig-title" id="fig-library-t"
+                    >有声书转正第二年，借阅量就追上了小说</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L9 · Bubble Almanac</span
@@ -454,34 +485,35 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  bubble area = support tickets per product area, per year ·
-                  bubbles overlap where years pile up · dark core = escalations
-                  · dashed ring = still in beta
+                  泡泡面积 = 当年借阅（千册）· 实心内核 = 其中的预约借阅 ·
+                  虚线圈 = 当年还在试点 · 右侧是 2026 年读数
                 </p>
                 <svg
-                  id="almanac"
-                  viewBox="0 0 840 400"
+                  id="library"
+                  viewBox="0 0 840 370"
                   role="img"
-                  aria-labelledby="almanac-title almanac-desc"
+                  aria-labelledby="library-title library-desc"
                 >
-                  <title id="almanac-title">
-                    Eight years of tickets, one almanac
+                  <title id="library-title">
+                    市图书馆八类图书 2019—2026 年的年借阅量
                   </title>
-                  <desc id="almanac-desc">
-                    bubble area = support tickets per product area, per year ·
-                    bubbles overlap where years pile up · dark core =
-                    escalations · dashed ring = still in beta
+                  <desc id="library-desc">
+                    有声书 2026 年 47 千册，超过小说的 45 千册；考试类从 26
+                    千册降到 9 千册
                   </desc>
                 </svg>
-                <p class="fig-src">BUBBLE ALMANAC · SUPPORT DESK</p>
+                <p class="fig-src">演示数据 · 市图书馆借阅年报</p>
               </div>
+              <figcaption>
+                新增的借阅几乎都流向了有声书、童书和科普，纸本考试书和外语书的读者在一年年离开。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L10">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-patchwork-t"
-                    >A quarter of deploys, overlaid</span
+                  <span class="fig-title" id="fig-consults-t"
+                    >夜里十点以后的问诊平均 23 分钟，是白天的近两倍</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L10 · Radial Patchwork</span
@@ -496,25 +528,31 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  each wedge = one deploy · angle = time of day · reach = files
-                  touched · ink builds where deploys pile up
+                  一片扇 = 一次线上问诊 · 角度 = 开始时刻 · 半径 = 时长 ·
+                  叠得越深问诊越扎堆 · 描边 = 转线下就诊
                 </p>
                 <svg
-                  id="patchwork"
+                  id="consults"
                   viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="patchwork-title patchwork-desc"
+                  aria-labelledby="consults-title consults-desc"
                 >
-                  <title id="patchwork-title">
-                    A quarter of deploys, overlaid
+                  <title id="consults-title">
+                    社区医院 9 月 140 次线上问诊的开始时刻与时长
                   </title>
-                  <desc id="patchwork-desc">
-                    each wedge = one deploy · angle = time of day · reach =
-                    files touched · ink builds where deploys pile up
+                  <desc id="consults-desc">
+                    问诊集中在午间和夜里十点前后；十点以后平均 23 分钟，其余时段
+                    12.5 分钟
                   </desc>
                 </svg>
-                <p class="fig-src">RADIAL PATCHWORK · DEPLOY LOG</p>
+                <p class="fig-src">
+                  演示数据 · 社区医院线上问诊记录 · 2026 年 9 月
+                </p>
               </div>
+              <figcaption>
+                转线下的 25 次里有 13
+                次在夜里十点之后，夜班更需要能开转诊单的医生。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L11">
@@ -1069,570 +1107,582 @@
 
         // ════ L2 · Dot Cascade ════
         (() => {
-          const CAUSE = [
-            "DNS",
-            "CDN",
-            "QUOTA",
-            "DISK",
-            "CERT",
-            "CACHE",
-            "QUEUE",
-            "LOCK",
-            "OOM",
-            "NET",
-            "3P API",
-            "CONFIG",
-            "DB",
-            "DEPLOY",
-            "CODE",
-            "HUMAN",
+          // 点瀑：一行 = 一个退货原因，一点 = 5 单；行按单数从多到少自上而下排，
+          // 每行起点比上一行右移一步，整体像台阶往右下流。每十点深一枚，数的时候有抓手。
+          // 每行末尾一枚头点并标单数，原因名写在起点左侧。主角：无 —— 标题所指的「尺码不合」本就是最长的一行。
+          // 九行、两端有标注，静态即可；头点 hover 出原因与单数。动效：点沿行依次淡入。
+          const { G, jit, tick, value, label } = showMeChart;
+          const UNIT = 5;
+          // [原因, 单数]，已按单数从多到少
+          const WHY = [
+            ["尺码不合", 240],
+            ["不喜欢", 95],
+            ["色差", 70],
+            ["质量问题", 60],
+            ["发错货", 35],
+            ["物流破损", 30],
+            ["买多了", 20],
+            ["降价", 15],
+            ["其他", 10],
           ];
-          const COUNT = [1, 1, 2, 3, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 22, 27];
-          reveal($("cascade"), (s) => {
-            const x = (i) => 34 + i * 22.2,
-              base = (i) => 272 - i * 7.5;
-            // dotted diagonal baseline
+          reveal($("returns"), (s) => {
+            const X0 = 62,
+              SHIFT = 15,
+              STEP = 5.1,
+              Y0 = 44,
+              ROW = 29;
+            // 台阶导轨：连起每行起点的一道虚线
             el(s, "line", {
-              x1: x(0) - 8,
-              y1: base(0) + 4,
-              x2: x(15) + 8,
-              y2: base(15) + 4,
-              stroke: I30,
-              "stroke-width": 1,
-              "stroke-dasharray": "2 4",
-              class: "fade",
+              x1: X0 - 3,
+              y1: Y0 - 12,
+              x2: X0 - 3 + SHIFT * (WHY.length - 0.3),
+              y2: Y0 + ROW * (WHY.length - 0.3),
+              stroke: G.ink.guide,
+              "stroke-width": G.line.grid,
+              "stroke-dasharray": "1 3",
             });
-            CAUSE.forEach((name, i) => {
-              const n = Math.ceil(COUNT[i] / 2),
-                bx = x(i),
-                by = base(i);
-              for (let k = 0; k < n - 1; k++)
+            WHY.forEach(([why, n], i) => {
+              const x0 = X0 + i * SHIFT,
+                y = Y0 + i * ROW,
+                dots = n / UNIT;
+              txt(
+                s,
+                label({ x: x0 - 8, y: y + 2.6, "text-anchor": "end" }),
+                why
+              );
+              for (let k = 0; k < dots - 1; k++)
                 el(s, "circle", {
-                  cx: bx,
-                  cy: by - 12 - k * 8.8,
-                  r: 2.2,
-                  fill: I45,
-                  opacity: 0.9,
-                  class: "pop",
-                  style: `animation-delay:${i * 0.05 + k * 0.03}s`,
+                  cx: x0 + k * STEP,
+                  cy: y + jit(i * 60 + k, 1, G.jitter.pos),
+                  r: G.dot.mark * 0.8 * (1 + jit(i * 60 + k, 2, G.jitter.size)),
+                  fill: (k + 1) % 10 ? G.ink.data : G.ink.strong,
+                  class: "fade",
+                  style: dl(0.1 + i * 0.05 + k * 0.012),
                 });
-              const topY = by - 12 - (n - 1) * 8.8;
-              const top = el(s, "circle", {
-                cx: bx,
-                cy: topY,
-                r: 4.6,
-                fill: INK,
+              const hx = x0 + (dots - 1) * STEP;
+              const head = el(s, "circle", {
+                cx: hx,
+                cy: y,
+                r: G.dot.head,
+                fill: G.ink.strong,
                 class: "pop",
-                style: `animation-delay:${i * 0.05 + n * 0.03}s`,
+                style: dl(0.2 + i * 0.05 + dots * 0.012),
               });
-              tip(top, `${name} — ${COUNT[i]} incidents`);
-              txt(
-                s,
-                {
-                  x: bx,
-                  y: topY - 10,
-                  "font-size": 9,
-                  "font-weight": 600,
-                  fill: INK,
-                  "text-anchor": "middle",
-                  class: "fade",
-                  style: `animation-delay:${0.2 + i * 0.05}s`,
-                },
-                COUNT[i]
-              );
-              txt(
-                s,
-                {
-                  x: bx,
-                  y: by + 12,
-                  "font-size": 6.5,
-                  "font-weight": 600,
-                  fill: I60,
-                  "text-anchor": "end",
-                  transform: `rotate(-90 ${bx} ${by + 12})`,
-                  class: "fade",
-                  style: `animation-delay:${0.1 + i * 0.05}s`,
-                },
-                name
-              );
+              tip(head, `${why} · ${n} 单`);
+              txt(s, value({ x: hx + 7, y: y + 2.6 }), n);
             });
+            txt(
+              s,
+              tick({ x: 392, y: 312, "text-anchor": "end" }),
+              `共 ${WHY.reduce((a, r) => a + r[1], 0)} 单`
+            );
           });
         })();
 
         // ════ L3 · Barcode Lollipop ════
         (() => {
-          const N = 90;
-          const val = (d) =>
-            95 +
-            55 * Math.sin(d / 9.5) +
-            30 * Math.sin(d / 3.7) +
-            rnd(d + 1, 5) * 40;
-          reveal($("barcode"), (s) => {
-            // the barcode: one hairline per day, full height
-            for (let d = 0; d < N; d++) {
-              const x = 18 + d * 8.53;
+          // 条码棒棒：一根 = 一天。底纹每天一根竖直发丝，日历不缺格；棒头 = 当日最高气温，
+          // 棒身往下拉到当日最低气温，棒长就是日温差；空心棒头 = 当天有降雨。
+          // 家具：每 5 ℃ 一道虚线网格，35 ℃ 一道长虚线导轨，月界一根短刻度。只标最热的两天，相隔至少一周。
+          // 主角：无。90 根、读形态不读单根，静态即可；棒头 hover 出日期与温度。动效：棒身自下描出，棒头弹出。
+          const { G, jit, tick, value } = showMeChart;
+          const HOT = 35;
+          // 6 月 1 日起 90 天：季节正弦 + 确定性噪声；六月梅雨多，雨天最高温低、温差小
+          const days = Array.from({ length: 90 }, (_, d) => {
+            const rain = rnd(d + 3, 41) < (d < 26 ? 0.5 : 0.22);
+            const hi =
+              Math.round(
+                (28.2 +
+                  7.6 * Math.sin((Math.PI * (d + 6)) / 100) +
+                  (rnd(d + 5, 42) - 0.5) * 3.2 -
+                  (rain ? 2.8 : 0)) *
+                  10
+              ) / 10;
+            const lo =
+              Math.round(
+                (hi - 5.2 - rnd(d + 7, 43) * 3.4 + (rain ? 1.4 : 0)) * 10
+              ) / 10;
+            return { d, rain, hi, lo };
+          });
+          const MONTHS = [
+            [0, 6],
+            [30, 7],
+            [61, 8],
+          ];
+          const date = (d) => {
+            const [start, m] = MONTHS.filter(([s]) => s <= d).pop();
+            return `${m}/${d - start + 1}`;
+          };
+          // 最热的两天，相隔至少 7 天
+          const peaks = [];
+          [...days]
+            .sort((a, b) => b.hi - a.hi || a.d - b.d)
+            .forEach((x) => {
+              if (
+                peaks.length < 2 &&
+                peaks.every((p) => Math.abs(p.d - x.d) >= 7)
+              )
+                peaks.push(x);
+            });
+          reveal($("summer"), (s) => {
+            const X0 = 56,
+              X1 = 782,
+              TOP = 34,
+              BOT = 236,
+              T0 = 18,
+              T1 = 40;
+            const x = (d) => X0 + (d * (X1 - X0)) / (days.length - 1),
+              y = (t) => BOT - ((t - T0) / (T1 - T0)) * (BOT - TOP);
+            for (let t = 20; t <= T1; t += 5) {
               el(s, "line", {
-                x1: x,
-                y1: 8,
-                x2: x,
-                y2: 258,
-                stroke: GRID,
-                "stroke-width": 0.7,
-                class: "fade",
-                style: `animation-delay:${d * 0.004}s`,
+                x1: X0 - 8,
+                x2: X1,
+                y1: y(t),
+                y2: y(t),
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
+                "stroke-dasharray": t === HOT ? "4 3" : "1 3",
               });
-            }
-            const vs = Array.from({ length: N }, (_, d) => val(d));
-            // top-3 peaks, kept at least 6 days apart so labels never collide
-            const top3 = [];
-            for (const d of [...vs.keys()].sort((a, b) => vs[b] - vs[a])) {
-              if (top3.every((t) => Math.abs(t - d) >= 6)) top3.push(d);
-              if (top3.length === 3) break;
-            }
-            for (let d = 0; d < N; d++) {
-              const x = 18 + d * 8.53,
-                v = vs[d],
-                y = 252 - v * 0.75;
-              const weekend = d % 7 === 5 || d % 7 === 6;
-              const stemEnd = Math.min(256, y + 14 + rnd(d + 1, 9) * 26);
-              el(s, "line", {
-                x1: x,
-                y1: y,
-                x2: x,
-                y2: stemEnd,
-                stroke: INK,
-                "stroke-width": 1.1,
-                class: "fade",
-                style: `animation-delay:${0.3 + d * 0.008}s`,
-              });
-              const big = top3.includes(d);
-              const dot = el(s, "circle", {
-                cx: x,
-                cy: y,
-                r: big ? 4.6 : 2.7,
-                fill: weekend ? PAPER : INK,
-                stroke: INK,
-                "stroke-width": weekend ? 1.2 : 0,
-                class: "pop",
-                style: `animation-delay:${0.3 + d * 0.008}s`,
-              });
-              tip(dot, `Day ${d + 1} — ${Math.round(v)}k peak`);
-              if (big)
-                txt(
-                  s,
-                  {
-                    x,
-                    y: y - 10,
-                    "font-size": 9,
-                    "font-weight": 600,
-                    fill: INK,
-                    "text-anchor": "middle",
-                    class: "fade",
-                    style: `animation-delay:${0.9 + d * 0.004}s`,
-                  },
-                  Math.round(v) + "k"
-                );
-            }
-            [
-              [0, "APR"],
-              [30, "MAY"],
-              [61, "JUN"],
-            ].forEach(([d, m]) =>
               txt(
                 s,
-                {
-                  x: 18 + d * 8.53,
-                  y: 276,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: MUTED,
-                  "letter-spacing": ".12em",
-                  class: "fade",
-                },
-                m
-              )
+                tick({ x: X0 - 12, y: y(t) + 2.2, "text-anchor": "end" }),
+                `${t}°`
+              );
+            }
+            days.forEach((c) => {
+              // 日历底纹：每天一根，高度统一
+              el(s, "line", {
+                x1: x(c.d),
+                x2: x(c.d),
+                y1: TOP,
+                y2: BOT + 4,
+                stroke: G.ink.mass,
+                "stroke-width": G.line.grid,
+              });
+            });
+            MONTHS.forEach(([d, m]) => {
+              el(s, "line", {
+                x1: x(d),
+                x2: x(d),
+                y1: BOT + 4,
+                y2: BOT + 12,
+                stroke: G.ink.quiet,
+                "stroke-width": G.line.base,
+              });
+              txt(s, tick({ x: x(d) + 3, y: BOT + 20 }), `${m} 月`);
+            });
+            days.forEach((c, i) => {
+              el(s, "line", {
+                x1: x(c.d),
+                x2: x(c.d),
+                y1: y(c.lo),
+                y2: y(c.hi),
+                stroke: G.ink.strong,
+                "stroke-width": G.line.data,
+                pathLength: 1,
+                class: "draw",
+                style: dl(0.1 + i * 0.012),
+              });
+              const peak = peaks.includes(c);
+              const head = el(s, "circle", {
+                cx: x(c.d),
+                cy: y(c.hi),
+                r: peak
+                  ? G.dot.head
+                  : G.dot.mark * (1 + jit(c.d, 4, G.jitter.size)),
+                fill: c.rain ? "var(--color-card)" : G.ink.strong,
+                stroke: G.ink.strong,
+                "stroke-width": G.line.data,
+                class: "pop",
+                style: dl(0.4 + i * 0.012),
+              });
+              tip(
+                head,
+                `${date(c.d)} · 最高 ${c.hi}℃ · 最低 ${c.lo}℃${c.rain ? " · 有雨" : ""}`
+              );
+            });
+            peaks.forEach((p) => {
+              txt(
+                s,
+                value({ x: x(p.d), y: y(p.hi) - 14, "text-anchor": "middle" }),
+                `${p.hi}°`
+              );
+              txt(
+                s,
+                tick({ x: x(p.d), y: y(p.hi) - 6, "text-anchor": "middle" }),
+                date(p.d)
+              );
+            });
+            txt(
+              s,
+              tick({ x: X1, y: y(HOT) - 4, "text-anchor": "end" }),
+              `${days.filter((c) => c.hi >= HOT).length} 天 ≥ ${HOT}°`
             );
           });
         })();
 
         // ════ L4 · Arc Matrix ════
         (() => {
-          const PROD = [
-            "Editor",
-            "Boards",
-            "Docs",
-            "Flows",
-            "Chat",
-            "Vault",
-            "Pages",
-            "Sync",
+          // 弧线矩阵：一行 = 一种团课，一列 = 一家门店，交叉处一个圆 = 当月报名人次。
+          // 每行沿一道中间下垂的弧排开，像一排吊床；圆面积 ∝ 人次（半径取 sqrt），
+          // 明度同时按人次分四档，最重的最深。报名不到 10 人的格子只留一个点标，不画圆。
+          // 只给全表最大的三格标数。主角：无 —— 瑜伽一行本身最大最深。72 格、静态，圆上 hover 出读数。
+          const { G, tick, value, label } = showMeChart;
+          const STORES = "徐汇 静安 长宁 普陀 虹口 杨浦 闵行 浦东 宝山".split(
+            " "
+          );
+          // [课程, 基数]；人次 = 基数 × 门店系数 × 确定性波动。搏击只在静安、浦东开课
+          const CLASSES = [
+            ["瑜伽", 80],
+            ["单车", 60],
+            ["普拉提", 46],
+            ["杠铃", 40],
+            ["舞蹈", 34],
+            ["拉伸", 28],
+            ["核心", 24],
+            ["搏击", 0],
           ];
-          const CITY = [
-            "SF",
-            "NYC",
-            "LON",
-            "BER",
-            "TOK",
-            "SYD",
-            "SIN",
-            "PAR",
-            "AMS",
-            "TOR",
-            "SEO",
-            "SAO",
-          ];
-          const W = [9, 8, 7, 7, 6, 5, 5, 4, 4, 3, 3, 2]; // market weight
-          reveal($("arcmatrix"), (s) => {
-            const rowY = (i) => 74 + i * 29,
-              colX = (j) => 92 + j * 27,
-              dy = (j) => -16 * Math.sin((Math.PI * j) / 11);
-            const v = (i, j) => {
-              if (rnd(i * 13 + 1, j * 7 + 3) < 0.09) return 0; // a few true absences
-              const age = 1 - i * 0.085; // older rows reach further
-              return Math.min(
-                40,
-                Math.round(W[j] * 3.4 * age * (0.45 + rnd(i + 1, j + 1) * 0.85))
-              );
-            };
-            // find top-4 cells for labels
-            const all = [];
-            PROD.forEach((_, i) =>
-              CITY.forEach((_, j) => all.push([v(i, j), i, j]))
+          const PULL = [1.0, 1.15, 0.9, 0.7, 0.75, 0.85, 0.8, 1.2, 0.6];
+          const BOXING = { 1: 72, 7: 58 };
+          const V = CLASSES.map(([, base], r) =>
+            PULL.map((f, c) =>
+              r === 7
+                ? (BOXING[c] ?? Math.floor(rnd(c + 2, 53) * 9))
+                : Math.round(
+                    base *
+                      f *
+                      (r === 0
+                        ? 0.95 + 0.15 * rnd(c + 1, 51)
+                        : 0.7 + 0.5 * rnd(r * 9 + c + 1, 52))
+                  )
+            )
+          );
+          const most = Math.max(...V.flat()),
+            top3 = V.flat()
+              .sort((a, b) => b - a)
+              .slice(0, 3);
+          reveal($("classes"), (s) => {
+            const X0 = 104,
+              X1 = 380,
+              Y0 = 72,
+              ROW = 29,
+              SAG = 9,
+              RMAX = 11;
+            const x = (c) => X0 + (c * (X1 - X0)) / (STORES.length - 1);
+            // 吊床：两端高、中间低
+            const sag = (xx) =>
+              SAG * (1 - ((xx - (X0 + X1) / 2) / ((X1 - X0) / 2)) ** 2);
+            STORES.forEach((name, c) =>
+              txt(s, label({ x: x(c), y: 40, "text-anchor": "middle" }), name)
             );
-            const top = all
-              .sort((a, b) => b[0] - a[0])
-              .slice(0, 4)
-              .map((d) => d[1] * 100 + d[2]);
-            PROD.forEach((p, i) => {
-              // the horizon arc
-              const d =
-                "M" +
-                CITY.map((_, j) => `${colX(j)} ${rowY(i) + dy(j)}`).join(" L ");
+            let shown = 0;
+            CLASSES.forEach(([name], r) => {
+              const y0 = Y0 + r * ROW;
+              let d = "";
+              for (let k = 0; k <= 40; k++) {
+                const xx = X0 - 8 + (k * (X1 - X0 + 16)) / 40;
+                d += `${k ? "L" : "M"}${xx.toFixed(1)} ${(y0 + sag(xx)).toFixed(1)}`;
+              }
               el(s, "path", {
                 d,
                 fill: "none",
-                stroke: I8,
-                "stroke-width": 1,
-                pathLength: 1,
-                class: "draw",
-                style: `animation-delay:${i * 0.08}s`,
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
               });
               txt(
                 s,
-                {
-                  x: 84,
-                  y: rowY(i) + 3,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: I60,
-                  "text-anchor": "end",
-                  class: "fade",
-                  style: `animation-delay:${i * 0.08}s`,
-                },
-                p
+                label({ x: X0 - 16, y: y0 + 2.6, "text-anchor": "end" }),
+                name
               );
-              CITY.forEach((c, j) => {
-                const x = colX(j),
-                  y = rowY(i) + dy(j),
-                  vv = v(i, j);
-                if (!vv) {
-                  el(s, "circle", {
-                    cx: x,
-                    cy: y,
-                    r: 0.9,
-                    fill: I14,
-                    class: "pop",
-                    style: `animation-delay:${0.2 + i * 0.08 + j * 0.02}s`,
-                  });
+              V[r].forEach((v, c) => {
+                const cx = x(c),
+                  cy = y0 + sag(cx);
+                if (v < 10) {
+                  el(s, "circle", { cx, cy, r: G.dot.tick, fill: G.ink.quiet });
                   return;
                 }
-                const fill = vv >= 25 ? INK : vv >= 12 ? I60 : I30;
-                const dot = el(s, "circle", {
-                  cx: x,
-                  cy: y,
-                  r: Math.sqrt(vv) * 1.3,
-                  fill,
-                  class: "pop",
-                  style: `animation-delay:${0.2 + i * 0.08 + j * 0.02}s`,
-                });
-                tip(dot, `${p} · ${c} — ${vv} accounts`);
-                if (top.includes(i * 100 + j))
+                const q = v / most,
+                  dot = el(s, "circle", {
+                    cx,
+                    cy,
+                    r: Math.sqrt(q) * RMAX,
+                    fill:
+                      q > 0.75
+                        ? G.ink.strong
+                        : q > 0.5
+                          ? I70
+                          : q > 0.25
+                            ? I45
+                            : I30,
+                    class: "pop",
+                    style: dl(0.1 + r * 0.06 + c * 0.02),
+                  });
+                tip(dot, `${name} · ${STORES[c]} · ${v} 人次`);
+                if (shown < 3 && top3.includes(v)) {
+                  shown++;
                   txt(
                     s,
-                    {
-                      x,
-                      y: y - Math.sqrt(vv) * 1.3 - 4,
-                      "font-size": 7,
-                      "font-weight": 600,
-                      fill: INK,
+                    value({
+                      x: cx,
+                      y: cy - Math.sqrt(q) * RMAX - 3,
                       "text-anchor": "middle",
-                      class: "fade",
-                      style: `animation-delay:${0.6}s`,
-                    },
-                    vv
+                    }),
+                    v
                   );
+                }
               });
             });
-            CITY.forEach((c, j) => {
-              const x = colX(j),
-                y = 74 + dy(j) - 24;
-              txt(
-                s,
-                {
-                  x,
-                  y,
-                  "font-size": 7,
-                  "font-weight": 600,
-                  fill: MUTED,
-                  "letter-spacing": ".08em",
-                  transform: `rotate(-55 ${x} ${y})`,
-                  class: "fade",
-                  style: `animation-delay:${j * 0.03}s`,
-                },
-                c
-              );
-            });
+            txt(s, tick({ x: X0 - 16, y: 312 }), "点标 = 不到 10 人次");
           });
         })();
 
         // ════ L5 · Radial Convergence ════
         (() => {
-          const N = 48,
-            CX = 200,
-            CY = 162,
-            R = 110;
-          // 主题角落在两枚编号正中（编号每 7.5° 一枚）：引线从缝里穿出去，不压编号
-          const THEME = [
-            ["PERF", 15, -71.25],
-            ["INTEGRATIONS", 10, -3.75],
-            ["PRICING", 9, 71.25],
-            ["MOBILE", 8, 138.75],
-            ["UX", 6, 213.75],
+          // 径向汇聚：外圈一个点 = 一条访谈原话，按访谈先后顺时针排、写上编号；每条原话一根曲线收进它归属的痛点。
+          // 痛点节点在内圈，面积 ∝ 条数（半径取 sqrt），落在自己那段外圈的正对面一侧。
+          // 痛点名与条数写在外圈之外：标签方位对准两枚编号之间的缝，引线从缝里穿出去，不压编号、不压圆环。
+          // 主角：无 —— 最大的痛点本身最大。42 根线、两端有标注，静态即可；外圈点 hover 出编号与痛点。
+          const { G, jit, tick, value, label } = showMeChart;
+          // [痛点, 条数]，合计 42
+          const PAIN = [
+            ["开票慢", 14],
+            ["找不到入口", 9],
+            ["价格看不懂", 8],
+            ["客服难联系", 7],
+            ["导出乱码", 4],
           ];
-          reveal($("converge"), (s) => {
-            // hub assignment: contiguous blocks with a little organic leakage
-            const blocks = THEME.flatMap(([, n], h) => Array(n).fill(h));
-            const hubOf = (i) =>
-              rnd(i + 1, 11) > 0.92 ? (blocks[i] + 2) % 5 : blocks[i];
-            const hubPt = (h) => pol(CX, CY, 34, THEME[h][2]);
-            const counts = [0, 0, 0, 0, 0];
-            for (let i = 0; i < N; i++) counts[hubOf(i)]++;
-            for (let i = 0; i < N; i++) {
-              const deg = (i / N) * 360 - 90,
-                [px, py] = pol(CX, CY, R, deg);
-              const h = hubOf(i),
-                [hx, hy] = hubPt(h);
-              const c1x = CX + (px - CX) * 0.42,
-                c1y = CY + (py - CY) * 0.42;
-              const c2x = CX + (hx - CX) * 0.3,
-                c2y = CY + (hy - CY) * 0.3;
+          const N = PAIN.reduce((a, p) => a + p[1], 0);
+          // 每个痛点先占一段连续的外圈，再用确定性随机两两对调 9 次：多数原话挨着同类，少数散到别处
+          const who = PAIN.flatMap(([, n], t) => Array(n).fill(t));
+          for (let k = 0; k < 9; k++) {
+            const a = Math.floor(rnd(k + 1, 81) * N),
+              b = Math.floor(rnd(k + 1, 82) * N);
+            [who[a], who[b]] = [who[b], who[a]];
+          }
+          // 每段外圈的中点：痛点节点与标签的方位
+          const home = [];
+          PAIN.reduce(
+            (start, [, n], t) => ((home[t] = start + n / 2), start + n),
+            0
+          );
+          reveal($("interviews"), (s) => {
+            const CX = 200,
+              CY = 164,
+              R = 100,
+              HUB = 44,
+              STEP = 360 / N,
+              A0 = -90;
+            const ang = (k) => A0 + (k + 0.5) * STEP;
+            el(s, "circle", {
+              cx: CX,
+              cy: CY,
+              r: R,
+              fill: "none",
+              stroke: G.ink.guide,
+              "stroke-width": G.line.grid,
+              "stroke-dasharray": "1 3",
+            });
+            const gapAt = (t) => A0 + Math.round(home[t]) * STEP,
+              hubAt = PAIN.map((_, t) => pol(CX, CY, HUB, gapAt(t)));
+            who.forEach((t, k) => {
+              const a = ang(k),
+                [x, y] = pol(CX, CY, R, a),
+                [cx, cy] = pol(
+                  CX,
+                  CY,
+                  R * (0.42 + jit(k, 1, G.jitter.bend)),
+                  a
+                );
               el(s, "path", {
-                d: `M${px} ${py} C${c1x} ${c1y} ${c2x} ${c2y} ${hx} ${hy}`,
+                d: `M${x.toFixed(1)} ${y.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${hubAt[t][0].toFixed(1)} ${hubAt[t][1].toFixed(1)}`,
                 fill: "none",
-                stroke: I30,
-                "stroke-width": 0.7,
-                opacity: 0.55,
+                stroke: G.ink.mass,
+                "stroke-width": G.line.thread,
                 pathLength: 1,
                 class: "draw",
-                style: `animation-delay:${i * 0.018}s`,
+                style: dl(0.1 + k * 0.015),
               });
-              el(s, "circle", {
-                cx: px,
-                cy: py,
-                r: 1.6,
-                fill: I60,
+              const dot = el(s, "circle", {
+                cx: x,
+                cy: y,
+                r: G.dot.mark * 0.85,
+                fill: G.ink.data,
                 class: "pop",
-                style: `animation-delay:${i * 0.018}s`,
+                style: dl(0.05 + k * 0.012),
               });
-              // tiny rim code, flipped on the left half so it stays readable；
-              // 只写序号：6.5 的「R-01」在径向上太长，会撞上主题标签
-              const flip = deg > 90 && deg < 270,
-                [lx, ly] = pol(CX, CY, R + 7, deg);
+              tip(dot, `原话 #${k + 1} · ${PAIN[t][0]}`);
+              const [nx, ny] = pol(CX, CY, R + 9, a);
               txt(
                 s,
-                {
-                  x: lx,
-                  y: ly,
-                  "font-size": 6.5,
-                  fill: MUTED,
-                  "text-anchor": flip ? "end" : "start",
-                  "dominant-baseline": "middle",
-                  transform: `rotate(${flip ? deg + 180 : deg} ${lx} ${ly})`,
-                  class: "fade",
-                  style: `animation-delay:${0.2 + i * 0.01}s`,
-                },
-                String(i + 1).padStart(2, "0")
+                tick({ x: nx, y: ny + 2.2, "text-anchor": "middle" }),
+                k + 1
               );
-            }
-            THEME.forEach(([name, , deg], h) => {
-              const [hx, hy] = hubPt(h);
-              const hub = el(s, "circle", {
-                cx: hx,
-                cy: hy,
-                r: Math.sqrt(counts[h]) * 1.55,
-                fill: INK,
-                class: "pop",
-                style: `animation-delay:${0.5 + h * 0.08}s`,
-              });
-              tip(hub, `${name} — ${counts[h]} requests`);
-              // theme label parked outside the code ring: name over count, anchored away from the centre
-              // 两侧的朝外对齐，上下的居中叠在点外侧；单行「INTEGRATIONS · 11」在右侧放不下
-              const [tx, ty] = pol(CX, CY, R + 22, deg),
-                c = Math.cos(deg * D2R),
-                side = Math.abs(c) > 0.5,
-                y0 = side ? ty - 1.5 : deg < 0 ? ty - 9.5 : ty + 6;
-              const at = {
-                x: tx,
-                "text-anchor": !side ? "middle" : c > 0 ? "start" : "end",
-                "font-size": 8,
-                "font-weight": 600,
-                "letter-spacing": ".08em",
-                style: `animation-delay:${0.6 + h * 0.08}s`,
-                class: "fade",
-              };
-              txt(s, { ...at, y: y0, fill: INK }, name);
-              txt(s, { ...at, y: y0 + 9.5, fill: MUTED }, counts[h]);
-              // hairline tying the label to its hub, threading the gap between two codes
-              const [gx, gy] = pol(CX, CY, R + 19, deg);
+            });
+            const big = Math.max(...PAIN.map((p) => p[1]));
+            PAIN.forEach(([name, n], t) => {
+              // 方位 = 离段中点最近的那道缝（两枚编号之间），痛点节点、引线、标签都在这条射线上
+              const la = gapAt(t),
+                [hx, hy] = hubAt[t],
+                [ex, ey] = pol(CX, CY, R + 20, la),
+                [tx, ty] = pol(CX, CY, R + 25, la),
+                c = Math.cos(la * D2R),
+                sn = Math.sin(la * D2R),
+                anchor = c > 0.3 ? "start" : c < -0.3 ? "end" : "middle",
+                dy = sn < -0.7 ? -9 : sn > 0.7 ? 6 : 0;
               el(s, "line", {
                 x1: hx,
                 y1: hy,
-                x2: gx,
-                y2: gy,
-                stroke: I22,
-                "stroke-width": 0.7,
-                "stroke-dasharray": "1 3",
-                class: "fade",
-                style: `animation-delay:${0.7 + h * 0.08}s`,
+                x2: ex,
+                y2: ey,
+                stroke: G.ink.quiet,
+                "stroke-width": G.line.grid,
+                "stroke-dasharray": "1 2",
               });
+              el(s, "circle", {
+                cx: hx,
+                cy: hy,
+                r: Math.sqrt(n / big) * 7.5,
+                fill: G.ink.strong,
+                stroke: "var(--color-card)",
+                "stroke-width": G.line.base,
+                class: "pop",
+                style: dl(0.7 + t * 0.06),
+              });
+              txt(
+                s,
+                label({
+                  x: tx,
+                  y: ty + dy,
+                  "text-anchor": anchor,
+                  fill: G.ink.strong,
+                }),
+                name
+              );
+              txt(
+                s,
+                value({ x: tx, y: ty + dy + 9, "text-anchor": anchor }),
+                n
+              );
             });
           });
         })();
 
         // ════ L6 · Cluster Field ════
         (() => {
-          const SAT = [
-            [622, 78, "PLUGINS", 22],
-            [706, 214, "THEMES", 16],
-            [540, 268, "DOCS", 13],
-            [92, 72, "FORKS", 12],
-            [774, 58, "MIRRORS", 9],
+          // 星团场：一个点 = 一位编辑者，点面积 ∝ 本季度编辑次数（半径取 sqrt）；每人一根辐条连到所在空间的中心 ——
+          // 辐条是纯肌理，不加交互。主库一团在正中，五个专题空间是两侧的小团，团的铺开半径随人数（sqrt）长。
+          // 团内按葵花序（黄金角）排开，点距收紧到刚好不碰。团与团之间的一道弧 = 一个两边都写过的人，从他本人连到另一团的中心。
+          // 主角 = 标题所指的数据组那 6 道弧及弧上的人：弧是发丝，几何上不凸显。静态，点 hover 出编辑次数。
+          const { G, jit, tick, label } = showMeChart;
+          // [空间, 人数, 中心 x, 中心 y]
+          const SPACES = [
+            ["主库", 72, 400, 168],
+            ["设计", 14, 132, 92],
+            ["客服", 11, 150, 250],
+            ["法务", 6, 668, 70],
+            ["数据", 17, 730, 196],
+            ["招聘", 8, 598, 272],
           ];
-          reveal($("clusters"), (s) => {
-            const HX = 300,
-              HY = 172;
-            // dotted cross-contribution paths, hub → each island
-            SAT.forEach(([x, y], ci) => {
-              const mx = (HX + x) / 2,
-                my = (HY + y) / 2 - 30;
-              el(s, "path", {
-                d: `M${HX} ${HY} Q${mx} ${my} ${x} ${y}`,
-                fill: "none",
-                stroke: GRID,
-                "stroke-width": 0.9,
-                "stroke-dasharray": "2 4",
-                pathLength: 1,
-                class: "draw",
-                style: `animation-delay:${0.8 + ci * 0.12}s;animation-duration:.7s`,
-              });
-            });
-            // main hub: 80 golden-angle spokes
-            for (let i = 0; i < 80; i++) {
-              const a = i * 137.508,
-                len = 28 + rnd(i + 1, 7) * 88;
-              const [x, y] = pol(HX, HY, len, a);
-              el(s, "line", {
-                x1: HX,
-                y1: HY,
-                x2: x,
-                y2: y,
-                stroke: I22,
-                "stroke-width": 0.6,
-                pathLength: 1,
-                class: "draw",
-                style: `animation-delay:${i * 0.012}s;animation-duration:.5s`,
-              });
-              const dot = el(s, "circle", {
-                cx: x,
-                cy: y,
-                r: 1.6 + rnd(i + 1, 4) * 1.8,
-                fill: INK,
-                opacity: 0.85,
-                class: "pop",
-                style: `animation-delay:${0.15 + i * 0.012}s`,
-              });
-              tip(dot, `core contributor #${i + 1}`);
-            }
-            el(s, "circle", {
-              cx: HX,
-              cy: HY,
-              r: 6.5,
-              fill: INK,
-              class: "pop",
-            });
-            txt(
-              s,
-              {
-                x: HX,
-                y: HY + 140,
-                "font-size": 8,
-                "font-weight": 600,
-                fill: INK,
-                "text-anchor": "middle",
-                "letter-spacing": ".1em",
-                style: `paint-order:stroke;stroke:${PAPER};stroke-width:3px`,
-                class: "fade",
-              },
-              "CORE · 80"
+          // 跨空间的人：[所在空间, 另一边的空间, 人数]
+          const BRIDGES = [
+            [4, 0, 6],
+            [1, 2, 2],
+            [3, 5, 1],
+          ];
+          const HERO_BRIDGE = 0;
+          reveal($("wiki"), (s) => {
+            const GOLD = 137.508,
+              PITCH = 11.2;
+            const people = SPACES.map(([, n, cx, cy], g) =>
+              Array.from({ length: n }, (_, i) => {
+                const r =
+                    PITCH *
+                    Math.sqrt(i + 0.6) *
+                    (1 + jit(g * 100 + i, 1, G.jitter.cluster.spread * 0.3)),
+                  [x, y] = pol(cx, cy, r, i * GOLD + g * 40),
+                  edits = Math.round(2 + 58 * rnd(g * 100 + i + 1, 91) ** 2.6);
+                return { x, y, edits };
+              })
             );
-            // satellite islands
-            SAT.forEach(([x, y, name, n], ci) => {
-              el(s, "circle", {
-                cx: x,
-                cy: y,
-                r: 3.5,
-                fill: I70,
-                class: "pop",
-                style: `animation-delay:${0.9 + ci * 0.12}s`,
+            const most = Math.max(...people.flat().map((p) => p.edits));
+            // 跨空间的人取离对面那团最近的几位，弧才不横穿自己的团
+            const bridgeOf = new Map();
+            BRIDGES.forEach(([from, to, n], b) => {
+              const [, , tx, ty] = SPACES[to],
+                far = (p) => Math.hypot(p.x - tx, p.y - ty);
+              [...people[from]]
+                .sort((p, q) => far(p) - far(q))
+                .slice(0, n)
+                .forEach((p) =>
+                  bridgeOf.set(p, { to, hero: b === HERO_BRIDGE })
+                );
+            });
+            // 辐条
+            SPACES.forEach(([, , cx, cy], g) =>
+              people[g].forEach((p, i) =>
+                el(s, "line", {
+                  x1: cx,
+                  y1: cy,
+                  x2: p.x,
+                  y2: p.y,
+                  stroke: G.ink.mass,
+                  "stroke-width": G.line.thread,
+                  class: "fade",
+                  style: dl(0.1 + g * 0.08 + i * 0.006),
+                })
+              )
+            );
+            // 跨空间弧：往上拱，拱高随跨度
+            bridgeOf.forEach(({ to, hero }, p) => {
+              const [, , tx, ty] = SPACES[to],
+                mx = (p.x + tx) / 2,
+                my = (p.y + ty) / 2 - Math.abs(tx - p.x) * 0.22 - 16;
+              el(s, "path", {
+                d: `M${p.x.toFixed(1)} ${p.y.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${tx} ${ty}`,
+                fill: "none",
+                stroke: hero ? HERO : G.ink.quiet,
+                "stroke-width": hero ? G.line.heroThread : G.line.thread,
+                "stroke-dasharray": hero ? null : "2 2",
+                pathLength: hero ? 1 : null,
+                class: hero ? "draw" : "fade",
+                style: dl(0.9),
               });
-              for (let k = 0; k < n; k++) {
-                const a = k * 137.508 + ci * 40,
-                  rr = 9 + rnd(k + 1, ci + 2) * 26;
-                const [dx, dy] = pol(x, y, rr, a);
-                if (k % 2 === 0)
-                  el(s, "line", {
-                    x1: x,
-                    y1: y,
-                    x2: dx,
-                    y2: dy,
-                    stroke: I14,
-                    "stroke-width": 0.5,
-                    class: "fade",
-                    style: `animation-delay:${1 + ci * 0.12 + k * 0.02}s`,
+            });
+            SPACES.forEach(([name, n, cx, cy], g) => {
+              people[g].forEach((p, i) => {
+                const hero = bridgeOf.get(p)?.hero,
+                  dot = el(s, "circle", {
+                    cx: p.x.toFixed(1),
+                    cy: p.y.toFixed(1),
+                    r: 0.9 + Math.sqrt(p.edits / most) * 3.6,
+                    fill: hero ? HERO : g ? G.ink.data : G.ink.strong,
+                    class: "pop",
+                    style: dl(0.2 + g * 0.08 + i * 0.008),
                   });
-                el(s, "circle", {
-                  cx: dx,
-                  cy: dy,
-                  r: 1.4 + rnd(k + 3, ci + 5) * 1.4,
-                  fill: I60,
-                  class: "pop",
-                  style: `animation-delay:${1 + ci * 0.12 + k * 0.02}s`,
-                });
-              }
+                tip(
+                  dot,
+                  `${name} · 本季度编辑 ${p.edits} 次${bridgeOf.has(p) ? ` · 也在${SPACES[bridgeOf.get(p).to][0]}写` : ""}`
+                );
+              });
+              el(s, "circle", {
+                cx,
+                cy,
+                r: 2.4,
+                fill: "var(--color-card)",
+                stroke: G.ink.strong,
+                "stroke-width": G.line.base,
+              });
+              const below = Math.max(...people[g].map((p) => p.y)) + 12;
               txt(
                 s,
-                {
-                  x,
-                  y: y + 44,
-                  "font-size": 7.5,
-                  "font-weight": 600,
-                  fill: MUTED,
+                tick({
+                  x: cx,
+                  y: Math.min(below, 314),
                   "text-anchor": "middle",
-                  "letter-spacing": ".12em",
-                  style: `paint-order:stroke;stroke:${PAPER};stroke-width:3px`,
-                  class: "fade",
-                },
-                `${name} · ${n}`
+                  fill: g ? G.ink.quiet : G.ink.strong,
+                  "letter-spacing": G.type.track * 1.5,
+                }),
+                `${name} ${n} 人`
               );
             });
           });
@@ -1640,622 +1690,533 @@
 
         // ════ L7 · Brand Spectrum ════
         (() => {
-          // paired opposites; the pale ribbon threads our position down the page
-          const ROWS = [
-            ["FRIEND", "AUTHORITY"],
-            ["SERIOUS", "PLAYFUL"],
-            ["RELIABLE", "RISK-TAKING"],
-            ["CONTEMPORARY", "CLASSIC"],
+          // 品牌光谱：一行 = 一组对立特质，两端都是正当定位（双极量表，不是好坏）；横轴 = 受访者打分的平均值，
+          // -3 到 +3 的 7 级量表。大点 = 我们，小点 = 三个对手，按市场份额分明度（份额越大越深）。
+          // 一根发丝折线把我们各行的位置串起来，读出整体轮廓。家具：每行 7 个刻度，正中一道竖虚线。
+          // 主角：无 —— 我们本身最大最黑。静态，点 hover 出读数。
+          const { G, tick, label } = showMeChart;
+          const RIVALS = ["甲", "乙", "丙"];
+          // [左端, 右端, 我们, 甲, 乙, 丙]
+          const AXES = [
+            ["简单", "强大", -2.1, 0.8, 1.6, -0.6],
+            ["私密", "协作", -1.7, 1.2, 0.2, 2.0],
+            ["亲和", "专业", -0.3, 0.9, 1.8, -0.9],
+            ["有趣", "严肃", -0.8, 0.4, 1.5, 0.1],
+            ["本地", "云端", -1.4, 2.2, 1.1, 1.7],
           ];
-          const US = [0.74, 0.8, 0.4, 0.22]; // 0 = left trait, 1 = right trait
-          const COMP = [
-            [0.42, 0.52, 0.57],
-            [0.6, 0.65, 0.86],
-            [0.3, 0.34, 0.5],
-            [0.36, 0.41, 0.73],
-          ];
-          const X0 = 118,
-            X1 = 342,
-            Y = (i) => 58 + i * 60,
-            px = (t) => X0 + t * (X1 - X0);
-          reveal($("spectrum"), (s) => {
-            // the ribbon first, underneath everything
-            let d = `M${px(US[0])} ${Y(0)}`;
-            for (let i = 1; i < 4; i++)
-              d += ` C${px(US[i - 1])} ${Y(i - 1) + 30} ${px(US[i])} ${Y(i) - 30} ${px(US[i])} ${Y(i)}`;
-            el(s, "path", {
-              d,
-              fill: "none",
-              stroke: PAPER,
-              "stroke-width": 30,
-              "stroke-linecap": "round",
-              "stroke-linejoin": "round",
-              opacity: 0.9,
-              pathLength: 1,
-              class: "draw",
-              style: "animation-duration:1.4s",
+          reveal($("persona"), (s) => {
+            const X0 = 96,
+              X1 = 304,
+              Y0 = 44,
+              ROW = 46;
+            const x = (v) => X0 + ((v + 3) / 6) * (X1 - X0),
+              y = (r) => Y0 + r * ROW;
+            el(s, "line", {
+              x1: x(0),
+              x2: x(0),
+              y1: Y0 - 14,
+              y2: y(AXES.length - 1) + 14,
+              stroke: G.ink.guide,
+              "stroke-width": G.line.grid,
+              "stroke-dasharray": "1 3",
             });
-            ROWS.forEach(([a, b], i) => {
-              const y = Y(i);
+            [-3, 0, 3].forEach((v) =>
+              txt(
+                s,
+                tick({ x: x(v), y: Y0 - 18, "text-anchor": "middle" }),
+                v > 0 ? `+${v}` : v
+              )
+            );
+            AXES.forEach(([lo, hi], r) => {
               el(s, "line", {
                 x1: X0,
-                y1: y,
                 x2: X1,
-                y2: y,
-                stroke: I30,
-                "stroke-width": 1,
-                class: "fade",
-                style: `animation-delay:${i * 0.08}s`,
+                y1: y(r),
+                y2: y(r),
+                stroke: G.ink.quiet,
+                "stroke-width": G.line.base,
               });
-              [X0, X1].forEach((x) =>
+              for (let v = -3; v <= 3; v++)
                 el(s, "line", {
-                  x1: x,
-                  y1: y - 4,
-                  x2: x,
-                  y2: y + 4,
-                  stroke: I30,
-                  "stroke-width": 1,
-                  class: "fade",
-                  style: `animation-delay:${i * 0.08}s`,
-                })
-              );
+                  x1: x(v),
+                  x2: x(v),
+                  y1: y(r) - (v % 3 ? 2 : 3.5),
+                  y2: y(r) + (v % 3 ? 2 : 3.5),
+                  stroke: G.ink.quiet,
+                  "stroke-width": G.line.base,
+                });
               txt(
                 s,
-                {
-                  x: X0 - 14,
-                  y: y + 3,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: I60,
-                  "text-anchor": "end",
-                  "letter-spacing": ".1em",
-                  class: "fade",
-                  style: `animation-delay:${i * 0.08}s`,
-                },
-                a
+                label({ x: X0 - 12, y: y(r) + 2.6, "text-anchor": "end" }),
+                lo
               );
-              txt(
-                s,
-                {
-                  x: X1 + 14,
-                  y: y + 3,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: I60,
-                  "letter-spacing": ".1em",
-                  class: "fade",
-                  style: `animation-delay:${i * 0.08}s`,
-                },
-                b
-              );
-              COMP[i].forEach((t, k) => {
-                const c = el(s, "circle", {
-                  cx: px(t),
-                  cy: y,
-                  r: 3.2,
-                  fill: I45,
+              txt(s, label({ x: X1 + 12, y: y(r) + 2.6 }), hi);
+            });
+            // 我们的轮廓线
+            el(s, "path", {
+              d:
+                "M" +
+                AXES.map((a, r) => `${x(a[2]).toFixed(1)} ${y(r)}`).join("L"),
+              fill: "none",
+              stroke: G.ink.strong,
+              "stroke-width": G.line.data,
+              pathLength: 1,
+              class: "draw",
+              style: dl(0.5),
+            });
+            const RINK = [I60, I45, I30];
+            AXES.forEach(([lo, hi, us, ...them], r) => {
+              them.forEach((v, k) => {
+                const d = el(s, "circle", {
+                  cx: x(v),
+                  cy: y(r),
+                  r: G.dot.mark * 1.15,
+                  fill: RINK[k],
+                  stroke: "var(--color-card)",
+                  "stroke-width": G.line.data,
                   class: "pop",
-                  style: `animation-delay:${0.3 + i * 0.1 + k * 0.05}s`,
+                  style: dl(0.1 + r * 0.06 + k * 0.03),
                 });
                 tip(
-                  c,
-                  `competitor ${"ABC"[k]} — ${Math.round(t * 100)}% toward ${b}`
+                  d,
+                  `对手${RIVALS[k]} · ${lo}—${hi} · ${v > 0 ? "+" : ""}${v}`
                 );
               });
-              const us = el(s, "circle", {
-                cx: px(US[i]),
-                cy: y,
-                r: 8,
-                fill: INK,
+              const d = el(s, "circle", {
+                cx: x(us),
+                cy: y(r),
+                r: G.dot.head * 1.9,
+                fill: G.ink.strong,
+                stroke: "var(--color-card)",
+                "stroke-width": G.line.base,
                 class: "pop",
-                style: `animation-delay:${0.5 + i * 0.1}s`,
+                style: dl(0.3 + r * 0.06),
               });
-              tip(us, `us — ${Math.round(US[i] * 100)}% toward ${b}`);
+              tip(d, `我们 · ${lo}—${hi} · ${us > 0 ? "+" : ""}${us}`);
             });
-            txt(
-              s,
-              {
-                x: X0,
-                y: 284,
-                "font-size": 7.5,
-                "font-weight": 600,
-                fill: I30,
-                "letter-spacing": ".12em",
-                class: "fade",
-                style: "animation-delay:.9s",
-              },
-              "● US    ● COMPETITORS A · B · C"
-            );
+            // 图例
+            const LY = y(AXES.length - 1) + 34;
+            el(s, "circle", {
+              cx: X0 + 4,
+              cy: LY - 2,
+              r: G.dot.head,
+              fill: G.ink.strong,
+            });
+            txt(s, tick({ x: X0 + 11, y: LY }), "我们");
+            RIVALS.forEach((n, k) => {
+              el(s, "circle", {
+                cx: X0 + 52 + k * 34,
+                cy: LY - 2,
+                r: G.dot.mark,
+                fill: RINK[k],
+              });
+              txt(s, tick({ x: X0 + 57 + k * 34, y: LY }), `对手${n}`);
+            });
           });
         })();
 
         // ════ L8 · Dotty Matrix ════
         (() => {
-          // pitch 20/10, dot radius capped well under half-pitch, decks 64px apart:
-          // each plane reads as its own quiet grid instead of a smudge
-          const SQUAD = ["PLATFORM", "GROWTH", "MOBILE", "INFRA"];
-          const SHADE = [I22, I30, I60, INK];
-          const P = (c, r, k) => [
-            196 + (c - r) * 20,
-            236 + (c + r) * 10 - k * 64,
+          // 点阵层：一层 = 一个仓库，每层一张 7 × 5 的格：列 = 周一到周日，行 = 8 月 3 日起的五周。
+          // 点面积 ∝ 当天发货单数（半径取 sqrt，四层同一比例）。四层用斜投影叠放，按五周总单数从上到下排，
+          // 墨色同序由深到浅。周末两列在平面上垫一条浅色带，读的是各层的整体密度与周末规律，不读单点。
+          // 主角：无。装饰感图型，静态；点 hover 出日期与单数。
+          const { G, tick, label } = showMeChart;
+          // [仓库, 工作日基数, 周末系数]
+          const WH = [
+            ["华东", 1300, 0.48],
+            ["华南", 980, 1.04],
+            ["华北", 860, 0.52],
+            ["西南", 540, 0.5],
           ];
-          reveal($("dotty"), (s) => {
-            for (let k = 0; k < 4; k++) {
-              // plane slab: paper fill so upper decks occlude lower ones
-              const cs = [
-                P(-0.8, -0.8, k),
-                P(5.8, -0.8, k),
-                P(5.8, 5.8, k),
-                P(-0.8, 5.8, k),
-              ];
+          const DAY = "一二三四五六日";
+          const grid = WH.map(([, base, weekend], w) =>
+            Array.from({ length: 35 }, (_, i) =>
+              Math.round(
+                base *
+                  (i % 7 >= 5 ? weekend : 1) *
+                  (0.82 + 0.36 * rnd(w * 50 + i + 1, 95))
+              )
+            )
+          );
+          const most = Math.max(...grid.flat()),
+            INKS = [G.ink.strong, I70, I45, I30];
+          reveal($("warehouses"), (s) => {
+            // 斜投影：列沿 x 展开，行往右下斜着退
+            const X0 = 56,
+              W = 196,
+              SKEW = 64,
+              D = 44,
+              Y0 = 34,
+              GAP = 64,
+              RMAX = 5.2;
+            const at = (w, c, r) => [
+              X0 + ((c + 0.5) / 7) * W + ((r + 0.5) / 5) * SKEW,
+              Y0 + w * GAP + ((r + 0.5) / 5) * D,
+            ];
+            const corner = (w, u, v) =>
+              `${(X0 + u * W + v * SKEW).toFixed(1)} ${(Y0 + w * GAP + v * D).toFixed(1)}`;
+            WH.forEach(([name], w) => {
+              // 周末色带与平面轮廓
               el(s, "path", {
-                d: "M" + cs.map((p) => p.join(" ")).join(" L ") + " Z",
-                fill: PAPER,
-                "fill-opacity": 0.96,
-                stroke: I14,
-                "stroke-width": 0.9,
-                class: "fade",
-                style: `animation-delay:${k * 0.16}s`,
+                d: `M${corner(w, 5 / 7, 0)}L${corner(w, 1, 0)}L${corner(w, 1, 1)}L${corner(w, 5 / 7, 1)}Z`,
+                fill: I8,
               });
-              for (let r = 0; r < 6; r++)
-                for (let c = 0; c < 6; c++) {
-                  const load = rnd(k * 37 + r * 6 + c + 1, k + 2);
-                  const v = load < 0.3 ? 0 : Math.round(load * 12); // sparser: silence is part of the texture
-                  const [x, y] = P(c, r, k);
-                  if (!v) {
-                    el(s, "circle", {
-                      cx: x,
-                      cy: y,
-                      r: 0.7,
-                      fill: I14,
-                      class: "pop",
-                      style: `animation-delay:${k * 0.16 + (r * 6 + c) * 0.008}s`,
-                    });
-                    continue;
-                  }
-                  const dot = el(s, "circle", {
-                    cx: x,
-                    cy: y,
-                    r: 1 + Math.sqrt(v) * 1.15,
-                    fill: SHADE[k],
+              el(s, "path", {
+                d: `M${corner(w, 0, 0)}L${corner(w, 1, 0)}L${corner(w, 1, 1)}L${corner(w, 0, 1)}Z`,
+                fill: "none",
+                stroke: G.ink.guide,
+                "stroke-width": G.line.base,
+              });
+              grid[w].forEach((v, i) => {
+                const c = i % 7,
+                  r = Math.floor(i / 7),
+                  [x, y] = at(w, c, r),
+                  d = el(s, "circle", {
+                    cx: x.toFixed(1),
+                    cy: y.toFixed(1),
+                    r: Math.sqrt(v / most) * RMAX,
+                    fill: INKS[w],
                     class: "pop",
-                    style: `animation-delay:${k * 0.16 + (r * 6 + c) * 0.008}s`,
+                    style: dl(0.1 + w * 0.12 + i * 0.008),
                   });
-                  tip(
-                    dot,
-                    `${SQUAD[k]} · week ${c + 1} × lane ${r + 1} — ${v} tasks`
-                  );
-                }
-              // label off the plane's right corner, tied by a short hairline
-              const [cxr, cyr] = P(5.8, -0.8, k);
-              el(s, "line", {
-                x1: cxr + 4,
-                y1: cyr,
-                x2: cxr + 22,
-                y2: cyr,
-                stroke: I22,
-                "stroke-width": 0.8,
-                class: "fade",
-                style: `animation-delay:${0.2 + k * 0.16}s`,
+                tip(d, `${name}仓 · 第 ${r + 1} 周周${DAY[c]} · ${v} 单`);
               });
+              // 名称引线：从平面右角水平引出
+              const [ex, ey] = corner(w, 1, 0.5).split(" ").map(Number);
+              el(s, "line", {
+                x1: ex + 6,
+                x2: 330,
+                y1: ey,
+                y2: ey,
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
+              });
+              const total = grid[w].reduce((a, b) => a + b, 0);
               txt(
                 s,
-                {
-                  x: cxr + 27,
-                  y: cyr + 2.5,
-                  "font-size": 7.5,
-                  "font-weight": 600,
-                  fill: k === 3 ? INK : I45,
-                  "letter-spacing": ".12em",
-                  class: "fade",
-                  style: `animation-delay:${0.2 + k * 0.16}s`,
-                },
-                SQUAD[k]
+                label({
+                  x: 336,
+                  y: ey - 1,
+                  fill: w ? G.ink.data : G.ink.strong,
+                }),
+                `${name}仓`
               );
-            }
+              txt(
+                s,
+                tick({ x: 336, y: ey + 8 }),
+                `${(total / 1000).toFixed(1)}k 单`
+              );
+            });
+            // 星期写在最上一层的前沿
+            [...DAY].forEach((d, c) => {
+              const [x] = at(0, c, -0.5);
+              txt(s, tick({ x, y: Y0 - 6, "text-anchor": "middle" }), d);
+            });
           });
         })();
 
         // ════ L9 · Bubble Almanac ════
         (() => {
-          // the vintage-almanac feel lives in three things: ledger-paper hairlines
-          // under everything, bubbles big enough to collide, and marginalia. do all three.
-          const AREAS = [
-            "EDITOR",
-            "BOARDS",
-            "DOCS",
-            "CHAT",
-            "FLOWS",
-            "VAULT",
-            "PAGES",
-            "SYNC",
-            "GRID",
-            "VIEWS",
-            "HUB",
-            "FORMS",
+          // 气泡年鉴：一行 = 一类图书，一列 = 一年（2019–2026，时间从左往右）。泡泡面积 ∝ 当年借阅（千册，半径取 sqrt），
+          // 手绘轮廓，实心浅底；大的泡泡会压到邻行，像一叠压在账本上的硬币。实心内核（最重的墨）面积 ∝ 其中的预约借阅；
+          // 虚线圈 = 当年还在试点。家具：每行一道账本线、行间两道极淡的线，页边两条批注，底部事件年表对齐年份列。
+          // 主角：无。静态，泡泡 hover 出读数。
+          const { G, tick, value, label } = showMeChart;
+          const YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+          // [类目, 各年借阅（千册）, 预约占比]
+          const SHELF = [
+            ["小说", [52, 30, 48, 50, 49, 47, 46, 45], 0.24],
+            ["童书", [30, 18, 33, 36, 40, 43, 44, 46], 0.18],
+            ["历史", [18, 11, 19, 21, 24, 22, 23, 24], 0.14],
+            ["科普", [12, 8, 15, 19, 23, 27, 30, 32], 0.2],
+            ["漫画", [10, 9, 14, 22, 26, 20, 17, 16], 0.3],
+            ["考试", [26, 15, 22, 19, 16, 13, 11, 9], 0.12],
+            ["外语", [20, 12, 17, 15, 13, 11, 10, 8], 0.1],
+            ["有声书", [0, 0, 3, 6, 12, 22, 34, 47], 0.28],
           ];
-          const BETA = { GRID: 2023, VIEWS: 2024, HUB: 2025, FORMS: 2025 }; // beta until this year
-          const BORN = {
-            EDITOR: 2019,
-            BOARDS: 2019,
-            DOCS: 2019,
-            CHAT: 2020,
-            FLOWS: 2020,
-            VAULT: 2021,
-            PAGES: 2021,
-            SYNC: 2022,
-            GRID: 2022,
-            VIEWS: 2023,
-            HUB: 2024,
-            FORMS: 2024,
-          };
-          reveal($("almanac"), (s) => {
-            const rowY = (i) => 62 + i * 34,
-              colX = (j) => 132 + j * 57;
-            // ledger paper: hairlines every 6.8px, edge to edge, under everything
-            for (let y = 40; y <= 318; y += 6.8)
+          const PILOT = { 7: [2021, 2022, 2023, 2024] }; // 有声书 2025 年转正
+          const EVENTS = [
+            [2020, "闭馆三个月"],
+            [2021, "自助借还上线"],
+            [2023, "全市通借通还"],
+            [2025, "有声书转正"],
+          ];
+          const most = Math.max(...SHELF.flatMap((r) => r[1]));
+          reveal($("library"), (s) => {
+            const X0 = 132,
+              X1 = 800,
+              Y0 = 52,
+              ROW = 34,
+              RMAX = 18.5;
+            const x = (k) => X0 + (k * (X1 - X0)) / (YEARS.length - 1),
+              y = (r) => Y0 + r * ROW;
+            // 账本纸：每行一道实线，行间两道极淡的线
+            for (let r = 0; r < SHELF.length; r++) {
               el(s, "line", {
-                x1: 56,
-                y1: y,
-                x2: 822,
-                y2: y,
-                stroke: I8,
-                "stroke-width": 0.5,
-                class: "fade",
-                style: `animation-delay:${(y - 40) * 0.001}s`,
+                x1: 40,
+                x2: 828,
+                y1: y(r),
+                y2: y(r),
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
               });
-            const vals = [];
-            for (let i = 0; i < 8; i++) {
-              const yr = 2019 + i;
-              el(s, "line", {
-                x1: 56,
-                y1: rowY(i),
-                x2: 822,
-                y2: rowY(i),
-                stroke: I14,
-                "stroke-width": 0.9,
-                class: "fade",
-                style: `animation-delay:${i * 0.04}s`,
-              });
-              txt(
-                s,
-                {
-                  x: 48,
-                  y: rowY(i) + 3,
-                  "font-size": 9,
-                  "font-weight": 600,
-                  fill: I45,
-                  "text-anchor": "end",
-                  class: "fade",
-                  style: `animation-delay:${i * 0.04}s`,
-                },
-                yr
+              [1, 2].forEach((k) =>
+                el(s, "line", {
+                  x1: 40,
+                  x2: 828,
+                  y1: y(r) + (k * ROW) / 3,
+                  y2: y(r) + (k * ROW) / 3,
+                  stroke: I14,
+                  "stroke-width": G.line.grid,
+                })
               );
-              AREAS.forEach((a, j) => {
-                if (yr < BORN[a]) return;
-                const age = yr - BORN[a];
-                // steep spread: quiet areas stay pinpricks, busy ones balloon
-                const v = Math.round(
-                  (2 + age * 5) * (0.25 + rnd(i * 12 + j + 1, j + 3) ** 2 * 2.2)
-                );
-                vals.push([Math.max(1, v), i, j, a, yr]);
-              });
             }
-            // draw small over large so the giants sit underneath as washes
-            vals.sort((a, b) => b[0] - a[0]);
-            const top3 = vals.slice(0, 3);
-            // hand-drawn circle: radius wobbles around the rim on two slow sine waves,
-            // so every bubble is its own slightly-off print — never a compass circle
-            const blob = (x, y, r, seed) => {
-              const n = Math.max(14, Math.round(r * 1.6)),
-                pts = [];
-              for (let t = 0; t < n; t++) {
-                const a = (t / n) * Math.PI * 2;
-                const w =
-                  1 +
-                  0.055 * Math.sin(a * 2 + seed * 7) +
-                  0.04 * Math.sin(a * 3 + seed * 13) +
-                  (rnd(seed + t, 3) - 0.5) * 0.03;
-                pts.push([x + Math.cos(a) * r * w, y + Math.sin(a) * r * w]);
-              }
-              let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-              for (let t = 0; t < n; t++) {
-                const p = pts[t],
-                  q = pts[(t + 1) % n];
-                d += ` Q${p[0].toFixed(1)} ${p[1].toFixed(1)} ${((p[0] + q[0]) / 2).toFixed(1)} ${((p[1] + q[1]) / 2).toFixed(1)}`;
-              }
-              return d + " Z";
-            };
-            vals.forEach(([v, i, j, a, yr], k) => {
-              const x = colX(j) + (rnd(i * 7 + j + 2, j + 9) - 0.5) * 10, // jitter off the gridline
-                y = rowY(i),
-                r = Math.sqrt(v) * 3.8; // big: rows are 34 apart, giants reach ~28 and collide
-              const beta = BETA[a] && yr <= BETA[a];
-              const g = el(s, "g", {
-                class: "pop",
-                style: `animation-delay:${0.15 + k * 0.012}s`,
-              });
-              const seed = i * 12 + j;
-              const dot = el(
-                g,
-                "path",
-                beta
-                  ? {
-                      d: blob(x, y, r, seed),
-                      fill: "none",
-                      stroke: I45,
-                      "stroke-width": 1,
-                      "stroke-dasharray": "3 3",
-                    }
-                  : {
-                      d: blob(x, y, r, seed),
-                      fill: INK,
-                      "fill-opacity": 0.09 + rnd(i + 2, j + 4) * 0.1,
-                      stroke: INK,
-                      "stroke-opacity": 0.3 + rnd(i + 5, j + 7) * 0.35,
-                      "stroke-width": 0.6 + rnd(i + 3, j + 11) * 0.9,
-                    }
-              );
-              tip(
-                dot,
-                `${a} · ${yr} — ${v * 10} tickets${beta ? " (beta)" : ""}`
-              );
-              // escalation core: small wobbly blot, nudged off-center like a press mark
-              if (!beta) {
-                const ox = (rnd(seed + 1, 17) - 0.5) * r * 0.3,
-                  oy = (rnd(seed + 3, 19) - 0.5) * r * 0.3;
-                el(g, "path", {
-                  d: blob(x + ox, y + oy, Math.max(1.4, r * 0.17), seed + 29),
-                  fill: INK,
-                });
-              }
-              if (top3.includes(vals[k]))
-                txt(
-                  s,
-                  {
-                    x,
-                    y: y - r - 5,
-                    "font-size": 8.5,
-                    "font-weight": 600,
-                    fill: INK,
-                    "text-anchor": "middle",
-                    class: "fade",
-                    style: "animation-delay:1s",
-                  },
-                  v * 10
-                );
-            });
-            AREAS.forEach((a, j) => {
-              const x = colX(j);
+            YEARS.forEach((yr, k) =>
               txt(
                 s,
-                {
-                  x,
-                  y: 34,
-                  "font-size": 7.5,
-                  "font-weight": 600,
-                  fill: MUTED,
-                  "letter-spacing": ".1em",
-                  transform: `rotate(-32 ${x} 34)`,
-                  class: "fade",
-                  style: `animation-delay:${j * 0.03}s`,
-                },
-                a
-              );
-            });
-            // marginalia: two annotations with pointer hairlines, like the original's notes
-            el(s, "path", {
-              d: `M${colX(3) + 30} ${rowY(5) - 14} C${colX(3) + 70} ${rowY(5) - 34} ${colX(3) + 96} ${rowY(5) - 38} ${colX(3) + 118} ${rowY(5) - 38}`,
-              fill: "none",
-              stroke: I30,
-              "stroke-width": 0.7,
-              class: "fade",
-              style: "animation-delay:1.1s",
-            });
-            txt(
-              s,
-              {
-                x: colX(3) + 124,
-                y: rowY(5) - 35,
-                "font-size": 7,
-                fill: I60,
-                "font-style": "italic",
-                class: "fade",
-                style: "animation-delay:1.1s",
-              },
-              "chat tickets triple after mobile GA"
-            );
-            el(s, "path", {
-              d: `M${colX(9) + 16} ${rowY(2) + 8} C${colX(9) + 40} ${rowY(2) + 26} ${colX(9) + 60} ${rowY(2) + 30} ${colX(9) + 80} ${rowY(2) + 30}`,
-              fill: "none",
-              stroke: I30,
-              "stroke-width": 0.7,
-              class: "fade",
-              style: "animation-delay:1.2s",
-            });
-            txt(
-              s,
-              {
-                x: colX(9) + 86,
-                y: rowY(2) + 33,
-                "font-size": 7,
-                fill: I60,
-                "font-style": "italic",
-                class: "fade",
-                style: "animation-delay:1.2s",
-              },
-              "betas barely ticket — nobody files bugs on toys"
-            );
-            // footer strip: important events, the almanac's timeline shelf
-            const evY = 356;
-            el(s, "line", {
-              x1: 56,
-              y1: evY - 16,
-              x2: 822,
-              y2: evY - 16,
-              stroke: I22,
-              "stroke-width": 0.8,
-              class: "fade",
-              style: "animation-delay:1.2s",
-            });
-            txt(
-              s,
-              {
-                x: 56,
-                y: evY - 24,
-                "font-size": 7,
-                "font-weight": 600,
-                fill: I45,
-                "letter-spacing": ".16em",
-                class: "fade",
-                style: "animation-delay:1.2s",
-              },
-              "IMPORTANT EVENTS"
-            );
-            [
-              ["2020", "SLA introduced"],
-              ["2022", "self-serve help center"],
-              ["2023", "the GA wave"],
-              ["2025", "AI deflection live"],
-            ].forEach(([yr, note], k) => {
-              const x = 90 + k * 196;
-              el(s, "line", {
-                x1: x,
-                y1: evY - 16,
-                x2: x,
-                y2: evY - 6,
-                stroke: I45,
-                "stroke-width": 1,
-                class: "fade",
-                style: `animation-delay:${1.3 + k * 0.08}s`,
-              });
-              txt(
-                s,
-                {
-                  x,
-                  y: evY + 4,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: INK,
-                  class: "fade",
-                  style: `animation-delay:${1.3 + k * 0.08}s`,
-                },
+                tick({
+                  x: x(k),
+                  y: 22,
+                  "text-anchor": "middle",
+                  "letter-spacing": G.type.track * 2,
+                }),
                 yr
-              );
+              )
+            );
+            SHELF.forEach(([name, vals, hold], r) => {
               txt(
                 s,
-                {
-                  x,
-                  y: evY + 15,
-                  "font-size": 7,
-                  fill: I45,
-                  class: "fade",
-                  style: `animation-delay:${1.3 + k * 0.08}s`,
-                },
-                note
+                label({
+                  x: 96,
+                  y: y(r) + 2.6,
+                  "text-anchor": "end",
+                  fill: G.ink.strong,
+                }),
+                name
               );
+              vals.forEach((v, k) => {
+                if (!v) return;
+                const cx = x(k),
+                  cy = y(r),
+                  rad = Math.sqrt(v / most) * RMAX,
+                  seed = r * 10 + k + 3,
+                  pilot = (PILOT[r] || []).includes(YEARS[k]);
+                const g = el(s, "g", {
+                  class: "pop",
+                  style: dl(0.1 + k * 0.07 + r * 0.02),
+                });
+                const b = el(g, "path", {
+                  d: blob(cx, cy, rad, seed),
+                  fill: pilot ? "none" : I8,
+                  stroke: pilot ? G.ink.quiet : I60,
+                  "stroke-width": G.line.data,
+                  "stroke-dasharray": pilot ? "2 2" : null,
+                });
+                tip(
+                  b,
+                  `${name} · ${YEARS[k]} · ${v} 千册 · 预约 ${Math.round(v * hold)} 千册${pilot ? " · 试点" : ""}`
+                );
+                if (!pilot)
+                  el(g, "path", {
+                    d: blob(
+                      cx + rad * 0.12,
+                      cy - rad * 0.08,
+                      rad * Math.sqrt(hold),
+                      seed + 50
+                    ),
+                    fill: G.ink.strong,
+                    "pointer-events": "none",
+                  });
+              });
+              const last = vals[vals.length - 1];
+              txt(s, value({ x: 812, y: y(r) + 2.6 }), last);
+            });
+            txt(s, tick({ x: 812, y: 22 }), "千册");
+            // 页边批注：斜体小字写在行缝里，发丝引线指到所说的泡泡
+            const note = (tx, ty, px, py, text, end) => {
+              const t = txt(
+                s,
+                tick({
+                  x: tx,
+                  y: ty,
+                  "font-style": "italic",
+                  "text-anchor": end ? "end" : "start",
+                }),
+                text
+              );
+              const bb = t.getBBox(),
+                sx = end ? bb.x - 3 : bb.x + bb.width + 3;
+              el(s, "path", {
+                d: `M${sx.toFixed(1)} ${ty - 2}Q${((sx + px) / 2).toFixed(1)} ${ty - 2} ${px} ${py}`,
+                fill: "none",
+                stroke: G.ink.quiet,
+                "stroke-width": G.line.grid,
+              });
+            };
+            note(
+              x(5) + 12,
+              y(5) + ROW / 2 + 2,
+              x(7) - 9,
+              y(5) + 5,
+              "考试类七年少了三分之二"
+            );
+            note(
+              x(5) + 20,
+              y(7) + 26,
+              x(7) - 6,
+              y(7) + 15,
+              "转正第二年就追上了小说"
+            );
+            // 事件年表：刻度对齐年份列
+            const TY = y(SHELF.length - 1) + 44;
+            el(s, "line", {
+              x1: 40,
+              x2: 828,
+              y1: TY,
+              y2: TY,
+              stroke: G.ink.quiet,
+              "stroke-width": G.line.base,
+            });
+            txt(
+              s,
+              tick({ x: 40, y: TY - 6, "letter-spacing": G.type.track * 3 }),
+              "馆内大事"
+            );
+            EVENTS.forEach(([yr, what]) => {
+              const ex = x(YEARS.indexOf(yr));
+              el(s, "line", {
+                x1: ex,
+                x2: ex,
+                y1: TY,
+                y2: TY + 6,
+                stroke: G.ink.strong,
+                "stroke-width": G.line.hero,
+              });
+              txt(s, label({ x: ex + 4, y: TY + 16 }), what);
             });
           });
         })();
 
         // ════ L10 · Radial Patchwork ════
         (() => {
-          const CX = 200,
-            CY = 168,
-            N = 46;
-          reveal($("patchwork"), (s) => {
-            // 24h rim ticks
-            for (let h = 0; h < 96; h++) {
-              const a = -90 + h * 3.75,
-                [x1, y1] = pol(CX, CY, 140, a),
-                [x2, y2] = pol(CX, CY, h % 4 === 0 ? 146 : 143, a);
+          // 径向拼布：一片扇 = 一次线上问诊。角度 = 开始时刻（一圈 24 小时，0 点在正上方，顺时针），
+          // 扇宽固定 = 20 分钟；半径 = 问诊时长，从内圈起线性量。扇片以低不透明度叠放，墨越深 = 这个时段问诊越扎堆 ——
+          // 本库唯一允许透明度编码密度的图。描边 = 转了线下就诊。家具：24 小时刻度环（每 6 小时标数）、10 / 20 / 30 分钟参考虚线圆。
+          // 主角：无。140 片，读密度不读单片，静态；扇片 hover 出时刻与时长。
+          const { G, tick } = showMeChart;
+          // 近似正态：三个均匀数之和
+          const bell = (i, k) =>
+            (rnd(i, k) + rnd(i + 11, k + 1) + rnd(i + 23, k + 2) - 1.5) / 1.5;
+          // 三类问诊：午间、深夜、白天零散；深夜的更长，转线下也多
+          const visits = Array.from({ length: 140 }, (_, i) => {
+            const p = rnd(i + 1, 61),
+              kind = p < 0.42 ? "noon" : p < 0.84 ? "night" : "day";
+            const h =
+              kind === "noon"
+                ? 12.6 + bell(i + 1, 62) * 1.6
+                : kind === "night"
+                  ? 22.4 + bell(i + 1, 63) * 1.5
+                  : 7.5 + rnd(i + 1, 64) * 11;
+            const min = Math.round(
+              kind === "night"
+                ? 11 + rnd(i + 2, 65) * 22
+                : 5 + rnd(i + 2, 66) * (kind === "noon" ? 10 : 8)
+            );
+            const referred =
+              kind === "night"
+                ? min > 22 && rnd(i + 3, 67) < 0.55
+                : rnd(i + 3, 68) < 0.05;
+            return { h: (h + 24) % 24, min, referred };
+          });
+          const clock = (h) =>
+            `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`;
+          reveal($("consults"), (s) => {
+            const CX = 200,
+              CY = 162,
+              R0 = 16,
+              K = 3.4, // 每分钟的半径
+              RIM = 132,
+              WIDE = 5; // 20 分钟 = 5°
+            const deg = (h) => -90 + h * 15;
+            [10, 20, 30].forEach((m) => {
+              el(s, "circle", {
+                cx: CX,
+                cy: CY,
+                r: R0 + m * K,
+                fill: "none",
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
+                "stroke-dasharray": "1 3",
+              });
+              // 分钟读数放在凌晨三点方向，那里几乎没有问诊
+              const [x, y] = pol(CX, CY, R0 + m * K, deg(3));
+              txt(s, tick({ x: x + 2, y: y - 2 }), `${m} 分`);
+            });
+            for (let q = 0; q < 96; q++) {
+              const hour = q % 4 === 0,
+                six = q % 24 === 0,
+                [x1, y1] = pol(CX, CY, RIM, deg(q / 4)),
+                [x2, y2] = pol(
+                  CX,
+                  CY,
+                  RIM + (six ? 8 : hour ? 5 : 2.5),
+                  deg(q / 4)
+                );
               el(s, "line", {
                 x1,
                 y1,
                 x2,
                 y2,
-                stroke: I22,
-                "stroke-width": h % 4 === 0 ? 1 : 0.5,
-                class: "fade",
-                style: `animation-delay:${h * 0.006}s`,
+                stroke: hour ? G.ink.quiet : G.ink.mass,
+                "stroke-width": six ? G.line.base : G.line.grid,
               });
             }
-            [0, 6, 12, 18].forEach((h) => {
-              const [x, y] = pol(CX, CY, 157, -90 + h * 15);
+            [
+              [0, "middle", -2],
+              [6, "start", 2.2],
+              [12, "middle", 7],
+              [18, "end", 2.2],
+            ].forEach(([h, anchor, dy]) => {
+              const [x, y] = pol(CX, CY, RIM + 12, deg(h));
               txt(
                 s,
-                {
-                  x,
-                  y: y + 3,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: MUTED,
-                  "text-anchor": "middle",
-                  class: "fade",
-                },
-                String(h).padStart(2, "0")
+                tick({ x, y: y + dy, "text-anchor": anchor, fill: G.ink.data }),
+                `${h} 时`
               );
             });
-            // the patchwork: translucent wedges pile into ink
-            const wedges = [];
-            for (let i = 0; i < N; i++) {
-              // deploys cluster around 11h and 16h, thin overnight
-              const peak = rnd(i + 1, 2) > 0.5 ? 11 : 16;
-              const hour = (peak + (rnd(i + 1, 3) - 0.5) * 7 + 24) % 24;
-              const a0 = -90 + hour * 15,
-                sw = 10 + rnd(i + 1, 4) * 34;
-              const r1 = 34 + rnd(i + 1, 5) * 100;
-              wedges.push([a0, sw, r1, hour, i]);
-            }
-            wedges.forEach(([a0, sw, r1, hour, i]) => {
-              const w = el(s, "path", {
-                d: sect(CX, CY, 16, r1, a0, a0 + sw),
-                fill: INK,
-                "fill-opacity": 0.07 + rnd(i + 1, 6) * 0.09,
-                class: "fade",
-                style: `animation-delay:${0.2 + i * 0.022}s`,
-              });
+            visits.forEach((v, i) => {
+              const a = deg(v.h),
+                w = el(s, "path", {
+                  d: sect(
+                    CX,
+                    CY,
+                    R0,
+                    R0 + v.min * K,
+                    a - WIDE / 2,
+                    a + WIDE / 2
+                  ),
+                  fill: G.ink.strong,
+                  "fill-opacity": 0.13,
+                  stroke: v.referred ? G.ink.strong : "none",
+                  "stroke-width": G.line.base,
+                  "stroke-linejoin": "round",
+                  class: "fade",
+                  style: dl(0.1 + i * 0.01),
+                });
               tip(
                 w,
-                `deploy #${i + 1} — ${String(Math.floor(hour)).padStart(2, "0")}:${String(Math.floor((hour % 1) * 60)).padStart(2, "0")} · ${Math.round(r1 * 6)} files`
+                `${clock(v.h)} · ${v.min} 分钟${v.referred ? " · 转线下" : ""}`
               );
-            });
-            // three outlined wedges: the ones that paged somebody
-            [4, 17, 31].forEach((i, k) => {
-              const [a0, sw, r1] = wedges[i];
-              const w = el(s, "path", {
-                d: sect(CX, CY, 16, r1, a0, a0 + sw),
-                fill: "none",
-                stroke: INK,
-                "stroke-width": 1.1,
-                class: "fade",
-                style: `animation-delay:${1.2 + k * 0.15}s`,
-              });
-              tip(w, `deploy #${i + 1} — triggered an incident`);
             });
             el(s, "circle", {
               cx: CX,
               cy: CY,
-              r: 3,
-              fill: INK,
-              class: "pop",
-              style: "animation-delay:1.3s",
+              r: R0 - 3,
+              fill: "none",
+              stroke: G.ink.quiet,
+              "stroke-width": G.line.base,
             });
-            txt(
-              s,
-              {
-                x: CX,
-                y: 308,
-                "font-size": 7.5,
-                "font-weight": 600,
-                fill: I30,
-                "text-anchor": "middle",
-                "letter-spacing": ".12em",
-                class: "fade",
-                style: "animation-delay:1.4s",
-              },
-              "OUTLINED = TRIGGERED AN INCIDENT"
-            );
           });
         })();
 
