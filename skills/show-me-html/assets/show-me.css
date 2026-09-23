@@ -2457,6 +2457,15 @@ body[data-recipe="share-card"] {
     box-shadow: none;
     break-inside: avoid;
   }
+  /* 带边框的配方舞台整块换页：里面的 .fig-box 不可拆，舞台一旦跨页，
+     图整块挪到下一页，上一页只剩一个空边框。舞台比一页还高时浏览器照常分页。 */
+  [data-recipe="visual-directions"] .artboard,
+  [data-recipe="interaction-proto"] .workbench,
+  [data-recipe="flowchart"] .diagram-canvas,
+  [data-recipe="concept-explainer"] .model-lab,
+  [data-recipe="text-tuner"] .tuner-workspace {
+    break-inside: avoid;
+  }
   [data-recipe="slide-deck"] .slide {
     min-height: auto;
     break-after: page;
