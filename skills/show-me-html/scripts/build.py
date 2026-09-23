@@ -54,6 +54,23 @@ JS_COMPONENTS = (
     "dropdown-menu", "popover", "select", "combobox", "command",
     "sidebar", "drawer", "tabs", "toaster", "chart",
 )
+# assets/gallery/LICENSE-lieflat-charts.md 列出的衍生块：遵循 PolyForm Noncommercial 1.0.0，不是 MIT。
+# 名单改动时两处同步。
+NONCOMMERCIAL_CHARTS = frozenset(
+    [f"L{i}" for i in range(1, 21)]
+    + [f"F{i}" for i in (*range(1, 13), 14, 15, 16, 17)]
+    + ["G4", "G19", "G20", "G21", "G22"]
+)
+POLYFORM_URL = "https://polyformproject.org/licenses/noncommercial/1.0.0"
+LICENSE_BEGIN = "<!--SHOW-ME:LICENSE:BEGIN"
+LICENSE_END = "SHOW-ME:LICENSE:END-->"
+LICENSE_BLOCK_RE = re.compile(re.escape(LICENSE_BEGIN) + r".*?" + re.escape(LICENSE_END), re.S)
+
+
+def noncommercial_charts(html):
+    """页面实际用到的非商用图块编号，按编号排序。"""
+    used = set(re.findall(r'\bdata-chart="([A-Z]\d+)"', html))
+    return sorted(used & NONCOMMERCIAL_CHARTS, key=lambda c: (c[0], int(c[1:])))
 
 # 页面自己写死的颜色。show-me-html 自有 CSS 不算。
 SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette|math)"[^>]*>.*?</style>', re.S)
@@ -590,6 +607,27 @@ def build(html, errors):
         html = new
         changed = True
 
+    ids = noncommercial_charts(html)
+    notice = ""
+    if ids:
+        notice = (
+            f"{LICENSE_BEGIN}\n"
+            f"  本页图表 {', '.join(ids)} 改写自 lieflat-charts（https://github.com/larashero3-dotcom/lieflat-charts，"
+            "提交 eace082，作者「躺在废墟里」），\n"
+            f"  遵循 PolyForm Noncommercial License 1.0.0：{POLYFORM_URL}\n"
+            "  商业用途需取得上游作者许可。\n"
+            f"{LICENSE_END}"
+        )
+    if LICENSE_BEGIN in html:
+        new = LICENSE_BLOCK_RE.sub(lambda _m: notice, html, count=1)
+    elif notice and "</head>" in html:
+        new = html.replace("</head>", f"{notice}\n  </head>", 1)
+    else:
+        new = html
+    if new != html:
+        html = new
+        changed = True
+
     return html, changed, used, langs, warns
 
 
@@ -722,6 +760,12 @@ def check(html, path, allow_legacy_recipe=False):
     if ink_cards > 1:
         warns.append(
             f"页面有 {ink_cards} 块反色暗卡：反色与 hero 共用强调预算，一页只留一块给决定性的数字或结论"
+        )
+    nc = noncommercial_charts(stripped)
+    if nc:
+        warns.append(
+            f"页面用了非商用许可图块 {', '.join(nc)}（PolyForm Noncommercial 1.0.0）："
+            "交付时向用户点名；商业场合转发前需上游许可，或换成 MIT 图块"
         )
 
     if has_math_source(stripped):

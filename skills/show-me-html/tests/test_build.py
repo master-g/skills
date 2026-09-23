@@ -194,6 +194,58 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("图表运行时", result.stdout)
 
+    def chart_figure(self, chart):
+        return self.FIGURE.replace('data-chart="F1"', f'data-chart="{chart}"')
+
+    def test_noncommercial_chart_gets_license_notice(self):
+        page = self.copy_fixture()
+        self.insert(page, self.chart_figure("L1"))
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("PolyForm", result.stdout)
+        built = page.read_text(encoding="utf-8")
+        self.assertEqual(built.count("https://polyformproject.org/licenses/noncommercial/1.0.0"), 1)
+        notice = re.search(r"<!--SHOW-ME:LICENSE:BEGIN.*?SHOW-ME:LICENSE:END-->", built, re.S)
+        self.assertIsNotNone(notice)
+        self.assertIn("L1", notice.group(0))
+
+    def test_mit_chart_has_no_license_notice(self):
+        page = self.copy_fixture()
+        self.insert(page, self.chart_figure("G3"))
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("polyformproject.org", page.read_text(encoding="utf-8"))
+        self.assertNotIn("PolyForm", result.stdout)
+
+    def test_license_notice_is_idempotent_and_tracks_charts(self):
+        page = self.copy_fixture()
+        self.insert(page, self.chart_figure("L1"))
+        self.assertEqual(run_build(page).returncode, 0)
+        before = hashlib.sha256(page.read_bytes()).digest()
+        self.assertEqual(run_build(page).returncode, 0)
+        built = page.read_text(encoding="utf-8")
+        self.assertEqual(built.count("SHOW-ME:LICENSE:BEGIN"), 1)
+        self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
+        page.write_text(re.sub(r"<section><figure.*?</figure></section>", "", built, count=1, flags=re.S), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("SHOW-ME:LICENSE:BEGIN", page.read_text(encoding="utf-8"))
+
+    def test_check_only_warns_on_noncommercial_chart(self):
+        page = self.copy_fixture()
+        self.insert(page, self.chart_figure("F3"))
+        self.assertEqual(run_build(page).returncode, 0)
+
+        result = run_build(page, "--check-only")
+
+        self.assertIn("PolyForm", result.stdout)
+
     def test_gallery_pages_build_and_scripts_parse(self):
         gallery = SKILL / "assets" / "gallery"
         pages = sorted(gallery.glob("*.html"))
@@ -208,7 +260,8 @@ class BuildCliTests(unittest.TestCase):
                 result = run_build(page)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertNotIn("ERROR", result.stdout)
-                self.assertNotIn("WARN", result.stdout)
+                warns = [l for l in result.stdout.splitlines() if l.startswith("WARN") and "PolyForm" not in l]
+                self.assertEqual(warns, [])
                 built = page.read_text(encoding="utf-8")
                 self.assertIn('data-show-me="charts"', built)
                 self.assertEqual(built.count("data-chart="), len(re.findall(r"// ════ [A-Z]\d+ · ", built)))
@@ -220,7 +273,7 @@ class BuildCliTests(unittest.TestCase):
                     self.assertEqual(check.returncode, 0, check.stderr)
 
     def test_gallery_overview_page_has_every_chart(self):
-        """scripts/gallery.py 拼出的总览页：59 张图各有唯一 id，构建只剩体积这一条 WARN，拼接后的脚本能解析。"""
+        """scripts/gallery.py 拼出的总览页：59 张图各有唯一 id，构建只剩体积与非商用许可两条 WARN，拼接后的脚本能解析。"""
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         result = subprocess.run(
@@ -230,7 +283,7 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn("ERROR", result.stdout)
         warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
-        self.assertTrue(all("超过 400 KB" in w for w in warns), warns)
+        self.assertTrue(all("超过 400 KB" in w or "PolyForm" in w for w in warns), warns)
         built = (Path(tmp.name) / "all-charts.html").read_text(encoding="utf-8")
         ids = re.findall(r'<figure id="fig-([A-Z]\d+)"', built)
         total = sum(p.read_text(encoding="utf-8").count("data-chart=")
