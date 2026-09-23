@@ -46,6 +46,7 @@
 
   ```sh
   rsync -a --delete --exclude .git --exclude agents --exclude /README.md \
+    --exclude scenarios/rounds --exclude .pytest_cache --exclude __pycache__ \
     /Users/mg/github/skills/skills/show-me-html/ ~/.agents/skills/show-me-html/
   ```
 
@@ -53,7 +54,8 @@
   文件虽复制但注册环节失败，不作为验证过的通道。）
 
   同步后用 `diff -rq skills/show-me-html ~/.agents/skills/show-me-html` 验证一致
-  （`.git`、`agents/`、`README.md` 属仓库侧文件，差异属预期）。
+  （`.git`、`agents/`、`README.md` 属仓库侧文件；`scenarios/rounds/` 是不进 git 的本地轮次产出，
+  `.pytest_cache`、`__pycache__` 是测试缓存，都不进安装副本，差异属预期）。
 
 ## Vendor 升级
 
