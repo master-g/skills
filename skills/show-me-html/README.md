@@ -69,6 +69,6 @@ effective-html 已弃用并由本 skill 取代，历史内容存于仓库的 `sk
 | [basecoat](https://basecoatui.com)（只保留 JS 行为层）                                                        | 1.0.2   | MIT © Ronan Berder                                    | `assets/vendor/LICENSE-basecoat.md`        |
 | [lucide](https://lucide.dev) 图标                                                                             | 1.31.0  | ISC © Lucide Contributors                             | `assets/vendor/LICENSE-lucide.txt`         |
 | [Temml](https://temml.org) 公式编译                                                                           | 0.13.5  | MIT © Ron Kok                                         | `assets/vendor/LICENSE-temml.txt`          |
-| [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型（`assets/gallery/` 中 4 个衍生块） | eace082 | PolyForm Noncommercial 1.0.0 © 躺在废墟里，**非商用** | `assets/gallery/LICENSE-lieflat-charts.md` |
+| [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型（`assets/gallery/` 中 0 个衍生块） | eace082 | PolyForm Noncommercial 1.0.0 © 躺在废墟里，**非商用** | `assets/gallery/LICENSE-lieflat-charts.md` |
 
 它们的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用。
