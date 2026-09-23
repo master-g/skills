@@ -835,8 +835,8 @@
             <figure class="fig" data-chart="G22">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-sankey-t"
-                    >Channels pour into plans</span
+                  <span class="fig-title" id="fig-ticketflow-t"
+                    >电话进来的工单，一半转去了二线</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">G22 · Aggregate Sankey</span
@@ -851,23 +851,35 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  ribbon width = accounts · channels on the left, the plans they
-                  land in on the right
+                  缎带宽 = 工单数 · 左边进线渠道，右边最后怎么结的 · 深浅 = 渠道
+                  · 主角 = 电话转二线
+                </p>
+                <p class="fig-hint" data-md-skip>
+                  悬停一条缎带看这一路，悬停或 Tab
+                  到两端看整束，点击钉住，点空白或 Esc 释放
                 </p>
                 <svg
-                  id="sankey"
+                  id="ticketflow"
                   viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="sankey-title sankey-desc"
+                  aria-labelledby="ticketflow-title ticketflow-desc"
                 >
-                  <title id="sankey-title">Channels pour into plans</title>
-                  <desc id="sankey-desc">
-                    ribbon width = accounts · channels on the left, the plans
-                    they land in on the right
+                  <title id="ticketflow-title">
+                    9 月 1,340 张客服工单从进线渠道到结单方式
+                  </title>
+                  <desc id="ticketflow-desc">
+                    电话进线 310 张，其中 156 张转二线；在线客服 520
+                    张里七成由一线直接解决
                   </desc>
                 </svg>
-                <p class="fig-src">AGGREGATE SANKEY · ATTRIBUTION</p>
+                <div class="fig-status" data-md-skip>
+                  <span data-text></span><span data-pin></span>
+                </div>
+                <p class="fig-src">演示数据 · 工单系统 · 2026 年 9 月</p>
               </div>
+              <figcaption>
+                其他渠道转二线都不到三成，电话是二线压力的主要来源，先查电话一线的授权范围。
+              </figcaption>
             </figure>
           </div>
         </section>
@@ -3021,144 +3033,274 @@
 
         // ════ G22 · Aggregate Sankey ════
         (() => {
-          // B3 Threads 是逐条丝线（每线一条记录）；这张是聚合版——
-          // 缎带宽度∝账号数。左渠道右套餐，缎带按渠道明度分。
-          // 交叉处必须读得清，缎带走 .5 透明度（同 convergence 连线的处理）。
-          const SRC = [
-            ["SEARCH", [20, 10, 4]],
-            ["REFERRAL", [12, 9, 6]],
-            ["SOCIAL", [12, 4, 2]],
-            ["PAID", [6, 3, 3]],
-            ["OTHER", [5, 2, 2]],
+          // 聚合桑基：左列 = 进线渠道，右列 = 结单方式；一条缎带 = 一个「渠道 → 结单」组合，宽 ∝ 工单数，
+          // 两端结柱高 = 该节点合计，与缎带同一比例。缎带颜色按渠道的明度阶（量最大的最深），实心；
+          // 每条缎带下垫一道卡片色描边，交叉处靠这道缝分开，不靠透明度。
+          // 主角 = 标题所指的「电话 → 转二线」：它不是最宽的一条，几何上没凸显，才上主角色。
+          // 悬停缎带看这一路，悬停 / Tab 节点看整束，点击钉住，点空白或 Esc 释放；读数写在状态栏。
+          const { G, tick, label } = showMeChart;
+          const SRC = ["在线客服", "电话", "邮件", "应用内反馈", "社区"],
+            DST = ["一线解决", "转二线", "转研发", "无回复关闭"];
+          // FLOW[渠道][结单] = 工单数
+          const FLOW = [
+            [372, 88, 34, 26],
+            [118, 156, 22, 14],
+            [128, 52, 30, 30],
+            [86, 28, 48, 18],
+            [34, 10, 30, 16],
           ];
-          const DST = ["FREE", "PRO", "TEAM"];
-          const SH = [INK, I70, I45, I30, I22];
-          reveal($("sankey"), (s) => {
-            const XL = 104,
-              XR = 298,
-              Y0 = 34,
-              SC = 1.9,
-              GAPL = 8,
-              GAPR = 22,
-              MID = (XL + XR) / 2;
-            const srcTot = SRC.map((d) => d[1].reduce((a, b) => a + b, 0));
-            const dstTot = DST.map((_, j) =>
-              SRC.reduce((a, d) => a + d[1][j], 0)
-            );
-            const sy = [],
-              dy = [];
-            let y = Y0;
-            srcTot.forEach((t, i) => {
-              sy[i] = y;
-              y += t * SC + GAPL;
-            });
-            y = Y0 + 2;
-            dstTot.forEach((t, j) => {
-              dy[j] = y;
-              y += t * SC + GAPR;
-            });
-            const syc = [...sy],
-              dyc = [...dy];
-            SRC.forEach((d, i) => {
-              d[1].forEach((v, j) => {
-                if (!v) return;
-                const sa = syc[i],
-                  sb = sa + v * SC,
-                  da = dyc[j],
-                  db = da + v * SC;
-                syc[i] = sb;
-                dyc[j] = db;
-                const rib = el(s, "path", {
-                  d: `M${XL} ${sa} C${MID} ${sa} ${MID} ${da} ${XR} ${da} L${XR} ${db} C${MID} ${db} ${MID} ${sb} ${XL} ${sb} Z`,
-                  fill: SH[i],
-                  opacity: 0.5,
-                  class: "fade",
-                  style: `animation-delay:${0.2 + (i * 3 + j) * 0.06}s`,
-                });
-                tip(rib, `${SRC[i][0]} → ${DST[j]} — ${v} accounts of 100`);
+          const HOT = [1, 1]; // 电话 → 转二线
+          const RIBBON_INK = [G.ink.strong, I70, I45, I30, I22];
+          const links = [];
+          FLOW.forEach((row, i) =>
+            row.forEach((n, j) => links.push({ i, j, n }))
+          );
+          const srcSum = FLOW.map((r) => r.reduce((a, b) => a + b, 0)),
+            dstSum = DST.map((_, j) => FLOW.reduce((a, r) => a + r[j], 0)),
+            total = srcSum.reduce((a, b) => a + b, 0);
+          const pct = (a, b) => `${Math.round((a / b) * 100)}%`;
+          let release = () => {};
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") release();
+          });
+          reveal($("ticketflow"), (s) => {
+            const XL = 102,
+              XR = 292,
+              BAR = 5,
+              Y0 = 36,
+              Y1 = 300,
+              GAP = 12;
+            const k =
+              (Y1 - Y0 - GAP * (Math.max(SRC.length, DST.length) - 1)) / total;
+            // 两列各自竖直居中；节点顶端 y
+            const stack = (sums) => {
+              const h =
+                sums.reduce((a, v) => a + v * k, 0) + GAP * (sums.length - 1);
+              let y = Y0 + (Y1 - Y0 - h) / 2;
+              return sums.map((v) => {
+                const top = y;
+                y += v * k + GAP;
+                return top;
               });
-            });
-            SRC.forEach((d, i) => {
-              el(s, "rect", {
-                x: XL - 9,
-                y: sy[i],
-                width: 9,
-                height: srcTot[i] * SC,
-                rx: 4,
-                fill: SH[i],
-                class: "fade",
-                style: `animation-delay:${i * 0.06}s`,
-              });
-              txt(
-                s,
-                {
-                  x: XL - 16,
-                  y: sy[i] + (srcTot[i] * SC) / 2 + 2.5,
-                  "font-size": 7.5,
-                  "font-weight": 600,
-                  fill: I70,
-                  "text-anchor": "end",
-                  "letter-spacing": ".05em",
-                  class: "fade",
-                  style: `animation-delay:${i * 0.06}s`,
-                },
-                `${d[0]} · ${srcTot[i]}`
-              );
-            });
-            DST.forEach((n, j) => {
-              el(s, "rect", {
-                x: XR,
-                y: dy[j],
-                width: 9,
-                height: dstTot[j] * SC,
-                rx: 4,
-                fill: I14,
-                class: "fade",
-                style: `animation-delay:${0.1 + j * 0.06}s`,
-              });
-              txt(
-                s,
-                {
-                  x: XR + 16,
-                  y: dy[j] + (dstTot[j] * SC) / 2 - 3,
-                  "font-size": 7.5,
-                  "font-weight": 600,
-                  fill: I70,
-                  "letter-spacing": ".05em",
-                  class: "fade",
-                  style: `animation-delay:${0.15 + j * 0.06}s`,
-                },
-                n
-              );
-              txt(
-                s,
-                {
-                  x: XR + 16,
-                  y: dy[j] + (dstTot[j] * SC) / 2 + 9,
-                  "font-size": 10,
-                  "font-weight": 600,
-                  fill: INK,
-                  class: "fade",
-                  style: `animation-delay:${0.2 + j * 0.06}s`,
-                },
-                dstTot[j]
-              );
+            };
+            const sTop = stack(srcSum),
+              dTop = stack(dstSum);
+            // 缎带在两端结柱里的位置：左端按结单顺序排，右端按渠道顺序排，交叉最少
+            const sOff = srcSum.map(() => 0),
+              dOff = dstSum.map(() => 0);
+            links.forEach((l) => {
+              l.w = l.n * k;
+              l.y0 = sTop[l.i] + sOff[l.i] + l.w / 2;
+              sOff[l.i] += l.w;
+              l.y1 = dTop[l.j] + dOff[l.j] + l.w / 2;
+              dOff[l.j] += l.w;
+              const a = XL + BAR,
+                b = XR,
+                m = (a + b) / 2;
+              l.d = `M${a} ${l.y0.toFixed(2)}C${m} ${l.y0.toFixed(2)} ${m} ${l.y1.toFixed(2)} ${b} ${l.y1.toFixed(2)}`;
             });
             txt(
               s,
-              {
-                x: 200,
-                y: 302,
-                "font-size": 7,
-                "font-weight": 600,
-                fill: I30,
-                "text-anchor": "middle",
-                "letter-spacing": ".12em",
-                class: "fade",
-                style: "animation-delay:1.1s",
-              },
-              "RIBBON WIDTH = ACCOUNTS OF 100 · SHADE = CHANNEL"
+              tick({ x: XL + BAR, y: 18, "text-anchor": "end" }),
+              `进线 · ${fmt(total)} 张`
             );
+            txt(s, tick({ x: XR, y: 18 }), "结单方式");
+            // 宽的先画，窄的压在上面才看得见；缎带颜色放在外层分组，.net-link.hot 的主角色才盖得上
+            const card = "var(--color-card)";
+            const order = [...links].sort((p, q) => q.w - p.w);
+            order.forEach((l) => {
+              const g = el(s, "g", {
+                fill: "none",
+                stroke:
+                  l.i === HOT[0] && l.j === HOT[1] ? HERO : RIBBON_INK[l.i],
+                class: "fade",
+                style: dl(0.15 + l.i * 0.08),
+              });
+              l.case = el(g, "path", {
+                d: l.d,
+                stroke: card,
+                "stroke-width": l.w + 1.2,
+                class: "net-link",
+              });
+              l.el = el(g, "path", {
+                d: l.d,
+                "stroke-width": l.w,
+                class: "net-link",
+              });
+            });
+            // 热区：细缎带至少 7 宽，窄的在上
+            const gHit = el(s, "g", {
+              fill: "none",
+              stroke: "transparent",
+              "pointer-events": "stroke",
+            });
+            [...order].reverse().forEach((l) => {
+              l.hit = el(gHit, "path", {
+                d: l.d,
+                "stroke-width": Math.max(l.w, 7),
+                class: "hit",
+              });
+            });
+            // 结柱与标签：渠道在左、结单在右
+            const node = (x, top, n, side, name, sub, fill) => {
+              const g = el(s, "g", { class: "net-node", tabindex: 0 });
+              const inner = el(g, "g", { class: "fade", style: dl(0.05) });
+              el(inner, "rect", {
+                x,
+                y: top,
+                width: BAR,
+                height: Math.max(n * k, 1),
+                rx: 1,
+                fill,
+              });
+              const at = {
+                x: side < 0 ? x - 5 : x + BAR + 5,
+                "text-anchor": side < 0 ? "end" : "start",
+              };
+              const cy = top + (n * k) / 2;
+              txt(inner, label({ ...at, y: cy - 1 }), name);
+              txt(inner, tick({ ...at, y: cy + 8 }), sub);
+              return g;
+            };
+            const sNodes = SRC.map((name, i) =>
+              node(
+                XL,
+                sTop[i],
+                srcSum[i],
+                -1,
+                name,
+                fmt(srcSum[i]),
+                RIBBON_INK[i]
+              )
+            );
+            const dNodes = DST.map((name, j) =>
+              node(
+                XR,
+                dTop[j],
+                dstSum[j],
+                1,
+                name,
+                `${fmt(dstSum[j])} · ${pct(dstSum[j], total)}`,
+                G.ink.quiet
+              )
+            );
+
+            // ── 交互：cur = 钉住优先，其次悬停；["l", 缎带] / ["s", 渠道] / ["d", 结单]
+            const bar = s.closest("figure").querySelector(".fig-status"),
+              sText = bar.querySelector("[data-text]"),
+              sPin = bar.querySelector("[data-pin]");
+            const put = (...parts) =>
+              sText.replaceChildren(
+                ...parts.map((v) =>
+                  typeof v === "number"
+                    ? Object.assign(document.createElement("b"), {
+                        textContent: fmt(v),
+                      })
+                    : v
+                )
+              );
+            let hov = null,
+              pin = null;
+            const show = () => {
+              const cur = pin || hov;
+              s.classList.toggle("focused", !!cur);
+              sPin.textContent = pin ? "已钉住 · 点空白或 Esc 释放" : "";
+              const on = (l) =>
+                !!cur &&
+                (cur[0] === "l"
+                  ? l === cur[1]
+                  : cur[0] === "s"
+                    ? l.i === cur[1]
+                    : l.j === cur[1]);
+              links.forEach((l) => {
+                l.el.classList.toggle("hot", on(l));
+                l.case.classList.toggle("hot", on(l));
+              });
+              sNodes.forEach((g, i) =>
+                g.classList.toggle(
+                  "hot",
+                  links.some((l) => l.i === i && on(l))
+                )
+              );
+              dNodes.forEach((g, j) =>
+                g.classList.toggle(
+                  "hot",
+                  links.some((l) => l.j === j && on(l))
+                )
+              );
+              if (!cur) {
+                const h = FLOW[HOT[0]][HOT[1]];
+                put(
+                  `${SRC[HOT[0]]} `,
+                  srcSum[HOT[0]],
+                  ` 张里 `,
+                  h,
+                  ` 张${DST[HOT[1]]} · ${pct(h, srcSum[HOT[0]])}`
+                );
+              } else if (cur[0] === "l") {
+                const l = cur[1];
+                put(
+                  `${SRC[l.i]} → ${DST[l.j]} `,
+                  l.n,
+                  ` 张 · 占${SRC[l.i]} ${pct(l.n, srcSum[l.i])}`
+                );
+              } else if (cur[0] === "s") {
+                const i = cur[1];
+                put(
+                  `${SRC[i]} `,
+                  srcSum[i],
+                  ` 张 · ` +
+                    DST.map(
+                      (d, j) => `${d} ${pct(FLOW[i][j], srcSum[i])}`
+                    ).join("、")
+                );
+              } else {
+                const j = cur[1];
+                put(
+                  `${DST[j]} `,
+                  dstSum[j],
+                  ` 张 · 来自 ` +
+                    SRC.map((n, i) => [n, FLOW[i][j]])
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 3)
+                      .map(([n, v]) => `${n} ${v}`)
+                      .join("、")
+                );
+              }
+            };
+            const bind = (target, key, focusable) => {
+              target.addEventListener(
+                "mouseenter",
+                () => ((hov = key), show())
+              );
+              target.addEventListener(
+                "mouseleave",
+                () => ((hov = null), show())
+              );
+              target.addEventListener("click", (e) => {
+                e.stopPropagation();
+                pin = key;
+                show();
+              });
+              if (!focusable) return;
+              target.addEventListener("focus", () => ((hov = key), show()));
+              target.addEventListener("blur", () => ((hov = null), show()));
+              target.addEventListener("keydown", (e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                pin = key;
+                show();
+              });
+            };
+            links.forEach((l) => bind(l.hit, ["l", l]));
+            sNodes.forEach((g, i) => bind(g, ["s", i], true));
+            dNodes.forEach((g, j) => bind(g, ["d", j], true));
+            release = () => {
+              pin = null;
+              show();
+            };
+            s.onclick = release;
+            show();
           });
         })();
       })();

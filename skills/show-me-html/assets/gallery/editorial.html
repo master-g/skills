@@ -125,8 +125,8 @@
             <figure class="fig" data-chart="L1">
               <div class="fig-box">
                 <div class="fig-head">
-                  <span class="fig-title" id="fig-fan-t"
-                    >Twelve features, fanned out</span
+                  <span class="fig-title" id="fig-storefan-t"
+                    >去年底才开的滨江店，日均杯量已排全城第二</span
                   >
                   <span class="fig-tools" data-md-skip
                     ><span class="fig-id">L1 · Launch Fan</span
@@ -141,23 +141,30 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  one spoke per feature · big dot = launch week, sized by MAU
-                  today · small dots = every week since
+                  一根辐条 = 一家店 · 大点 = 开业那个月，面积 = 现在的日均杯数 ·
+                  小点 = 开业后每个月 · 主角 = 滨江店
                 </p>
                 <svg
-                  id="fan"
+                  id="storefan"
                   viewBox="0 0 400 320"
                   role="img"
-                  aria-labelledby="fan-title fan-desc"
+                  aria-labelledby="storefan-title storefan-desc"
                 >
-                  <title id="fan-title">Twelve features, fanned out</title>
-                  <desc id="fan-desc">
-                    one spoke per feature · big dot = launch week, sized by MAU
-                    today · small dots = every week since
+                  <title id="storefan-title">
+                    13 家门店的开业月份与现在的日均杯数
+                  </title>
+                  <desc id="storefan-desc">
+                    人民广场店 2024 年 3 月开业，日均 780 杯居首；滨江店 2025 年
+                    12 月开业，日均 740 杯排第二
                   </desc>
                 </svg>
-                <p class="fig-src">LAUNCH FAN · PRODUCT ANALYTICS</p>
+                <p class="fig-src">
+                  演示数据 · 门店经营月报 · 截至 2026 年 9 月
+                </p>
               </div>
+              <figcaption>
+                开得早不等于卖得多：2025 年起开的九家店里，已有两家进了前五。
+              </figcaption>
             </figure>
 
             <figure class="fig" data-chart="L2">
@@ -908,114 +915,154 @@
 
         // ════ L1 · Launch Fan ════
         (() => {
-          // spokes sorted by launch week → the big dots cascade along a diagonal arc
-          const FEAT = [
-            "Editor",
-            "Boards",
-            "Docs",
-            "Chat",
-            "Flows",
-            "Vault",
-            "Pages",
-            "Sync",
-            "Grid",
-            "Views",
-            "Hub",
-            "Forms",
+          // 发射扇：一根辐条 = 一家店，辐条按开业先后依次排开。半径是日历：圆心一侧是 2024 年 1 月，
+          // 最外一道弧是今天。大点落在开业那个月，面积 ∝ 现在的日均杯数（半径取 sqrt）；
+          // 大点往外每个月一个小点，直到今天，所以辐条长 = 店龄。家具：每年一道虚线弧，今天一道实线弧。
+          // 主角 = 标题所指的滨江店：杯量第二、辐条又短，几何上不凸显，大点与小点都上主角色、小点升一档。
+          // 13 家店、两端有标注，静态即可；大点 hover 出开业月与杯数。
+          const { G, jit, tick, label } = showMeChart;
+          const NOW = 32; // 月序：0 = 2024 年 1 月，32 = 2026 年 9 月（今天）
+          // [店名, 开业月序, 现在的日均杯数]，按开业先后
+          const STORES = [
+            ["人民广场", 2, 780],
+            ["静安寺", 4, 690],
+            ["徐家汇", 7, 610],
+            ["五角场", 9, 540],
+            ["陆家嘴", 12, 720],
+            ["中山公园", 14, 430],
+            ["七宝", 17, 380],
+            ["张江", 19, 460],
+            ["虹桥", 21, 350],
+            ["滨江", 23, 740],
+            ["大宁", 24, 300],
+            ["前滩", 27, 410],
+            ["松江", 30, 220],
           ];
-          const LAUNCH = [1, 3, 4, 6, 8, 9, 11, 12, 14, 16, 17, 19]; // week of launch
-          const CX = 40,
-            CY = 304,
-            rOf = (w) => 56 + w * 9.7;
-          reveal($("fan"), (s) => {
-            const ang = (i) => -84 + i * (76 / 11);
-            // dotted week guides
-            [5, 10, 15, 20].forEach((w, gi) => {
-              const r = rOf(w),
-                [x1, y1] = pol(CX, CY, r, -84),
-                [x2, y2] = pol(CX, CY, r, -8);
+          const STAR = "滨江";
+          const ym = (m) =>
+            `${2024 + Math.floor(m / 12)} 年 ${(m % 12) + 1} 月`;
+          const most = Math.max(...STORES.map((r) => r[2]));
+          reveal($("storefan"), (s) => {
+            // 扇面：圆心在下方正中，辐条张开近 200°，最早的店在左
+            const CX = 200,
+              CY = 226,
+              A0 = 177,
+              A1 = 363,
+              R0 = 62,
+              R1 = 150,
+              DOT = 8,
+              RING_AT = 369,
+              RING_ANCHOR = "start";
+            // 标签水平摆放，按所在方位决定对齐
+            const labelAt = (x, y, a) => {
+              const c = Math.cos(a * D2R);
+              return {
+                x,
+                y: y + 2.6,
+                "text-anchor": c > 0.3 ? "start" : c < -0.3 ? "end" : "middle",
+              };
+            };
+            const rAt = (m) => R0 + (m / NOW) * (R1 - R0),
+              aAt = (i) => A0 + (i * (A1 - A0)) / (STORES.length - 1),
+              P = (r, a) => pol(CX, CY, r, a);
+            const arc = (r, a0, a1) => {
+              const [x0, y0] = P(r, a0),
+                [x1, y1] = P(r, a1);
+              return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+            };
+            // 年份弧：每年 1 月一道虚线；今天一道实线，标签放在扇面起点外侧
+            [0, 12, 24].forEach((m) => {
               el(s, "path", {
-                d: `M${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2}`,
+                d: arc(rAt(m), A0 - 3, A1 + 3),
                 fill: "none",
-                stroke: I14,
-                "stroke-width": 1,
-                "stroke-dasharray": "2 5",
-                class: "fade",
-                style: `animation-delay:${gi * 0.1}s`,
+                stroke: G.ink.guide,
+                "stroke-width": G.line.grid,
+                "stroke-dasharray": "1 3",
               });
-              const [lx, ly] = pol(CX, CY, r, -87.5);
+              const [x, y] = P(rAt(m), RING_AT);
               txt(
                 s,
-                {
-                  x: lx,
-                  y: ly,
-                  "font-size": 6.5,
-                  fill: I30,
-                  "text-anchor": "middle",
-                  class: "fade",
-                  style: `animation-delay:${gi * 0.1}s`,
-                },
-                "W" + w
+                tick({ x, y: y + 2.2, "text-anchor": RING_ANCHOR }),
+                `${2024 + m / 12}`
               );
             });
-            FEAT.forEach((name, i) => {
-              const a = ang(i),
-                L = LAUNCH[i];
-              const mau = Math.round(48 - i * 3 + rnd(i + 1, 3) * 10);
-              // hairline spoke from launch to rim
-              const [sx, sy] = pol(CX, CY, rOf(L), a),
-                [ex, ey] = pol(CX, CY, rOf(20), a);
-              el(s, "line", {
-                x1: sx,
-                y1: sy,
-                x2: ex,
-                y2: ey,
-                stroke: I8,
-                "stroke-width": 0.7,
-                class: "fade",
-                style: `animation-delay:${0.15 + i * 0.05}s`,
-              });
-              // weekly texture dots
-              for (let w = L + 1; w <= 20; w++) {
-                const [x, y] = pol(CX, CY, rOf(w), a);
-                el(s, "circle", {
-                  cx: x,
-                  cy: y,
-                  r: 1.1 + rnd(i + 1, w) * 1.2,
-                  fill: I30,
-                  opacity: 0.8,
-                  class: "pop",
-                  style: `animation-delay:${0.2 + i * 0.06 + (w - L) * 0.015}s`,
-                });
-              }
-              // launch dot, sized by MAU
-              const [bx, by] = pol(CX, CY, rOf(L), a);
-              const big = el(s, "circle", {
-                cx: bx,
-                cy: by,
-                r: Math.sqrt(mau) * 1.15,
-                fill: INK,
-                class: "pop",
-                style: `animation-delay:${0.15 + i * 0.07}s`,
-              });
-              tip(big, `${name} — launched W${L} · ${mau}k MAU`);
-              // rim label along the spoke
-              const [tx, ty] = pol(CX, CY, rOf(20) + 9, a);
+            el(s, "path", {
+              d: arc(R1, A0 - 3, A1 + 3),
+              fill: "none",
+              stroke: G.ink.quiet,
+              "stroke-width": G.line.base,
+            });
+            {
+              const [x, y] = P(R1, RING_AT);
               txt(
                 s,
-                {
-                  x: tx,
-                  y: ty,
-                  "font-size": 7,
-                  "font-weight": 600,
-                  fill: I60,
-                  transform: `rotate(${a} ${tx} ${ty})`,
-                  "dominant-baseline": "middle",
+                tick({ x, y: y + 2.2, "text-anchor": RING_ANCHOR }),
+                "今天"
+              );
+            }
+            STORES.forEach(([name, m, cups], i) => {
+              const a = aAt(i),
+                star = name === STAR,
+                ink = star ? HERO : G.ink.data;
+              // 辐条导轨：开业点到今天的一根发丝
+              const [x0, y0] = P(rAt(m), a),
+                [x1, y1] = P(R1, a);
+              el(s, "line", {
+                x1: x0,
+                y1: y0,
+                x2: x1,
+                y2: y1,
+                stroke: star ? HERO : G.ink.mass,
+                "stroke-width": star ? G.line.data : G.line.grid,
+                class: "fade",
+                style: dl(0.2 + i * 0.04),
+              });
+              // 每月一点：只在垂直于辐条的方向上抖，月份位置不动
+              for (let k = 1; k <= NOW - m; k++) {
+                const [px, py] = P(rAt(m + k), a),
+                  off = jit(i * 50 + k, 1, G.jitter.pos),
+                  [ox, oy] = pol(0, 0, off, a + 90);
+                el(s, "circle", {
+                  cx: (px + ox).toFixed(2),
+                  cy: (py + oy).toFixed(2),
+                  r:
+                    G.dot.tick *
+                    (star ? 1.35 : 1) *
+                    (1 + jit(i * 50 + k, 2, G.jitter.size)),
+                  fill: ink,
                   class: "fade",
-                  style: `animation-delay:${0.3 + i * 0.05}s`,
-                },
+                  style: dl(0.3 + i * 0.04 + k * 0.012),
+                });
+              }
+              const big = el(s, "circle", {
+                cx: x0,
+                cy: y0,
+                r: Math.sqrt(cups / most) * DOT,
+                fill: star ? HERO : G.ink.strong,
+                stroke: "var(--color-card)",
+                "stroke-width": G.line.data,
+                class: "pop",
+                style: dl(0.1 + i * 0.05),
+              });
+              tip(big, `${name} · ${ym(m)}开业 · 日均 ${cups} 杯`);
+              // 店名 + 杯数写在今天弧外
+              const [lx, ly] = P(R1 + 7, a);
+              const t = txt(
+                s,
+                label({
+                  ...labelAt(lx, ly, a),
+                  fill: star ? HERO : G.ink.data,
+                  class: "name fade",
+                  style: dl(0.5 + i * 0.03),
+                }),
                 name
               );
+              el(t, "tspan", {
+                dx: 2.5,
+                "font-size": G.type.tick,
+                fill: star ? HERO : G.ink.quiet,
+                style: "font-family:var(--font-mono)",
+              }).textContent = cups;
             });
           });
         })();
