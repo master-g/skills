@@ -274,8 +274,8 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  一根刻度 = 1% 的重量 · 从正上方顺时针 · 墨色区分四类 ·
-                  虚线刻度 = 有害垃圾
+                  一根刻度 = 1% 的重量 · 从正上方顺时针 ·
+                  四类之间留缺口，内侧括弧圈出每一类 · 虚线刻度 = 有害垃圾
                 </p>
                 <svg
                   id="sorting"
@@ -406,8 +406,8 @@
                   >
                 </div>
                 <p class="fig-sub">
-                  一档 = 100 杯 · 自下而上：咖啡（实墨）· 茶（中灰）·
-                  果汁（浅灰）
+                  一档 = 100 杯 · 自下而上：咖啡（宽档、实墨）·
+                  茶（中档、中灰）· 果汁（窄档、浅灰）
                 </p>
                 <svg
                   id="drinks"
@@ -1344,30 +1344,37 @@
 
         // ════ F4 · Tick Donut ════
         (() => {
-          // 刻度环：100 根径向刻度 = 100%，一根 = 1% 的重量，从正上方顺时针排。
-          // 类目按占比从大到小接续，墨色四级区分；每满 10% 在环外点一粒小点，好数。
-          // 类目名与百分比写在各段中角的环外，发丝引线连回环；环心写标题所指的厨余占比。
+          // 刻度环：100 根径向刻度 = 100%，一根 = 1% 的重量，从正上方顺时针排；刻度长度处处相同，不编码大小。
+          // 类目按占比从大到小接续，四类之间各留一道角缺口；每类内侧一道带端钩的括弧圈出它的范围，
+          // 线宽与墨色四级拉开（厨余粗实墨、其他中墨、可回收细淡墨、有害虚线），缺口、括弧、线宽三重区分。
+          // 每满 10% 在环外点一粒小点，好数。类目名与百分比写在各段中角的环外，环心写标题所指的厨余占比。
           // 厨余占一半多，几何已凸显，不上主角色。100 根刻度静态即可，每段 hover 出重量与占比。
           const { G, jit, tick, value, label } = showMeChart;
           const KG = 1860; // 9 月全小区分出的生活垃圾，千克
+          // [名称, 占比, 墨色, 线宽, 虚线]
           const PART = [
-            ["厨余垃圾", 52, G.ink.strong],
-            ["其他垃圾", 29, G.ink.data],
-            ["可回收物", 17, G.ink.quiet],
-            ["有害垃圾", 2, G.ink.strong],
+            ["厨余垃圾", 52, G.ink.strong, G.line.hero, null],
+            ["其他垃圾", 29, G.ink.data, G.line.data, null],
+            ["可回收物", 17, G.ink.quiet, G.line.grid, null],
+            ["有害垃圾", 2, G.ink.strong, G.line.data, "2 1.4"],
           ];
+          const GAP = 4, // 类目之间的角缺口，度
+            STEP = (360 - GAP * PART.length) / 100;
           reveal($("sorting"), (s) => {
             const CX = 196,
               CY = 124,
               R0 = 70,
-              R1 = 94;
-            const ang = (k) => -90 + k * 3.6;
+              R1 = 94,
+              RB = 63; // 括弧半径
+            // 第 k 根刻度（0 起，属于第 p 类）的角度：每进一类多让出一道缺口
+            const ang = (k, p) => -90 + GAP / 2 + p * GAP + k * STEP;
             let k0 = 0;
-            PART.forEach(([name, pct, ink], p) => {
+            PART.forEach(([name, pct, ink, w, dash], p) => {
+              const a0 = ang(k0, p),
+                a1 = ang(k0 + pct, p);
               for (let k = k0; k < k0 + pct; k++) {
-                const a = ang(k + 0.5),
-                  inner = R0 + jit(k, 13, 3);
-                const [xa, ya] = pol(CX, CY, inner, a),
+                const a = ang(k + 0.5, p),
+                  [xa, ya] = pol(CX, CY, R0 + jit(k, 13, 2), a),
                   [xb, yb] = pol(CX, CY, R1, a);
                 el(s, "line", {
                   x1: xa,
@@ -1375,33 +1382,58 @@
                   x2: xb,
                   y2: yb,
                   stroke: ink,
-                  "stroke-width": p === 3 ? G.line.heroData : G.line.data,
-                  "stroke-dasharray": p === 3 ? "2 1.4" : null,
+                  "stroke-width": w,
+                  "stroke-dasharray": dash,
                   class: "fade",
                   style: dl(0.1 + k * 0.009),
                 });
+                // 每满 10% 一粒点
+                if (k % 10 === 0) {
+                  const [x, y] = pol(CX, CY, R1 + 5, a);
+                  el(s, "circle", {
+                    cx: x,
+                    cy: y,
+                    r: G.dot.tick,
+                    fill: G.ink.quiet,
+                  });
+                }
               }
+              // 内侧括弧：弧两端各带一根向环的短钩
+              const b0 = a0 + STEP * 0.2,
+                b1 = a1 - STEP * 0.2,
+                [sx, sy] = pol(CX, CY, RB, b0),
+                [ex, ey] = pol(CX, CY, RB, b1),
+                [sx2, sy2] = pol(CX, CY, RB + 4, b0),
+                [ex2, ey2] = pol(CX, CY, RB + 4, b1);
+              el(s, "path", {
+                d: `M${sx2} ${sy2}L${sx} ${sy}A${RB} ${RB} 0 ${b1 - b0 > 180 ? 1 : 0} 1 ${ex} ${ey}L${ex2} ${ey2}`,
+                fill: "none",
+                stroke: ink,
+                "stroke-width": G.line.base,
+                class: "fade",
+                style: dl(0.6),
+              });
               const hit = el(s, "path", {
-                d: sect(CX, CY, R0 - 4, R1 + 4, ang(k0), ang(k0 + pct)),
+                d: sect(CX, CY, RB - 3, R1 + 4, a0, a1),
                 fill: "none",
                 "pointer-events": "all",
                 class: "hit",
               });
               tip(hit, `${name} · ${pct}% · 约 ${fmt((KG * pct) / 100)} 千克`);
               // 环外标注：中角方向，左半边右对齐
-              const mid = ang(k0 + pct / 2),
+              const mid = (a0 + a1) / 2,
                 right = Math.cos(mid * D2R) >= 0,
                 [lx0, ly0] = pol(CX, CY, R1 + 4, mid),
                 [lx1, ly1] = pol(CX, CY, R1 + 18, mid),
-                ex = lx1 + (right ? 10 : -10);
+                hx = lx1 + (right ? 10 : -10);
               el(s, "path", {
-                d: `M${lx0} ${ly0}L${lx1} ${ly1}H${ex}`,
+                d: `M${lx0} ${ly0}L${lx1} ${ly1}H${hx}`,
                 fill: "none",
                 stroke: G.ink.quiet,
                 "stroke-width": G.line.grid,
               });
               const anchor = right ? "start" : "end",
-                tx = ex + (right ? 3 : -3);
+                tx = hx + (right ? 3 : -3);
               txt(
                 s,
                 label({ x: tx, y: ly1 - 1.5, "text-anchor": anchor }),
@@ -1414,16 +1446,6 @@
               );
               k0 += pct;
             });
-            // 每满 10% 一粒点
-            for (let k = 0; k < 100; k += 10) {
-              const [x, y] = pol(CX, CY, R1 + 5, ang(k));
-              el(s, "circle", {
-                cx: x,
-                cy: y,
-                r: G.dot.tick,
-                fill: G.ink.quiet,
-              });
-            }
             txt(
               s,
               value({
@@ -1651,14 +1673,16 @@
         // ════ F7 · Stacked Rungs ════
         (() => {
           // 堆叠梯：一档 = 100 杯，每家店一架梯，自下而上依次是咖啡、茶、果汁三段，段高 = 档数，总高 = 当月杯数。
-          // 三段用墨色三级区分（咖啡实墨、茶中灰、果汁浅墨），段与段之间不留空，总高不失真；
+          // 三段用档宽与墨色两重区分：咖啡宽档实墨、茶中档中灰、果汁窄档浅灰，梯身逐段收窄，段界一眼可见；
+          // 档宽不编码数据，段与段之间不留空，总高不失真；
           // 类目名直接写在最右一架的各段旁。店按总杯数从多到少排。档宽带确定性抖动，档数不抖。
           // 标题所指的是校园店的茶这一段，几何上不突出，整段上主角色。4 架静态即可，每段 hover 出读数。
           const { G, jit, tick, value, label } = showMeChart;
+          // [名称, 墨色, 半档宽]
           const KIND = [
-            ["咖啡", G.ink.strong],
-            ["茶", G.ink.quiet],
-            ["果汁", G.ink.mass],
+            ["咖啡", G.ink.strong, 18],
+            ["茶", G.ink.quiet, 12],
+            ["果汁", G.ink.mass, 6.5],
           ];
           const SHOP = [
             ["写字楼店", [42, 14, 6]],
@@ -1672,7 +1696,7 @@
               X1 = 336,
               BASE = 234,
               STEP = 3.2,
-              HALF = 17;
+              HALF = KIND[0][2];
             const slot = (X1 - X0) / SHOP.length,
               y = (n) => BASE - n * STEP;
             [20, 40, 60].forEach((n) => {
@@ -1712,7 +1736,8 @@
                     style: `transform-origin:${cx}px ${y(n0)}px;${dl(0.1 + i * 0.08 + p * 0.22)}`,
                   });
                 for (let k = n0 + 1; k <= n0 + n; k++) {
-                  const hw = HALF * (1 + jit(i * 100 + k, 23, G.jitter.len));
+                  const hw =
+                    KIND[p][2] * (1 + jit(i * 100 + k, 23, G.jitter.len));
                   el(g, "line", {
                     x1: cx - hw,
                     x2: cx + hw,
