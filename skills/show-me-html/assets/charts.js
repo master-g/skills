@@ -93,7 +93,16 @@ window.showMeChart = (function () {
       guide: "var(--ink-30)",
     },
     // 相对幅度：len 线段长度、size 点径、bend 曲线控制点；pos 是绝对位移（viewBox 单位）；accent 为改用 strong 墨的比例
-    jitter: { len: 0.16, pos: 0.4, size: 0.14, bend: 0.14, accent: 0.2 },
+    // cluster 给成簇的点（每点一个单位）：spread 是按点距算的位移比例，size 是点径倍数的上下限，
+    // 取值 lo + (hi - lo) * rnd ** 1.8，多数点偏小、少数点大。点簇尺度下 ±14% 的点径看不出来
+    jitter: {
+      len: 0.08,
+      pos: 0.4,
+      size: 0.14,
+      bend: 0.14,
+      accent: 0.2,
+      cluster: { spread: 0.28, size: [0.72, 1.32] },
+    },
   };
   // 确定性抖动：返回 [-amp, amp] 内的值，同一 (i, k) 永远相同，刷新与截图可回归
   const jit = (i, k, amp) => (rnd(i + 1, k + 7) - 0.5) * 2 * amp;
