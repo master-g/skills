@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -300,6 +301,38 @@ class BuildCliTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("反色暗卡", result.stdout + result.stderr)
+
+    def test_grid_without_track_template_warns(self):
+        page = self.copy_fixture()
+        style = (
+            "<style>.ok { display: grid; grid-template-columns: 1fr; }"
+            " @media (min-width: 40rem) { .bare { display: grid; } }"
+            " .noted { display: grid; /* grid-template-columns later */ }</style></head>"
+        )
+        page.write_text(page.read_text(encoding="utf-8").replace("</head>", style, 1), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("`.bare` 是 grid", result.stdout)
+        self.assertIn("`.noted` 是 grid", result.stdout)
+        self.assertNotIn("`.ok` 是 grid", result.stdout)
+
+    def test_long_inline_data_does_not_stall_checks(self):
+        page = self.copy_fixture()
+        blob = "A" * 400_000  # 约等于一张内联截图；旧的规则扫描在这里要跑几分钟
+        page.write_text(
+            page.read_text(encoding="utf-8").replace(
+                "</section>", f'<p><img alt="示意" src="data:image/png;base64,{blob}"></p></section>', 1
+            ),
+            encoding="utf-8",
+        )
+
+        started = time.monotonic()
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertLess(time.monotonic() - started, 20)
 
 
 class VisualContractTests(unittest.TestCase):

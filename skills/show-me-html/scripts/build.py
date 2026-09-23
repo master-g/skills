@@ -338,27 +338,30 @@ def main_children(html):
 # `grid-template-columns` 时，隐式 auto 轨道按内容 max-content 计宽，
 # 窄屏时文档宽超出视口（实测 500px 视口被撑到 596px）。
 # 渲染关只能抓到溢出症状，这条指根因。
-RULE_BLOCK_RE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+# 选择器只从文本开头或 { } 之后起算：不锚定时，每个起点都会把一长段无花括号的文本
+# （内联 base64 图片、长正文）扫到底再失败，耗时随长度平方增长，1.6 MB 的页面会卡死。
+RULE_BLOCK_RE = re.compile(r"(?:^|(?<=[{}]))([^{}]+)\{([^{}]*)\}")
+AUTHORED_STYLE_RE = re.compile(r"<style\b[^>]*>(.*?)</style>", re.S | re.I)
 
 
 def check_grid_tracks(html, warns):
-    own = SYSTEM_STYLE_RE.sub("", html)
     seen = set()
-    for m in RULE_BLOCK_RE.finditer(own):
-        # 先剥 CSS 注释再判断：注释里提到 grid-template-columns 字样不能算写了模板
-        body = re.sub(r"/\*.*?\*/", " ", m.group(2))
-        if not re.search(r"display\s*:\s*grid", body):
-            continue
-        if re.search(r"grid-template-columns|grid-template-areas", body):
-            continue
-        sel = re.sub(r"\s+", " ", m.group(1)).strip()[:60]
-        if sel in seen:
-            continue
-        seen.add(sel)
-        warns.append(
-            f"`{sel}` 是 grid 但没写 grid-template-columns：隐式 auto 轨道按内容"
-            " max-content 计宽，窄屏会横向溢出。单列写 1fr，多列抄 layouts.md 里"
-            "带 minmax(min(100%,…),…) 的写法（anti-patterns.md #3）")
+    for css in AUTHORED_STYLE_RE.findall(SYSTEM_STYLE_RE.sub("", html)):
+        for m in RULE_BLOCK_RE.finditer(css):
+            # 先剥 CSS 注释再判断：注释里提到 grid-template-columns 字样不能算写了模板
+            body = re.sub(r"/\*.*?\*/", " ", m.group(2))
+            if not re.search(r"display\s*:\s*grid", body):
+                continue
+            if re.search(r"grid-template-columns|grid-template-areas", body):
+                continue
+            sel = re.sub(r"\s+", " ", m.group(1)).strip()[:60]
+            if sel in seen:
+                continue
+            seen.add(sel)
+            warns.append(
+                f"`{sel}` 是 grid 但没写 grid-template-columns：隐式 auto 轨道按内容"
+                " max-content 计宽，窄屏会横向溢出。单列写 1fr，多列抄 layouts.md 里"
+                "带 minmax(min(100%,…),…) 的写法（anti-patterns.md #3）")
 
 
 def fail(msg):
