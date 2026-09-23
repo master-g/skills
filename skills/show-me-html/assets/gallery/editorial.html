@@ -1933,13 +1933,14 @@
           const N = 48,
             CX = 200,
             CY = 162,
-            R = 116;
+            R = 110;
+          // 主题角落在两枚编号正中（编号每 7.5° 一枚）：引线从缝里穿出去，不压编号
           const THEME = [
-            ["PERF", 15, -75],
-            ["INTEGRATIONS", 10, -3],
-            ["PRICING", 9, 69],
-            ["MOBILE", 8, 141],
-            ["UX", 6, 213],
+            ["PERF", 15, -71.25],
+            ["INTEGRATIONS", 10, -3.75],
+            ["PRICING", 9, 71.25],
+            ["MOBILE", 8, 138.75],
+            ["UX", 6, 213.75],
           ];
           reveal($("converge"), (s) => {
             // hub assignment: contiguous blocks with a little organic leakage
@@ -2007,27 +2008,25 @@
                 style: `animation-delay:${0.5 + h * 0.08}s`,
               });
               tip(hub, `${name} — ${counts[h]} requests`);
-              // theme label parked outside the rim, past the code ring
-              // 左侧标签向外对齐，居中会压住编号；右侧的落在两枚编号之间，居中正好
-              const [tx, ty] = pol(CX, CY, R + 34, deg);
-              txt(
-                s,
-                {
-                  x: tx,
-                  y: ty,
-                  "font-size": 8,
-                  "font-weight": 600,
-                  fill: INK,
-                  "text-anchor": Math.cos(deg * D2R) < -0.5 ? "end" : "middle",
-                  "dominant-baseline": "middle",
-                  "letter-spacing": ".08em",
-                  style: `animation-delay:${0.6 + h * 0.08}s`,
-                  class: "fade",
-                },
-                `${name} · ${counts[h]}`
-              );
-              // hairline tying the label to its hub, skimming past the rim
-              const [gx, gy] = pol(CX, CY, R + 22, deg);
+              // theme label parked outside the code ring: name over count, anchored away from the centre
+              // 两侧的朝外对齐，上下的居中叠在点外侧；单行「INTEGRATIONS · 11」在右侧放不下
+              const [tx, ty] = pol(CX, CY, R + 22, deg),
+                c = Math.cos(deg * D2R),
+                side = Math.abs(c) > 0.5,
+                y0 = side ? ty - 1.5 : deg < 0 ? ty - 9.5 : ty + 6;
+              const at = {
+                x: tx,
+                "text-anchor": !side ? "middle" : c > 0 ? "start" : "end",
+                "font-size": 8,
+                "font-weight": 600,
+                "letter-spacing": ".08em",
+                style: `animation-delay:${0.6 + h * 0.08}s`,
+                class: "fade",
+              };
+              txt(s, { ...at, y: y0, fill: INK }, name);
+              txt(s, { ...at, y: y0 + 9.5, fill: MUTED }, counts[h]);
+              // hairline tying the label to its hub, threading the gap between two codes
+              const [gx, gy] = pol(CX, CY, R + 19, deg);
               el(s, "line", {
                 x1: hx,
                 y1: hy,
