@@ -260,7 +260,10 @@ class BuildCliTests(unittest.TestCase):
         page = Path(tmp.name) / "page.html"
         html = SHELL.read_text(encoding="utf-8").replace("PAGE TITLE", "快照测试").replace("choose-a-recipe", "status-report")
         html = re.sub(r'<main id="doc">.*?</main>',
-                      '<main id="doc"><section><h1>快照测试</h1><p>正文一段。</p><h2>第二节</h2><p>内容</p></section></main>',
+                      '<main id="doc"><section><h1>快照测试</h1><p>正文一段。</p><h2>第二节</h2><p>内容</p>'
+                      '<div class="item"><section><h4>条目</h4><p>说明</p></section></div>'
+                      '<h3>泳道</h3><article class="card"><header><h3>工单</h3></header>'
+                      '<section><h4>卡内小节</h4><p>细节</p></section></article></section></main>',
                       html, count=1, flags=re.S)
         page.write_text(html, encoding="utf-8")
         out = Path(tmp.name) / "snap"
@@ -276,6 +279,10 @@ class BuildCliTests(unittest.TestCase):
         md = (out / "export.md").read_text(encoding="utf-8")
         self.assertIn("# 快照测试", md)
         self.assertIn("## 第二节", md)
+        # 组件里的标题按所在节排级：h2 下的 item h4 → ###；h3 泳道下的卡片 h3/h4 → ####/#####
+        self.assertIn("\n### 条目\n", md)
+        self.assertIn("\n#### 工单\n", md)
+        self.assertIn("\n##### 卡内小节\n", md)
         self.assertNotIn("__snap", md)
 
     def test_gallery_pages_build_and_scripts_parse(self):

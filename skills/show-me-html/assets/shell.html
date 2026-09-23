@@ -288,6 +288,12 @@
           "LABEL",
           "OUTPUT",
         ]);
+        /* 组件容器与目录生成器的排除表保持一致。容器里的标题级别由组件文档固定
+           （卡片头 h3、item / alert 用 h4），和所在节无关；导出时改排到当前节标题的下一级，
+           否则会出现 h2 直跳 h4、工单卡与泳道同为 h3。outline 是最近一个节标题的级别。 */
+        var COMPONENT =
+          ".card, .fig-box, .alert, .item, .accordion, .dialog, .empty";
+        var outline = 1;
 
         function skipped(el) {
           return (
@@ -425,7 +431,23 @@
             if (t === "SUMMARY")
               return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
             if (/^H[1-6]$/.test(t)) {
-              out += "\n" + "#".repeat(+t[1]) + " " + inline(n).trim() + "\n\n";
+              var lv = +t[1],
+                box = n.closest(COMPONENT),
+                up;
+              if (box) {
+                /* 以最外层组件里最高的标题为下一级，组件内部的相对层级照旧（卡头 h3 + 卡内 h4） */
+                while ((up = box.parentElement.closest(COMPONENT))) box = up;
+                var top = Math.min.apply(
+                  null,
+                  Array.from(box.querySelectorAll("h1,h2,h3,h4,h5,h6")).map(
+                    function (h) {
+                      return +h.tagName[1];
+                    }
+                  )
+                );
+                lv = Math.min(outline + 1 + lv - top, 6);
+              } else outline = lv;
+              out += "\n" + "#".repeat(lv) + " " + inline(n).trim() + "\n\n";
             } else if (t === "P") {
               var s = inline(n).trim();
               if (s) out += s + "\n\n";
@@ -506,6 +528,7 @@
             document.querySelector("[data-md-root]") ||
             document.getElementById("doc") ||
             document.body;
+          outline = 1;
           var md = block(root, 0)
             .replace(/\n{3,}/g, "\n\n")
             .trim();
