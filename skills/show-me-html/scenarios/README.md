@@ -24,9 +24,10 @@
 2. 让任一 agent 读本目录选中的场景文件，按其冻结材料生成页面，输出到
    `rounds/<日期>-<SHA>/<场景名>.html`（`rounds/` 不进 git，仅本地对比用）。
 3. 每页跑 `python3 scripts/build.py <页面>`，ERROR 和未处置 WARN 都必须为零。
-4. 验证 light / dark / system、500 / 1280px 自动几何、390px 截图与键盘、reduced motion、打印和 Markdown。
-   390px 与键盘跑 `node scripts/probe390.mjs rounds/<日期>-<SHA>`：自动核对溢出、Tab 可达、焦点环、遮挡和各场景的按键交互，
-   截图写到 `_probe/390/`，要逐张看。
+4. 跑 `node scripts/probe_round.mjs rounds/<日期>-<SHA> rounds/<上一轮>`：核对 light / dark / system、reduced motion、
+   390 / 500 / 1280 横向溢出、真实键盘 Tab（可达、焦点环、遮挡）、打印页数、Markdown 导出和各场景的通过标准，
+   再与上一轮对比 `probe.json` 与截图。结果在 `_probe/`，截图要逐张看，字节不同的先放大确认是不是抗锯齿噪声。
+   场景判据的选择器按当前基线页面写：重新生成过页面、摘要报「未命中」时，按 SCENARIO.md 把选择器改到新页面上。
 5. 与上一轮同名页面对比：结构、无颜色时的几何指纹和名册自查（见 `references/anti-patterns.md`）。
 6. 差异只能来自视觉系统 / 骨架 / 检查 / 指引的改动；若不是，先检查场景材料是否漂移。
 
