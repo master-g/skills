@@ -71,4 +71,4 @@ effective-html 已弃用并由本 skill 取代，历史内容存于仓库的 `sk
 | [Temml](https://temml.org) 公式编译                                                                      | 0.13.5  | MIT © Ron Kok             | `assets/vendor/LICENSE-temml.txt`   |
 | [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型概念与选型规则来源，无代码衍生 | eace082 | 不适用                    | —                                   |
 
-它们的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用。
+前三项的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用；lieflat-charts 只提供图型概念，没有代码进入产出。

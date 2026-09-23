@@ -295,6 +295,7 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual(warns, [])
                 built = page.read_text(encoding="utf-8")
                 self.assertIn('data-show-me="charts"', built)
+                self.assertNotIn("SHOW-ME:LICENSE", built)
                 self.assertEqual(built.count("data-chart="), len(re.findall(r"// ════ [A-Z]\d+ · ", built)))
                 if node:
                     script = re.findall(r"<script>(.*?)</script>", built, re.S)[-1]  # 页尾图型脚本（prettier 可能重排缩进）

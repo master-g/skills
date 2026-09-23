@@ -1677,7 +1677,7 @@
                   dot = el(s, "circle", {
                     cx: p.x.toFixed(1),
                     cy: p.y.toFixed(1),
-                    r: 0.9 + Math.sqrt(p.edits / most) * 3.6,
+                    r: Math.sqrt(p.edits / most) * 4.5,
                     fill: hero ? HERO : g ? G.ink.data : G.ink.strong,
                     class: "pop",
                     style: dl(0.2 + g * 0.08 + i * 0.008),
@@ -2453,7 +2453,7 @@
               S1 = 360;
             const dx = (i) => D0 + (i * (D1 - D0)) / (MENU.length - 1),
               sx = (k) => S0 + (k * (S1 - S0)) / (STALLS.length - 1),
-              rad = (n) => 2 + Math.sqrt(n / count[0]) * 9;
+              rad = (n) => Math.sqrt(n / count[0]) * 11;
             MENU.forEach(([dish, k], i) => {
               const x0 = sx(k),
                 y0 = TOP + rad(count[k]),
