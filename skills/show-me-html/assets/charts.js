@@ -65,6 +65,58 @@ window.showMeChart = (function () {
     }
     return d + " Z";
   };
+  /* 发丝语法：所有图块共用的粗细、点径、字号与墨色层级。构图各图自定，这些数只从这里取。
+     数据线用发丝，主角只加粗一档；网格比数据更细更淡；点分三级（点标、标点、头点）；
+     刻度与数值是小号等宽字加字距，类目名用正文字。两条补充：主角系列整体升一档，
+     否则发丝下的橙色会发虚；大量叠加的线（丝线、辐条）用 mass 浅墨，否则叠密了自己会变深。
+     网格用 ink-30 而非更浅一档：深色主题下 ink-22 的发丝几乎看不见。
+     抖动：线宽处处相同，长度、位置、点径、弯度带一点确定性的不齐，配上足够的密度，
+     才有半手绘半机器的质感。抖动只加在不编码数据的维度上：档的横向长度可以抖，
+     柱高、射线长度、点的个数不能抖。 */
+  const G = {
+    line: {
+      grid: 0.35,
+      base: 0.5,
+      data: 0.6,
+      heroData: 0.95,
+      hero: 1.2,
+      thread: 0.45,
+      heroThread: 0.8,
+    },
+    dot: { tick: 0.9, mark: 2.1, head: 3.1 },
+    type: { tick: 6.2, label: 7.6, value: 7.6, track: 0.5 },
+    ink: {
+      strong: "var(--ink)",
+      data: "var(--ink-70)",
+      quiet: "var(--ink-45)",
+      mass: "var(--ink-30)",
+      guide: "var(--ink-30)",
+    },
+    // 相对幅度：len 线段长度、size 点径、bend 曲线控制点；pos 是绝对位移（viewBox 单位）；accent 为改用 strong 墨的比例
+    jitter: { len: 0.16, pos: 0.4, size: 0.14, bend: 0.14, accent: 0.2 },
+  };
+  // 确定性抖动：返回 [-amp, amp] 内的值，同一 (i, k) 永远相同，刷新与截图可回归
+  const jit = (i, k, amp) => (rnd(i + 1, k + 7) - 0.5) * 2 * amp;
+  // 文字属性：txt(s, tick({ x, y }), "2k")。传入的属性覆盖默认值
+  const tick = (a) => ({
+    "font-size": G.type.tick,
+    fill: G.ink.quiet,
+    "letter-spacing": G.type.track,
+    ...a,
+  });
+  const value = (a, hero) => ({
+    "font-size": G.type.value,
+    "font-weight": 600,
+    fill: hero ? "var(--chart-hero)" : G.ink.strong,
+    "letter-spacing": G.type.track * 0.6,
+    ...a,
+  });
+  const label = (a) => ({
+    "font-size": G.type.label,
+    fill: G.ink.data,
+    class: "name",
+    ...a,
+  });
   const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fmt = (v, d = 0) =>
     Number(v).toLocaleString("en-US", {
@@ -111,5 +163,22 @@ window.showMeChart = (function () {
     if (btn) btn.addEventListener("click", go);
     svg._replay = go;
   };
-  return { el, txt, tip, rnd, pol, sect, blob, reveal, motion, fmt, NS };
+  return {
+    el,
+    txt,
+    tip,
+    rnd,
+    pol,
+    sect,
+    blob,
+    reveal,
+    motion,
+    fmt,
+    NS,
+    G,
+    jit,
+    tick,
+    value,
+    label,
+  };
 })();
