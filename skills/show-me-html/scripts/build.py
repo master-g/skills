@@ -11,6 +11,7 @@
   2. 把用到的 lucide 图标从 sprite 里抽出来，替换 data-lucide="name"。
   3. 页面用到需要 JS 的组件时，把保留的 basecoat JS 内联到 <!--SHOW-ME:JS--> 处。
   4. 按页面实际出现的 language-* 内联语法高亮：只带上用到的语言。
+  5. 注入骨架行为脚本 assets/shell.js（主题切换、目录、Markdown 导出等）。每次构建重算，旧页面重建也拿到最新骨架。
 
 对已合成的文件重复运行是安全的：占位符已消失时只跑自检。
 """
@@ -44,6 +45,10 @@ HL_MARK = 'data-show-me="hl"'
 CHART_MARK = 'data-show-me="charts"'
 CHART_JS = ASSETS / "charts.js"
 MATH_MARK = 'data-show-me="math"'
+SHELL_MARK = 'data-show-me="shell"'
+SHELL_JS = ASSETS / "shell.js"
+# 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
+LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
 MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
 # 作者写 LaTeX：行内 \( … \) 或 $ … $（pandoc 规则），块级 \[ … \] 或 $$ … $$。
 MATH_DELIM_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?:^|[^\\$])\$(?=\S)[^$\n]*?\S\$(?!\d)")
@@ -75,7 +80,7 @@ def noncommercial_charts(html):
 # 页面自己写死的颜色。show-me-html 自有 CSS 不算。
 SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette|math)"[^>]*>.*?</style>', re.S)
 SYSTEM_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
-SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts)"[^>]*>.*?</script>', re.S)
+SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts|shell)"[^>]*>.*?</script>', re.S)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -547,6 +552,8 @@ def runtime_scripts(html, warns):
     if hl:
         # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
         slot += f'<script {HL_MARK}>{hl}</script>'
+    # 骨架放最后：原先它就紧跟在这些运行时脚本之后，页面脚本与它的相对顺序因此不变
+    slot += f'<script {SHELL_MARK}>{SHELL_JS.read_text(encoding="utf-8")}</script>'
     return slot, langs
 
 
@@ -582,6 +589,7 @@ def build(html, errors):
         changed = True
 
     warns = []
+    legacy = LEGACY_SHELL_RE.search(html)
     slot, langs = runtime_scripts(html, warns)
     block = f"{JS_BEGIN}{slot}{JS_END}"
     if JS_SLOT in html:
@@ -590,7 +598,7 @@ def build(html, errors):
         new = JS_BLOCK_RE.sub(lambda _m: block, html, count=1)
     else:
         # 本改动之前合成的旧页面：没有哨兵。拿掉散落的系统脚本，在原位置（没有就在 </main> 后第一个 <script> 前）放回哨兵块
-        first = SYSTEM_SCRIPT_RE.search(html)
+        first = SYSTEM_SCRIPT_RE.search(html) or legacy
         if first:
             anchor = first.start()
         else:
@@ -603,6 +611,7 @@ def build(html, errors):
         head = html[:anchor]
         tail = SYSTEM_SCRIPT_RE.sub("", html[anchor:])
         new = head + block + tail
+    new = LEGACY_SHELL_RE.sub("", new)
     if new != html:
         html = new
         changed = True

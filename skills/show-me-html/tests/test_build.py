@@ -178,6 +178,28 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
 
+    def test_rebuild_replaces_copied_shell_scripts(self):
+        # 骨架改为构建注入之前的页面：骨架以普通 <script> 复制在哨兵块之后，页面脚本再往后
+        page = self.copy_fixture()
+        self.assertEqual(run_build(page).returncode, 0)
+        built = re.sub(r'<script data-show-me="shell">.*?</script>', "", page.read_text(encoding="utf-8"), flags=re.S)
+        shell_js = (SKILL / "assets" / "shell.js").read_text(encoding="utf-8")
+        legacy = built.replace("<!--SHOW-ME:JS:END-->",
+                               f"<!--SHOW-ME:JS:END-->\n    <script>\n{shell_js}</script>\n"
+                               "    <script>window.__pageScript = 1;</script>", 1)
+        page.write_text(legacy, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        html = page.read_text(encoding="utf-8")
+        self.assertEqual(html.count('data-show-me="shell"'), 1)
+        self.assertEqual(html.count("定尺卡（share-card）"), 1)
+        self.assertLess(html.index('data-show-me="shell"'), html.index("window.__pageScript"))
+        before = hashlib.sha256(page.read_bytes()).digest()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
+
     def test_chart_runtime_precedes_page_scripts(self):
         page = self.copy_fixture()
         self.insert(page, self.FIGURE)

@@ -905,7 +905,7 @@ q.addEventListener("input", () => {
 
 ## 侧栏目录 + 滚动高亮
 
-**骨架已内置，不要手写。** `assets/shell.html` 会扫描 `#doc` 的 h2/h3 自动生成右侧目录：
+**骨架已内置，不要手写。** 骨架脚本（`assets/shell.js`，build 时注入）会扫描 `#doc` 的 h2/h3 自动生成右侧目录：
 指示条随滚动滑动到当前节，点击条目平滑跳转。≥80rem 且条目 ≥2 时出现，否则整块不存在。
 单个标题豁免加 `data-toc-skip`。目录整块带 `data-md-skip`，不进 Markdown 导出。
 

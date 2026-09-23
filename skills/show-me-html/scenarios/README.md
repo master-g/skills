@@ -18,7 +18,7 @@
 
 ## 轮次流程
 
-改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 之后（MAINTENANCE.md 联动规则）：
+改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js` 或 `scripts/build.py` 之后（MAINTENANCE.md 联动规则）：
 
 1. 记下当前 git 短 SHA：`git rev-parse --short HEAD`。
 2. 让任一 agent 读本目录选中的场景文件，按其冻结材料生成页面，输出到

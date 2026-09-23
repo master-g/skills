@@ -14,7 +14,7 @@
 ## 所有权
 
 - `assets/show-me.css` 持有 token、两套主题、基础排版、组件状态、chrome、配方几何、打印和 reduced motion。
-- `assets/shell.html` 只持有文档结构与行为：主题初始化、Markdown 导出、TOC 和滑块同步。
+- `assets/shell.html` 只持有文档结构与主题初始化；Markdown 导出、TOC 和滑块同步等行为在 `assets/shell.js`，由 `build.py` 注入。
 - `scripts/math.mjs` 持有公式编译：LaTeX → MathML，由 `build.py` 调用。
 - `assets/charts.js` 持有数据图运行时（建元素、确定性伪随机、滚入播放与重播），页面出现 `data-chart` 时由 `build.py` 内联；`assets/gallery/*.html` 是 59 张图型的参考实现，页面从中复制渲染块。
 - 页面自己的 `<style>` 只能写材料特有的几何或图形，必须消费语义 token。

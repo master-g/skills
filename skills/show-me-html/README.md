@@ -37,7 +37,8 @@ npx skills add master-g/skills --skill show-me-html -g
 | 路径                          | 作用                                                                     |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付                          |
-| `assets/shell.html`           | 页面骨架（工具条、主题切换、Markdown 导出、行为脚本）                    |
+| `assets/shell.html`           | 页面骨架（工具条、目录容器、防闪烁主题脚本）                             |
+| `assets/shell.js`             | 骨架行为脚本（主题切换、目录、Markdown 导出、代码工具条），构建时注入    |
 | `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何、打印样式，以及数据图外壳与入场动画 |
 | `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                                       |
 | `references/components.md`    | 稳定组件 markup、设计 token、分类色                                      |

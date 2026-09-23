@@ -12,6 +12,7 @@
    主题三态切换、复制为 Markdown（单图标按钮）、右侧目录（扫描 h2/h3 自动生成，条目 ≥2 且视口 ≥80rem 时出现），
    以及 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->` 两个占位符。
    改标题（`<title>` 和 `.chrome-title` 两处），在 `<body data-recipe="配方名">` 写入选定配方，内容写进 `<main id="doc">`。
+   页面自己的 `<script>` 写在 `<!--SHOW-ME:JS-->` 之后：骨架行为脚本由 `build.py` 注入到占位符处，页面脚本运行时它已就绪（如 `window.showMeMarkdown`）。
    **占位符、工具条与目录结构不要删**，`build.py` 会检查。
 2. **先读 `visual-system.md`，写 markup 前定位 `components.md` 中实际用到的组件。** 前者规定视觉所有权与配方几何，后者规定稳定的 DOM、ARIA 和 `data-*` 契约。按钮、卡片、徽章、表格、提示块的状态已经在两套主题下调好；
    自己写一遍只会得到深色主题下读不了的东西。配色一律用 token

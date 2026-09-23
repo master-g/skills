@@ -11,7 +11,7 @@
 | ---------------------------- | ----------------------------------------- | -------------------------- |
 | 判断类（怎么写更好）         | `references/*.md` 散文                    | 「先写模型函数再写图」     |
 | 可复用视觉（每个页面都该有） | `assets/show-me.css`                      | 滑块轨道、焦点、间距节奏   |
-| 可复用行为                   | `assets/shell.html` 骨架                  | 主题、TOC、Markdown 导出   |
+| 可复用行为                   | `assets/shell.js` 骨架脚本                | 主题、TOC、Markdown 导出   |
 | 可机械核对                   | `scripts/build.py` 检查（ERROR/WARN）     | 配方名、写死颜色、横向溢出 |
 | harness 自身的问题           | harness（build.py / 骨架的 TOC 与导出器） | TOC 吞掉卡片内标题         |
 | 只有一个模型 / 只出现一次    | 观察名单（本文末尾），复现后再编码        | —                          |
@@ -27,13 +27,14 @@
 
 ## 联动规则
 
-改 `assets/show-me.css`、`assets/shell.html` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
+改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、500 / 1280px 自动几何、390px 人工截图、键盘、reduced motion、打印和 Markdown。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
 改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，跑 `python3 scripts/gallery.py --shots`：它把四个 gallery 页拼成 `all-charts.html` 构建一遍（只该有「超过 400 KB」与 PolyForm 非商用许可两条 WARN），再给每张图截 light/dark 两张 PNG，`index.md` 开头列出空图、控制台报错和低于下限的字号。逐张看改到的图，人也可以直接打开 `all-charts.html`，`#fig-编号` 直达、`?only=编号` 单看。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析，外加 `setInterval` 都登记进了 `keep`。
 
 改 `reveal` 的生命周期时另测常驻开销：用 `scripts/gallery.py` 拼好的 `all-charts.html`（59 图、约 20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
 
-旧页面不会自动获得新的视觉或骨架行为，它们携带的是生成时的 CSS 与 HTML 副本。视觉/骨架修复只影响今后合成的页面；历史页面不动。
+旧页面重新跑一遍 `build.py` 会拿到当前的 CSS 与骨架脚本（`shell.js`，旧页面里复制的骨架块按段首注释认出并替换）；
+`shell.html` 的 HTML 结构（工具条、目录容器、`<head>` 里的防闪烁主题脚本）仍是生成时的副本，改它只影响今后合成的页面。历史页面默认不动。
 旧页面的回归用 `--check-only` 验证新检查不误报即可。
 
 ## 版本规则
