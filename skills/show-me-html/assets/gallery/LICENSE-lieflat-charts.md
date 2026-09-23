@@ -1,15 +1,14 @@
 # assets/gallery/ 的许可证说明
 
-本目录下四个 gallery 页面中的 **19 个渲染块**改写自
+本目录下四个 gallery 页面中的 **4 个渲染块**改写自
 [larashero3-dotcom/lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts)
 （提交 `eace082`，2026-09-05；作者「躺在废墟里」，制作于 moxt.ai），
 只替换了颜色 token、字体、外壳与运行时。这些块属于上游的衍生作品，遵循上游的
 **PolyForm Noncommercial License 1.0.0**（全文见下），**不**适用本仓库根目录的 MIT 许可。
 
-衍生块：`basics.html` 的 F1、F3–F12、F14–F17；
-`glance.html` 的 G4、G19–G21。
+衍生块：`glance.html` 的 G4、G19–G21。
 
-其余 40 块（`editorial.html` 的 L1–L17、L19、L20 全部；`basics.html` 的 F2、F13；`glance.html` 的 G3、G5–G18、G22；`big.html` 的 B1–B3）
+其余 55 块（`editorial.html` 的 L1–L17、L19、L20 全部；`basics.html` 的 F1–F17 全部；`glance.html` 的 G3、G5–G18、G22；`big.html` 的 B1–B3）
 是按上游图型概念独立编写的 SVG 实现，属本仓库 MIT 部分。
 `references/charts.md` 的选型规则与图型目录是对上游规则的转述，图型名沿用上游。
 

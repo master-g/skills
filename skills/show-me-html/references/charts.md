@@ -6,7 +6,7 @@
 
 来源：`larashero3-dotcom/lieflat-charts` 的图型体系与选型规则（2026-09-06 读取），
 颜色、字体、外壳和运行时已换成本 skill 的；所有渲染只用 SVG 与页内 JS，零外部依赖。
-gallery 里 19 个块是上游代码的衍生（PolyForm Noncommercial 1.0.0），名单与全文见 `../assets/gallery/LICENSE-lieflat-charts.md`；交付页复制这些块时同样受该许可约束；`build.py` 会在页面 `<head>` 写入许可声明并发 WARN，交付时向用户点名。
+gallery 里 4 个块是上游代码的衍生（PolyForm Noncommercial 1.0.0），名单与全文见 `../assets/gallery/LICENSE-lieflat-charts.md`；交付页复制这些块时同样受该许可约束；`build.py` 会在页面 `<head>` 写入许可声明并发 WARN，交付时向用户点名。
 
 ## 什么时候画数据图
 
