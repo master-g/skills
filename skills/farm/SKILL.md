@@ -72,8 +72,10 @@ worker 的 prompt 永远是同一句:`读 <$PWD/.farm/<task>-brief.md> 并执行
 | mux   | 派发                                                                                                                   |
 | ----- | ---------------------------------------------------------------------------------------------------------------------- |
 | herdr | 先按下文「herdr pane 复用」拿到 agent 名(复用或新开)→ `herdr agent prompt <agent> "<prompt>" --wait --timeout 1800000` |
-| tmux  | `tmux new-window -n farm-<task> "cd '$PWD' && <cli> <modelflag-headless> '<prompt>' 2>&1 \| tee .farm/<task>.log"`     |
-| none  | `cd "$PWD" && <cli> <modelflag-headless> '<prompt>' > .farm/<task>.log 2>&1 &`,轮询 log                                |
+| tmux  | `tmux new-window -d -c "$PWD" -n farm-<task> "sh '<skill>/headless.sh' run <task> <model>"`                            |
+| none  | `nohup sh '<skill>/headless.sh' run <task> <model> >/dev/null 2>&1 &`                                                  |
+
+**无头派发**(tmux、none,以及任何在 pane 里跑 `pi -p` 的场景)一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit` 清掉上一轮标记。
 
 **herdr pane 复用**(一个 farm 会话只维护一个 worker pane):
 
@@ -94,24 +96,31 @@ worker CLI 通用斜杠命令(用 `agent prompt` 发送,等价于用户在 pane 
 
 modelflag(pane 交互 / 无头):
 
-| cli    | herdr pane        | 无头                 |
-| ------ | ----------------- | -------------------- |
-| pi     | `--model <model>` | `-p --model <model>` |
-| claude | `--model <model>` | 禁用(见红线)         |
-| codex  | `-m <model>`      | 禁用(见红线)         |
+| cli    | herdr pane        | 无头               |
+| ------ | ----------------- | ------------------ |
+| pi     | `--model <model>` | `headless.sh` 内置 |
+| claude | `--model <model>` | 禁用(见红线)       |
+| codex  | `-m <model>`      | 禁用(见红线)       |
 
 `herdr agent start` 返回 `agent_not_ready`:用 `herdr agent get <task>` 查看,通常是登录或 trust 提示,报告用户处理。
 
-完成标准:此阶段仅确认 worker 已启动且 brief 已落盘；整个任务必须完成第 4 节的独立验收。
+完成标准:brief 已落盘,且 worker 确认已启动——herdr:`agent prompt --wait` 没有返回 `agent_prompt_stalled`;无头:派发后立即开始第 4 节的 `wait`,首次返回不是 `not-started`。整个任务必须完成第 4 节的独立验收。
 
 ## 4. 门禁循环
 
-worker 结束(herdr:`agent prompt` 返回;tmux/none:log 出现报告路径且进程退出)后:
+worker 结束(herdr:`agent prompt` 返回;无头:`headless.sh wait` 返回 `done`)后进入门禁。无头等待是分段的,每段最长 100 秒,按结果分支:
+
+| `sh '<skill>/headless.sh' wait <task>` | 含义与动作                                                                                                                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `done <code>`(退出码 0)                | worker 已退出,进入下面第 1 步                                                                                                                                                     |
+| `running`(2)                           | 再调一次;累计超过 30 分钟仍 running → 读 `.farm/<task>.log` 尾部,向用户报告并问是否继续等                                                                                         |
+| `not-started`(3)                       | 15 秒内脚本没写 pid,启动命令从未执行:查 tmux 窗口 / 后台命令输出 / pane 内容找原因,修正后重发(pane 里重发前先 `herdr pane send-keys <pane> ctrl+c` 清掉提示符残留),不计入修正轮次 |
+| `dead`(4)                              | 进程消失且没写退出码(被杀或崩溃):读 log,按下面第 1 步「报告缺失」处理                                                                                                             |
 
 1. 读 `.farm/<task>-report.md`。报告缺失:抓 worker 输出(log,或 `herdr agent read <task> --source recent-unwrapped --lines 120`),判断 worker 是死了还是违约,显式报告给用户。
 2. **独立重跑验收命令**,不信 worker 自述。
 3. 通过 → 向用户汇报:改动摘要(git 仓库用 `git diff --stat`)+ 门禁输出。herdr:汇报时问用户是否关闭 worker pane(`herdr pane close <pane-id>`);用户不回应则保留,但下次 /farm 新开 pane 前必关(见「herdr pane 复用」第 3 步)。
-   不过 → 把失败输出写成修正 brief 再派一轮(herdr:对同一 agent 再 `agent prompt`;无头:`pi -p -c` 继续会话)。**最多 3 轮**;仍失败则保留现场,带报告与门禁输出升级给用户。
+   不过 → 把失败输出写成修正 brief 再派一轮(herdr:对同一 agent 再 `agent prompt`;无头:把修正内容追加进 brief,清标记后 `headless.sh run <task> <model> -c` 继续会话)。**最多 3 轮**;仍失败则保留现场,带报告与门禁输出升级给用户。
 
 ## 失败处理
 
