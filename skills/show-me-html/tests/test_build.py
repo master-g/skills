@@ -440,6 +440,29 @@ class BuildCliTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("innerHTML", result.stdout + result.stderr)
 
+    def test_inner_html_bypasses_are_rejected_and_literals_allowed(self):
+        """+= 与 insertAdjacentHTML 也会把动态值写成 HTML；字面量与比较运算不算。"""
+        cases = (
+            ("output.innerHTML += value;", True),
+            ('output.insertAdjacentHTML("beforeend", value);', True),
+            ('output.insertAdjacentHTML("beforeend", "<br>");', False),
+            ('output.innerHTML = "<br>";', False),
+            ('output.innerHTML = "";', False),
+            ('output.innerHTML = "<b>" + value;', True),
+            ("output.innerHTML = `<b>${value}</b>`;", True),
+            ('if (output.innerHTML == "") output.textContent = value;', False),
+        )
+        for js, rejected in cases:
+            with self.subTest(js=js):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8").replace("</body>", f"<script>{js}</script></body>")
+                page.write_text(html, encoding="utf-8")
+
+                result = run_build(page)
+
+                self.assertEqual("innerHTML" in result.stdout, rejected, result.stdout)
+                self.assertEqual(result.returncode != 0, rejected, result.stdout)
+
     def test_hidden_native_control_requires_accessible_replacement(self):
         page = self.copy_fixture()
         html = page.read_text(encoding="utf-8").replace(

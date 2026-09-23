@@ -633,6 +633,19 @@ def build(html, errors):
 
 # ── 自检 ────────────────────────────────────────────────────────────────
 
+def writes_dynamic_html(script):
+    """innerHTML / outerHTML 赋值（含 +=，不含 == 比较）或 insertAdjacentHTML 的 HTML 参数，
+    只要不是一整个字符串字面量就算动态写入：拼接、模板字符串、变量都可能带进未转义的内容。"""
+    literal = re.compile(r"""\s*(["'])[^"'\\]*\1\s*""")
+    for m in re.finditer(r"\.(?:innerHTML|outerHTML)\s*\+?=(?!=)([^;\n]*)", script):
+        if not literal.fullmatch(m.group(1)):
+            return True
+    for m in re.finditer(r"\.insertAdjacentHTML\(\s*[^,()]+,([^;\n]*)\)", script):
+        if not literal.fullmatch(m.group(1)):
+            return True
+    return False
+
+
 def check(html, path, allow_legacy_recipe=False):
     errors, warns = [], []
     stripped = re.sub(r"<!--.*?-->", "", html, flags=re.S)
@@ -726,9 +739,9 @@ def check(html, path, allow_legacy_recipe=False):
 
     authored = SYSTEM_SCRIPT_RE.sub("", stripped)
     for script in re.findall(r"<script\b[^>]*>(.*?)</script>", authored, re.S | re.I):
-        if re.search(r"\.(?:innerHTML|outerHTML)\s*=\s*(?![\"'])", script):
+        if writes_dynamic_html(script):
             errors.append(
-                "页面脚本把动态值写进 innerHTML/outerHTML："
+                "页面脚本把动态值写进 innerHTML/outerHTML/insertAdjacentHTML："
                 "改用 textContent、DOM 构造或经过严格转义的可信片段"
             )
             break
@@ -911,6 +924,7 @@ def shoot_sheets(page, theme="light", scale=2):
             out = page.with_name(f"{page.stem}{suffix}{'-dark' if theme == 'dark' else ''}.png")
             try:
                 subprocess.run(
+                    # --no-sandbox：macOS 与普通用户下不需要，Linux 容器里以 root 跑 Chrome 时不加会直接退出
                     [chrome, "--headless", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
                      f"--force-device-scale-factor={scale}", "--virtual-time-budget=4000",
                      f"--window-size={w},{h}", f"--screenshot={out}", probe.as_uri()],
@@ -1020,6 +1034,7 @@ def render_check(page, widths=(500, 1280)):
         for w in widths:
             try:
                 out = subprocess.run(
+                    # --no-sandbox 见 shoot_sheets 的说明
                     [chrome, "--headless", "--disable-gpu", "--no-sandbox",
                      "--virtual-time-budget=4000", f"--window-size={w},900",
                      "--dump-dom", probe.as_uri()],
@@ -1140,10 +1155,8 @@ def main():
             if err:
                 print(f"--shot 未完成：{err}")
 
-    if args.open:
-        if errors:
-            print("--open 未执行：自检有错误，先修再开。")
-        elif not open_page(args.page.resolve()):
+    if args.open:  # 走到这里自检已通过：有 ERROR 时上面已经 return 1
+        if not open_page(args.page.resolve()):
             print("--open 未执行：找不到可用的打开命令（macOS 需要 open，"
                   "Linux/WSL 需要 wslview 或 xdg-open，Windows 用 os.startfile）。")
         else:
