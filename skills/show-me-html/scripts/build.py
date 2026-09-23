@@ -35,6 +35,9 @@ RECIPES = (
 
 CSS_SLOT = "<!--SHOW-ME:CSS-->"
 JS_SLOT = "<!--SHOW-ME:JS-->"
+JS_BEGIN = "<!--SHOW-ME:JS:BEGIN-->"
+JS_END = "<!--SHOW-ME:JS:END-->"
+JS_BLOCK_RE = re.compile(re.escape(JS_BEGIN) + r".*?" + re.escape(JS_END), re.S)
 CSS_MARK = 'data-show-me="css"'
 JS_MARK = 'data-show-me="js"'
 HL_MARK = 'data-show-me="hl"'
@@ -513,6 +516,27 @@ def compile_math(page, errors, warns):
     return True
 
 
+def runtime_scripts(html, warns):
+    """按页面当前内容算出应当内联的运行时脚本。每次构建都重算：加了就补，删了就去。
+    返回 (拼好的 <script> 串, 语言名集合)。判断时先剥掉已内联的系统脚本，免得脚本自身的文本误命中。"""
+    authored = SYSTEM_SCRIPT_RE.sub("", html)
+    slot = ""
+    if needs_basecoat(authored):
+        slot += f'<script {JS_MARK}>{(VENDOR / "basecoat.min.js").read_text(encoding="utf-8")}</script>'
+    if re.search(r'\bdata-chart=', authored):
+        # 图表运行时：页面用 data-chart 标记图型时内联，图型代码本身由页面自带
+        slot += f'<script {CHART_MARK}>{CHART_JS.read_text(encoding="utf-8")}</script>'
+    hl, langs = inline_highlight(authored, warns)
+    if hl:
+        # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
+        slot += f'<script {HL_MARK}>{hl}</script>'
+    return slot, langs
+
+
+def needs_basecoat(html):
+    return any(re.search(rf'class="[^"]*\b{c}\b', html) for c in JS_COMPONENTS)
+
+
 def build(html, errors):
     changed = False
 
@@ -540,28 +564,31 @@ def build(html, errors):
     if used:
         changed = True
 
-    langs, warns = set(), []
+    warns = []
+    slot, langs = runtime_scripts(html, warns)
+    block = f"{JS_BEGIN}{slot}{JS_END}"
     if JS_SLOT in html:
-        slot = ""
-        needs_js = any(re.search(rf'class="[^"]*\b{c}\b', html) for c in JS_COMPONENTS)
-        if needs_js:
-            js = (VENDOR / "basecoat.min.js").read_text(encoding="utf-8")
-            slot += f'<script {JS_MARK}>{js}</script>'
-        if re.search(r'\bdata-chart=', html):
-            # 图表运行时：页面用 data-chart 标记图型时内联，图型代码本身由页面自带
-            slot += f'<script {CHART_MARK}>{CHART_JS.read_text(encoding="utf-8")}</script>'
-        hl, langs = inline_highlight(html, warns)
-        if hl:
-            # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
-            slot += f'<script {HL_MARK}>{hl}</script>'
-        html = html.replace(JS_SLOT, slot, 1)
+        new = html.replace(JS_SLOT, block, 1)
+    elif JS_BEGIN in html:
+        new = JS_BLOCK_RE.sub(lambda _m: block, html, count=1)
+    else:
+        # 本改动之前合成的旧页面：没有哨兵。拿掉散落的系统脚本，在原位置（没有就在 </main> 后第一个 <script> 前）放回哨兵块
+        first = SYSTEM_SCRIPT_RE.search(html)
+        if first:
+            anchor = first.start()
+        else:
+            main_end = html.find("</main>")
+            nxt = html.find("<script", main_end) if main_end >= 0 else -1
+            anchor = nxt if nxt >= 0 else html.rfind("</body>")
+        if anchor < 0:
+            errors.append("找不到内联运行时脚本的位置（没有 <!--SHOW-ME:JS--> 占位符，也没有 </body>）")
+            return html, changed, used, langs, warns
+        head = html[:anchor]
+        tail = SYSTEM_SCRIPT_RE.sub("", html[anchor:])
+        new = head + block + tail
+    if new != html:
+        html = new
         changed = True
-    elif HL_MARK not in html and "</body>" in html:
-        # 占位符已经用掉的旧页面：仍然可以补上高亮，这样升级 skill 后不必重做整页
-        hl, langs = inline_highlight(html, warns)
-        if hl:
-            html = html.replace("</body>", f"    <script {HL_MARK}>{hl}</script>\n  </body>", 1)
-            changed = True
 
     return html, changed, used, langs, warns
 
@@ -614,6 +641,11 @@ def check(html, path, allow_legacy_recipe=False):
     for m in re.finditer(r'data-lucide="([a-z0-9-]+)"', html):
         errors.append(f"data-lucide=\"{m.group(1)}\" 未被替换成内联 SVG")
 
+    authored_markup = SYSTEM_SCRIPT_RE.sub("", stripped)
+    if re.search(r'\bdata-chart=', authored_markup) and CHART_MARK not in html:
+        errors.append("页面有 data-chart 但没有内联图表运行时：跑一遍不带 --check-only 的 build")
+    if needs_basecoat(authored_markup) and JS_MARK not in html:
+        errors.append("页面用了需要 JS 的组件（tabs / dropdown-menu 等）但没有内联 basecoat JS：跑一遍不带 --check-only 的 build")
     if "data-copy-md" not in html:
         errors.append("缺少「复制为 Markdown」按钮（data-copy-md）")
     if "data-theme-set" not in html:

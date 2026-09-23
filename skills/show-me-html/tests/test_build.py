@@ -106,6 +106,94 @@ class BuildCliTests(unittest.TestCase):
         self.assertIn('data-show-me="charts"', built)
         self.assertIn("window.showMeChart", built)
 
+    FIGURE = '<section><figure class="fig" data-chart="F1"><div class="fig-box"><svg id="x" viewBox="0 0 4 4" role="img" aria-labelledby="x-t x-d"><title id="x-t">t</title><desc id="x-d">d</desc></svg></div></figure></section>'
+
+    def insert(self, page, snippet, before="</main>"):
+        html = page.read_text(encoding="utf-8")
+        page.write_text(html.replace(before, snippet + before, 1), encoding="utf-8")
+
+    def test_rebuild_adds_chart_runtime_for_new_chart(self):
+        page = self.copy_fixture()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.assertNotIn('data-show-me="charts"', page.read_text(encoding="utf-8"))
+        self.insert(page, self.FIGURE)
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(page.read_text(encoding="utf-8").count('data-show-me="charts"'), 1)
+
+    def test_rebuild_adds_basecoat_for_new_tabs(self):
+        page = self.copy_fixture()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.insert(page, '<section><div class="tabs"></div></section>')
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(page.read_text(encoding="utf-8").count('data-show-me="js"'), 1)
+
+    def test_rebuild_adds_new_highlight_language(self):
+        page = self.copy_fixture()
+        self.insert(page, '<section><pre><code class="language-python">x = 1</code></pre></section>')
+        self.assertEqual(run_build(page).returncode, 0)
+        self.insert(page, '<section><pre><code class="language-rust">let x = 1;</code></pre></section>')
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertIn('__SHJ_LANGS["rs"]', built)
+        self.assertIn('__SHJ_LANGS["py"]', built)
+        self.assertEqual(built.count('data-show-me="hl"'), 1)
+
+    def test_rebuild_drops_runtime_no_longer_needed(self):
+        page = self.copy_fixture()
+        self.insert(page, self.FIGURE)
+        self.assertEqual(run_build(page).returncode, 0)
+        html = page.read_text(encoding="utf-8")
+        page.write_text(re.sub(r"<section><figure.*?</figure></section>", "", html, count=1, flags=re.S), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(page.read_text(encoding="utf-8").count('data-show-me="charts"'), 0)
+
+    def test_rebuild_after_edit_is_idempotent(self):
+        page = self.copy_fixture()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.insert(page, self.FIGURE)
+        self.assertEqual(run_build(page).returncode, 0)
+        before = hashlib.sha256(page.read_bytes()).digest()
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
+
+    def test_chart_runtime_precedes_page_scripts(self):
+        page = self.copy_fixture()
+        self.insert(page, self.FIGURE)
+        self.insert(page, "<script>window.__pageScript = 1;</script>", before="</body>")
+        self.assertEqual(run_build(page).returncode, 0)
+        self.insert(page, self.FIGURE.replace('id="x', 'id="y').replace("x-t x-d", "y-t y-d").replace('"x-', '"y-'))
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertLess(built.index('data-show-me="charts"'), built.index("window.__pageScript"))
+
+    def test_check_only_flags_chart_without_runtime(self):
+        page = self.copy_fixture()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.insert(page, self.FIGURE)
+
+        result = run_build(page, "--check-only")
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("图表运行时", result.stdout)
+
     def test_gallery_pages_build_and_scripts_parse(self):
         gallery = SKILL / "assets" / "gallery"
         pages = sorted(gallery.glob("*.html"))
