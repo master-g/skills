@@ -34,6 +34,7 @@ npx skills add master-g/skills --skill '*' -g
 - `effective-html`: **DEPRECATED** — superseded by `show-me-html`; kept as `skills/deprecated/effective-html/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker CLI, with acceptance gates.
 - `makemake`: consolidate project commands into a documented Makefile.
+- `mdxcn-term`: draw mdxcn-style framed ASCII figures in the terminal, aligned for CJK labels (derived from MIT-licensed [mdxcn](https://github.com/keshav-exe/mdxcn)).
 - `office-hours`: explain one concept in a single session, calibrating to the user's level first when it is hard.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
 - `show-me-html`: create offline-readable HTML explanations using an owned editorial visual system.

@@ -1,0 +1,5 @@
+interface:
+  display_name: "mdxcn-term"
+  short_description: "终端里生成中文对齐的 ASCII 框图"
+policy:
+  allow_implicit_invocation: true
