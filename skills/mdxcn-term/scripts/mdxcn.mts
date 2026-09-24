@@ -1,4 +1,4 @@
-// Usage: echo '<props json>' | node mdxcn.mts <graph> [TITLE]
+// Usage: echo '<props json>' | mdxcn <graph> [TITLE]
 // Prints the framed figure inside a ``` fence. Props match mdxcn's React API.
 import * as g from "./graphs.mts";
 
@@ -53,7 +53,7 @@ if (import.meta.main) {
   const [name, title] = process.argv.slice(2);
   if (!name) {
     console.error(
-      `usage: echo '<json>' | node mdxcn.mts <graph> [TITLE]\ngraphs: ${Object.keys(GRAPHS).join(", ")}`
+      `usage: echo '<json>' | mdxcn <graph> [TITLE]\ngraphs: ${Object.keys(GRAPHS).join(", ")}`
     );
     process.exit(2);
   }

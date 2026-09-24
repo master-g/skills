@@ -15,10 +15,10 @@ description: 在终端回复里要画 ASCII 图时使用：时间线、清单、
 ## 怎么画
 
 ```sh
-echo '<props json>' | node <本 skill 目录>/scripts/mdxcn.mts <graph> [TITLE]
+echo '<props json>' | <本 skill 目录>/scripts/mdxcn <graph> [TITLE]
 ```
 
-输出已带 ``` 围栏，**原样**贴进回复，不改一个字符。JSON 里也可以写 `title`，命令行的 TITLE 优先。报错时按提示修 JSON，不要退回手画。
+入口脚本优先用 bun，没有再用 node（需 24.2+）。输出已带 ``` 围栏，**原样**贴进回复，不改一个字符。JSON 里也可以写 `title`，命令行的 TITLE 优先。报错时按提示修 JSON，不要退回手画。
 
 标题 1–2 个词（英文会转大写）；标签简短、小写或中文，不写 `AuthMiddleware Layer` 这类名字。
 
@@ -68,4 +68,4 @@ echo '<props json>' | node <本 skill 目录>/scripts/mdxcn.mts <graph> [TITLE]
 
 - `● ○ │ █ ✓ →` 这类宽度不固定的符号按 1 列算，适合全角严格等于 2 个半角、上述符号为半角的等宽字体。
 - 没有 flow、plot、heatmap、calendar 这类无法用字符画的图。需要流程图时用文字或 `steps`。
-- 源自 mdxcn 的 `registry/default/graph-knap`（MIT，见 `LICENSE-mdxcn`），改动：按显示宽度补齐和截断、中文可逐字换行、甘特刻度按列放置。改代码后跑 `node scripts/check.mts`。
+- 源自 mdxcn 的 `registry/default/graph-knap`（MIT，见 `LICENSE-mdxcn`），改动：按显示宽度补齐和截断、中文可逐字换行、甘特刻度按列放置。改代码后跑 `bun scripts/check.mts`（或 `node`）。

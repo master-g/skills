@@ -1,0 +1,7 @@
+#!/bin/sh
+# Run mdxcn.mts with bun when present, else node (>= 24.2 for type stripping and import.meta.main).
+dir=$(cd "$(dirname "$0")" && pwd)
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$dir/mdxcn.mts" "$@"
+fi
+exec node "$dir/mdxcn.mts" "$@"

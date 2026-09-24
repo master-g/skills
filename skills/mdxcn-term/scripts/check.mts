@@ -1,5 +1,5 @@
 // Self-check: every example, in English and with CJK labels, draws a frame whose lines share one width.
-// Run: node check.mts
+// Run: bun check.mts (or node)
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
