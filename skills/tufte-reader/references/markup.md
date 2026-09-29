@@ -1,0 +1,202 @@
+# 标记契约
+
+读本源码从 `assets/shell.html` 开始。本文件列出每种元素的写法；构建脚本负责的部分（边注开关、脚注归位、目录、图片内联、公式编译）作者不手写。完整示范见 `assets/specimen.html`。
+
+## 骨架
+
+```html
+<body>
+  <button type="button" class="theme-toggle" aria-label="切换明暗主题"></button>
+  <header class="titlepage">…</header>
+  <article class="chapter" id="…">…</article>
+  <!-- 每章一个 -->
+  <section class="references" id="references">…</section>
+  <!--TR:JS-->
+</body>
+```
+
+- `<title>`：「中文标题 · 原文标题」。`<html lang="zh-CN">`。
+- `<!--TR:CSS-->` 与 `<!--TR:JS-->` 占位符保留到首次构建，构建后由内联资源替代，重跑时按 `data-tr` 标记刷新。
+
+## 扉页
+
+```html
+<header class="titlepage">
+  <h1>中文标题</h1>
+  <p class="subtitle">Original Title</p>
+  <p class="byline">作者 著 · 单位 · 出处与年份</p>
+  <div class="epigraph">
+    <blockquote>
+      <p>题记</p>
+      <footer>出处</footer>
+    </blockquote>
+  </div>
+  <p class="asterism">❧</p>
+  <div class="abstract">
+    <h2>摘要</h2>
+    <p>…</p>
+  </div>
+  <p>读本说明：原文链接、许可、译法取舍（删节、未译部分、术语约定）。</p>
+  <nav class="toc"></nav>
+</header>
+```
+
+题记只在原文有题记时使用。`<nav class="toc">` 留空，构建时从各章生成。
+
+## 章与节
+
+```html
+<article class="chapter" id="attention">
+  <h2><span class="chapter-number">3</span>模型架构</h2>
+  <section>
+    <p>…</p>
+  </section>
+  <section>
+    <h3>3.1　编码器与解码器</h3>
+    <p>…</p>
+  </section>
+</article>
+```
+
+- 章 `id` 用英文 kebab-case，取自原文标题。`chapter-number` 照原文编号：论文写 `1`、`2`，书写 `第 II 章`，附录写 `附录 A`，原文无编号的章写 `·`。
+- 标题只有两级：`h2` 是章，`h3` 是节。原文第三级及更深的标题，改成段首 `<span class="newthought">小标题，</span>`。构建遇到 h4–h6 报 ERROR。
+- 每个 `h3` 连同其下段落放进一个 `<section>`；章首无小标题的段落也包进 `<section>`。
+- 章与章之间不加署名页脚或导航：出处与许可写在扉页读本说明；某一章有删节、或整理模式下用到了哪些来源，写在该章第一段的译注旁注里。
+
+## 注释分流
+
+三种注释写法相同，都是插在正文句中的一个 span，构建补全开关：
+
+| 内容                                        | 写法                                                            | 呈现                        |
+| ------------------------------------------- | --------------------------------------------------------------- | --------------------------- |
+| 原作者脚注                                  | `<span class="sidenote">…</span>`                               | 页边，数字编号，每章从 1 起 |
+| 原作者脚注，超过约 150 字或含块级公式、列表 | `<span class="footnote">…</span>`                               | 章末，符号 \*†‡§‖¶          |
+| 译注                                        | `<span class="marginnote"><span class="tn">译注</span>…</span>` | 页边，无编号                |
+| 术语原文、人名原文、单位换算                | `<span class="marginnote">…</span>`                             | 页边，无编号                |
+
+- 注释必须位于 `<p>`、`<li>`、`<figure>`、`<blockquote>` 内部，紧跟它所注释的词或句末标点。直接挂在 `<section>` 下时页边定位错位，构建报 ERROR。
+- 注释内只放行内内容（文字、行内公式、`<em>`、`<code>`、`<a>`、小图 `<img>`）；块级内容用 `footnote`。
+- 原文本身就是边注排版（LaTeX `\sidenote`、`\marginnote`）时，边注无论长短都留在页边，只有含块级公式或列表的才改成章末脚注。
+- 同一段里多条旁注会在页边依次下推；一段超过三条时考虑把部分改成正文括注。
+
+## 插图
+
+```html
+<figure>
+  <span class="marginnote">图 1　图题。图注说明。</span>
+  <img src="figures/fig1.png" alt="描述图的内容" />
+</figure>
+
+<figure class="fullwidth">…</figure>
+<!-- 宽图：横跨正文栏与页边 -->
+
+<p>
+  …<span class="marginnote"
+    ><img src="figures/small.png" alt="…" />图 2　小图放页边。</span
+  >…
+</p>
+
+<figure class="fullwidth">
+  <img src="figures/wide.png" alt="…" />
+  <figcaption>图 3　通栏图的图注用 figcaption，放在图下。</figcaption>
+</figure>
+```
+
+- 页边图（原文的 `marginfigure`）挂在它所属的正文段落开头，不要单独放进一个空 `<p>`：空段落没有高度，图会一直浮到下一章。
+- 原文的 `figure*` 通栏图用 `figure.fullwidth`；原图宽度不到 1000px 的仍用普通 `figure`，放大会糊。
+- 普通 figure 的图题放在 figure 内的 `marginnote` 里，写「图 N　」（全角空格）加译文图题；图中文字不改图，必要时在图注里对照翻译关键标签。
+- `src` 写相对页面文件的本地路径，构建转成 data URI。外网图片先下载到本地，否则报 ERROR。
+- 矢量示意图可以直接写内联 `<svg>`，给 `width` 和 `aria-label`，颜色用 `currentColor` 以跟随明暗主题。
+
+## 表格
+
+```html
+<div class="table-wrapper">
+  <table>
+    <caption>
+      表 1　表题
+    </caption>
+    <thead>
+      <tr>
+        <th>模型</th>
+        <th class="num">BLEU</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Transformer</td>
+        <td class="num">28.4</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+三线表样式由 CSS 给出。数值列加 `class="num"` 右对齐。宽表加 `class="fullwidth"` 到 wrapper 上。
+
+## 公式
+
+- 行内 `$…$`，块级 `$$…$$` 单独成行、放在段落之间。构建时编译为 MathML，页面不带运行时 JS。
+- 编号照原文：`$$…\tag{3}$$`。正文引用写「式 (3)」，不做交叉链接。
+- 正文栏约 30 个汉字宽，放得下约 55 个可见字符（去掉命令名与花括号后计数）。更长的单行块级公式，用 `\begin{aligned}…\end{aligned}` 在 `=` 或二元运算符前断行，对齐点写 `&{}+`（直接写 `&+` 会把加号排成一元运算符，间距变紧）；构建对未断行的长公式发 WARN。手机上仍放不下时横向滚动。
+- 公式里的中文写进 `\text{}`；其余中文会让 `$…$` 不被识别为公式。
+- 公式里的 `<` `>` `&` 按 HTML 写成 `&lt;` `&gt;` `&amp;`，编译前会还原。
+- 可见字符超过约 25 个的行内公式，窄屏下自动变成可横向滚动的块；更长的考虑改成块级。
+- Temml 与 LaTeX 的差异：`\hdots` 不支持，写 `\ldots`。`align` 环境拆成每行一个 `$$…\tag{n}$$`，或用 `aligned`。
+- 公式中出现的 `$` 金额写 `\$`；正文里的美元金额保持 `$5` 这种「$ 后紧跟数字」的写法，不会被误识别。
+- 编译失败的公式会留下红字，构建报 ERROR：把出错的 `<span class="temml-error">` 或 `<math>` 整个换回改正后的 `$…$` 再构建。
+
+## 代码
+
+```html
+<pre><code class="language-python">…</code></pre>
+```
+
+语言名见 `assets/vendor/shj/languages/`，常用别名（python、rust、shell 等）可直接写；运行输出写 `language-text`，不着色。代码与代码注释保持原文；需要解释时用正文或旁注。最长行超过 68 列的代码块，构建自动加 `fullwidth`，横跨正文栏与页边，并排在页边注之下。
+
+代码多的材料（notebook、教程）不要手抄代码：写译文时放占位符，再用脚本从取到的原文按顺序原样填回，确保逐字一致、块数不漏。
+
+## 引文、题记、分节
+
+- 块引用：`<blockquote><p>…</p><footer>出处</footer></blockquote>`。
+- 分节花 `<p class="asterism">❧</p>`：扉页固定一处；正文里只在原文有分节符（\* \* \* 之类）的位置使用。
+
+## 习题与答案
+
+```html
+<section class="exercises">
+  <h3>习题 1</h3>
+  <ol>
+    <li>…</li>
+  </ol>
+  <details class="answers">
+    <summary>答案</summary>
+    <ol>
+      <li>…</li>
+    </ol>
+  </details>
+</section>
+```
+
+## 参考文献与引用
+
+```html
+<p>……如文献 <a class="cite" href="#ref-vaswani2017">[12]</a> 所示。</p>
+
+<section class="references" id="references">
+  <h2>参考文献</h2>
+  <ol>
+    <li id="ref-vaswani2017">
+      A. Vaswani et al. Attention Is All You Need. <em>NeurIPS</em>, 2017.
+    </li>
+  </ol>
+</section>
+```
+
+- 引用标记保留原文格式（`[12]`、`(Vaswani et al., 2017)`），链到对应条目。
+- 参考文献条目保持原文，不翻译；按原文顺序排列，编号与原文一致。
+- 没有参考文献的材料省略这一节。
+
+## 构建负责的部分
+
+作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、内联的 CSS 与脚本。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>微积分入门 · Calculus Made Easy</title>
+    <script>
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("tufte-reader-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark")
+          t = matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!--TR:CSS-->
+  </head>
+  <body>
+    <button
+      type="button"
+      class="theme-toggle"
+      aria-label="切换明暗主题"
+    ></button>
+
+    <header class="titlepage">
+      <h1>微积分入门</h1>
+      <p class="subtitle">Calculus Made Easy</p>
+      <p class="byline">Silvanus P. Thompson 著 · 1910 年初版，1914 年修订</p>
+      <div class="epigraph">
+        <blockquote>
+          <p>一个笨蛋能做的事，另一个笨蛋也能做。</p>
+          <footer>古老的猿猴谚语</footer>
+        </blockquote>
+      </div>
+      <p class="asterism">❧</p>
+      <div class="abstract">
+        <h2>摘要</h2>
+        <p>
+          本书写给「最笨的读者」：它绕开学院派的恐吓式开场，用直觉和常识讲清微分与积分。本样张节选第
+          II 章与第 IV 章，并附一篇译者补充，用来展示 tufte-reader
+          的全部排版元素。
+        </p>
+      </div>
+      <p>
+        原著属公有领域，由
+        <a href="https://www.gutenberg.org/ebooks/33283"
+          >Project Gutenberg #33283</a
+        >
+        数字化。中文译文取自
+        <a href="https://master-g.github.io/calculus-made-easy-zh/"
+          >Calculus Made Easy 中文</a
+        >，有删节。
+      </p>
+      <nav class="toc"></nav>
+    </header>
+
+    <article class="chapter" id="degrees-of-smallness">
+      <h2><span class="chapter-number">第 II 章</span>论不同程度的微小</h2>
+      <section>
+        <p>
+          我们会发现，在计算过程中，我们必须处理各种不同程度的微小量。我们还要学会，在什么情况下可以把微小量看得如此微不足道，以至于可以从考虑中略去。一切都取决于相对的微小程度。
+        </p>
+        <p>
+          在制定规则之前，让我们先想想一些熟悉的情况。一小时有 $60$ 分钟，一天有
+          $24$ 小时，一周有 $7$ 天。因此一天有 $1440$ 分钟，一周有 $10080$
+          分钟。
+        </p>
+        <p>
+          显然，相对于整整一周而言，$1$
+          分钟是一个极小的时间量。事实上，我们的先辈认为它与一小时相比也算小，称之为「minute」<span
+            class="marginnote"
+            ><span class="tn">译注</span>minute 作形容词读
+            /maɪˈnjuːt/，意为「微小的」；作名词读
+            /ˈmɪnɪt/，即「分钟」。两者同源于拉丁语 <em>minuta</em>。</span
+          >，意指一小时的六十分之一。当他们需要更小的时间划分时，就把每一分钟再细分为
+          $60$ 个更小的部分，在伊丽莎白女王时代，他们称之为「second
+          minutes」（即第二阶的小量）。
+        </p>
+        <p>
+          一枚法寻（farthing<span class="marginnote"
+            >farthing：英国旧铜币，值四分之一便士。sovereign：英国金币，面值一英镑。</span
+          >）同一枚沙弗林（sovereign）相比，它的价值不过略多于 $\frac{1}{1000}$
+          而已。多一枚或少一枚法寻，相对于一枚沙弗林来说几乎无关紧要：它确实可以被看作一个微小量。
+        </p>
+      </section>
+
+      <section>
+        <h3>第二阶微小量</h3>
+        <p>
+          现在，如果我们任意选定某个数值分数，作为某种用途下我们称作「相对小」的比例，那么就很容易给出更高一阶微小的分数。比如，就时间而言，若把
+          $\frac{1}{60}$ 称为一个小分数，那么 $\frac{1}{60}$ 的 $\frac{1}{60}$
+          便可看作第二阶微小程度的小量。<span class="sidenote"
+            >数学家们嘴上说的是第二阶「大小」（即：巨大），心里想说的其实是第二阶微小。这对初学者来说非常令人困惑。</span
+          >
+        </p>
+        <div class="table-wrapper">
+          <table>
+            <caption>
+              表 1　以时间为例的各阶微小量
+            </caption>
+            <thead>
+              <tr>
+                <th>阶</th>
+                <th>分数</th>
+                <th class="num">相当于</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>第一阶</td>
+                <td>$\frac{1}{60}$ 小时</td>
+                <td class="num">1 分钟</td>
+              </tr>
+              <tr>
+                <td>第二阶</td>
+                <td>$\frac{1}{3600}$ 小时</td>
+                <td class="num">1 秒</td>
+              </tr>
+              <tr>
+                <td>第三阶</td>
+                <td>$\frac{1}{216000}$ 小时</td>
+                <td class="num">$\frac{1}{60}$ 秒</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          在微积分里，我们用 $dx$ 来表示 $x$ 的一个小小片段。像 $dx$、$du$、$dy$
+          这些东西，叫作「微分」。倘若 $dx$ 是 $x$
+          的一个小片段，且其自身相对而言很小，那么像 $x \cdot
+          dx$、$x^2\,dx$、$a^x\,dx$ 这类量却未必可以忽略；而 $dx \cdot dx$
+          则可以忽略，因为它是第二阶的微小量。
+        </p>
+        <figure>
+          <label for="mn-square" class="margin-toggle">&#8853;</label
+          ><input type="checkbox" id="mn-square" class="margin-toggle" /><span
+            class="marginnote"
+            >图 1　边长为 $x$ 的正方形向两个方向各长出一段
+            $dx$。右上角的小正方形面积为 $(dx)^2$，是第二阶微小量。</span
+          >
+          <svg
+            viewBox="0 0 240 240"
+            width="280"
+            role="img"
+            aria-label="边长 x 的正方形向右、向上各增长 dx"
+          >
+            <g fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="20" y="50" width="170" height="170" />
+              <rect
+                x="190"
+                y="50"
+                width="30"
+                height="170"
+                stroke-dasharray="3 3"
+              />
+              <rect
+                x="20"
+                y="20"
+                width="170"
+                height="30"
+                stroke-dasharray="3 3"
+              />
+              <rect x="190" y="20" width="30" height="30" />
+            </g>
+            <g
+              fill="currentColor"
+              font-family="Palatino, Georgia, serif"
+              font-style="italic"
+              font-size="16"
+              text-anchor="middle"
+            >
+              <text x="105" y="140">x²</text>
+              <text x="205" y="140">x·dx</text>
+              <text x="105" y="40">x·dx</text>
+              <text x="105" y="236">x</text>
+              <text x="205" y="236">dx</text>
+            </g>
+          </svg>
+        </figure>
+        <p>
+          于是，$(x+dx)^2 = x^2 + 2x\,dx +
+          (dx)^2$。第二项不可忽略，因为它是第一阶的量；而第三项则是第二阶微小程度的量。阶次一高，展开式就长得很快，比如六次方：
+        </p>
+        $$\begin{aligned}(x+dx)^6 = x^6 &{}+ 6x^5\,dx + 15x^4(dx)^2 +
+        20x^3(dx)^3 \\ &{}+ 15x^2(dx)^4 + 6x(dx)^5 + (dx)^6\end{aligned}$$
+        <p>
+          风趣的斯威夫特教长曾写道：「博物学家们观察到，一只跳蚤身上有更小的跳蚤来叮咬它。」<span
+            class="footnote"
+            >《论诗：一首狂想曲》（<em>On Poetry: a Rhapsody</em>，第 20
+            页），1733 年印行，常被误引。</span
+          >一头公牛也许会为一只普通大小的跳蚤烦心，那是一个第一阶微小程度的小生物。但它大概不会去操心跳蚤身上的跳蚤；那是第二阶微小程度的东西，可以忽略不计。
+        </p>
+      </section>
+    </article>
+
+    <article class="chapter" id="simplest-cases">
+      <h2><span class="chapter-number">第 IV 章</span>最简单的情形</h2>
+      <section>
+        <p>
+          <span class="newthought">那么现在，</span
+          >让我们来看看，如何根据基本原理，对一些简单的代数表达式求导。
+        </p>
+        <h3>情形一</h3>
+        <p>
+          我们从简单的表达式 $y = x^2$ 开始。让 $x$ 稍微变大一点点，变成 $x +
+          dx$；同样地，$y$ 也会变大一点点，变成 $y + dy$。那么很显然，变大了的
+          $y$ 仍然等于变大了的 $x$ 的平方：
+        </p>
+        $$y + dy = (x + dx)^2 = x^2 + 2x\,dx + (dx)^2$$
+        <p>$(dx)^2$ 是第二阶微小量，可以舍去。再减去原来的 $y = x^2$，就得到</p>
+        $$\frac{dy}{dx} = 2x \tag{1}$$
+        <p>
+          这个比值 $\frac{dy}{dx}$ 是对 $y$ 关于 $x$ 求导的结果。<span
+            class="sidenote"
+            >求导就是求微分系数（differential
+            coefficient）。今天的教材多称「导数」（derivative），本书沿用原著说法，两者同义。</span
+          >求导这个运算，似乎起到了这样的效果：把 $x$
+          的幂降低一，同时乘上原先那个幂。
+        </p>
+      </section>
+
+      <section>
+        <h3>小结</h3>
+        <p>
+          要对 $x^n$ 求导，就乘以那个幂，再把幂减去一，便得到 $n
+          x^{n-1}$。这条规则在 $n$
+          为正整数时由二项式定理直接可得，对负幂和分数幂同样成立。<span
+            class="footnote"
+            >负幂的情形：设 $y = x^{-2}$，照例展开 $(x+dx)^{-2} = x^{-2}\left(1
+            - \frac{2\,dx}{x} + \frac{3(dx)^2}{x^2} -
+            \cdots\right)$，略去高阶项后得 $\frac{dy}{dx} =
+            -2x^{-3}$，与规则吻合。</span
+          >
+        </p>
+      </section>
+
+      <section class="exercises">
+        <h3>习题 I</h3>
+        <p>对下列各式求导：</p>
+        <ol>
+          <li>$y = x^{13}$</li>
+          <li>$y = x^{-\frac{3}{2}}$</li>
+          <li>$y = x^{2a}$</li>
+          <li>$u = t^{2.4}$</li>
+          <li>$z = \sqrt[3]{u}$</li>
+        </ol>
+        <details class="answers">
+          <summary>答案</summary>
+          <ol>
+            <li>$\frac{dy}{dx} = 13x^{12}$</li>
+            <li>$\frac{dy}{dx} = -\frac{3}{2}x^{-\frac{5}{2}}$</li>
+            <li>$\frac{dy}{dx} = 2a\,x^{2a-1}$</li>
+            <li>$\frac{du}{dt} = 2.4\,t^{1.4}$</li>
+            <li>$\frac{dz}{du} = \frac{1}{3}u^{-\frac{2}{3}}$</li>
+          </ol>
+        </details>
+      </section>
+    </article>
+
+    <article class="chapter" id="appendix-check">
+      <h2><span class="chapter-number">附录</span>用程序验证第二阶微小量</h2>
+      <section>
+        <p>
+          本附录是译者补充，原书没有。<span class="marginnote"
+            ><span class="tn">译注</span
+            >读本里译者添加的整节内容，在章题下写明「译者补充」，与原文区分。</span
+          >下面的程序取越来越小的 $dx$，比较 $(x+dx)^2 - x^2$ 与 $2x\,dx$
+          的差，差值正是被略去的 $(dx)^2$。
+        </p>
+        <pre><code class="language-python"># 第二阶微小量随 dx 缩小得更快
+x = 10.0
+for dx in (1, 0.1, 0.01, 0.001):
+    exact = (x + dx) ** 2 - x ** 2
+    print(f"dx={dx:<6} 误差={exact - 2 * x * dx:.6f}")  # 恰为 dx**2</code></pre>
+        <p>
+          输出里误差依次是 $1$、$0.01$、$0.0001$、$0.000001$：$dx$ 每缩小 $10$
+          倍，误差缩小 $100$ 倍。这就是 Thompson
+          所说「第二阶微小量可以略去」的数值含义。<a
+            class="cite"
+            href="#ref-thompson"
+            >[1]</a
+          >
+        </p>
+      </section>
+    </article>
+
+    <section class="references" id="references">
+      <h2>参考文献</h2>
+      <ol>
+        <li id="ref-thompson">
+          Silvanus P. Thompson. <em>Calculus Made Easy</em>. 2nd ed. London:
+          Macmillan, 1914.
+          <a href="https://www.gutenberg.org/ebooks/33283"
+            >Project Gutenberg #33283</a
+          >.
+        </li>
+        <li id="ref-nadvornix">
+          nadvornix. <em>calculus-made-easy</em>（HTML 整理版）.
+          <a href="https://github.com/nadvornix/calculus-made-easy">GitHub</a>.
+        </li>
+      </ol>
+    </section>
+
+    <!--TR:JS-->
+  </body>
+</html>

@@ -1,0 +1,534 @@
+#!/usr/bin/env python3
+"""build.py 页面.html [--open] [--check-only]
+
+把作者写的读本源码就地合成为单文件成品，再做检查。可重复运行：成品再跑一遍会刷新内联的
+CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处理。
+
+合成：
+  1. LaTeX → MathML（node + vendor 的 Temml）
+  2. <span class="sidenote|marginnote"> 补全 label + checkbox
+  3. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
+  4. 填 <nav class="toc">
+  5. 本地图片转 data URI
+  6. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言
+
+ERROR 必须修；WARN 需要判断。
+"""
+import base64
+import mimetypes
+import re
+import shutil
+import subprocess
+import sys
+from html import escape
+from html.parser import HTMLParser
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+ASSETS = ROOT / "assets"
+VENDOR = ASSETS / "vendor"
+HL_DIR = VENDOR / "shj"
+MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
+
+CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
+CSS_TAG_RE = re.compile(r'<style data-tr="css">.*?</style>', re.S)
+JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl)">.*?</script>', re.S)
+
+SIZE_WARN = 5 * 1024 * 1024
+CJK = r"\u3400-\u4dbf\u4e00-\u9fff"
+CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style|math)\b.*?</\1\s*>", re.S | re.I)
+
+CODE_LANG_RE = re.compile(r'<code[^>]*\bclass="[^"]*\blanguage-([\w+-]+)')
+HL_ALIASES = {
+    "rust": "rs", "golang": "go", "python": "py", "javascript": "js", "typescript": "ts",
+    "jsx": "js", "tsx": "ts", "shell": "bash", "sh": "bash", "zsh": "bash", "console": "bash",
+    "yml": "yaml", "markdown": "md", "dockerfile": "docker", "htm": "html", "jsonc": "json",
+}
+HL_SKIP = {"text", "plain", "plaintext", "txt"}
+
+
+# ── 公式 ────────────────────────────────────────────────────────────────
+BLOCK_MATH_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)")
+CJK_RE = re.compile(r"[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]")
+
+
+def single_dollar_spans(text):
+    """与 math.mjs 同一套扫描规则。"""
+    i, n = 0, len(text)
+    while i < n:
+        i = text.find("$", i)
+        if i < 0:
+            return
+        if (i and text[i - 1] in "\\$") or i + 1 >= n or text[i + 1].isspace() or text[i + 1] == "$":
+            i += 1
+            continue
+        j = text.find("$", i + 1)
+        while j > 0 and text[j - 1] in " \t\n\\":
+            j = text.find("$", j + 1)
+        if j < 0:
+            return
+        inner = text[i + 1 : j]
+        ok = "\n" not in inner and not (j + 1 < n and text[j + 1].isdigit()) \
+            and not CJK_RE.search(re.sub(r"\\text\{[^}]*\}", "", inner))
+        if ok:
+            yield i, j + 1
+            i = j + 1
+        else:
+            i += 1
+
+
+def has_math_source(html):
+    text = CODE_ISLAND_RE.sub("", html)
+    return bool(BLOCK_MATH_RE.search(text)) or any(True for _ in single_dollar_spans(text))
+
+
+def compile_math(page, errors, warns):
+    if not has_math_source(page.read_text(encoding="utf-8")):
+        return
+    node = shutil.which("node")
+    if not node:
+        errors.append("页面里有 LaTeX 公式，但找不到 node 来编译成 MathML；装 Node.js 后重跑")
+        return
+    out = subprocess.run([node, str(MATH_SCRIPT), str(page)], capture_output=True, text=True)
+    if out.returncode != 0:
+        errors.append("公式编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
+        return
+    for line in out.stdout.splitlines():
+        if line.startswith("ERROR"):
+            errors.append(line[5:].strip())
+        elif line.startswith("WARN"):
+            warns.append(line[4:].strip())
+        else:
+            print(line)
+
+
+# ── 平衡扫描：取出一个元素的完整外层 HTML ──────────────────────────────
+def element_end(html, start, tag):
+    """start 指向 <tag 的 '<'，返回对应闭合标签之后的位置。"""
+    pat = re.compile(rf"<(/?){tag}\b[^>]*>", re.I)
+    depth = 0
+    for m in pat.finditer(html, start):
+        depth += -1 if m.group(1) else 1
+        if depth == 0:
+            return m.end()
+    raise ValueError(f"<{tag}> 没有闭合")
+
+
+# ── 边注 ────────────────────────────────────────────────────────────────
+NOTE_OPEN_RE = re.compile(r'<span class="(sidenote|marginnote)">')
+TOGGLE_TAIL_RE = re.compile(r'class="margin-toggle"\s*/?>\s*$')
+
+
+def expand_notes(html):
+    used = set(re.findall(r'\bid="((?:sn|mn)-\d+)"', html))
+    counter = {"sn": 0, "mn": 0}
+
+    def next_id(prefix):
+        while True:
+            counter[prefix] += 1
+            cand = f"{prefix}-{counter[prefix]}"
+            if cand not in used:
+                used.add(cand)
+                return cand
+
+    out, pos, added = [], 0, 0
+    for m in NOTE_OPEN_RE.finditer(html):
+        if TOGGLE_TAIL_RE.search(html[max(0, m.start() - 80) : m.start()]):
+            continue  # 已展开
+        kind = m.group(1)
+        prefix = "sn" if kind == "sidenote" else "mn"
+        nid = next_id(prefix)
+        label = (
+            f'<label for="{nid}" class="margin-toggle sidenote-number"></label>'
+            if kind == "sidenote"
+            else f'<label for="{nid}" class="margin-toggle">&#8853;</label>'
+        )
+        out.append(html[pos : m.start()])
+        out.append(f'{label}<input type="checkbox" id="{nid}" class="margin-toggle"/>')
+        pos = m.start()
+        added += 1
+    out.append(html[pos:])
+    return "".join(out), added
+
+
+# ── 章、脚注、目录 ────────────────────────────────────────────
+CHAPTER_RE = re.compile(r'<article\b[^>]*\bclass="[^"]*\bchapter\b[^"]*"[^>]*>', re.I)
+FOOTNOTE_OPEN_RE = re.compile(r'<span class="footnote">')
+# 章末脚注用符号，与边注的数字编号区分开；超出后退回数字
+FN_MARKS = ["*", "†", "‡", "§", "‖", "¶"]
+
+
+def chapters(html):
+    """[(start, end, id, number_html, title_html)]"""
+    found = []
+    for m in CHAPTER_RE.finditer(html):
+        end = element_end(html, m.start(), "article")
+        body = html[m.start() : end]
+        cid = re.search(r'\bid="([^"]+)"', m.group(0))
+        h2 = re.search(r"<h2\b[^>]*>(.*?)</h2>", body, re.S)
+        num, title = "", ""
+        if h2:
+            inner = h2.group(1)
+            nm = re.search(r'<span class="chapter-number">(.*?)</span>', inner, re.S)
+            num = nm.group(1).strip() if nm else ""
+            title = re.sub(r'<span class="chapter-number">.*?</span>', "", inner, flags=re.S).strip()
+        found.append((m.start(), end, cid.group(1) if cid else None, num, title))
+    return found
+
+
+def place_footnotes(html, errors):
+    total = 0
+    for start, end, cid, _, _ in reversed(chapters(html)):
+        body = html[start:end]
+        if not FOOTNOTE_OPEN_RE.search(body):
+            continue
+        if not cid:
+            errors.append("含脚注的 <article class=\"chapter\"> 缺 id，脚注无法编号")
+            continue
+        existing = len(re.findall(rf'<li id="fn-{re.escape(cid)}-\d+"', body))
+        items, out, pos, n = [], [], 0, existing
+        for m in FOOTNOTE_OPEN_RE.finditer(body):
+            if m.start() < pos:
+                continue  # 嵌套在上一个脚注里
+            fend = element_end(body, m.start(), "span")
+            n += 1
+            mark = FN_MARKS[n - 1] if n <= len(FN_MARKS) else str(n)
+            content = body[m.end() : fend - len("</span>")].strip()
+            out.append(body[pos : m.start()])
+            out.append(f'<a class="fn-ref" id="fnref-{cid}-{n}" href="#fn-{cid}-{n}">{mark}</a>')
+            items.append(
+                f'<li id="fn-{cid}-{n}"><span class="fn-mark">{mark}</span>{content} '
+                f'<a class="fn-back" href="#fnref-{cid}-{n}" aria-label="回到正文">↩</a></li>'
+            )
+            pos = fend
+        out.append(body[pos:])
+        body = "".join(out)
+        total += len(items)
+        block = "\n".join(items)
+        if '<section class="footnotes">' in body:
+            body = re.sub(r'(<section class="footnotes">.*?)(</ol>)', lambda mm: mm.group(1) + block + "\n" + mm.group(2), body, count=1, flags=re.S)
+        else:
+            sec = f'<section class="footnotes"><ol>\n{block}\n</ol></section>\n'
+            at = body.rfind("</article>")
+            body = body[:at] + sec + body[at:]
+        html = html[:start] + body + html[end:]
+    return html, total
+
+
+def strip_tags(s):
+    return re.sub(r"<[^>]+>", "", s).strip()
+
+
+def build_toc(html, errors):
+    chs = chapters(html)
+    if not chs:
+        return html
+    for _, _, cid, _, title in chs:
+        if not cid:
+            errors.append(f"章「{strip_tags(title)[:20]}」缺 id，目录无法链接")
+        if not title:
+            errors.append(f"章 {cid} 没有 <h2> 标题")
+    if any(not c[2] for c in chs):
+        return html
+
+    has_toc = '<nav class="toc"' in html
+    if has_toc:
+        items = []
+        for _, _, cid, num, title in chapters(html):
+            items.append(f'<li><span class="toc-number">{num or "·"}</span><a href="#{cid}">{strip_tags(title)}</a></li>')
+        ref = re.search(r'<section class="references" id="([^"]+)"', html)
+        if ref:
+            items.append(f'<li><span class="toc-number">·</span><a href="#{ref.group(1)}">参考文献</a></li>')
+        toc = '<nav class="toc" id="toc" aria-label="目录"><h2>目录</h2><ol>\n' + "\n".join(items) + "\n</ol></nav>"
+        s = html.index('<nav class="toc"')
+        html = html[:s] + toc + html[element_end(html, s, "nav"):]
+    return html
+
+
+# ── 宽代码块 ────────────────────────────────────────────────────────
+# 正文栏里的代码块约 68 列（1280px 下 0.9rem 等宽字）；按 black / PEP 8 排的 79 列代码放不下，
+# 35/56 个块要横向滚动（annotated-transformer 实测）。超宽的块改成 fullwidth，占正文栏加页边。
+CODE_COLS = 68
+PRE_RE = re.compile(r'<pre(\s[^>]*)?>(\s*<code\b[^>]*>)(.*?)</code>', re.S)
+
+
+def widen_code(html):
+    """超宽的代码块加 fullwidth。超过一半的块都超宽时全部加宽，页面上代码宽度保持一致。"""
+    import html as htmllib
+
+    def cols(m):
+        text = htmllib.unescape(re.sub(r"<[^>]+>", "", m.group(3)))
+        return max((len(l.expandtabs(4)) for l in text.split("\n")), default=0)
+
+    blocks = list(PRE_RE.finditer(html))
+    wide_all = sum(cols(m) > CODE_COLS for m in blocks) * 2 > len(blocks)
+    count = 0
+
+    def repl(m):
+        nonlocal count
+        attrs = m.group(1) or ""
+        if "fullwidth" in attrs or (not wide_all and cols(m) <= CODE_COLS):
+            return m.group(0)
+        count += 1
+        if 'class="' in attrs:
+            attrs = attrs.replace('class="', 'class="fullwidth ', 1)
+        else:
+            attrs += ' class="fullwidth"'
+        return f"<pre{attrs}>{m.group(2)}{m.group(3)}</code>"
+
+    return PRE_RE.sub(repl, html), count
+
+
+# ── 图片内联 ────────────────────────────────────────────────────────────
+IMG_RE = re.compile(r'(<img\b[^>]*?\bsrc=")([^"]+)(")', re.I)
+
+
+def inline_images(html, base, errors):
+    count = 0
+
+    def repl(m):
+        nonlocal count
+        src = m.group(2)
+        if src.startswith("data:"):
+            return m.group(0)
+        if re.match(r"https?://", src):
+            errors.append(f"图片引用外网地址，离线打不开：{src[:80]}；先下载到本地再引用")
+            return m.group(0)
+        path = (base / src).resolve()
+        if not path.is_file():
+            errors.append(f"图片不存在：{src}")
+            return m.group(0)
+        mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        count += 1
+        return m.group(1) + f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode() + m.group(3)
+
+    return IMG_RE.sub(repl, html), count
+
+
+# ── 代码高亮与资源内联 ──────────────────────────────────────────────────
+def highlight_script(html, warns):
+    wanted = {}
+    for name in sorted(set(CODE_LANG_RE.findall(html))):
+        if name in HL_SKIP:
+            continue
+        stem = HL_ALIASES.get(name, name)
+        if not (HL_DIR / "languages" / f"{stem}.js").exists():
+            warns.append(f"language-{name} 没有对应的语法规则，该代码块不着色")
+            continue
+        wanted.setdefault(stem, set()).add(name)
+    if not wanted:
+        return ""
+    stems, queue = set(wanted), list(wanted)
+    while queue:
+        src = (HL_DIR / "languages" / f"{queue.pop()}.js").read_text(encoding="utf-8")
+        for dep in re.findall(r'sub:"(\w+)"', src):
+            if dep not in stems and (HL_DIR / "languages" / f"{dep}.js").exists():
+                stems.add(dep)
+                queue.append(dep)
+    parts = ["window.__SHJ_LANGS={};"]
+    for stem in sorted(stems):
+        src = (HL_DIR / "languages" / f"{stem}.js").read_text(encoding="utf-8").strip()
+        m = re.search(r"export\s*\{\s*(\w+)\s+as\s+default\s*\}\s*;?\s*$", src)
+        if not m:
+            continue
+        parts.append(f'window.__SHJ_LANGS["{stem}"]=(function(){{{src[:m.start()]}return {m.group(1)};}})();')
+        for alias in sorted(wanted.get(stem, set()) - {stem}):
+            parts.append(f'window.__SHJ_LANGS["{alias}"]=window.__SHJ_LANGS["{stem}"];')
+    parts.append((HL_DIR / "core.js").read_text(encoding="utf-8"))
+    return "".join(parts)
+
+
+def inline_assets(html, warns, errors):
+    css = f'<style data-tr="css">{(ASSETS / "tufte.css").read_text(encoding="utf-8")}</style>'
+    if CSS_SLOT in html:
+        html = html.replace(CSS_SLOT, css, 1)
+    elif CSS_TAG_RE.search(html):
+        html = CSS_TAG_RE.sub(lambda _: css, html, count=1)
+    else:
+        errors.append(f"找不到 {CSS_SLOT} 占位符或已内联的样式；页面应从 assets/shell.html 开始")
+
+    authored = JS_TAG_RE.sub("", html)
+    hl = highlight_script(authored, warns)
+    js = (f'<script data-tr="hl">{hl}</script>' if hl else "") + \
+        f'<script data-tr="js">{(ASSETS / "shell.js").read_text(encoding="utf-8")}</script>'
+    if JS_SLOT in html:
+        html = html.replace(JS_SLOT, js, 1)
+    elif JS_TAG_RE.search(html):
+        first = JS_TAG_RE.search(html).start()
+        html = JS_TAG_RE.sub("", html)
+        html = html[:first] + js + html[first:]
+    else:
+        errors.append(f"找不到 {JS_SLOT} 占位符或已内联的脚本")
+    return html
+
+
+# ── 检查 ────────────────────────────────────────────────────────────────
+NOTE_HOSTS = {"p", "figure", "li", "dd", "blockquote", "td", "figcaption"}
+BLOCK_BREAKERS = {"section", "article", "header", "footer", "div", "nav", "body", "main"}
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class Checker(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
+        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0}
+        self.errors, self.text = [], []
+        self.deep_heading = []
+        self.external = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        cls = (a.get("class") or "").split()
+        if "id" in a:
+            self.ids.append(a["id"])
+        if tag == "a" and (a.get("href") or "").startswith("#"):
+            self.hrefs.append(a["href"][1:])
+        if tag in ("h4", "h5", "h6"):
+            self.deep_heading.append(tag)
+        if tag in ("script", "link") and re.match(r"https?://", a.get("src") or a.get("href") or ""):
+            self.external.append(a.get("src") or a.get("href"))
+        if tag == "article" and "chapter" in cls:
+            self.stats["章"] += 1
+        if tag == "h3":
+            self.stats["小节(h3)"] += 1
+        if tag == "figure":
+            self.stats["图"] += 1
+        if tag == "table":
+            self.stats["表"] += 1
+        if tag == "pre":
+            self.stats["代码块"] += 1
+        if tag == "li" and (a.get("id") or "").startswith("fn-"):
+            self.stats["脚注"] += 1
+        if tag == "math":
+            self.stats["块级公式" if a.get("display") == "block" else "行内公式"] += 1
+        if tag == "span" and ("sidenote" in cls or "marginnote" in cls):
+            self.stats["边注" if "sidenote" in cls else "旁注"] += 1
+            host = next((t for t in reversed(self.stack) if t in NOTE_HOSTS | BLOCK_BREAKERS), None)
+            if host not in NOTE_HOSTS:
+                self.errors.append(f"{'边注' if 'sidenote' in cls else '旁注'}不在 <p>/<figure>/<li> 里（直接挂在 <{host}> 下），页边定位会错位")
+        if tag == "img" and any("marginnote" in c for c in self.classes) and "figure" not in self.stack:
+            self.stats["页边图"] += 1
+        if tag not in VOID:
+            self.stack.append(tag)
+            self.classes.append(cls)
+
+    def handle_endtag(self, tag):
+        if tag in self.stack:
+            while self.stack:
+                self.classes.pop()
+                if self.stack.pop() == tag:
+                    break
+
+    def handle_data(self, data):
+        if not any(t in ("script", "style", "pre", "code", "math") for t in self.stack):
+            self.text.append(data)
+
+
+def check(html, errors, warns):
+    c = Checker()
+    c.feed(html)
+    errors.extend(c.errors)
+
+    dup = sorted({i for i in c.ids if c.ids.count(i) > 1})
+    if dup:
+        errors.append("重复的 id：" + "、".join(dup[:8]))
+    ids = set(c.ids)
+    broken = sorted({h for h in c.hrefs if h and h not in ids})
+    if broken:
+        errors.append("页内链接指向不存在的 id：" + "、".join(broken[:8]))
+    if c.deep_heading:
+        errors.append(f"出现 {'/'.join(sorted(set(c.deep_heading)))}：读本只用 h2（章）与 h3（节），更深一级用 <span class=\"newthought\"> 起段")
+    for u in c.external:
+        errors.append(f"外链脚本或样式，离线打不开：{u[:80]}")
+    if re.search(r'<span class="footnote">', html):
+        errors.append("有 <span class=\"footnote\"> 不在任何 <article class=\"chapter\"> 里，无法归位到章末")
+    if re.search(r"<p\b[^>]*>(?:(?!</p>).)*?<(div|figure|pre|table|ol|ul|section|blockquote|details)\b", html, re.S):
+        errors.append("<p> 里嵌了块级元素：浏览器会提前闭合 <p>，边注与版心随之错位；把块级元素移到段落之外")
+    if not re.search(r"<title>[^<]+</title>", html) or "中文标题 · 原文标题" in html:
+        errors.append("<title> 还是骨架占位，换成「中文标题 · 原文标题」")
+    if has_math_source(html):
+        errors.append("仍有未编译的 LaTeX 定界符")
+    # 两种残留：解析失败整段变红字 span；未知宏在 MathML 里变红色 mtext
+    bad = re.findall(r'<span class="temml-error"[^>]*>(.*?)</span>', html, re.S) + \
+        re.findall(r'<mtext style="color:#b22222;">(.*?)</mtext>', html, re.S)
+    if bad:
+        errors.append("公式编译出错残留 " + str(len(bad)) + " 处（" + "；".join(" ".join(b.split())[:40] for b in bad[:3])
+                      + "）：把出错的整个 <span class=\"temml-error\"> 或 <math> 换回改正后的 $…$ 再构建")
+
+    text = "\n".join(c.text)  # 只查同一文本节点内部；跨元素拼接会把单元格、标签边界误报为相邻
+    gaps = re.findall(rf"[{CJK}][A-Za-z0-9]|[A-Za-z0-9][{CJK}]", text)
+    if gaps:
+        sample = "、".join(dict.fromkeys(gaps))
+        warns.append(f"中西文之间缺空格 {len(gaps)} 处（{sample[:40]}）")
+    half = re.findall(rf"[{CJK}][,;:?!]|[,;:?!][{CJK}]|[{CJK}]\([^)]*\)", text)
+    if half:
+        warns.append(f"中文语境里用了半角标点 {len(half)} 处（{'、'.join(dict.fromkeys(half))[:40]}）")
+    straight = re.findall(rf'"[^"\n]*[{CJK}][^"\n]*"', text)
+    if straight:
+        warns.append(f"中文引文用了直引号 {len(straight)} 处，改用「」")
+    return c.stats
+
+
+# ── 打开 ────────────────────────────────────────────────────────────────
+def open_page(path):
+    if sys.platform == "darwin":
+        subprocess.run(["open", str(path)], check=False)
+        return True
+    import os
+    if os.name == "nt" and hasattr(os, "startfile"):
+        os.startfile(str(path))
+        return True
+    for cmd in ("wslview", "xdg-open"):
+        exe = shutil.which(cmd)
+        if exe:
+            subprocess.run([exe, str(path)], check=False)
+            return True
+    return False
+
+
+def main(argv):
+    args = [a for a in argv if not a.startswith("--")]
+    flags = {a for a in argv if a.startswith("--")}
+    if len(args) != 1:
+        print(__doc__)
+        return 2
+    page = Path(args[0]).resolve()
+    if not page.is_file():
+        print(f"ERROR 文件不存在：{page}")
+        return 2
+    errors, warns = [], []
+
+    if "--check-only" not in flags:
+        compile_math(page, errors, warns)
+        html = page.read_text(encoding="utf-8")
+        html, notes = expand_notes(html)
+        html, fns = place_footnotes(html, errors)
+        html = build_toc(html, errors)
+        html, imgs = inline_images(html, page.parent, errors)
+        html, wide = widen_code(html)
+        html = inline_assets(html, warns, errors)
+        page.write_text(html, encoding="utf-8")
+        print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个")
+
+    html = page.read_text(encoding="utf-8")
+    stats = check(html, errors, warns)
+    print("统计    " + "  ".join(f"{k} {v}" for k, v in stats.items()))
+    size = page.stat().st_size
+    if size > SIZE_WARN:
+        warns.append(f"页面 {size / 1024 / 1024:.1f} MB：检查是否有可压缩的大图")
+
+    for w in warns:
+        print("WARN  ", w)
+    for e in errors:
+        print("ERROR ", e)
+    print(f"{'失败' if errors else '通过'}：{len(errors)} 个 ERROR，{len(warns)} 个 WARN  →  {page}")
+    if errors:
+        return 1
+    if "--open" in flags and not open_page(page):
+        print("未能打开浏览器，请手动打开上面的路径")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

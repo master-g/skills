@@ -39,6 +39,7 @@ npx skills add master-g/skills --skill '*' -g
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
 - `show-me-html`: create offline-readable HTML explanations using an owned editorial visual system.
 - `storm`: research and write citation-grounded articles using the STORM method.
+- `tufte-reader`: translate or organize papers and technical docs into a Tufte-style single-file Chinese reading edition with sidenotes, MathML formulas, and a light/dark toggle.
 - `url-to-kami`: extract a URL and typeset it with the Kami design system.
 - `wtf`: re-explain the previous message in clear, unambiguous Simplified Chinese.
 - `x-to-markdown`: convert X posts, threads, and articles to Markdown.

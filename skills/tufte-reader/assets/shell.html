@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>中文标题 · 原文标题</title>
+    <script>
+      /* 主题：首绘前决定，避免闪烁。存储值优先，否则跟随系统。 */
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("tufte-reader-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark")
+          t = matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!--TR:CSS-->
+  </head>
+  <body>
+    <button
+      type="button"
+      class="theme-toggle"
+      aria-label="切换明暗主题"
+    ></button>
+
+    <header class="titlepage">
+      <h1>中文标题</h1>
+      <p class="subtitle">原文标题</p>
+      <p class="byline">作者 著 · 出处与年份</p>
+      <p class="asterism">❧</p>
+      <div class="abstract">
+        <h2>摘要</h2>
+        <p>……</p>
+      </div>
+      <p>读本说明：原文出处、许可、译法取舍。</p>
+      <nav class="toc"></nav>
+    </header>
+
+    <article class="chapter" id="ch-1">
+      <h2><span class="chapter-number">1</span>章节标题</h2>
+      <section>
+        <p>正文……</p>
+      </section>
+    </article>
+
+    <!--TR:JS-->
+  </body>
+</html>

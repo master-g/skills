@@ -1,0 +1,724 @@
+/* tufte-reader —— 论文与技术文档的中文读本排版。
+
+   版式取自 Tufte CSS（MIT，Dave Liepmann / Edward Tufte，许可见 LICENSE-tufte-css.txt）：55% 正文栏、右侧页边放边注与旁注、
+   窄屏点 ⊕ 展开。书的架构取自 Calculus Made Easy 中文站：扉页、目录、章号、❧ 分节花、
+   章末脚注。
+
+   中文化调整：
+   - 只用系统字体：拉丁 Palatino/Georgia，中文落到宋体系衬线，离线可读。
+   - CJK 行高 1.75；Tufte 原值 1.43 是拉丁书写习惯。
+   - font-synthesis-style: none —— 中文没有斜体字形，浏览器会把宋体机械压斜；关掉后
+     拉丁 <em> 仍用 Palatino 真斜体，中文保持正体。中文强调用 <strong>。
+   - 颜色全部走 token，data-theme 切明暗；首绘前由 <head> 里的脚本定下。 */
+
+:root {
+  --bg: #fffff8;
+  --fg: #111;
+  --muted: #5c5c56;
+  --rule: #cfcfc6;
+  --code-bg: #f3f2e8;
+  --mark: #7a1f1f;
+  --syn-cmnt: #8a8a80;
+  --syn-kwd: #7a1f1f;
+  --syn-str: #3d5a2a;
+  --syn-num: #6b4a12;
+  --syn-func: #1f3f66;
+  color-scheme: light;
+
+  --font-serif:
+    Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia,
+    "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", SimSun,
+    serif;
+  --font-sans:
+    "Gill Sans", "Gill Sans MT", Calibri, "PingFang SC", "Hiragino Sans GB",
+    "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-mono:
+    Consolas, "Liberation Mono", Menlo, "SF Mono", Courier, "PingFang SC",
+    monospace;
+  --font-math:
+    "STIX Two Math", "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
+}
+
+:root[data-theme="dark"] {
+  --bg: #151515;
+  --fg: #ddd;
+  --muted: #9a9a92;
+  --rule: #3a3a36;
+  --code-bg: #1f1f1d;
+  --mark: #d08770;
+  --syn-cmnt: #7c7c74;
+  --syn-kwd: #d08770;
+  --syn-str: #a3be8c;
+  --syn-num: #ebcb8b;
+  --syn-func: #8fb3d9;
+  color-scheme: dark;
+}
+
+html {
+  font-size: 15px;
+  background: var(--bg);
+}
+
+body {
+  width: 87.5%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 12.5%;
+  font-family: var(--font-serif);
+  font-synthesis-style: none;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-autospace: normal;
+}
+
+/* ── 标题 ──────────────────────────────────────────────────────────── */
+
+h1 {
+  font-weight: 400;
+  margin: 4rem 0 1.5rem;
+  font-size: 3.2rem;
+  line-height: 1.15;
+}
+h2 {
+  font-style: italic;
+  font-weight: 400;
+  margin: 2.1rem 0 1.4rem;
+  font-size: 2.2rem;
+  line-height: 1.25;
+}
+h3 {
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.7rem;
+  margin: 2rem 0 1.4rem;
+  line-height: 1.3;
+}
+h1 code,
+h2 code,
+h3 code {
+  font-size: 0.8em;
+}
+
+p.subtitle {
+  font-style: italic;
+  margin: 1rem 0;
+  font-size: 1.8rem;
+  line-height: 1.3;
+}
+
+/* ── 正文栏 ────────────────────────────────────────────────────────── */
+
+article {
+  padding: 2rem 0;
+}
+section {
+  padding: 1rem 0;
+}
+
+p,
+dl,
+ol,
+ul {
+  font-size: 1.4rem;
+  line-height: 1.75;
+}
+p {
+  margin: 1.4rem 0;
+  padding-right: 0;
+  vertical-align: baseline;
+}
+sup {
+  line-height: 0;
+}
+
+section > p,
+section > footer,
+section > table,
+section > .table-wrapper,
+section > .math-display,
+.titlepage > p,
+.titlepage > .abstract {
+  width: 55%;
+}
+section > dl,
+section > ol,
+section > ul,
+.titlepage > nav.toc > ol {
+  width: 50%;
+  padding-inline-start: 5%;
+}
+dt:not(:first-child),
+li:not(:first-child) {
+  margin-top: 0.25rem;
+}
+
+hr {
+  display: block;
+  height: 1px;
+  width: 55%;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 1em 0;
+  padding: 0;
+}
+
+a:link,
+a:visited {
+  color: inherit;
+  text-underline-offset: 0.28em; /* 中文字形贴近基线，0.12em（Tufte 原值）会压到字 */
+  text-decoration-thickness: 0.05em;
+}
+
+strong {
+  font-weight: 700;
+}
+
+/* 段首小标题：Tufte 原版是 small-caps 加 1.2em，中文没有小型大写，只剩字号突变，
+   看起来像排版故障。宋体 Bold 笔画细，深色主题下与正文几乎分不开；
+   用最粗一档（macOS 宋体为 Black，其他系统落到可用的最粗字重）加略大字号，同行接正文 */
+span.newthought {
+  font-weight: 900;
+  font-size: 1.1em;
+}
+
+.sans {
+  font-family: var(--font-sans);
+  letter-spacing: 0.03em;
+}
+
+/* ── 引文与题记 ────────────────────────────────────────────────────── */
+
+blockquote {
+  font-size: 1.4rem;
+  margin-inline: 40px;
+}
+blockquote p {
+  width: 55%;
+  margin-right: 40px;
+}
+blockquote footer {
+  width: 55%;
+  font-size: 1.1rem;
+  text-align: right;
+}
+
+div.epigraph {
+  margin: 3em 0;
+}
+div.epigraph > blockquote {
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+div.epigraph > blockquote,
+div.epigraph > blockquote > p {
+  font-style: italic;
+}
+div.epigraph > blockquote > footer {
+  font-style: normal;
+}
+div.epigraph > blockquote > footer > cite {
+  font-style: italic;
+}
+
+/* 分节花：CME 原站的 ❧；字体栈避开 CJK 正文字体，否则字形由宋体回退渲染 */
+.asterism {
+  width: 55%;
+  text-align: center;
+  font-family:
+    "Arial Unicode MS", "Apple Symbols", FreeSerif, OpenSymbol, "DejaVu Sans",
+    sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+  margin: 2rem 0;
+  color: var(--muted);
+}
+
+/* ── 边注与旁注 ────────────────────────────────────────────────────── */
+
+.sidenote,
+.marginnote {
+  float: right;
+  clear: right;
+  margin-right: -60%;
+  width: 50%;
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  vertical-align: baseline;
+  position: relative;
+}
+.sidenote-number {
+  counter-increment: sidenote-counter;
+}
+.sidenote-number::after,
+.sidenote::before {
+  font-family: var(--font-serif);
+  position: relative;
+  vertical-align: baseline;
+}
+.sidenote-number::after {
+  content: counter(sidenote-counter);
+  font-size: 1rem;
+  top: -0.5rem;
+  left: 0.1rem;
+}
+.sidenote::before {
+  content: counter(sidenote-counter) " ";
+  font-size: 1rem;
+  top: -0.5rem;
+}
+/* 译注标签：旁注开头的「译注」二字 */
+.marginnote .tn,
+.sidenote .tn {
+  font-family: var(--font-sans);
+  font-size: 0.9em;
+  color: var(--muted);
+  margin-right: 0.3em;
+}
+blockquote .sidenote,
+blockquote .marginnote {
+  margin-right: -82%;
+  min-width: 59%;
+  text-align: left;
+}
+
+input.margin-toggle {
+  display: none;
+}
+label.margin-toggle:has(+ input.margin-toggle:focus-visible) {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+label.sidenote-number {
+  display: inline-block;
+  max-height: 2rem;
+}
+label.margin-toggle:not(.sidenote-number) {
+  display: none;
+}
+
+/* 页边的注与图在本章内收住，不越进下一章 */
+article.chapter {
+  display: flow-root;
+}
+
+/* 每章从 1 起编号 */
+body,
+article.chapter {
+  counter-reset: sidenote-counter;
+}
+
+/* ── 插图 ──────────────────────────────────────────────────────────── */
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+figure {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  max-width: 55%;
+  margin: 0 0 3em 0;
+}
+/* 页边图独占一行，图注排在图下；inline 时小图旁边会挤进图注文字 */
+.marginnote img,
+.sidenote img {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+figure svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+figcaption {
+  float: right;
+  clear: right;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  position: relative;
+  max-width: 40%;
+}
+figure.fullwidth {
+  display: flow-root; /* 收住右浮的图注，后文不绕排 */
+}
+figure.fullwidth figcaption {
+  margin-right: 24%;
+}
+figure.fullwidth img {
+  width: 100%;
+}
+.fullwidth {
+  max-width: 90%;
+  clear: both;
+}
+div.fullwidth,
+table.fullwidth {
+  width: 100%;
+}
+
+/* ── 表格：booktabs 三线 ───────────────────────────────────────────── */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+table {
+  border-collapse: collapse;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  margin: 1.4rem 0;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+table caption {
+  caption-side: top;
+  text-align: left;
+  font-size: 1.1rem;
+  color: var(--muted);
+  padding-bottom: 0.4rem;
+}
+thead {
+  border-top: 2px solid var(--fg);
+  border-bottom: 1px solid var(--fg);
+}
+tbody {
+  border-bottom: 2px solid var(--fg);
+}
+th,
+td {
+  padding: 0.35rem 1rem 0.35rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  font-weight: 400;
+  font-style: italic;
+}
+td.num,
+th.num {
+  text-align: right;
+}
+
+/* ── 代码 ──────────────────────────────────────────────────────────── */
+
+code,
+pre > code {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.42;
+  -webkit-text-size-adjust: 100%;
+}
+.sans > code {
+  font-size: 1.2rem;
+}
+.marginnote > code,
+.sidenote > code {
+  font-size: 1rem;
+}
+pre {
+  margin: 1.4rem 0;
+}
+pre > code {
+  font-size: 0.9rem;
+  width: 55%; /* 与正文栏同宽、左缘对齐 */
+  padding: 0.8rem 1rem;
+  box-sizing: border-box;
+  background: var(--code-bg);
+  overflow-x: auto;
+  display: block;
+}
+pre.fullwidth {
+  max-width: none; /* 与普通代码块同一基准，左缘对齐 */
+}
+pre.fullwidth > code {
+  width: 90%;
+}
+.shj-syn-cmnt {
+  color: var(--syn-cmnt);
+  font-style: italic;
+}
+.shj-syn-kwd,
+.shj-syn-bool {
+  color: var(--syn-kwd);
+}
+.shj-syn-str {
+  color: var(--syn-str);
+}
+.shj-syn-num {
+  color: var(--syn-num);
+}
+.shj-syn-func,
+.shj-syn-class,
+.shj-syn-type {
+  color: var(--syn-func);
+}
+
+/* ── 公式：作者写 LaTeX，build 编译为 MathML ───────────────────────── */
+
+math {
+  font-family: var(--font-math);
+}
+.math-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1.4rem 0;
+  padding: 0.2rem 0;
+  font-size: 1.4rem;
+}
+.math-display > math {
+  display: block math;
+  margin: 0 auto;
+}
+
+/* ── 扉页与目录 ────────────────────────────────────────────────────── */
+
+.titlepage {
+  padding: 2rem 0 1rem;
+}
+.titlepage .byline {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+.abstract {
+  font-size: 1.25rem;
+  line-height: 1.75;
+  margin: 2rem 0;
+}
+.abstract > h2 {
+  font-size: 1.3rem;
+  font-style: normal;
+  font-family: var(--font-sans);
+  letter-spacing: 0.08em;
+  margin: 0 0 0.4rem;
+}
+.abstract > p {
+  font-size: inherit;
+  margin: 0.8rem 0;
+}
+
+nav.toc > h2 {
+  font-size: 1.7rem;
+}
+nav.toc ol {
+  list-style: none;
+}
+nav.toc li {
+  display: flex;
+  gap: 0.8em;
+}
+nav.toc .toc-number {
+  flex: 0 0 4.5em;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: lining-nums;
+}
+
+/* ── 章 ────────────────────────────────────────────────────────────── */
+
+.chapter-number {
+  display: block;
+  font-style: normal;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+section.footnotes {
+  font-size: 1.1rem;
+  border-top: 1px solid var(--rule);
+  width: 55%;
+  margin-top: 2rem;
+}
+section.footnotes > ol {
+  width: auto;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  list-style: none;
+  padding-inline-start: 1.4em;
+}
+.fn-mark {
+  display: inline-block;
+  width: 1.4em;
+  margin-left: -1.4em;
+}
+a.fn-ref {
+  text-decoration: none;
+  font-size: 0.7em;
+  vertical-align: super;
+  line-height: 0;
+  padding-left: 0.1em;
+}
+a.fn-back {
+  text-decoration: none;
+  margin-left: 0.3em;
+}
+
+/* ── 习题与折叠答案 ────────────────────────────────────────────────── */
+
+details.answers {
+  width: 55%;
+  margin: 1.4rem 0;
+}
+details.answers > summary {
+  cursor: pointer;
+  font-style: italic;
+  font-size: 1.4rem;
+  list-style: none;
+}
+details.answers > summary::-webkit-details-marker {
+  display: none;
+}
+details.answers > summary::after {
+  content: " ▸";
+  font-style: normal;
+  font-size: 0.8em;
+  color: var(--muted);
+}
+details.answers[open] > summary::after {
+  content: " ▾";
+}
+details.answers > ol {
+  width: auto;
+}
+
+/* ── 参考文献 ──────────────────────────────────────────────────────── */
+
+section.references > ol {
+  width: 55%;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  padding-inline-start: 2.4em;
+}
+a.cite {
+  text-decoration: none;
+}
+
+/* ── 明暗切换 ──────────────────────────────────────────────────────── */
+
+.theme-toggle {
+  position: fixed;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  color: var(--fg);
+}
+.theme-toggle:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+/* ── 窄屏：边注收进 ⊕ ─────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  body {
+    width: 84%;
+    padding-left: 8%;
+    padding-right: 8%;
+  }
+  h1 {
+    font-size: 2.4rem;
+  }
+  hr,
+  section > p,
+  section > footer,
+  section > table,
+  section > .table-wrapper,
+  section > .math-display,
+  .titlepage > p,
+  .titlepage > .abstract,
+  .asterism,
+  section.footnotes,
+  section.references > ol,
+  details.answers {
+    width: 100%;
+  }
+  pre > code {
+    width: 100%;
+  }
+  section > dl,
+  section > ol,
+  section > ul,
+  .titlepage > nav.toc > ol {
+    width: 90%;
+  }
+  figure {
+    max-width: 90%;
+  }
+  figcaption,
+  figure.fullwidth figcaption {
+    margin-right: 0;
+    max-width: none;
+  }
+  blockquote {
+    margin-left: 1.5em;
+    margin-right: 0;
+  }
+  blockquote p,
+  blockquote footer {
+    width: 100%;
+  }
+  label.margin-toggle:not(.sidenote-number) {
+    display: inline;
+  }
+  /* 长行内公式不会断行，窄屏下改成可横向滚动的块，避免撑宽整页 */
+  .math-inline-long {
+    display: inline-block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    vertical-align: middle;
+  }
+  /* 窄屏时 checkbox 要能被 Tab 到，空格键展开；视觉上仍隐藏 */
+  input.margin-toggle {
+    display: inline;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    margin: 0;
+  }
+  .sidenote,
+  .marginnote {
+    display: none;
+  }
+  .margin-toggle:checked + .sidenote,
+  .margin-toggle:checked + .marginnote {
+    display: block;
+    float: left;
+    left: 1rem;
+    clear: both;
+    width: 95%;
+    margin: 1rem 2.5%;
+    position: relative;
+  }
+  label {
+    cursor: pointer;
+  }
+  .theme-toggle {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+}
+
+@media print {
+  .theme-toggle {
+    display: none;
+  }
+}
