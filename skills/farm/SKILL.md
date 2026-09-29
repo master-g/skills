@@ -1,6 +1,6 @@
 ---
 name: farm
-description: 用户调用 /farm 时，将明确的实施任务交给选定 worker CLI，并独立验证结果。
+description: 用户调用 /farm 时，将明确的实施任务交给宿主原生子代理（Codex App、Claude Code）或选定 worker CLI，并独立验证结果。
 disable-model-invocation: true
 ---
 
@@ -12,6 +12,27 @@ worker 只做一件事:按 brief 实施并写报告。
 ## 0. 前置
 
 任务已有方案或明确目标才派发。没有就先规划,farm 不做探索。
+
+### 拆分与并发数
+
+把任务拆成 k 个子任务。子任务同时满足三条才成立：负责的文件与其他子任务互不重叠；有只覆盖自己范围、可单独运行的验收命令；不依赖其他子任务的产出。拆不出来就合并，k = 1 走单 worker 流程。
+
+并发上限 N 来自用户参数 `-j N`（“并发 3”“4 个 worker”等说法同样算；`-j 1` 即串行）：
+
+- 给了参数：参数即授权，不再问是否并发，取 min(N, k)，在确认屏用一行说明取值。
+- 没给参数：k = 1 不问；2 ≤ k ≤ 4 问“并发 k 个 / 串行”；k > 4 问“同时最多 4 个（推荐）/ 自定义数量 / 串行”。4 是可见 pane 里同时等审批、人还盯得住的上限。
+
+这个问题并入第 2 节的 pair 确认，一屏答完。k ≥ 2（含串行）时，派发与门禁按 [worker 池](references/pool.md) 执行。
+
+### 执行方式
+
+先按当前会话实际提供的工具选择执行方式：
+
+- 在 Codex 桌面 App 等 GUI 环境中，有原生代理工具时，读取 [App 原生 worker 用例](references/app-worker.md)，按其中流程执行。该分支复用下文的 brief 与独立验收要求，跳过 CLI preflight、pairs 和终端 pane 步骤。
+- 在 Claude Code 中（有 Agent 工具），读取 [Claude Code 原生 worker 用例](references/claude-code-worker.md)。默认用原生子代理，不用 pi；用户明确要求在 pane 里看 worker 时才走 herdr，且 cli 固定为 `claude`。
+- 通过 worker CLI 派发时，继续第 1 节。
+
+仅分析或编辑 farm 不代表要启动 worker。GUI 名称本身也不证明支持派发；以本次会话的工具与模型列表为准。
 
 ## 1. Preflight
 
@@ -26,12 +47,13 @@ worker 只做一件事:按 brief 实施并写报告。
 
 ## 2. 选定 pair
 
-你知道自己是谁(host + 模型名):从 pairs 取匹配项,无匹配取 `*` 兜底项,向用户确认后定案。
+你知道自己是谁(host + 模型名):从 pairs 按 精确项 → `<host>:*` → `*` 的顺序取第一个匹配,向用户确认后定案。
+确认屏一次列清:pair、第 0 节的并发问题(需要问时)、将启动的每个 worker(子任务、cli:model、无头,或 herdr 下复用哪个 pane / 新开)。一次确认覆盖屏上列出的全部启动。
 无匹配且无 `*`:列出全部 pairs 让用户选。
 
 每次实际调用外部模型都遵守当前环境与用户的授权边界；pair 选择不代替调用授权，修正轮次需要新进程时也一样。
 
-红线:无头 worker 只允许 **pi**(用户调用本技能即接受 pi 无头改文件)。claude / codex 当 worker 只能在 herdr pane 里跑,审批弹窗必须用户可见。
+红线:无头 worker 只允许 **pi**(用户调用本技能即接受 pi 无头改文件)。claude / codex CLI 当 worker 只能在 herdr pane 里跑,审批弹窗必须用户可见。宿主自带的原生子代理(Claude Code Agent 工具、App spawn_agent)不是外部 CLI 进程,不受这条限制,按对应用例执行。
 
 ## 3. 派发
 
@@ -77,7 +99,7 @@ worker 的 prompt 永远是同一句:`读 <$PWD/.farm/<task>-brief.md> 并执行
 
 **无头派发**(tmux、none,以及任何在 pane 里跑 `pi -p` 的场景)一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit` 清掉上一轮标记。
 
-**herdr pane 复用**(一个 farm 会话只维护一个 worker pane):
+**herdr pane 复用**(单 worker 时一个 farm 会话只维护一个 worker pane;池见 pool.md):
 
 1. `herdr agent list`,筛 `tab_id == $HERDR_TAB_ID` 且 `agent == <cli>` 且 `cwd == $PWD` 且 `agent_status` 为 `idle`/`done` 的 agent(排除 `pane_id == $HERDR_PANE_ID` 即自己)。
 2. 命中 → 问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <agent> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
