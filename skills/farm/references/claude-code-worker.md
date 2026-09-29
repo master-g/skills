@@ -23,7 +23,7 @@ Agent 工具的 `model` 只接受模型族别名（`sonnet`、`opus`、`haiku`�
 worker 数按 SKILL.md 第 0 节决定；k ≥ 2 时子 brief、池、审计和集成门禁按 [worker 池](pool.md) 执行，下列步骤对每个 worker 各做一遍。
 
 1. 核对项目目录与未提交改动，按 SKILL.md 第 3 节把 brief 写入 `<项目绝对路径>/.farm/<task>-brief.md`。补充负责的文件、已有改动，并告诉 worker：你不是唯一修改代码的代理，保留他人改动并适配它们。brief 和报告一律用绝对路径，会话的工作目录可能已被切换。
-2. 调用 Agent 工具，不用 `fork`（fork 忽略模型覆盖并继承整段上下文）：
+2. 调用 Agent 工具，不用 `fork`（fork 忽略模型覆盖并继承整段上下文）。池开局的 min(N, k) 个 worker 要在同一条消息里发出多个 Agent 调用，才会并发运行：
 
 ```json
 {
@@ -34,6 +34,8 @@ worker 数按 SKILL.md 第 0 节决定；k ≥ 2 时子 brief、池、审计和�
 }
 ```
 
-池开局的 min(N, k) 个 worker 在同一条消息里发出多个 Agent 调用，才会并发运行。3. 记下返回的 agent ID，等完成通知，不轮询、不猜结果。等待期间 orchestrator 不改 worker 负责的文件。某个 worker 通过审计后，它的槽位再发一次 Agent 调用接下一个子任务。4. 收到通知后按 SKILL.md 第 4 节门禁：读报告，看实际 diff，独立重跑验收命令。代理的最终回复只是自述，不算验收。报告缺失时以代理的最终回复作现场。5. 不过 → 用 SendMessage 向同一个 agent ID 发修正内容（SendMessage 是延迟加载工具，先 `ToolSearch` 查 `select:SendMessage`），计入 3 轮额度。代理已无法继续时，把修正追加进 brief，重新发一次 Agent 调用。
+3. 记下返回的 agent ID，等完成通知，不轮询、不猜结果。等待期间 orchestrator 不改 worker 负责的文件。某个 worker 通过审计后，它的槽位再发一次 Agent 调用接下一个子任务。
+4. 收到通知后按 SKILL.md 第 4 节门禁：读报告，看实际 diff，独立重跑验收命令。代理的最终回复只是自述，不算验收。报告缺失时以代理的最终回复作现场。
+5. 不过 → 用 SendMessage 向同一个 agent ID 发修正内容（SendMessage 是延迟加载工具，先 `ToolSearch` 查 `select:SendMessage`），计入 3 轮额度。代理已无法继续时，把修正追加进 brief，重新发一次 Agent 调用。
 
 子代理沿用当前会话的权限设置。worker 因审批被拒或越界而停止时，按第 4 节「报告缺失」或升级给用户处理。
