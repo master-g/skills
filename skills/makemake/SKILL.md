@@ -38,7 +38,7 @@ description: 把当前项目散落的命令收敛成一个自文档 Makefile。
 
 每个选项给出推荐答案和它对应的命令,让用户能直接确认而不是从头描述。
 
-**选项标签直接写 target 名** —— 写 `android-lib + android-install-dep`,不写「Android 构建」。用户确认功能的同时就确认了命名,省掉之后再问一轮。名字取自项目已有词汇:crate 名、`CONTEXT.md` 的术语、脚本名;同族共用前缀(`android-*`、`bench-*`)。
+**选项标签直接写 target 名** —— 写 `android-lib + android-install-dep`,不写「Android 构建」。用户确认功能的同时就确认了命名,省掉之后再问一轮。名字取自项目已有词汇:crate 名、`GLOSSARY.md` 的术语、脚本名;同族共用前缀(`android-*`、`bench-*`)。
 
 **完成条件**:最终 target 清单里每条都能追到项目文件或用户答复；真正阻塞的缺口已解决。
 
