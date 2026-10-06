@@ -44,4 +44,6 @@ deprecate: ## 归档并卸载指定技能（需要 SKILL=<name>）
 	mv "skills/deprecated/$(SKILL)/SKILL.md" "skills/deprecated/$(SKILL)/ARCHIVE.md"
 	perl -pi -e 'print "deprecated: true\n" if /^description:/ && !$$seen++' "skills/deprecated/$(SKILL)/ARCHIVE.md"
 	-$(NPX) skills remove "$(SKILL)" -g -y
+	@# skills remove 不清理部分代理目录里的链接，卸载后它们指向已删除的目录
+	-find "$$HOME"/.*/skills -maxdepth 1 -name "$(SKILL)" -type l ! -exec test -e {} \; -print -delete 2>/dev/null
 	@echo "还需手工完成: ARCHIVE.md 的 description 改为以 DEPRECATED 开头并写明原因和替代技能；正文顶部加历史档案说明；更新 README.md 里 $(SKILL) 那一行。"
