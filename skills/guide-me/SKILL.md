@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 - **本会话** —— 对话历史与当前上下文：用户提出的目标、已经做过的操作、已验证与未验证的结论。
 - **仓库状态** —— `git status -sb`（含未推送提交）、`git log --format='%h %ad %s' --date=short -20`、`git stash list`、`git worktree list`；有未提交改动时看 diff 摘要。
-- **进度记录** —— 例如工作目录下的 `PROJECT_MEMORY.md`、`MEMORY.md`、`TODO.md`、`PLAN.md`、`NOTES.md`、`CHANGELOG.md`，`docs/plans/`、`docs/research/` 等计划与调研文档，会话交接（handoff）文件，Claude Code 的 auto memory 目录（`~/.claude/projects/<项目路径 slug>/memory/`，上下文里只注入 `MEMORY.md` 索引时，打开与当前目标相关的正文文件），以及 `CLAUDE.md` / `AGENTS.md` 中链接或描述的任何进度记录（「上次会话」「下次运行」「待办」之类的段落及其指向的文件）。`GLOSSARY.md` 存在时用它的统一语言。
+- **进度记录** —— 例如工作目录下的 `PROJECT_MEMORY.md`、`MEMORY.md`、`TODO.md`、`PLAN.md`、`NOTES.md`、`CHANGELOG.md`，`docs/plans/`、`docs/research/` 等计划与调研文档，会话交接（handoff）文件，Claude Code 的 auto memory 目录（`~/.claude/projects/<项目路径 slug>/memory/`，上下文里只注入 `MEMORY.md` 索引时，打开与当前目标相关的正文文件），以及 `CLAUDE.md` / `AGENTS.md` 中链接或描述的任何进度记录（「上次会话」「下次运行」「待办」之类的段落及其指向的文件）。`GLOSSARY.md` 或是 `CONTEXT.md` 存在时用它的统一语言。
   - 先定位与当前目标有关的小节，追查其证据；记录很长时按章节检索，不因行数固定通读或派发子代理。
   - 仅对完成声明、记录矛盾和下一步依赖做必要复查，每条注明文件与小节。
   - 复查只用低成本、无副作用的只读手段（`git show`、搜索、查看文件或已有日志）；需要跑测试、构建等耗时或有副作用的检查才能确认的，标为「未验证」并列入下一步。
