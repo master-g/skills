@@ -124,6 +124,7 @@ def compile_math(page, errors, warns):
 # 浏览器把行内 <math> 当成一个整块，块的前后总能断行，于是「$V$：」的冒号会落到下一行行首
 # （Chrome 实测，U+2060 也拦不住）。把公式连同紧邻的全角标点包进不换行的 span。
 # 长公式（math-inline-long）不包：窄屏下它占满一行，再粘一个标点会撑出版心。
+OPENERS, CLOSERS = "（「『《〈【", "，。；：？！、）」』》〉】"
 MATH_PUNCT_RE = re.compile(
     r'(<span class="math-nobr">|<span class="math-inline-long">)?'
     r"([（「『《〈【]?)(<math\b(?![^>]*\bdisplay=)[^>]*>.*?</math>)([，。；：？！、）」』》〉】]?)", re.S)
@@ -133,7 +134,12 @@ def glue_math_punctuation(html):
     def repl(m):
         if m.group(1) or not (m.group(2) or m.group(4)):
             return m.group(0)
-        return f'<span class="math-nobr">{m.group(2)}{m.group(3)}{m.group(4)}</span>'
+        # Firefox 内核在相邻的两个不换行片段之间不给断行机会，「$a$、$b$、$c$」会连成一条撑宽页面；
+        # 在标点允许断行的一侧补 <wbr>。紧挨着另一个标点时不补，免得标点落到行首或行尾
+        s, before, after = m.string, m.start(), m.end()
+        pre = "<wbr>" if m.group(2) and before and s[before - 1] not in OPENERS + "<>" else ""
+        post = "<wbr>" if m.group(4) and after < len(s) and s[after] not in CLOSERS else ""
+        return f'{pre}<span class="math-nobr">{m.group(2)}{m.group(3)}{m.group(4)}</span>{post}'
 
     return MATH_PUNCT_RE.sub(repl, html)
 

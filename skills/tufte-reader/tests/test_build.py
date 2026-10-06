@@ -122,6 +122,16 @@ class BuildTest(unittest.TestCase):
         _, second, _ = run(first)
         self.assertEqual(first, second)
 
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+    def test_glued_math_runs_can_wrap(self):
+        # 相邻的不换行片段之间要留断行机会，否则 Firefox 内核里一串「公式、公式、」会撑宽页面
+        rc, html, out = run(PAGE.replace("BODY", "<p>有 $a$、$b$。（$c$），再看「$d$」。</p>"))
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(html.count("、</span><wbr>"), 1)
+        self.assertEqual(html.count("。</span><wbr>"), 1)
+        self.assertNotIn("）</span><wbr>", html)  # 后面紧跟逗号，不能在这里断
+        self.assertIn("看<wbr><span", html)
+
     def test_dollar_amounts_are_not_math(self):
         rc, html, out = run(PAGE.replace("BODY", "<p>早餐 $5，午餐 $8，合计 $13。写成 &#36;x&#36; 也不算公式。</p>"))
         self.assertEqual(rc, 0, out)

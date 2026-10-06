@@ -53,6 +53,8 @@
   --text-secondary: 1.2rem; /* 表格、署名 */
   --text-references: 1.15rem; /* 参考文献 */
   --text-note: 16px; /* 页边注、图注、脚注、表题、章号 */
+  --text-body-narrow: 18px; /* 窄屏的正文 */
+  --text-note-narrow: 15px; /* 窄屏的页边注、图注 */
   --text-small: 1rem; /* 行内代码、边注编号 */
   --text-code: 0.9rem; /* 代码块 */
 
@@ -79,6 +81,7 @@
   --page: calc(
     var(--col) + var(--note-gap) + var(--note-width)
   ); /* 版面：正文栏 + 间隔 + 页边注，通栏元素占满它 */
+  --gutter-narrow: 16px; /* 窄屏：正文离屏幕两侧的距离 */
   --list-indent: calc(2.5 * var(--text-body)); /* 列表缩进 */
   --quote-indent: 40px; /* 引文左右各缩进 */
   /* 断点写在媒体查询里，不能用变量：760px 以下是手机版式，页边注收进 ⊕ */
@@ -711,12 +714,16 @@ summary:focus-visible {
 /* ── 窄屏：边注收进 ⊕ ─────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
+  :root {
+    --text-body: var(--text-body-narrow);
+    --text-note: var(--text-note-narrow);
+  }
   body {
-    width: 84%;
+    width: auto;
     max-width: none;
     margin-left: 0;
-    padding-left: 8%;
-    padding-right: 8%;
+    padding-left: var(--gutter-narrow);
+    padding-right: var(--gutter-narrow);
   }
   h1 {
     font-size: var(--text-h1-narrow);
