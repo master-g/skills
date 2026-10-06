@@ -12,6 +12,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const temml = require("../assets/vendor/temml/temml.cjs");
+import { estimate } from "./mathwidth.mjs";
 const CSS = readFileSync(
   new URL("../assets/vendor/temml/Temml-Local.css", import.meta.url),
   "utf8"
@@ -38,25 +39,87 @@ const unescape = (t) =>
 const visible = (t) =>
   t.replace(/\\[a-zA-Z]+|\\./g, "").replace(/[{}\s^_&]/g, "").length;
 
+/* Firefox 内核把「文字 + 箭头 + 文字」这样的上下标当成一个可伸缩的运算符：标注不缩小，箭头被拉长，
+   公式比 Chrome 里宽出一截（\\underbrace{…}_{\\text{the}\\to\\text{cat}} 实测宽 40%）。
+   这里把结果改成各内核一致：没写 stretchy 的箭头标成不伸缩；munder / mover / munderover 里
+   作上下标的 mrow 显式写上缩小一级。重音记号是 mo，不是 mrow，不受影响。 */
+const ARROW_RE = /<mo>([←-⇿⟵-⟿])<\/mo>/gu;
+const SCRIPT_HOSTS = new Set(["munder", "mover", "munderover"]);
+const SCRIPT_STYLE = ' style="math-depth:add(1);font-size:math;"';
+const portable = (mathml) => {
+  const stack = [];
+  return mathml
+    .replace(ARROW_RE, '<mo stretchy="false">$1</mo>')
+    .replace(
+      /<(\/?)([a-z]+)((?:"[^"]*"|[^>"])*?)(\/?)>/g,
+      (m, close, tag, attrs, self) => {
+        if (close) {
+          stack.pop();
+          return m;
+        }
+        const host = stack[stack.length - 1];
+        const nth = host ? ++host.kids : 0;
+        if (!self) stack.push({ tag, kids: 0 });
+        return host &&
+          SCRIPT_HOSTS.has(host.tag) &&
+          nth > 1 &&
+          tag === "mrow" &&
+          !attrs.includes("style=")
+          ? `<mrow${attrs}${SCRIPT_STYLE}>`
+          : m;
+      }
+    );
+};
+
 const render = (tex, display) => {
   tex = unescape(tex.trim());
   if (!display) tex = tex.replace(/\s+/g, " ");
   count[display ? "block" : "inline"]++;
-  const out = temml.renderToString(tex, {
-    displayMode: display,
-    throwOnError: false,
-    annotate: true,
-  });
+  const out = portable(
+    temml.renderToString(tex, {
+      displayMode: display,
+      throwOnError: false,
+      annotate: true,
+    })
+  );
   const short = tex.length > 60 ? tex.slice(0, 60) + "…" : tex;
   if (/class="temml-error"|color:#b22222|merror/.test(out)) errors.push(short);
-  // 渲染宽度约等于「可见字符数 × 10px」：去掉命令名、花括号、上下标符号后计数（2304.10557 实测校准）。
-  // 正文栏 660px（33 字 × 20px），块级公式单行超过约 55 个可见字符放不下。
-  if (display && Math.max(...tex.split(/\\\\/).map(visible)) > 55)
-    warns.push(`块级公式过长，用 aligned 在 = 或 + 前断行：${short}`);
+  if (display) return renderBlock(out, short);
   // 行内 MathML 不会自动断行；超过约 25 个可见字符在手机上会撑宽页面，窄屏下改为可横向滚动
   if (!display && visible(tex) > 25)
     return `<span class="math-inline-long">${out}</span>`;
-  return display ? `<span class="math-display">${out}</span>` : out;
+  return out;
+};
+
+/* 块级公式的宽度检查。基准是 1280 宽的窗口：正文栏 616px、字号 20px，即 30.8em；更宽的窗口栏也更宽。
+   带编号的公式还要给编号和它前面的间隔让出位置。超出的公式在页面上横向滚动，所以是 WARN。 */
+const COL_EM = 30.8;
+const TAG_GAP_EM = 1.5; // 与 tufte.css 里 .eq-tag 的 padding-left 一致
+const TAG_RE =
+  /<mtable displaystyle="true" style="width:100%;"><mtr class="tml-tageqn"><mtd style="padding:0;width:50%;"><\/mtd><mtd>([\s\S]*)<\/mtd><mtd style="padding:0;width:50%;"><mtext class="tml-tag">([^<]*)<\/mtext><\/mtd><\/mtr><\/mtable>/;
+
+/* Temml 把 \tag 排成一张占满整栏的三列表格，编号放在右边那一列里；公式一宽，右列被挤没，
+   编号就贴上甚至压住公式（各浏览器表现不同）。这里把编号从 MathML 里取出来，交给 tufte.css 的三栏网格：
+   公式居中，编号靠右，中间至少隔 TAG_GAP_EM，放不下时整行横向滚动。 */
+const renderBlock = (out, short) => {
+  let tag = "";
+  out = out.replace(TAG_RE, (_, body, label) => {
+    tag = label;
+    return body;
+  });
+  if (out.includes("tml-tag"))
+    warns.push(
+      `带编号的公式没能把编号移出来，窄栏里编号可能压住公式；多行编号拆成每行一个 $$…\\tag{n}$$：${short}`
+    );
+  const room = COL_EM - (tag ? [...tag].length * 0.5 + TAG_GAP_EM : 0);
+  const need = estimate(out);
+  if (need > room)
+    warns.push(
+      `块级公式估计宽 ${need.toFixed(0)}em，正文栏${tag ? "扣掉编号后" : ""}只有 ${room.toFixed(0)}em（1280 宽的窗口），会横向滚动；用 aligned 在 = 或 + 前断行：${short}`
+    );
+  return tag
+    ? `<span class="math-display tagged">${out}<span class="eq-tag">${tag}</span></span>`
+    : `<span class="math-display">${out}</span>`;
 };
 
 /* 单 $ 扫描：被拒的候选只跳过开 $，不吞后文。与 build.py 的 single_dollar_spans 同一套规则。 */

@@ -148,6 +148,37 @@ class BuildTest(unittest.TestCase):
         self.assertIn("没有归位到章末", out)
 
     @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+    def test_tagged_equation_keeps_tag_out_of_math(self):
+        rc, html, out = run(PAGE.replace("BODY", "<p>甲</p>\n$$a = b \\tag{2.4}$$\n$$c = d$$"))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("0 个 WARN", out)
+        self.assertRegex(html, r'<span class="math-display tagged"><math.*?</math><span class="eq-tag">\(2\.4\)</span></span>')
+        self.assertNotIn("tml-tag", html.split("<body", 1)[1])
+        self.assertIn('<span class="math-display"><math', html)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+    def test_script_labels_render_alike_across_engines(self):
+        # Firefox 内核会把「文字 + 箭头 + 文字」的上下标当成可伸缩运算符；构建要写死缩小一级、箭头不伸缩
+        rc, html, out = run(PAGE.replace("BODY", (
+            "<p>甲</p>\n$$\\underbrace{x}_{\\text{the}\\to\\text{cat}} + \\hat{y} + a \\xrightarrow{f} b$$")))
+        self.assertEqual(rc, 0, out)
+        self.assertIn('</munder><mrow style="math-depth:add(1);font-size:math;"><mtext>the</mtext>', html)
+        self.assertIn('<mo stretchy="false">→</mo>', html)
+        self.assertIn('<mo stretchy="true" lspace="0" rspace="0">→</mo>', html)  # \xrightarrow 仍然伸缩
+        self.assertEqual(html.count("math-depth:add(1)"), 1)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+    def test_wide_display_math_warns(self):
+        terms = " + ".join(f"x_{{{i}}}" for i in range(14))  # 约 29em：不带编号放得下，带编号放不下
+        rc, _, out = run(PAGE.replace("BODY", f"<p>甲</p>\n$$y = {terms}$$"))
+        self.assertIn("0 个 WARN", out)
+        rc, _, out = run(PAGE.replace("BODY", f"<p>甲</p>\n$$y = {terms} \\tag{{1}}$$"))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("扣掉编号后只有 28em", out)
+        rc, _, out = run(PAGE.replace("BODY", "<p>甲</p>\n$$\\begin{align} a &= b \\tag{1} \\\\ c &= d \\tag{2} \\end{align}$$"))
+        self.assertIn("没能把编号移出来", out)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
     def test_specimen_builds_clean(self):
         rc, html, out = run((ROOT / "assets" / "specimen.html").read_text(encoding="utf-8"))
         self.assertEqual(rc, 0, out)
