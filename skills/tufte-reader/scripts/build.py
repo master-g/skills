@@ -10,7 +10,8 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
   3. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
   4. 填 <nav class="toc">
   5. 本地图片转 data URI
-  6. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言
+  6. 分步图：给最后一步可见的帧盖 data-step-last（没有脚本和打印时显示这一步）
+  7. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言、分步图脚本和动态插图样式
 
 ERROR 必须修；WARN 需要判断。
 """
@@ -31,8 +32,8 @@ HL_DIR = VENDOR / "shj"
 MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
 
 CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
-CSS_TAG_RE = re.compile(r'<style data-tr="css">.*?</style>', re.S)
-JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl)">.*?</script>', re.S)
+CSS_TAG_RE = re.compile(r'<style data-tr="(?:css|fig)">.*?</style>', re.S)
+JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl|steps)">.*?</script>', re.S)
 
 SIZE_WARN = 5 * 1024 * 1024
 CJK = r"\u3400-\u4dbf\u4e00-\u9fff"
@@ -334,6 +335,63 @@ def inline_images(html, base, errors):
     return IMG_RE.sub(repl, html), count
 
 
+# ── 分步图 ──────────────────────────────────────────────────────────────
+# figure.steps 里带 data-step 的元素是帧，ol.step-captions 的第 k 项是第 k 步的说明。
+STEPS_FIGURE_RE = re.compile(r'<figure\b[^>]*\bclass="[^"]*(?<![\w-])steps(?![\w-])[^"]*"[^>]*>', re.I)
+STEP_ATTR_RE = re.compile(r'(\bdata-step="([^"]*)")(\s+data-step-last(?:="")?)?')
+STEP_PART_RE = re.compile(r"\s*(\d+)\s*(?:(-)\s*(\d*))?\s*$")
+# 用到这三个 class 之一的页面才内联 interactive.css
+INTERACTIVE_RE = re.compile(r'\bclass="[^"]*(?<![\w-])(?:steps|controls|scroll-x)(?![\w-])')
+SCRIPT_NET_RE = re.compile(
+    r"\bfetch\s*\(|\bXMLHttpRequest\b|\bimport\s*\(|\bWebSocket\b|\bEventSource\b|\bsendBeacon\b"
+    r"|https?://(?!www\.w3\.org/)[^\s\"'`)]*")
+
+
+def step_ranges(spec):
+    """data-step 的值 → [(起, 止)]，止为 None 表示到最后一步；写法不对返回 None。
+    "3"、"3-5"、"3-"、"1,4-6"；assets/steps.js 的 covers 是同一套规则。"""
+    out = []
+    for part in spec.split(","):
+        m = STEP_PART_RE.match(part)
+        if not m:
+            return None
+        a = int(m.group(1))
+        b = a if not m.group(2) else int(m.group(3)) if m.group(3) else None
+        if a < 1 or (b is not None and b < a):
+            return None
+        out.append((a, b))
+    return out
+
+
+def step_count(specs):
+    """一幅分步图的步数：各帧 data-step 里写出的最大编号。有写错的值时返回 0。"""
+    ranges = [step_ranges(s) for s in specs]
+    if not ranges or None in ranges:
+        return 0
+    return max(max(a, b or a) for r in ranges for a, b in r)
+
+
+def mark_last_frames(html):
+    """给最后一步可见的帧盖 data-step-last。每次构建先去掉旧标记再重盖，改过帧之后不会留下过期的标记。"""
+    islands = [m.span() for m in CODE_ISLAND_RE.finditer(html) if m.group(1).lower() != "svg"]
+    for fm in reversed(list(STEPS_FIGURE_RE.finditer(html))):
+        if any(a <= fm.start() < b for a, b in islands):
+            continue  # 代码块或脚本里提到的 figure，不是页面元素
+        end = element_end(html, fm.start(), "figure")
+        body = html[fm.start() : end]
+        cap = re.search(r'<ol\b[^>]*\bstep-captions\b', body)
+        c0, c1 = (cap.start(), element_end(body, cap.start(), "ol")) if cap else (len(body), len(body))
+        n = step_count([m.group(2) for m in STEP_ATTR_RE.finditer(body) if not c0 <= m.start() < c1])
+
+        def repl(m):
+            r = None if c0 <= m.start() < c1 else step_ranges(m.group(2))
+            last = n and r and any(a <= n <= (b or n) for a, b in r)
+            return m.group(1) + (" data-step-last" if last else "")
+
+        html = html[: fm.start()] + STEP_ATTR_RE.sub(repl, body) + html[end:]
+    return html
+
+
 # ── 代码高亮与资源内联 ──────────────────────────────────────────────────
 def highlight_script(html, warns):
     wanted = {}
@@ -368,17 +426,25 @@ def highlight_script(html, warns):
 
 
 def inline_assets(html, warns, errors):
+    # 判断页面用到什么，只看作者写的标记：代码块、脚本里出现的同名字样不算
+    markup = CODE_ISLAND_RE.sub("", html)
     css = f'<style data-tr="css">{(ASSETS / "tufte.css").read_text(encoding="utf-8")}</style>'
+    if INTERACTIVE_RE.search(markup):
+        css += f'<style data-tr="fig">{(ASSETS / "interactive.css").read_text(encoding="utf-8")}</style>'
     if CSS_SLOT in html:
         html = html.replace(CSS_SLOT, css, 1)
     elif CSS_TAG_RE.search(html):
-        html = CSS_TAG_RE.sub(lambda _: css, html, count=1)
+        first = CSS_TAG_RE.search(html).start()
+        html = CSS_TAG_RE.sub("", html)
+        html = html[:first] + css + html[first:]
     else:
         errors.append(f"找不到 {CSS_SLOT} 占位符或已内联的样式；页面应从 assets/shell.html 开始")
 
     authored = JS_TAG_RE.sub("", html)
     hl = highlight_script(authored, warns)
+    steps = (ASSETS / "steps.js").read_text(encoding="utf-8") if STEPS_FIGURE_RE.search(markup) else ""
     js = (f'<script data-tr="hl">{hl}</script>' if hl else "") + \
+        (f'<script data-tr="steps">{steps}</script>' if steps else "") + \
         f'<script data-tr="js">{(ASSETS / "shell.js").read_text(encoding="utf-8")}</script>'
     if JS_SLOT in html:
         html = html.replace(JS_SLOT, js, 1)
@@ -401,8 +467,11 @@ class Checker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
-        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0}
-        self.errors, self.text = [], []
+        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "分步图": 0, "帧": 0}
+        self.errors, self.warns, self.text = [], [], []
+        self.steps = None  # 正在读的 figure.steps：帧的 data-step、说明条数、所在的栈深
+        self.stray_steps = 0
+        self.author_js = []
         self.deep_heading = []
         self.external = []
         self.after_toggle = False  # 上一个标签是不是边注开关的 checkbox
@@ -425,6 +494,20 @@ class Checker(HTMLParser):
             self.stats["小节(h3)"] += 1
         if tag == "figure":
             self.stats["图"] += 1
+            if "steps" in cls and not self.steps:
+                self.steps = {"specs": [], "caps": 0, "depth": len(self.stack), "list": None, "in_list": False}
+        if tag == "script":
+            self.author_js.append("" if "data-tr" not in a else None)
+        if "data-step" in a:
+            if not self.steps:
+                self.stray_steps += 1
+            elif not self.steps["in_list"]:
+                self.steps["specs"].append(a["data-step"] or "")
+        if self.steps:
+            if tag == "ol" and "step-captions" in cls and self.steps["list"] is None:
+                self.steps["list"], self.steps["in_list"] = len(self.stack), True
+            elif tag == "li" and self.steps["in_list"] and self.steps["list"] == len(self.stack) - 1:
+                self.steps["caps"] += 1
         if tag == "table":
             self.stats["表"] += 1
         if tag == "pre":
@@ -454,10 +537,39 @@ class Checker(HTMLParser):
                 self.classes.pop()
                 if self.stack.pop() == tag:
                     break
+        if self.steps and self.steps["in_list"] and len(self.stack) <= self.steps["list"]:
+            self.steps["in_list"] = False
+        if self.steps and len(self.stack) <= self.steps["depth"]:
+            self.close_steps()
+
+    def close_steps(self):
+        s, self.steps = self.steps, None
+        self.stats["分步图"] += 1
+        where = f"第 {self.stats['分步图']} 幅分步图"
+        bad = [x for x in s["specs"] if step_ranges(x) is None]
+        if not s["specs"]:
+            self.errors.append(f"{where}里没有帧：给 <svg> 里每一步要显示的元素加 data-step")
+        elif bad:
+            self.errors.append(f"{where}的 data-step=\"{bad[0]}\" 写法不对：写 3、3-5、3-（从第 3 步到最后一步）或 1,4-6")
+        else:
+            n = step_count(s["specs"])
+            self.stats["帧"] += n
+            covered = {k for x in s["specs"] for a, b in step_ranges(x) for k in range(a, (b or n) + 1)}
+            missing = [str(k) for k in range(1, n + 1) if k not in covered]
+            if missing:
+                self.errors.append(f"{where}的帧编号不连续：共 {n} 步，缺第 {'、'.join(missing[:8])} 步")
+            if n == 1:
+                self.warns.append(f"{where}只有 1 步，用普通的 <figure> 就够了")
+        if s["list"] is None:
+            self.errors.append(f"{where}缺 <ol class=\"step-captions\">：每一步的说明写成其中的一个 <li>")
+        elif s["specs"] and not bad and s["caps"] != step_count(s["specs"]):
+            self.errors.append(f"{where}有 {step_count(s['specs'])} 步，说明却是 {s['caps']} 条：两者要一样多")
 
     def handle_data(self, data):
         if data.strip():
             self.after_toggle = False
+        if self.stack and self.stack[-1] == "script" and self.author_js and self.author_js[-1] is not None:
+            self.author_js[-1] += data
         if not any(t in ("script", "style", "pre", "code", "math") for t in self.stack):
             self.text.append(data)
 
@@ -466,6 +578,16 @@ def check(html, errors, warns):
     c = Checker()
     c.feed(html)
     errors.extend(c.errors)
+    warns.extend(c.warns)
+    if c.steps:
+        errors.append("<figure class=\"steps\"> 没有闭合")
+    if c.stray_steps:
+        warns.append(f"有 {c.stray_steps} 处 data-step 不在 <figure class=\"steps\"> 里，不会按步显示")
+    net = sorted({m.group(0)[:60] for js in c.author_js if js for m in SCRIPT_NET_RE.finditer(js)})
+    if net:
+        errors.append("作者脚本里出现 " + "、".join(net[:6]) + "：读本是离线单文件，脚本不能发网络请求、不能加载外部代码或写外链地址")
+    if re.search(r"<canvas\b[^>]*>\s*</canvas>", CODE_ISLAND_RE.sub("", html)):
+        warns.append("<canvas> 里没有回退内容：脚本不运行时这里是空白，在标签内放一幅静态图或一句说明")
 
     dup = sorted({i for i in c.ids if c.ids.count(i) > 1})
     if dup:
@@ -552,6 +674,7 @@ def main(argv):
         html = build_toc(html, errors)
         html, imgs = inline_images(html, page.parent, errors)
         html, wide = widen_code(html)
+        html = mark_last_frames(html)
         html = inline_assets(html, warns, errors)
         page.write_text(html, encoding="utf-8")
         print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个")

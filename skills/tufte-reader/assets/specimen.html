@@ -285,6 +285,137 @@ for dx in (1, 0.1, 0.01, 0.001):
             >[1]</a
           >
         </p>
+        <p>
+          同一件事也可以一步一步地看。下面的分步图把 $(x+dx)^2$
+          的三部分依次加上去，读者自己控制节奏；没有脚本和打印时，图停在最后一步，三条说明全部列出。
+        </p>
+        <figure class="steps">
+          <span class="marginnote"
+            >图 2　$(x+dx)^2$ 的三部分。帧写在
+            <code>data-step</code> 里，控件由构建注入的脚本生成。</span
+          >
+          <svg
+            viewBox="0 0 240 240"
+            width="280"
+            role="img"
+            aria-label="正方形 x² 先长出两条 x·dx 的长条，再补上右上角的 (dx)²"
+          >
+            <g data-step="1-">
+              <rect
+                x="20"
+                y="50"
+                width="170"
+                height="170"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.2"
+              />
+              <text x="105" y="140" text-anchor="middle" fill="currentColor">
+                x²
+              </text>
+            </g>
+            <g data-step="2-" fill="none" stroke="currentColor">
+              <rect x="190" y="50" width="30" height="170" />
+              <rect x="20" y="20" width="170" height="30" />
+            </g>
+            <g
+              data-step="2"
+              fill="currentColor"
+              fill-opacity="0.25"
+              stroke="none"
+            >
+              <rect x="190" y="50" width="30" height="170" />
+              <rect x="20" y="20" width="170" height="30" />
+            </g>
+            <rect
+              data-step="3"
+              x="190"
+              y="20"
+              width="30"
+              height="30"
+              fill="currentColor"
+              fill-opacity="0.25"
+              stroke="currentColor"
+            />
+          </svg>
+          <ol class="step-captions">
+            <li>原来的正方形，面积 $x^2$。</li>
+            <li>
+              边长增加 $dx$，先长出两条长条（深色），各是 $x\,dx$，合计
+              $2x\,dx$，是第一阶的量。
+            </li>
+            <li>
+              右上角还缺一小块（深色），面积
+              $(dx)^2$，是第二阶微小量，可以略去。
+            </li>
+          </ol>
+        </figure>
+        <p>
+          需要实时重算的图才带自己的脚本。下面这幅图里，滑块改的是 $dx$
+          的大小；脚本只改矩形的几何属性和一行数值，不运行时它就是 $dx = 0.2$
+          的静态图。
+        </p>
+        <figure>
+          <span class="marginnote"
+            >图 3　取 $x = 1$，拖动滑块改变 $dx$：长条随 $dx$
+            变窄，右上角的小方块缩得更快。</span
+          >
+          <svg
+            viewBox="0 0 240 240"
+            width="280"
+            role="img"
+            aria-label="边长为 1 的正方形和它长出的两条长条、一个小方块，大小随 dx 变化"
+          >
+            <g fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="20" y="70" width="150" height="150" />
+              <rect data-part="right" x="170" y="70" width="30" height="150" />
+              <rect data-part="top" x="20" y="40" width="150" height="30" />
+              <rect
+                data-part="corner"
+                x="170"
+                y="40"
+                width="30"
+                height="30"
+                fill="currentColor"
+                fill-opacity="0.25"
+              />
+            </g>
+          </svg>
+          <div class="controls" hidden>
+            <label
+              >$dx$
+              <input type="range" min="0.02" max="0.4" step="0.02" value="0.2"
+            /></label>
+            <output>2x·dx = 0.40，(dx)² = 0.0400</output>
+          </div>
+          <script>
+            (function () {
+              var fig = document.currentScript.closest("figure");
+              var ctl = fig.querySelector(".controls");
+              var range = ctl.querySelector("input");
+              var out = ctl.querySelector("output");
+              function set(part, attrs) {
+                var el = fig.querySelector('[data-part="' + part + '"]');
+                for (var k in attrs) el.setAttribute(k, attrs[k]);
+              }
+              function draw() {
+                var dx = +range.value;
+                var w = 150 * dx;
+                set("right", { width: w });
+                set("top", { y: 70 - w, height: w });
+                set("corner", { y: 70 - w, width: w, height: w });
+                out.textContent =
+                  "2x·dx = " +
+                  (2 * dx).toFixed(2) +
+                  "，(dx)² = " +
+                  (dx * dx).toFixed(4);
+              }
+              range.addEventListener("input", draw);
+              ctl.hidden = false;
+              draw();
+            })();
+          </script>
+        </figure>
       </section>
     </article>
 

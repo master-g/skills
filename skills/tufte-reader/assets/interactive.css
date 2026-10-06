@@ -1,0 +1,126 @@
+/* tufte-reader 动态插图：分步图（figure.steps）、带控件的图（.controls）与窄屏横向滚动的宽图（.scroll-x）。
+   只在页面用到这三个 class 之一时内联，排在 tufte.css 之后；颜色全部走 tufte.css 的 token。 */
+
+/* ── 控件：分步图的控件由 steps.js 生成，作者脚本图的控件由作者写进 .controls ── */
+
+figure .controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  margin: 0.8rem 0 0;
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+/* 作者脚本图的控件在源码里写 hidden，脚本运行后取消：没有脚本时不留下拖不动的滑块 */
+figure .controls[hidden] {
+  display: none;
+}
+figure .controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap; /* 标签文字不被滑块挤成竖排 */
+}
+figure .controls input[type="range"] {
+  flex: 0 1 16rem;
+  min-width: 8rem;
+  margin: 0;
+  accent-color: var(--fg);
+}
+figure .controls button,
+figure .controls select {
+  font: inherit;
+  color: var(--fg);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.1rem 0.9rem;
+  cursor: pointer;
+}
+figure .controls button:hover {
+  border-color: var(--fg);
+}
+figure .controls button:disabled,
+figure .controls button[aria-disabled="true"] {
+  color: var(--muted);
+  border-color: var(--rule);
+  opacity: 0.5;
+  cursor: default;
+}
+figure .controls output {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+figure .controls :focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+/* ── 分步图 ────────────────────────────────────────────────────────── */
+
+/* 控件排成一行：窄屏下滑块让出宽度，不折行 */
+figure.steps .step-ui {
+  flex-wrap: nowrap;
+}
+figure.steps .step-ui input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 16rem;
+}
+figure.steps .step-ui output {
+  white-space: nowrap;
+}
+
+figure.steps .step-captions {
+  margin: 0.8rem 0 0;
+  padding-inline-start: 1.6em;
+  font-size: 1.2rem;
+  line-height: 1.7;
+}
+/* 没有脚本：停在最后一步，说明作为有序列表全部列出。data-step-last 由构建盖在最后一步可见的帧上 */
+figure.steps:not(.js) [data-step]:not([data-step-last]) {
+  display: none;
+}
+@media screen {
+  figure.steps.js [data-step]:not(.step-on),
+  figure.steps.js .step-captions > li:not(.step-on) {
+    display: none;
+  }
+  figure.steps.js .step-captions {
+    list-style: none;
+    padding-inline-start: 0;
+    min-height: 3.4em; /* 两行：说明长短不一时，下面的正文少跳动 */
+  }
+}
+@media print {
+  figure.steps [data-step]:not([data-step-last]),
+  figure .controls {
+    display: none; /* 分步图的控件和作者脚本图的控件都不印 */
+  }
+}
+/* 可选的淡入：<figure class="steps fade">。只在系统没有要求减少动态效果时生效 */
+@media screen and (prefers-reduced-motion: no-preference) {
+  figure.steps.fade.js [data-step].step-on {
+    animation: step-in 0.3s ease-out;
+  }
+}
+@keyframes step-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── 宽图在窄屏下横向滚动，不等比缩小 ──────────────────────────────── */
+
+@media (max-width: 760px) {
+  figure .scroll-x {
+    overflow-x: auto;
+  }
+  figure .scroll-x > svg,
+  figure .scroll-x > img {
+    max-width: none;
+  }
+}

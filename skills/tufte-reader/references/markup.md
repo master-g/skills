@@ -117,6 +117,96 @@
 - 矢量示意图可以直接写内联 `<svg>`，给 `width` 和 `aria-label`，颜色用 `currentColor` 以跟随明暗主题。
 - 内联 SVG 里的 `id`（`marker`、`linearGradient`、`clipPath` 等）在整个页面内必须唯一，带上图的编号作前缀：`<marker id="fig3-arrow">`。两幅图用了同一个 `id` 时，后一幅会引用到前一幅的定义，构建报 ERROR。
 - `<svg>` 内部不编译公式，`$…$` 会原样显示。图里的数学符号直接写 Unicode 字符（`x₁`、`Σ`），或者放到图注里。
+- 宽图在手机上等比缩小后图内文字太小时，把 `<svg>` 或 `<img>` 包进 `<div class="scroll-x">`：窄屏下按原始宽度显示、横向滚动，宽屏不变。图的原始宽度取 `width` 属性。
+
+## 分步图
+
+读者点「下一步」逐帧看的图。什么时候用见 [行文](style.md) 的「动态插图」。作者只写帧和每一步的说明，控件、脚本和样式由构建注入，不写 `<script>` 和 `style`。
+
+```html
+<figure class="steps">
+  <span class="marginnote">图 4　图题。</span>
+  <svg viewBox="0 0 240 120" width="280" role="img" aria-label="描述整幅图">
+    <rect
+      x="10"
+      y="10"
+      width="220"
+      height="100"
+      fill="none"
+      stroke="currentColor"
+    />
+    <!-- 没有 data-step：每一步都在 -->
+    <g data-step="1">…只在第 1 步显示…</g>
+    <g data-step="2-">…从第 2 步起一直显示…</g>
+    <g data-step="2-3">…第 2、3 步显示…</g>
+    <g data-step="3">…只在第 3 步显示…</g>
+  </svg>
+  <ol class="step-captions">
+    <li>第 1 步的说明。</li>
+    <li>第 2 步的说明，可以有行内公式 $x^2$。</li>
+    <li>第 3 步的说明。</li>
+  </ol>
+</figure>
+```
+
+- **帧**：`<figure class="steps">` 里带 `data-step` 的元素，通常是 `<svg>` 里的 `<g>`，也可以是单个图形或 `<img>`。值写第几步显示：`3`、`3-5`、`3-`（从第 3 步到最后一步）、`1,4-6`。不带 `data-step` 的元素每一步都显示。
+- **不变的部分只写一次**：每一步都重画整幅图最容易写对，但体积按步数成倍增加。坐标轴、外框、不变的方块不加 `data-step`；出现后不再消失的元素用 `3-`。
+- **说明**：`<ol class="step-captions">` 的第 k 个 `<li>` 是第 k 步的说明，条数必须等于步数。说明里写这一步发生了什么、读者该看哪里；可以用行内公式、`<code>`、`<strong>`。`data-step` 只写在说明列表之外。
+- **步数**是各帧 `data-step` 里写出的最大编号。编号从 1 起连续，每一步至少有一个帧。
+- 图题照普通插图写在 `marginnote` 里；整幅图的 `aria-label` 描述完整过程。高亮当前步用 `fill-opacity` 的深浅，颜色仍然只用 `currentColor`。
+- **呈现**：打开页面时显示第 1 步，控件是「← 滑块 → 第 k / N 步」，滑块可用方向键。没有脚本和打印时，图停在最后一步，全部说明作为有序列表列出，所以最后一步应当是看得懂的完整状态。没有播放按钮，不会自动播放。
+- **淡入（可选）**：`<figure class="steps fade">` 让新出现的帧淡入，只用在表现「流动」的图上；系统设置了「减少动态效果」时自动关闭。
+- 构建检查：没有帧、`data-step` 写法不对、编号不连续、说明条数与步数不等、缺 `ol.step-captions`，都报 ERROR。
+
+## 带控件的图
+
+滑杆、实时重算这类分步图做不了的图，可以带一段自己的脚本。能用分步图就用分步图。
+
+```html
+<figure>
+  <span class="marginnote">图 5　图题。</span>
+  <svg viewBox="0 0 240 120" width="280" role="img" aria-label="…">
+    <rect
+      data-part="bar"
+      x="20"
+      y="40"
+      width="60"
+      height="60"
+      fill="currentColor"
+      fill-opacity="0.5"
+    />
+  </svg>
+  <div class="controls" hidden>
+    <label
+      >温度 <input type="range" min="0.1" max="3" step="0.1" value="1"
+    /></label>
+    <output>1.0</output>
+  </div>
+  <script>
+    (function () {
+      var fig = document.currentScript.closest("figure");
+      var ctl = fig.querySelector(".controls");
+      var range = ctl.querySelector("input");
+      function draw() {
+        var t = +range.value;
+        fig.querySelector('[data-part="bar"]').setAttribute("width", 60 * t);
+        ctl.querySelector("output").textContent = t.toFixed(1);
+      }
+      range.addEventListener("input", draw);
+      ctl.hidden = false;
+      draw();
+    })();
+  </script>
+</figure>
+```
+
+- **脚本的位置和范围**：内联 `<script>` 放在它所属的 `<figure>` 内部的最后，用 `document.currentScript.closest("figure")` 取到这幅图，只操作图内的元素。不发网络请求，不用外部库，不写外链地址（SVG 命名空间 `http://www.w3.org/2000/svg` 除外）。脚本里出现 `fetch(`、`XMLHttpRequest`、`import(`、`WebSocket` 或 `http(s)://` 地址时构建报 ERROR。
+- **没有脚本也是一幅完整的图**：`<svg>` 的初始状态按控件的默认值画好，`<output>` 里写好默认值对应的文字。控件所在的 `<div class="controls">` 写 `hidden`，由脚本在运行后取消，没有脚本时页面上不会留下拖不动的滑块。
+- **控件**：放进 `<div class="controls">`，里面用 `<label>` 包住 `<input type="range">`，数值用 `<output>`，需要时用 `<button type="button">` 和 `<select>`。样式由构建内联，不写 `style` 属性和 `<style>`。每个控件都要有文字标签或 `aria-label`。
+- **颜色**仍然只用 `currentColor`。脚本改的是几何属性（坐标、宽高、`d`、`transform`）、`fill-opacity` 和文字，这样切换明暗主题不用重画。
+- **不自动动起来**：图只在读者操作控件时变化。确实要连续动画时，先查 `matchMedia("(prefers-reduced-motion: reduce)").matches`，为真就不播放。
+- **canvas** 只在图元多到 SVG 承受不了时使用。用了就要自己处理：按 `devicePixelRatio` 设置画布尺寸；颜色从 `getComputedStyle` 读，并在 `<html>` 的 `data-theme` 变化时重绘（用 `MutationObserver`）；在 `<canvas>` 标签内放回退内容（一幅静态图或一句说明），空的 `<canvas>` 构建发 WARN。
+- 本节的图在统计里计入「图」，不计入「分步图」。
 
 ## 表格
 
@@ -211,4 +301,4 @@
 
 ## 构建负责的部分
 
-作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、内联的 CSS 与脚本。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
+作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、分步图帧上的 `data-step-last` 和它的控件、内联的 CSS 与脚本（带 `data-tr` 标记的 `<style>` 和 `<script>`）。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
