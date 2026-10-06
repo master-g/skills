@@ -39,6 +39,48 @@
     monospace;
   --font-math:
     "STIX Two Math", "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
+
+  /* ── 字号 ── 1rem = --text-root。正文、页边注、标题各一档，其余向这几档靠 */
+  --text-root: 15px;
+  --text-h1: 3.2rem; /* 书名 */
+  --text-h1-narrow: 2.4rem; /* 书名，窄屏 */
+  --text-h2: 2.2rem; /* 章题 */
+  --text-subtitle: 1.8rem; /* 副标题 */
+  --text-h3: 1.7rem; /* 节题、目录标题 */
+  --text-body: 1.4rem; /* 正文、列表、引文、块级公式 */
+  --text-abstract-title: 1.3rem; /* 「摘要」二字 */
+  --text-abstract: 1.25rem; /* 摘要正文 */
+  --text-secondary: 1.2rem; /* 表格、署名 */
+  --text-references: 1.15rem; /* 参考文献 */
+  --text-note: 1.1rem; /* 页边注、图注、脚注、表题、章号 */
+  --text-small: 1rem; /* 行内代码、边注编号 */
+  --text-code: 0.9rem; /* 代码块 */
+
+  /* ── 行高 ── */
+  --leading-body: 1.75; /* 正文：中文需要比西文（Tufte 原值 1.43）更松 */
+  --leading-caption: 1.6; /* 图注、脚注、参考文献 */
+  --leading-note: 1.5; /* 页边注、表格 */
+  --leading-code: 1.42;
+
+  /* ── 间距 ── */
+  --space-block: 1.4rem; /* 段落、表格、代码块、块级公式的上下间距 */
+  --space-section: 1rem; /* 节的上下留白 */
+  --space-chapter: 2rem; /* 章的上下留白 */
+
+  /* ── 版面 ── 都是比例，不带单位。版面是一个宽 --page 的盒子，正文栏从它的左沿起占 --col；
+     页边注挂在正文栏右侧，宽度和间隔按正文栏的宽度算 */
+  --col: 0.55; /* 正文栏占版面 */
+  --wide: 0.9; /* 通栏（fullwidth）占版面 */
+  --list-indent: 0.05; /* 列表缩进占版面；列表本身占 --col 减去它 */
+  --note-width: 0.5; /* 页边注宽度，占正文栏 */
+  --note-gap: 0.1; /* 正文栏与页边注的间隔，占正文栏 */
+  --page-max: 1400px; /* 版面最大宽度 */
+  --page-left: 0.875; /* 左起版式（1100px 以下）：版面占视口；其余留在左边 */
+  --page-center: 0.8; /* 居中版式（1100px 以上）：版面占视口 */
+  /* 居中版式里版面盒子实际占 --page 的比例：要盖住页边注的右沿，
+     即不小于 --col × (1 + --note-gap + --note-width)；更大会伸出视口，页面能左右滑动 */
+  --page-used: 0.875;
+  /* 断点写在媒体查询里，不能用变量：1100px 以上居中，760px 以下是手机版式 */
 }
 
 :root[data-theme="dark"] {
@@ -57,16 +99,16 @@
 }
 
 html {
-  font-size: 15px;
+  font-size: var(--text-root);
   background: var(--bg);
 }
 
 body {
-  width: 87.5%;
-  max-width: 1400px;
+  width: calc(var(--page-left) * 100%);
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding-left: 12.5%;
-  --k: 1; /* 按版面百分比定宽的栏的缩放系数，宽屏居中时大于 1 */
+  padding-left: calc((1 - var(--page-left)) * 100%);
+  --k: 1; /* 按版面比例定宽的栏的缩放系数，宽屏居中时大于 1 */
   font-family: var(--font-serif);
   font-synthesis-style: none;
   background: var(--bg);
@@ -76,15 +118,14 @@ body {
 }
 
 /* 宽屏：正文栏居中，页边注挂在它右侧。
-   左起版式里版面宽 --page，正文栏占 55%。居中时把正文栏的中线对到视口中线，版面的左沿随之右移；
-   右边多出来的一截是空的，会让整页可以左右滑动，所以版面只取 --page 的 87.5%，
-   并用 --k 把按版面百分比定宽的栏（正文、列表、图、代码、通栏）等比放大回原来的尺寸。 */
+   把正文栏的中线对到视口中线，版面的左沿随之右移。版面盒子只取 --page 的 --page-used，
+   不伸出视口；再用 --k 把按版面比例定宽的栏等比放大回原来的尺寸。 */
 @media (min-width: 1100px) {
   body {
-    --page: min(80%, 1400px);
-    --k: 1.142857; /* 1 / 0.875 */
-    width: calc(0.875 * var(--page));
-    margin-left: calc(50% - 0.275 * var(--page));
+    --page: min(calc(var(--page-center) * 100%), var(--page-max));
+    --k: calc(1 / var(--page-used));
+    width: calc(var(--page-used) * var(--page));
+    margin-left: calc(50% - var(--col) / 2 * var(--page));
     margin-right: 0;
     padding-left: 0;
   }
@@ -95,20 +136,20 @@ body {
 h1 {
   font-weight: 400;
   margin: 4rem 0 1.5rem;
-  font-size: 3.2rem;
+  font-size: var(--text-h1);
   line-height: 1.15;
 }
 h2 {
   font-style: italic;
   font-weight: 400;
   margin: 2.1rem 0 1.4rem;
-  font-size: 2.2rem;
+  font-size: var(--text-h2);
   line-height: 1.25;
 }
 h3 {
   font-style: italic;
   font-weight: 400;
-  font-size: 1.7rem;
+  font-size: var(--text-h3);
   margin: 2rem 0 1.4rem;
   line-height: 1.3;
 }
@@ -121,28 +162,28 @@ h3 code {
 p.subtitle {
   font-style: italic;
   margin: 1rem 0;
-  font-size: 1.8rem;
+  font-size: var(--text-subtitle);
   line-height: 1.3;
 }
 
 /* ── 正文栏 ────────────────────────────────────────────────────────── */
 
 article {
-  padding: 2rem 0;
+  padding: var(--space-chapter) 0;
 }
 section {
-  padding: 1rem 0;
+  padding: var(--space-section) 0;
 }
 
 p,
 dl,
 ol,
 ul {
-  font-size: 1.4rem;
-  line-height: 1.75;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
 p {
-  margin: 1.4rem 0;
+  margin: var(--space-block) 0;
   padding-right: 0;
   vertical-align: baseline;
 }
@@ -157,14 +198,14 @@ section > .table-wrapper,
 section > .math-display,
 .titlepage > p,
 .titlepage > .abstract {
-  width: calc(55% * var(--k));
+  width: calc(var(--col) * 100% * var(--k));
 }
 section > dl,
 section > ol,
 section > ul,
 .titlepage > nav.toc > ol {
-  width: calc(50% * var(--k));
-  padding-inline-start: calc(5% * var(--k));
+  width: calc((var(--col) - var(--list-indent)) * 100% * var(--k));
+  padding-inline-start: calc(var(--list-indent) * 100% * var(--k));
 }
 dt:not(:first-child),
 li:not(:first-child) {
@@ -174,7 +215,7 @@ li:not(:first-child) {
 hr {
   display: block;
   height: 1px;
-  width: calc(55% * var(--k));
+  width: calc(var(--col) * 100% * var(--k));
   border: 0;
   border-top: 1px solid var(--rule);
   margin: 1em 0;
@@ -208,16 +249,16 @@ span.newthought {
 /* ── 引文与题记 ────────────────────────────────────────────────────── */
 
 blockquote {
-  font-size: 1.4rem;
+  font-size: var(--text-body);
   margin-inline: 40px;
 }
 blockquote p {
-  width: calc(55% * var(--k));
+  width: calc(var(--col) * 100% * var(--k));
   margin-right: 40px;
 }
 blockquote footer {
-  width: calc(55% * var(--k));
-  font-size: 1.1rem;
+  width: calc(var(--col) * 100% * var(--k));
+  font-size: var(--text-note);
   text-align: right;
 }
 
@@ -241,7 +282,7 @@ div.epigraph > blockquote > footer > cite {
 
 /* 分节花：CME 原站的 ❧；字体栈避开 CJK 正文字体，否则字形由宋体回退渲染 */
 .asterism {
-  width: calc(55% * var(--k));
+  width: calc(var(--col) * 100% * var(--k));
   text-align: center;
   font-family:
     "Arial Unicode MS", "Apple Symbols", FreeSerif, OpenSymbol, "DejaVu Sans",
@@ -258,12 +299,12 @@ div.epigraph > blockquote > footer > cite {
 .marginnote {
   float: right;
   clear: right;
-  margin-right: -60%;
-  width: 50%;
+  margin-right: calc((var(--note-width) + var(--note-gap)) * -100%);
+  width: calc(var(--note-width) * 100%);
   margin-top: 0.3rem;
   margin-bottom: 0;
-  font-size: 1.1rem;
-  line-height: 1.5;
+  font-size: var(--text-note);
+  line-height: var(--leading-note);
   vertical-align: baseline;
   position: relative;
 }
@@ -278,13 +319,13 @@ div.epigraph > blockquote > footer > cite {
 }
 .sidenote-number::after {
   content: counter(sidenote-counter);
-  font-size: 1rem;
+  font-size: var(--text-small);
   top: -0.5rem;
   left: 0.1rem;
 }
 .sidenote::before {
   content: counter(sidenote-counter) " ";
-  font-size: 1rem;
+  font-size: var(--text-small);
   top: -0.5rem;
 }
 /* 译注标签：旁注开头的「译注」二字 */
@@ -338,7 +379,7 @@ figure {
   padding: 0;
   border: 0;
   font: inherit;
-  max-width: calc(55% * var(--k));
+  max-width: calc(var(--col) * 100% * var(--k));
   margin: 0 0 3em 0;
 }
 /* 页边图独占一行，图注排在图下；inline 时小图旁边会挤进图注文字 */
@@ -356,8 +397,8 @@ figcaption {
   float: right;
   clear: right;
   margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: var(--text-note);
+  line-height: var(--leading-caption);
   position: relative;
   max-width: calc(40% * var(--k));
 }
@@ -371,7 +412,7 @@ figure.fullwidth img {
   width: 100%;
 }
 .fullwidth {
-  max-width: min(100%, calc(90% * var(--k)));
+  max-width: min(100%, calc(var(--wide) * 100% * var(--k)));
   clear: both;
 }
 
@@ -385,8 +426,8 @@ ol.step-frames {
   gap: 1.8rem 2.4rem;
   margin: 0;
   padding-inline-start: 1.6em;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: var(--text-note);
+  line-height: var(--leading-caption);
 }
 ol.step-frames > li {
   margin: 0;
@@ -407,15 +448,15 @@ table.fullwidth {
 }
 table {
   border-collapse: collapse;
-  font-size: 1.2rem;
-  line-height: 1.5;
-  margin: 1.4rem 0;
+  font-size: var(--text-secondary);
+  line-height: var(--leading-note);
+  margin: var(--space-block) 0;
   font-variant-numeric: tabular-nums lining-nums;
 }
 table caption {
   caption-side: top;
   text-align: left;
-  font-size: 1.1rem;
+  font-size: var(--text-note);
   color: var(--muted);
   padding-bottom: 0.4rem;
 }
@@ -446,23 +487,23 @@ th.num {
 code,
 pre > code {
   font-family: var(--font-mono);
-  font-size: 1rem;
-  line-height: 1.42;
+  font-size: var(--text-small);
+  line-height: var(--leading-code);
   -webkit-text-size-adjust: 100%;
 }
 .sans > code {
-  font-size: 1.2rem;
+  font-size: var(--text-secondary);
 }
 .marginnote > code,
 .sidenote > code {
-  font-size: 1rem;
+  font-size: var(--text-small);
 }
 pre {
-  margin: 1.4rem 0;
+  margin: var(--space-block) 0;
 }
 pre > code {
-  font-size: 0.9rem;
-  width: calc(55% * var(--k)); /* 与正文栏同宽、左缘对齐 */
+  font-size: var(--text-code);
+  width: calc(var(--col) * 100% * var(--k)); /* 与正文栏同宽、左缘对齐 */
   padding: 0.8rem 1rem;
   box-sizing: border-box;
   background: var(--code-bg);
@@ -473,7 +514,7 @@ pre.fullwidth {
   max-width: none; /* 与普通代码块同一基准，左缘对齐 */
 }
 pre.fullwidth > code {
-  width: min(100%, calc(90% * var(--k)));
+  width: min(100%, calc(var(--wide) * 100% * var(--k)));
 }
 .shj-syn-cmnt {
   color: var(--syn-cmnt);
@@ -508,9 +549,9 @@ math {
   display: block;
   overflow-x: auto;
   overflow-y: hidden;
-  margin: 1.4rem 0;
+  margin: var(--space-block) 0;
   padding: 0.2rem 0;
-  font-size: 1.4rem;
+  font-size: var(--text-body);
 }
 .math-display > math {
   display: block math;
@@ -523,16 +564,16 @@ math {
   padding: 2rem 0 1rem;
 }
 .titlepage .byline {
-  font-size: 1.2rem;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .abstract {
-  font-size: 1.25rem;
-  line-height: 1.75;
+  font-size: var(--text-abstract);
+  line-height: var(--leading-body);
   margin: 2rem 0;
 }
 .abstract > h2 {
-  font-size: 1.3rem;
+  font-size: var(--text-abstract-title);
   font-style: normal;
   font-family: var(--font-sans);
   letter-spacing: 0.08em;
@@ -544,7 +585,7 @@ math {
 }
 
 nav.toc > h2 {
-  font-size: 1.7rem;
+  font-size: var(--text-h3);
 }
 nav.toc ol {
   list-style: none;
@@ -566,22 +607,22 @@ nav.toc .toc-number {
 .chapter-number {
   display: block;
   font-style: normal;
-  font-size: 1.1rem;
+  font-size: var(--text-note);
   letter-spacing: 0.12em;
   color: var(--muted);
   margin-bottom: 0.5rem;
 }
 
 section.footnotes {
-  font-size: 1.1rem;
+  font-size: var(--text-note);
   border-top: 1px solid var(--rule);
-  width: calc(55% * var(--k));
+  width: calc(var(--col) * 100% * var(--k));
   margin-top: 2rem;
 }
 section.footnotes > ol {
   width: auto;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: var(--text-note);
+  line-height: var(--leading-caption);
   list-style: none;
   padding-inline-start: 1.4em;
 }
@@ -605,13 +646,13 @@ a.fn-back {
 /* ── 习题与折叠答案 ────────────────────────────────────────────────── */
 
 details.answers {
-  width: calc(55% * var(--k));
-  margin: 1.4rem 0;
+  width: calc(var(--col) * 100% * var(--k));
+  margin: var(--space-block) 0;
 }
 details.answers > summary {
   cursor: pointer;
   font-style: italic;
-  font-size: 1.4rem;
+  font-size: var(--text-body);
   list-style: none;
 }
 details.answers > summary::-webkit-details-marker {
@@ -633,9 +674,9 @@ details.answers > ol {
 /* ── 参考文献 ──────────────────────────────────────────────────────── */
 
 section.references > ol {
-  width: calc(55% * var(--k));
-  font-size: 1.15rem;
-  line-height: 1.6;
+  width: calc(var(--col) * 100% * var(--k));
+  font-size: var(--text-references);
+  line-height: var(--leading-caption);
   padding-inline-start: 2.4em;
 }
 a.cite {
@@ -676,7 +717,7 @@ summary:focus-visible {
     padding-right: 8%;
   }
   h1 {
-    font-size: 2.4rem;
+    font-size: var(--text-h1-narrow);
   }
   hr,
   section > p,
