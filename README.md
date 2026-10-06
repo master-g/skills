@@ -41,7 +41,7 @@ npx skills add master-g/skills --skill '*' -g
 - `storm`: research and write citation-grounded articles using the STORM method.
 - `tufte-reader`: translate or organize papers and technical docs into a Tufte-style single-file Chinese reading edition with sidenotes, MathML formulas, and a light/dark toggle.
 - `url-to-kami`: extract a URL and typeset it with the Kami design system.
-- `wtf`: re-explain the previous message in clear, unambiguous Simplified Chinese.
+- `wtf`: **DEPRECATED** — rarely needed now that model prose is clearer by default; kept as `skills/deprecated/wtf/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `x-to-markdown`: convert X posts, threads, and articles to Markdown.
 
 ## License
