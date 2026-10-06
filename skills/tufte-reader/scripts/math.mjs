@@ -50,7 +50,7 @@ const render = (tex, display) => {
   const short = tex.length > 60 ? tex.slice(0, 60) + "…" : tex;
   if (/class="temml-error"|color:#b22222|merror/.test(out)) errors.push(short);
   // 渲染宽度约等于「可见字符数 × 10px」：去掉命令名、花括号、上下标符号后计数（2304.10557 实测校准）。
-  // 正文栏约 616px，块级公式单行超过约 55 个可见字符放不下。
+  // 正文栏 660px（33 字 × 20px），块级公式单行超过约 55 个可见字符放不下。
   if (display && Math.max(...tex.split(/\\\\/).map(visible)) > 55)
     warns.push(`块级公式过长，用 aligned 在 = 或 + 前断行：${short}`);
   // 行内 MathML 不会自动断行；超过约 25 个可见字符在手机上会撑宽页面，窄屏下改为可横向滚动

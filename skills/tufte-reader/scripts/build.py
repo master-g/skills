@@ -283,9 +283,9 @@ def build_toc(html, errors):
 
 
 # ── 宽代码块 ────────────────────────────────────────────────────────
-# 正文栏里的代码块约 68 列（1280px 下 0.9rem 等宽字）；按 black / PEP 8 排的 79 列代码放不下，
+# 正文栏宽 660px（33 字 × 20px），里面的代码块约 76 列（0.9rem 的 Menlo，两侧各留 1rem）；按 black / PEP 8 排的 79 列代码放不下，
 # 35/56 个块要横向滚动（annotated-transformer 实测）。超宽的块改成 fullwidth，占正文栏加页边。
-CODE_COLS = 68
+CODE_COLS = 76
 PRE_RE = re.compile(r'<pre(\s[^>]*)?>(\s*<code\b[^>]*>)(.*?)</code>', re.S)
 
 

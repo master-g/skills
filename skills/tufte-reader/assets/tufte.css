@@ -47,12 +47,12 @@
   --text-h2: 2.2rem; /* 章题 */
   --text-subtitle: 1.8rem; /* 副标题 */
   --text-h3: 1.7rem; /* 节题、目录标题 */
-  --text-body: 1.4rem; /* 正文、列表、引文、块级公式 */
+  --text-body: 20px; /* 正文、列表、引文、块级公式。栏宽按它的倍数算，所以用 px */
   --text-abstract-title: 1.3rem; /* 「摘要」二字 */
   --text-abstract: 1.25rem; /* 摘要正文 */
   --text-secondary: 1.2rem; /* 表格、署名 */
   --text-references: 1.15rem; /* 参考文献 */
-  --text-note: 1.1rem; /* 页边注、图注、脚注、表题、章号 */
+  --text-note: 16px; /* 页边注、图注、脚注、表题、章号 */
   --text-small: 1rem; /* 行内代码、边注编号 */
   --text-code: 0.9rem; /* 代码块 */
 
@@ -67,20 +67,22 @@
   --space-section: 1rem; /* 节的上下留白 */
   --space-chapter: 2rem; /* 章的上下留白 */
 
-  /* ── 版面 ── 都是比例，不带单位。版面是一个宽 --page 的盒子，正文栏从它的左沿起占 --col；
-     页边注挂在正文栏右侧，宽度和间隔按正文栏的宽度算 */
-  --col: 0.55; /* 正文栏占版面 */
-  --wide: 0.9; /* 通栏（fullwidth）占版面 */
-  --list-indent: 0.05; /* 列表缩进占版面；列表本身占 --col 减去它 */
-  --note-width: 0.5; /* 页边注宽度，占正文栏 */
-  --note-gap: 0.1; /* 正文栏与页边注的间隔，占正文栏 */
-  --page-max: 1400px; /* 版面最大宽度 */
-  --page-left: 0.875; /* 左起版式（1100px 以下）：版面占视口；其余留在左边 */
-  --page-center: 0.8; /* 居中版式（1100px 以上）：版面占视口 */
-  /* 居中版式里版面盒子实际占 --page 的比例：要盖住页边注的右沿，
-     即不小于 --col × (1 + --note-gap + --note-width)；更大会伸出视口，页面能左右滑动 */
-  --page-used: 0.875;
-  /* 断点写在媒体查询里，不能用变量：1100px 以上居中，760px 以下是手机版式 */
+  /* ── 版面 ── 按字数定宽：窗口变宽只增加两侧留白，每行字数不变 */
+  --measure-chars: 33; /* 正文每行字数 */
+  --note-chars: 16; /* 页边注每行字数 */
+  --measure: calc(var(--measure-chars) * var(--text-body)); /* 正文栏宽 */
+  --note-width: calc(var(--note-chars) * var(--text-note)); /* 页边注宽 */
+  --note-gap: calc(2.5 * var(--text-body)); /* 正文栏与页边注的间隔 */
+  --list-indent: calc(2.5 * var(--text-body)); /* 列表缩进 */
+  --quote-indent: 40px; /* 引文左右各缩进 */
+  --gutter: 2rem; /* 版面离视口边缘的最小距离 */
+  --page: calc(
+    var(--measure) + var(--note-gap) + var(--note-width)
+  ); /* 版面：正文栏 + 间隔 + 页边注 */
+  /* 正文栏的实际宽度：视口放不下整个版面时，页边注保持宽度，正文栏让出。
+     里面的 100% 在用到它的元素上才计算，所以只用在以版面为容器的元素上 */
+  --col: min(var(--measure), calc(100% - var(--note-gap) - var(--note-width)));
+  /* 断点写在媒体查询里，不能用变量：760px 以下是手机版式，页边注收进 ⊕ */
 }
 
 :root[data-theme="dark"] {
@@ -103,32 +105,22 @@ html {
   background: var(--bg);
 }
 
+/* 版面是一个宽 --page 的盒子，正文栏从它的左沿起。正文栏的中线对到视口中线；
+   右侧放不下页边注时整体左移，直到贴住左边距；再窄，版面随视口收窄，正文栏让出宽度。 */
 body {
-  width: calc(var(--page-left) * 100%);
-  max-width: var(--page-max);
-  margin: 0 auto;
-  padding-left: calc((1 - var(--page-left)) * 100%);
-  --k: 1; /* 按版面比例定宽的栏的缩放系数，宽屏居中时大于 1 */
+  width: min(var(--page), calc(100% - 2 * var(--gutter)));
+  margin: 0;
+  margin-left: clamp(
+    var(--gutter),
+    calc(50% - var(--measure) / 2),
+    max(var(--gutter), calc(100% - var(--page) - var(--gutter)))
+  );
   font-family: var(--font-serif);
   font-synthesis-style: none;
   background: var(--bg);
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   text-autospace: normal;
-}
-
-/* 宽屏：正文栏居中，页边注挂在它右侧。
-   把正文栏的中线对到视口中线，版面的左沿随之右移。版面盒子只取 --page 的 --page-used，
-   不伸出视口；再用 --k 把按版面比例定宽的栏等比放大回原来的尺寸。 */
-@media (min-width: 1100px) {
-  body {
-    --page: min(calc(var(--page-center) * 100%), var(--page-max));
-    --k: calc(1 / var(--page-used));
-    width: calc(var(--page-used) * var(--page));
-    margin-left: calc(50% - var(--col) / 2 * var(--page));
-    margin-right: 0;
-    padding-left: 0;
-  }
 }
 
 /* ── 标题 ──────────────────────────────────────────────────────────── */
@@ -198,14 +190,14 @@ section > .table-wrapper,
 section > .math-display,
 .titlepage > p,
 .titlepage > .abstract {
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
 }
 section > dl,
 section > ol,
 section > ul,
 .titlepage > nav.toc > ol {
-  width: calc((var(--col) - var(--list-indent)) * 100% * var(--k));
-  padding-inline-start: calc(var(--list-indent) * 100% * var(--k));
+  width: calc(var(--col) - var(--list-indent));
+  padding-inline-start: var(--list-indent);
 }
 dt:not(:first-child),
 li:not(:first-child) {
@@ -215,7 +207,7 @@ li:not(:first-child) {
 hr {
   display: block;
   height: 1px;
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
   border: 0;
   border-top: 1px solid var(--rule);
   margin: 1em 0;
@@ -250,14 +242,13 @@ span.newthought {
 
 blockquote {
   font-size: var(--text-body);
-  margin-inline: 40px;
+  margin-inline: var(--quote-indent);
 }
 blockquote p {
-  width: calc(var(--col) * 100% * var(--k));
-  margin-right: 40px;
+  width: calc(var(--col) - 2 * var(--quote-indent));
 }
 blockquote footer {
-  width: calc(var(--col) * 100% * var(--k));
+  width: calc(var(--col) - 2 * var(--quote-indent));
   font-size: var(--text-note);
   text-align: right;
 }
@@ -282,7 +273,7 @@ div.epigraph > blockquote > footer > cite {
 
 /* 分节花：CME 原站的 ❧；字体栈避开 CJK 正文字体，否则字形由宋体回退渲染 */
 .asterism {
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
   text-align: center;
   font-family:
     "Arial Unicode MS", "Apple Symbols", FreeSerif, OpenSymbol, "DejaVu Sans",
@@ -299,8 +290,8 @@ div.epigraph > blockquote > footer > cite {
 .marginnote {
   float: right;
   clear: right;
-  margin-right: calc((var(--note-width) + var(--note-gap)) * -100%);
-  width: calc(var(--note-width) * 100%);
+  margin-right: calc(-1 * (var(--note-width) + var(--note-gap)));
+  width: var(--note-width);
   margin-top: 0.3rem;
   margin-bottom: 0;
   font-size: var(--text-note);
@@ -338,8 +329,9 @@ div.epigraph > blockquote > footer > cite {
 }
 blockquote .sidenote,
 blockquote .marginnote {
-  margin-right: -82%;
-  min-width: 59%;
+  margin-right: calc(
+    -1 * (var(--note-width) + var(--note-gap) + var(--quote-indent))
+  );
   text-align: left;
 }
 
@@ -379,7 +371,7 @@ figure {
   padding: 0;
   border: 0;
   font: inherit;
-  max-width: calc(var(--col) * 100% * var(--k));
+  max-width: var(--col);
   margin: 0 0 3em 0;
 }
 /* 页边图独占一行，图注排在图下；inline 时小图旁边会挤进图注文字 */
@@ -400,19 +392,16 @@ figcaption {
   font-size: var(--text-note);
   line-height: var(--leading-caption);
   position: relative;
-  max-width: calc(40% * var(--k));
+  max-width: var(--note-width);
 }
 figure.fullwidth {
   display: flow-root; /* 收住右浮的图注，后文不绕排 */
-}
-figure.fullwidth figcaption {
-  margin-right: calc(24% * var(--k));
 }
 figure.fullwidth img {
   width: 100%;
 }
 .fullwidth {
-  max-width: min(100%, calc(var(--wide) * 100% * var(--k)));
+  max-width: 100%;
   clear: both;
 }
 
@@ -503,7 +492,7 @@ pre {
 }
 pre > code {
   font-size: var(--text-code);
-  width: calc(var(--col) * 100% * var(--k)); /* 与正文栏同宽、左缘对齐 */
+  width: var(--col); /* 与正文栏同宽、左缘对齐 */
   padding: 0.8rem 1rem;
   box-sizing: border-box;
   background: var(--code-bg);
@@ -514,7 +503,7 @@ pre.fullwidth {
   max-width: none; /* 与普通代码块同一基准，左缘对齐 */
 }
 pre.fullwidth > code {
-  width: min(100%, calc(var(--wide) * 100% * var(--k)));
+  width: 100%;
 }
 .shj-syn-cmnt {
   color: var(--syn-cmnt);
@@ -616,7 +605,7 @@ nav.toc .toc-number {
 section.footnotes {
   font-size: var(--text-note);
   border-top: 1px solid var(--rule);
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
   margin-top: 2rem;
 }
 section.footnotes > ol {
@@ -646,7 +635,7 @@ a.fn-back {
 /* ── 习题与折叠答案 ────────────────────────────────────────────────── */
 
 details.answers {
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
   margin: var(--space-block) 0;
 }
 details.answers > summary {
@@ -674,7 +663,7 @@ details.answers > ol {
 /* ── 参考文献 ──────────────────────────────────────────────────────── */
 
 section.references > ol {
-  width: calc(var(--col) * 100% * var(--k));
+  width: var(--col);
   font-size: var(--text-references);
   line-height: var(--leading-caption);
   padding-inline-start: 2.4em;
@@ -713,6 +702,7 @@ summary:focus-visible {
 @media (max-width: 760px) {
   body {
     width: 84%;
+    margin-left: 0;
     padding-left: 8%;
     padding-right: 8%;
   }
@@ -740,7 +730,8 @@ summary:focus-visible {
   section > ol,
   section > ul,
   .titlepage > nav.toc > ol {
-    width: 90%;
+    width: auto;
+    padding-inline-start: 1.6em;
   }
   figure {
     max-width: 90%;
@@ -757,9 +748,7 @@ summary:focus-visible {
   figure .scroll-x > img {
     max-width: none;
   }
-  figcaption,
-  figure.fullwidth figcaption {
-    margin-right: 0;
+  figcaption {
     max-width: none;
   }
   blockquote {

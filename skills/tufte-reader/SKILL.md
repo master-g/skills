@@ -64,7 +64,7 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 ## 修改本技能
 
-调字号、行高、间距和栏宽，改 `assets/tufte.css` 开头 `:root` 里的 token（`--text-*`、`--leading-*`、`--space-*`、`--col`、`--note-width` 等），各条规则只引用它们，不在规则里写新的数值。
+调字号、行高、间距和栏宽，改 `assets/tufte.css` 开头 `:root` 里的 token（`--text-*`、`--leading-*`、`--space-*`，以及版面的 `--measure-chars`、`--note-chars` 等），各条规则只引用它们，不在规则里写新的数值。
 
 改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。
 
