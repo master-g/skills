@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # tufte-reader
 
-把材料做成一份**读本**：单个离线 HTML 文件，正文栏加页边注释的 Tufte 版式，书的架构（扉页、目录、章、章末出处）。公式在构建时编译成 MathML。
+把材料做成一份**读本**：单个 HTML 文件，正文栏加页边注释的 Tufte 版式，书的架构（扉页、目录、章、章末出处）。公式在构建时编译成 MathML。内容、样式和脚本全部内联，离线可读；只有字体（西文 ET Book、中文思源宋体）联网时从 jsDelivr 加载，离线或加载失败时回退系统字体。
 
 用户调用即表示要读本。材料缺失、无法取得时才提问。
 
@@ -50,7 +50,7 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 构建需要 node，用来编译公式。修掉所有 ERROR，逐条判断 WARN。
 
-把构建输出的「统计」行和结构清单对照，每一处差异都要说得出原因。例如：原文的页边图计入「页边图」而不是「图」；原文第四级标题改成了 `newthought`，所以 h3 变少；原作者脚注按分流规则分成了边注和章末脚注，两者合计应等于原脚注数，另加译注条数；分步图同时计入「图」和「分步图」，「帧」是各分步图的步数之和。
+把构建输出的「统计」行和结构清单对照，每一处差异都要说得出原因。例如：原文的页边图计入「页边图」而不是「图」；原文第四级标题改成了 `newthought`，所以 h3 变少；原作者脚注按分流规则分成了边注和章末脚注，两者合计应等于原脚注数，另加译注条数。
 
 「行内公式」只统计编译成功的。正文里留下成对的 `$` 时构建报 ERROR 并给出上下文，按提示改完再构建。
 
@@ -64,6 +64,6 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 ## 修改本技能
 
-改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。改了 `assets/steps.js` 或 `interactive.css` 时，另外看三种情况：在分步图上点到中间一步；删掉页面里所有 `<script>` 之后（图停在最后一步，说明全部列出，带控件的图不显示控件）；打印预览。
+改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。
 
 无头 Chrome 的窗口最窄 500px，`--window-size=390,…` 截出的是按 500px 排版、右侧被裁掉的图。看 390px 要用能设置视口的浏览器工具，或者写一个只含 `<iframe src="specimen.html" width="390" height="844">` 的外层页面，对外层页面截图。

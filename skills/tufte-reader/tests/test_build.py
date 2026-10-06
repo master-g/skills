@@ -36,13 +36,6 @@ def run(html, files=None):
     return rc, page.read_text(encoding="utf-8"), out.getvalue()
 
 
-def steps_figure(frames=("1-", "2", "2-3"), caps=3):
-    groups = "".join(f'<g data-step="{f}"><rect width="5" height="5" /></g>' for f in frames)
-    return ('<figure class="steps"><span class="marginnote">图 1　题</span>'
-            f'<svg viewBox="0 0 10 10" width="10" role="img" aria-label="图">{groups}</svg>'
-            f'<ol class="step-captions">{"<li>说明。</li>" * caps}</ol></figure>')
-
-
 class BuildTest(unittest.TestCase):
     def test_notes_footnotes_toc_nav(self):
         rc, html, out = run(PAGE.replace("BODY", (
@@ -55,6 +48,14 @@ class BuildTest(unittest.TestCase):
         self.assertIn('href="#fn-one-2">†</a>', html)
         self.assertIn('<nav class="toc" id="toc"', html)
         self.assertIn('<a href="#two">第二章</a>', html)
+        # 网络字体的样式表由构建注入，不算作者写的外链
+        self.assertEqual(html.count('<link data-tr="font" rel="stylesheet" href="https://cdn.jsdelivr.net/'), 2)
+
+    def test_author_external_stylesheet_is_error(self):
+        rc, _, out = run(PAGE.replace("<!--TR:CSS-->", '<link rel="stylesheet" href="https://example.org/a.css"><!--TR:CSS-->')
+                         .replace("BODY", "<p>正文。</p>"))
+        self.assertEqual(rc, 1)
+        self.assertIn("外链脚本或样式", out)
 
     def test_rebuild_is_stable(self):
         _, first, _ = run(PAGE.replace("BODY", '<p>甲<span class="sidenote">注</span><span class="footnote">脚</span></p>'))
@@ -147,74 +148,8 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 3  页边图 0", out)
-        self.assertIn("边注 2  旁注 6  脚注 2  块级公式 3  行内公式 83  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 8)
-        self.assertIn('<script data-tr="steps">', html)
-        self.assertIn('<style data-tr="fig">', html)
-
-    def test_steps_figure(self):
-        rc, first, out = run(PAGE.replace("BODY", steps_figure()))
-        self.assertEqual(rc, 0, out)
-        self.assertIn("分步图 1  帧 3", out)
-        self.assertEqual(first.count('<script data-tr="steps">'), 1)
-        self.assertEqual(first.count('<style data-tr="fig">'), 1)
-        # 没有脚本和打印时显示最后一步：只有第 3 步可见的帧带标记
-        self.assertIn('<g data-step="1-" data-step-last>', first)
-        self.assertIn('<g data-step="2"><', first)
-        self.assertIn('<g data-step="2-3" data-step-last>', first)
-        rc, second, out = run(first)
-        self.assertEqual(rc, 0, out)
-        self.assertEqual(first, second)
-        # 改掉帧之后重新构建，过期的标记要撤掉
-        rc, third, out = run(second.replace('data-step="2-3" data-step-last', 'data-step="2"').replace(
-            "</svg>", '<g data-step="3"><circle r="1" /></g></svg>'))
-        self.assertEqual(rc, 0, out)
-        self.assertEqual(third.count(" data-step-last>"), 2)
-        self.assertNotIn('data-step="2" data-step-last', third)
-
-    def test_page_without_steps_gets_no_extra_assets(self):
-        code = '<pre><code class="language-html">&lt;figure class="steps"&gt;&lt;div class="controls"&gt;</code></pre>'
-        rc, html, out = run(PAGE.replace("BODY", "<p>正文。</p>" + code))
-        self.assertEqual(rc, 0, out)
-        self.assertNotIn('data-tr="steps"', html)
-        self.assertNotIn('data-tr="fig"', html)
-        self.assertIn("分步图 0  帧 0", out)
-        # 去掉分步图后重新构建，脚本和样式一并撤掉
-        _, built, _ = run(PAGE.replace("BODY", steps_figure()))
-        start = built.index('<figure class="steps">')
-        rc, html, out = run(built[:start] + "<p>正文。</p>" + built[built.index("</figure>") + 9:])
-        self.assertEqual(rc, 0, out)
-        self.assertNotIn('data-tr="steps"', html)
-        self.assertNotIn('data-tr="fig"', html)
-
-    def test_steps_errors(self):
-        cases = [
-            (steps_figure(frames=("1", "2", "4"), caps=4), "缺第 3 步"),
-            (steps_figure(caps=2), "有 3 步，说明却是 2 条"),
-            (steps_figure(frames=()), "里没有帧"),
-            (steps_figure(frames=("1", "3-2", "3")), "写法不对"),
-            (steps_figure().replace(' class="step-captions"', ""), "缺 <ol class=\"step-captions\">"),
-        ]
-        for body, message in cases:
-            rc, _, out = run(PAGE.replace("BODY", body))
-            self.assertEqual(rc, 1, out)
-            self.assertIn(message, out)
-
-    def test_author_script(self):
-        fig = ('<figure><svg viewBox="0 0 10 10" width="10" role="img" aria-label="图"><rect width="5" height="5" /></svg>'
-               '<div class="controls" hidden><input type="range" /><output>1</output></div><script>SCRIPT</script></figure>'
-               '<pre><code class="language-js">fetch("https://example.org")</code></pre>')
-        ok = 'document.createElementNS("http://www.w3.org/2000/svg", "rect");'
-        rc, html, out = run(PAGE.replace("BODY", fig.replace("SCRIPT", ok)))
-        self.assertEqual(rc, 0, out)
-        self.assertIn(ok, html)
-        self.assertIn('<style data-tr="fig">', html)
-        self.assertNotIn('data-tr="steps"', html)
-        for bad in ('fetch("data.json")', "new XMLHttpRequest()", 'import("./m.js")', 'var u = "https://example.org/x.js";'):
-            rc, _, out = run(PAGE.replace("BODY", fig.replace("SCRIPT", bad)))
-            self.assertEqual(rc, 1, bad)
-            self.assertIn("作者脚本里出现", out)
+        self.assertIn("边注 2  旁注 4  脚注 2  块级公式 3  行内公式 70", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 6)
 
 
 if __name__ == "__main__":
