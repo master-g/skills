@@ -58,6 +58,10 @@
   --text-small: 1rem; /* 行内代码、边注编号 */
   --text-code: 0.9rem; /* 代码块 */
 
+  /* ── 字重 ── 正文 400。粗体用 600：思源宋体和 EB Garamond 的 700 在手机高分屏上与正文反差过大。
+     改这里要同时改 build.py 里 FONT_CSS 加载的字重 */
+  --weight-bold: 600;
+
   /* ── 行高 ── */
   --leading-body: 1.75; /* 正文：中文需要比西文（Tufte 原值 1.43）更松 */
   --leading-caption: 1.6; /* 图注、脚注、参考文献 */
@@ -218,15 +222,15 @@ a:visited {
   text-decoration-thickness: 0.05em;
 }
 
-strong {
-  font-weight: 700;
+strong,
+b {
+  font-weight: var(--weight-bold);
 }
 
 /* 段首小标题：Tufte 原版是 small-caps 加 1.2em，中文没有小型大写，只剩字号突变，
-   看起来像排版故障。宋体 Bold 笔画细，深色主题下与正文几乎分不开；
-   用最粗一档（macOS 宋体为 Black，其他系统落到可用的最粗字重）加略大字号，同行接正文 */
+   看起来像排版故障。改用粗体加略大字号，同行接正文 */
 span.newthought {
-  font-weight: 900;
+  font-weight: var(--weight-bold);
   font-size: 1.1em;
 }
 

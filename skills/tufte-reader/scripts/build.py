@@ -35,9 +35,9 @@ MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
 CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
 CSS_TAG_RE = re.compile(r'<style data-tr="css">.*?</style>|<link data-tr="font"[^>]*>', re.S)
 # 网络字体：西文 EB Garamond、中文 Noto Serif SC，都是按 unicode-range 分片的样式表，不阻塞首绘；
-# 离线或加载失败时回退 tufte.css 里的系统字体
+# 离线或加载失败时回退 tufte.css 里的系统字体。粗体加载 600，与 tufte.css 的 --weight-bold 一致
 FONT_CSS = [f"https://cdn.jsdelivr.net/npm/@fontsource/{name}@5.3.0/{w}.css"
-            for name, weights in (("eb-garamond", ("400", "400-italic", "700")), ("noto-serif-sc", ("400", "700")))
+            for name, weights in (("eb-garamond", ("400", "400-italic", "600")), ("noto-serif-sc", ("400", "600")))
             for w in weights]
 FONT_LINKS = "".join(
     f'<link data-tr="font" rel="stylesheet" href="{u}" media="print" onload="this.media=\'all\'">' for u in FONT_CSS)
