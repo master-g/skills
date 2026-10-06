@@ -34,8 +34,11 @@ MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
 
 CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
 CSS_TAG_RE = re.compile(r'<style data-tr="css">.*?</style>|<link data-tr="font"[^>]*>', re.S)
-# 中文网络字体：按 unicode-range 分片的样式表，不阻塞首绘；离线或加载失败时回退 tufte.css 里的系统字体
-FONT_CSS = [f"https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/{w}.css" for w in (400, 700)]
+# 网络字体：西文 EB Garamond、中文 Noto Serif SC，都是按 unicode-range 分片的样式表，不阻塞首绘；
+# 离线或加载失败时回退 tufte.css 里的系统字体
+FONT_CSS = [f"https://cdn.jsdelivr.net/npm/@fontsource/{name}@5.3.0/{w}.css"
+            for name, weights in (("eb-garamond", ("400", "400-italic", "700")), ("noto-serif-sc", ("400", "700")))
+            for w in weights]
 FONT_LINKS = "".join(
     f'<link data-tr="font" rel="stylesheet" href="{u}" media="print" onload="this.media=\'all\'">' for u in FONT_CSS)
 JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl)">.*?</script>', re.S)
@@ -283,7 +286,7 @@ def build_toc(html, errors):
 
 
 # ── 宽代码块 ────────────────────────────────────────────────────────
-# 正文栏宽 660px（33 字 × 20px），里面的代码块约 76 列（0.9rem 的 Menlo，两侧各留 1rem）；按 black / PEP 8 排的 79 列代码放不下，
+# 正文栏宽随窗口变，1280 宽的窗口里是 616px，里面的代码块约 76 列（0.9rem 的 Menlo，两侧各留 1rem）；按 black / PEP 8 排的 79 列代码放不下，
 # 35/56 个块要横向滚动（annotated-transformer 实测）。超宽的块改成 fullwidth，占正文栏加页边。
 CODE_COLS = 76
 PRE_RE = re.compile(r'<pre(\s[^>]*)?>(\s*<code\b[^>]*>)(.*?)</code>', re.S)

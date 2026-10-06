@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # tufte-reader
 
-把材料做成一份**读本**：单个 HTML 文件，正文栏加页边注释的 Tufte 版式，书的架构（扉页、目录、章、章末出处）。公式在构建时编译成 MathML。内容、样式和脚本全部内联，离线可读；只有字体（西文 ET Book、中文思源宋体）联网时从 jsDelivr 加载，离线或加载失败时回退系统字体。
+把材料做成一份**读本**：单个 HTML 文件，正文栏加页边注释的 Tufte 版式，书的架构（扉页、目录、章、章末出处）。公式在构建时编译成 MathML。内容、样式和脚本全部内联，离线可读；只有字体（西文 EB Garamond、中文思源宋体）联网时从 jsDelivr 加载，离线或加载失败时回退系统字体。
 
 用户调用即表示要读本。材料缺失、无法取得时才提问。
 
@@ -64,7 +64,7 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 ## 修改本技能
 
-调字号、行高、间距和栏宽，改 `assets/tufte.css` 开头 `:root` 里的 token（`--text-*`、`--leading-*`、`--space-*`，以及版面的 `--measure-chars`、`--note-chars` 等），各条规则只引用它们，不在规则里写新的数值。
+调字号、行高、间距和栏宽，改 `assets/tufte.css` 开头 `:root` 里的 token（`--text-*`、`--leading-*`、`--space-*`，以及版面的 `--sheet-*`、`--col`、`--note-width` 等），各条规则只引用它们，不在规则里写新的数值。
 
 改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。
 

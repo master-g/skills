@@ -25,11 +25,11 @@
   --syn-func: #1f3f66;
   color-scheme: light;
 
-  /* 排在最前的 ET Book 和 Noto Serif SC 是网络字体（见文件末尾和构建注入的 <link>），
+  /* 排在最前的 EB Garamond 和 Noto Serif SC 是网络字体（样式表由构建注入 <link>），
      离线或加载失败时依次回退到后面的系统字体 */
   --font-serif:
-    "ET Book", Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua",
-    Georgia, "Noto Serif SC", "Songti SC", "Noto Serif CJK SC",
+    "EB Garamond", Palatino, "Palatino Linotype", "Palatino LT STD",
+    "Book Antiqua", Georgia, "Noto Serif SC", "Songti SC", "Noto Serif CJK SC",
     "Source Han Serif SC", "STSong", SimSun, serif;
   --font-sans:
     "Gill Sans", "Gill Sans MT", Calibri, "PingFang SC", "Hiragino Sans GB",
@@ -47,7 +47,7 @@
   --text-h2: 2.2rem; /* 章题 */
   --text-subtitle: 1.8rem; /* 副标题 */
   --text-h3: 1.7rem; /* 节题、目录标题 */
-  --text-body: 20px; /* 正文、列表、引文、块级公式。栏宽按它的倍数算，所以用 px */
+  --text-body: 20px; /* 正文、列表、引文、块级公式 */
   --text-abstract-title: 1.3rem; /* 「摘要」二字 */
   --text-abstract: 1.25rem; /* 摘要正文 */
   --text-secondary: 1.2rem; /* 表格、署名 */
@@ -67,21 +67,20 @@
   --space-section: 1rem; /* 节的上下留白 */
   --space-chapter: 2rem; /* 章的上下留白 */
 
-  /* ── 版面 ── 按字数定宽：窗口变宽只增加两侧留白，每行字数不变 */
-  --measure-chars: 33; /* 正文每行字数 */
-  --note-chars: 16; /* 页边注每行字数 */
-  --measure: calc(var(--measure-chars) * var(--text-body)); /* 正文栏宽 */
-  --note-width: calc(var(--note-chars) * var(--text-note)); /* 页边注宽 */
-  --note-gap: calc(2.5 * var(--text-body)); /* 正文栏与页边注的间隔 */
+  /* ── 版面 ── 沿用 Tufte CSS 的比例：纸面随窗口伸缩，到 --sheet-max 为止；
+     正文栏、间隔、页边注各占纸面的固定份额，所以每行字数随窗口宽度变（1280 约 31 字，1600 以上 38 字） */
+  --sheet-max: 1400px; /* 纸面最宽 */
+  --sheet-share: 87.5vw; /* 纸面占窗口的宽度 */
+  --sheet-inset: 12.5vw; /* 纸面左侧的留白；纸面连同这段留白在窗口里居中 */
+  --sheet: min(var(--sheet-max), var(--sheet-share));
+  --col: calc(0.55 * var(--sheet)); /* 正文栏宽 */
+  --note-gap: calc(0.055 * var(--sheet)); /* 正文栏与页边注的间隔 */
+  --note-width: calc(0.275 * var(--sheet)); /* 页边注宽，正文栏的一半 */
+  --page: calc(
+    var(--col) + var(--note-gap) + var(--note-width)
+  ); /* 版面：正文栏 + 间隔 + 页边注，通栏元素占满它 */
   --list-indent: calc(2.5 * var(--text-body)); /* 列表缩进 */
   --quote-indent: 40px; /* 引文左右各缩进 */
-  --gutter: 2rem; /* 版面离视口边缘的最小距离 */
-  --page: calc(
-    var(--measure) + var(--note-gap) + var(--note-width)
-  ); /* 版面：正文栏 + 间隔 + 页边注 */
-  /* 正文栏的实际宽度：视口放不下整个版面时，页边注保持宽度，正文栏让出。
-     里面的 100% 在用到它的元素上才计算，所以只用在以版面为容器的元素上 */
-  --col: min(var(--measure), calc(100% - var(--note-gap) - var(--note-width)));
   /* 断点写在媒体查询里，不能用变量：760px 以下是手机版式，页边注收进 ⊕ */
 }
 
@@ -105,21 +104,16 @@ html {
   background: var(--bg);
 }
 
-/* 版面是一个宽 --page 的盒子，正文栏从它的左沿起。正文栏的中线对到视口中线；
-   右侧放不下页边注时整体左移，直到贴住左边距；再窄，版面随视口收窄，正文栏让出宽度。 */
+/* 版面是一个宽 --page 的盒子，正文栏从它的左沿起，页边注挂在正文栏右侧。
+   左沿的位置照 Tufte CSS：纸面加左侧留白在窗口里居中，正文因此落在中线偏左。 */
 body {
-  width: min(var(--page), calc(100% - 2 * var(--gutter)));
+  max-width: var(--page);
   margin: 0;
-  margin-left: clamp(
-    var(--gutter),
-    calc(50% - var(--measure) / 2),
-    max(var(--gutter), calc(100% - var(--page) - var(--gutter)))
-  );
+  margin-left: calc(50vw - var(--sheet) / 2 + var(--sheet-inset) / 2);
   font-family: var(--font-serif);
   font-synthesis-style: none;
   background: var(--bg);
   color: var(--fg);
-  -webkit-font-smoothing: antialiased;
   text-autospace: normal;
 }
 
@@ -702,6 +696,7 @@ summary:focus-visible {
 @media (max-width: 760px) {
   body {
     width: 84%;
+    max-width: none;
     margin-left: 0;
     padding-left: 8%;
     padding-right: 8%;
@@ -806,34 +801,4 @@ summary:focus-visible {
   .theme-toggle {
     display: none;
   }
-}
-
-/* ── 网络字体 ──────────────────────────────────────────────────────────
-   西文 ET Book（Tufte CSS 自带，MIT），从 jsDelivr 取；中文 Noto Serif SC 由构建注入 <link>，
-   按 unicode-range 分片，只下载页面用到的字。两者都不可用时回退系统字体，页面照常可读。 */
-@font-face {
-  font-family: "ET Book";
-  src:
-    local("ET Book"),
-    url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@1.8.0/et-book/et-book-roman-line-figures/et-book-roman-line-figures.woff")
-      format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "ET Book";
-  src: url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@1.8.0/et-book/et-book-display-italic-old-style-figures/et-book-display-italic-old-style-figures.woff")
-    format("woff");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "ET Book";
-  src: url("https://cdn.jsdelivr.net/gh/edwardtufte/tufte-css@1.8.0/et-book/et-book-bold-line-figures/et-book-bold-line-figures.woff")
-    format("woff");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
 }
