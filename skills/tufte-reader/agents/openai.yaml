@@ -1,5 +1,5 @@
 interface:
   display_name: "tufte-reader"
-  short_description: "把论文与技术文档做成 Tufte 版式的中文读本"
+  short_description: "把论文与技术文档译成、整理成或撰写成 Tufte 版式的中文读本"
 policy:
   allow_implicit_invocation: false

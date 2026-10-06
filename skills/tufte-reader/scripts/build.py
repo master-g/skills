@@ -5,7 +5,7 @@
 CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处理。
 
 合成：
-  1. LaTeX → MathML（node + vendor 的 Temml）
+  1. LaTeX → MathML（node + vendor 的 Temml）；公式与紧邻的全角标点之间禁止断行
   2. <span class="sidenote|marginnote"> 补全 label + checkbox
   3. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
   4. 填 <nav class="toc">
@@ -36,7 +36,7 @@ JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl)">.*?</script>', re.S)
 
 SIZE_WARN = 5 * 1024 * 1024
 CJK = r"\u3400-\u4dbf\u4e00-\u9fff"
-CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style|math)\b.*?</\1\s*>", re.S | re.I)
+CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style|math|svg)\b.*?</\1\s*>", re.S | re.I)
 
 CODE_LANG_RE = re.compile(r'<code[^>]*\bclass="[^"]*\blanguage-([\w+-]+)')
 HL_ALIASES = {
@@ -52,8 +52,9 @@ BLOCK_MATH_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)"
 CJK_RE = re.compile(r"[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]")
 
 
-def single_dollar_spans(text):
-    """与 math.mjs 同一套扫描规则。"""
+def single_dollar_spans(text, allow_cjk=False):
+    """与 math.mjs 同一套扫描规则：公式内部可以换行，不能跨越标签。
+    allow_cjk 只给构建后的残留检查用：含中文的 $…$ 不会被编译，但要报出来。"""
     i, n = 0, len(text)
     while i < n:
         i = text.find("$", i)
@@ -68,8 +69,8 @@ def single_dollar_spans(text):
         if j < 0:
             return
         inner = text[i + 1 : j]
-        ok = "\n" not in inner and not (j + 1 < n and text[j + 1].isdigit()) \
-            and not CJK_RE.search(re.sub(r"\\text\{[^}]*\}", "", inner))
+        ok = "<" not in inner and not (j + 1 < n and text[j + 1].isdigit()) \
+            and (allow_cjk or not CJK_RE.search(re.sub(r"\\text\{[^}]*\}", "", inner)))
         if ok:
             yield i, j + 1
             i = j + 1
@@ -80,6 +81,15 @@ def single_dollar_spans(text):
 def has_math_source(html):
     text = CODE_ISLAND_RE.sub("", html)
     return bool(BLOCK_MATH_RE.search(text)) or any(True for _ in single_dollar_spans(text))
+
+
+def leftover_dollars(html):
+    """成品正文里仍然成对的 $：没被编译的公式。逐个文本片段扫描，不跨标签。"""
+    found = []
+    for piece in re.split(r"<[^>]+>", CODE_ISLAND_RE.sub("<i>", html)):
+        for a, b in single_dollar_spans(piece, allow_cjk=True):
+            found.append(" ".join(piece[max(0, a - 12) : b + 12].split()))
+    return found
 
 
 def compile_math(page, errors, warns):
@@ -102,6 +112,23 @@ def compile_math(page, errors, warns):
             print(line)
 
 
+# 浏览器把行内 <math> 当成一个整块，块的前后总能断行，于是「$V$：」的冒号会落到下一行行首
+# （Chrome 实测，U+2060 也拦不住）。把公式连同紧邻的全角标点包进不换行的 span。
+# 长公式（math-inline-long）不包：窄屏下它占满一行，再粘一个标点会撑出版心。
+MATH_PUNCT_RE = re.compile(
+    r'(<span class="math-nobr">|<span class="math-inline-long">)?'
+    r"([（「『《〈【]?)(<math\b(?![^>]*\bdisplay=)[^>]*>.*?</math>)([，。；：？！、）」』》〉】]?)", re.S)
+
+
+def glue_math_punctuation(html):
+    def repl(m):
+        if m.group(1) or not (m.group(2) or m.group(4)):
+            return m.group(0)
+        return f'<span class="math-nobr">{m.group(2)}{m.group(3)}{m.group(4)}</span>'
+
+    return MATH_PUNCT_RE.sub(repl, html)
+
+
 # ── 平衡扫描：取出一个元素的完整外层 HTML ──────────────────────────────
 def element_end(html, start, tag):
     """start 指向 <tag 的 '<'，返回对应闭合标签之后的位置。"""
@@ -115,7 +142,8 @@ def element_end(html, start, tag):
 
 
 # ── 边注 ────────────────────────────────────────────────────────────────
-NOTE_OPEN_RE = re.compile(r'<span class="(sidenote|marginnote)">')
+# 开标签里允许换行：格式化工具会把 <span class="…"> 折成几行
+NOTE_OPEN_RE = re.compile(r'<span\s+class="(sidenote|marginnote)"\s*>')
 TOGGLE_TAIL_RE = re.compile(r'class="margin-toggle"\s*/?>\s*$')
 
 
@@ -153,7 +181,8 @@ def expand_notes(html):
 
 # ── 章、脚注、目录 ────────────────────────────────────────────
 CHAPTER_RE = re.compile(r'<article\b[^>]*\bclass="[^"]*\bchapter\b[^"]*"[^>]*>', re.I)
-FOOTNOTE_OPEN_RE = re.compile(r'<span class="footnote">')
+FOOTNOTE_OPEN_RE = re.compile(r'<span\s+class="footnote"\s*>')
+CHAPTER_NUMBER_RE = re.compile(r'<span\s+class="chapter-number"\s*>(.*?)</span\s*>', re.S)
 # 章末脚注用符号，与边注的数字编号区分开；超出后退回数字
 FN_MARKS = ["*", "†", "‡", "§", "‖", "¶"]
 
@@ -169,9 +198,9 @@ def chapters(html):
         num, title = "", ""
         if h2:
             inner = h2.group(1)
-            nm = re.search(r'<span class="chapter-number">(.*?)</span>', inner, re.S)
+            nm = CHAPTER_NUMBER_RE.search(inner)
             num = nm.group(1).strip() if nm else ""
-            title = re.sub(r'<span class="chapter-number">.*?</span>', "", inner, flags=re.S).strip()
+            title = CHAPTER_NUMBER_RE.sub("", inner).strip()
         found.append((m.start(), end, cid.group(1) if cid else None, num, title))
     return found
 
@@ -193,7 +222,7 @@ def place_footnotes(html, errors):
             fend = element_end(body, m.start(), "span")
             n += 1
             mark = FN_MARKS[n - 1] if n <= len(FN_MARKS) else str(n)
-            content = body[m.end() : fend - len("</span>")].strip()
+            content = re.sub(r"</span\s*>$", "", body[m.end() : fend]).strip()
             out.append(body[pos : m.start()])
             out.append(f'<a class="fn-ref" id="fnref-{cid}-{n}" href="#fn-{cid}-{n}">{mark}</a>')
             items.append(
@@ -376,6 +405,8 @@ class Checker(HTMLParser):
         self.errors, self.text = [], []
         self.deep_heading = []
         self.external = []
+        self.after_toggle = False  # 上一个标签是不是边注开关的 checkbox
+        self.raw_notes = self.raw_footnotes = 0
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -402,13 +433,17 @@ class Checker(HTMLParser):
             self.stats["脚注"] += 1
         if tag == "math":
             self.stats["块级公式" if a.get("display") == "block" else "行内公式"] += 1
+        if tag == "span" and "footnote" in cls:
+            self.raw_footnotes += 1
         if tag == "span" and ("sidenote" in cls or "marginnote" in cls):
             self.stats["边注" if "sidenote" in cls else "旁注"] += 1
+            self.raw_notes += not self.after_toggle
             host = next((t for t in reversed(self.stack) if t in NOTE_HOSTS | BLOCK_BREAKERS), None)
             if host not in NOTE_HOSTS:
                 self.errors.append(f"{'边注' if 'sidenote' in cls else '旁注'}不在 <p>/<figure>/<li> 里（直接挂在 <{host}> 下），页边定位会错位")
         if tag == "img" and any("marginnote" in c for c in self.classes) and "figure" not in self.stack:
             self.stats["页边图"] += 1
+        self.after_toggle = tag == "input" and "margin-toggle" in cls
         if tag not in VOID:
             self.stack.append(tag)
             self.classes.append(cls)
@@ -421,6 +456,8 @@ class Checker(HTMLParser):
                     break
 
     def handle_data(self, data):
+        if data.strip():
+            self.after_toggle = False
         if not any(t in ("script", "style", "pre", "code", "math") for t in self.stack):
             self.text.append(data)
 
@@ -441,14 +478,22 @@ def check(html, errors, warns):
         errors.append(f"出现 {'/'.join(sorted(set(c.deep_heading)))}：读本只用 h2（章）与 h3（节），更深一级用 <span class=\"newthought\"> 起段")
     for u in c.external:
         errors.append(f"外链脚本或样式，离线打不开：{u[:80]}")
-    if re.search(r'<span class="footnote">', html):
-        errors.append("有 <span class=\"footnote\"> 不在任何 <article class=\"chapter\"> 里，无法归位到章末")
+    if c.raw_footnotes:
+        errors.append(f"有 {c.raw_footnotes} 处 <span class=\"footnote\"> 没有归位到章末：要么不在 <article class=\"chapter\"> 里，"
+                      "要么开标签不是 <span class=\"footnote\"> 这个写法（不要加别的属性或 class）")
+    if c.raw_notes:
+        errors.append(f"有 {c.raw_notes} 处边注/旁注没有展开开关，窄屏下点不开：开标签只写 <span class=\"sidenote\"> 或 "
+                      "<span class=\"marginnote\">，不要加别的属性或 class")
     if re.search(r"<p\b[^>]*>(?:(?!</p>).)*?<(div|figure|pre|table|ol|ul|section|blockquote|details)\b", html, re.S):
         errors.append("<p> 里嵌了块级元素：浏览器会提前闭合 <p>，边注与版心随之错位；把块级元素移到段落之外")
     if not re.search(r"<title>[^<]+</title>", html) or "中文标题 · 原文标题" in html:
-        errors.append("<title> 还是骨架占位，换成「中文标题 · 原文标题」")
-    if has_math_source(html):
-        errors.append("仍有未编译的 LaTeX 定界符")
+        errors.append("<title> 还是骨架占位，换成「中文标题 · 原文标题」（原创撰写写「书名 · 副标题」）")
+    if BLOCK_MATH_RE.search(CODE_ISLAND_RE.sub("", html)):
+        errors.append("仍有未编译的块级公式定界符（$$、\\[、\\(）")
+    left = leftover_dollars(html)
+    if left:
+        errors.append(f"正文里有 {len(left)} 处成对的 $ 没有编译成公式（" + "；".join(f"…{x[:60]}…" for x in left[:5])
+                      + "）：公式里的中文写进 \\text{}；确实要显示美元符号就写 &#36;")
     # 两种残留：解析失败整段变红字 span；未知宏在 MathML 里变红色 mtext
     bad = re.findall(r'<span class="temml-error"[^>]*>(.*?)</span>', html, re.S) + \
         re.findall(r'<mtext style="color:#b22222;">(.*?)</mtext>', html, re.S)
@@ -501,7 +546,7 @@ def main(argv):
 
     if "--check-only" not in flags:
         compile_math(page, errors, warns)
-        html = page.read_text(encoding="utf-8")
+        html = glue_math_punctuation(page.read_text(encoding="utf-8"))
         html, notes = expand_notes(html)
         html, fns = place_footnotes(html, errors)
         html = build_toc(html, errors)

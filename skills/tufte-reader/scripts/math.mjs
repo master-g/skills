@@ -3,7 +3,8 @@
 
    定界符：行内 \( … \) 或 $ … $（pandoc 规则：开 $ 后、闭 $ 前不能是空白，闭 $ 后不能紧跟数字，
    于是「$5 和 $8」不会被当成公式；内容含中文且不在 \text{} 里的也不算）；块级 \[ … \] 或 $$ … $$。
-   <pre> <code> <script> <style> <math> 内部不碰。
+   $ … $ 内部可以换行（格式化工具会折行），连续空白按一个空格处理；内部出现 < 即跨越了标签，不算公式。
+   <pre> <code> <script> <style> <math> <svg> 内部不碰。
    块级公式包进 <span class="math-display">：span 在 <p> 里也合法，窄栏里横向滚动而不是撑破版心。
    编译产物带 <annotation encoding="application/x-tex">，保留 LaTeX 源便于复查。 */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -24,7 +25,7 @@ if (!file) {
   process.exit(2);
 }
 let html = readFileSync(file, "utf8");
-const SKIP = /(<(pre|code|script|style|math)\b[\s\S]*?<\/\2\s*>)/g;
+const SKIP = /(<(pre|code|script|style|math|svg)\b[\s\S]*?<\/\2\s*>)/g;
 const count = { inline: 0, block: 0 };
 const errors = [];
 const warns = [];
@@ -39,6 +40,7 @@ const visible = (t) =>
 
 const render = (tex, display) => {
   tex = unescape(tex.trim());
+  if (!display) tex = tex.replace(/\s+/g, " ");
   count[display ? "block" : "inline"]++;
   const out = temml.renderToString(tex, {
     displayMode: display,
@@ -73,7 +75,7 @@ const singleDollar = (s) => {
     const inner = b > 0 ? s.slice(a + 1, b) : "";
     const ok =
       b > 0 &&
-      !inner.includes("\n") &&
+      !inner.includes("<") &&
       !/\d/.test(s[b + 1] || "") &&
       !CJK.test(inner.replace(/\\text\{[^}]*\}/g, ""));
     if (ok) {

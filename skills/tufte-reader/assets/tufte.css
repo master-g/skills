@@ -461,6 +461,10 @@ pre.fullwidth > code {
 math {
   font-family: var(--font-math);
 }
+/* 行内公式与紧邻的全角标点：build 包成一组，标点不落到行首或行尾 */
+.math-nobr {
+  white-space: nowrap;
+}
 .math-display {
   display: block;
   overflow-x: auto;
