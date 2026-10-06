@@ -66,6 +66,7 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   padding-left: 12.5%;
+  --k: 1; /* 按版面百分比定宽的栏的缩放系数，宽屏居中时大于 1 */
   font-family: var(--font-serif);
   font-synthesis-style: none;
   background: var(--bg);
@@ -74,12 +75,15 @@ body {
   text-autospace: normal;
 }
 
-/* 宽屏：正文栏居中，页边注挂在它右侧。正文栏占版面的 55%，中线在 27.5% 处，
-   把它对到视口中线；版面取 80%，页边注的右沿正好收在视口内。更窄时回到上面的左起版式。 */
+/* 宽屏：正文栏居中，页边注挂在它右侧。
+   左起版式里版面宽 --page，正文栏占 55%。居中时把正文栏的中线对到视口中线，版面的左沿随之右移；
+   右边多出来的一截是空的，会让整页可以左右滑动，所以版面只取 --page 的 87.5%，
+   并用 --k 把按版面百分比定宽的栏（正文、列表、图、代码、通栏）等比放大回原来的尺寸。 */
 @media (min-width: 1100px) {
   body {
     --page: min(80%, 1400px);
-    width: var(--page);
+    --k: 1.142857; /* 1 / 0.875 */
+    width: calc(0.875 * var(--page));
     margin-left: calc(50% - 0.275 * var(--page));
     margin-right: 0;
     padding-left: 0;
@@ -153,14 +157,14 @@ section > .table-wrapper,
 section > .math-display,
 .titlepage > p,
 .titlepage > .abstract {
-  width: 55%;
+  width: calc(55% * var(--k));
 }
 section > dl,
 section > ol,
 section > ul,
 .titlepage > nav.toc > ol {
-  width: 50%;
-  padding-inline-start: 5%;
+  width: calc(50% * var(--k));
+  padding-inline-start: calc(5% * var(--k));
 }
 dt:not(:first-child),
 li:not(:first-child) {
@@ -170,7 +174,7 @@ li:not(:first-child) {
 hr {
   display: block;
   height: 1px;
-  width: 55%;
+  width: calc(55% * var(--k));
   border: 0;
   border-top: 1px solid var(--rule);
   margin: 1em 0;
@@ -208,11 +212,11 @@ blockquote {
   margin-inline: 40px;
 }
 blockquote p {
-  width: 55%;
+  width: calc(55% * var(--k));
   margin-right: 40px;
 }
 blockquote footer {
-  width: 55%;
+  width: calc(55% * var(--k));
   font-size: 1.1rem;
   text-align: right;
 }
@@ -237,7 +241,7 @@ div.epigraph > blockquote > footer > cite {
 
 /* 分节花：CME 原站的 ❧；字体栈避开 CJK 正文字体，否则字形由宋体回退渲染 */
 .asterism {
-  width: 55%;
+  width: calc(55% * var(--k));
   text-align: center;
   font-family:
     "Arial Unicode MS", "Apple Symbols", FreeSerif, OpenSymbol, "DejaVu Sans",
@@ -334,7 +338,7 @@ figure {
   padding: 0;
   border: 0;
   font: inherit;
-  max-width: 55%;
+  max-width: calc(55% * var(--k));
   margin: 0 0 3em 0;
 }
 /* 页边图独占一行，图注排在图下；inline 时小图旁边会挤进图注文字 */
@@ -355,20 +359,41 @@ figcaption {
   font-size: 1.1rem;
   line-height: 1.6;
   position: relative;
-  max-width: 40%;
+  max-width: calc(40% * var(--k));
 }
 figure.fullwidth {
   display: flow-root; /* 收住右浮的图注，后文不绕排 */
 }
 figure.fullwidth figcaption {
-  margin-right: 24%;
+  margin-right: calc(24% * var(--k));
 }
 figure.fullwidth img {
   width: 100%;
 }
 .fullwidth {
-  max-width: 90%;
+  max-width: min(100%, calc(90% * var(--k)));
   clear: both;
+}
+
+/* 分步图：构建把每一步各画一幅小图，连同说明并排排开。--step-w 是每幅小图的最小宽度，构建取原图宽度的四分之三：放得下两幅就并排，否则一列 */
+ol.step-frames {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, var(--step-w, 16rem)), 1fr)
+  );
+  gap: 1.8rem 2.4rem;
+  margin: 0;
+  padding-inline-start: 1.6em;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+ol.step-frames > li {
+  margin: 0;
+  break-inside: avoid;
+}
+ol.step-frames svg {
+  margin-bottom: 0.4rem;
 }
 div.fullwidth,
 table.fullwidth {
@@ -437,7 +462,7 @@ pre {
 }
 pre > code {
   font-size: 0.9rem;
-  width: 55%; /* 与正文栏同宽、左缘对齐 */
+  width: calc(55% * var(--k)); /* 与正文栏同宽、左缘对齐 */
   padding: 0.8rem 1rem;
   box-sizing: border-box;
   background: var(--code-bg);
@@ -448,7 +473,7 @@ pre.fullwidth {
   max-width: none; /* 与普通代码块同一基准，左缘对齐 */
 }
 pre.fullwidth > code {
-  width: 90%;
+  width: min(100%, calc(90% * var(--k)));
 }
 .shj-syn-cmnt {
   color: var(--syn-cmnt);
@@ -550,7 +575,7 @@ nav.toc .toc-number {
 section.footnotes {
   font-size: 1.1rem;
   border-top: 1px solid var(--rule);
-  width: 55%;
+  width: calc(55% * var(--k));
   margin-top: 2rem;
 }
 section.footnotes > ol {
@@ -580,7 +605,7 @@ a.fn-back {
 /* ── 习题与折叠答案 ────────────────────────────────────────────────── */
 
 details.answers {
-  width: 55%;
+  width: calc(55% * var(--k));
   margin: 1.4rem 0;
 }
 details.answers > summary {
@@ -608,7 +633,7 @@ details.answers > ol {
 /* ── 参考文献 ──────────────────────────────────────────────────────── */
 
 section.references > ol {
-  width: 55%;
+  width: calc(55% * var(--k));
   font-size: 1.15rem;
   line-height: 1.6;
   padding-inline-start: 2.4em;
@@ -678,6 +703,18 @@ summary:focus-visible {
   }
   figure {
     max-width: 90%;
+  }
+  /* 参考文献列表占满整栏，编号的缩进算在宽度之内，否则多出的缩进让整页可以左右滑动 */
+  section.references > ol {
+    box-sizing: border-box;
+  }
+  /* 宽图包进 div.scroll-x：按原始宽度显示、横向滚动，不等比缩小 */
+  figure .scroll-x {
+    overflow-x: auto;
+  }
+  figure .scroll-x > svg,
+  figure .scroll-x > img {
+    max-width: none;
   }
   figcaption,
   figure.fullwidth figcaption {

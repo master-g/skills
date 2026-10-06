@@ -10,7 +10,8 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
   3. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
   4. 填 <nav class="toc">
   5. 本地图片转 data URI
-  6. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言；注入网络字体的 <link>
+  6. 分步图（figure.steps）展开成并排的小图，每一步一幅，成品里没有脚本和控件
+  7. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言；注入网络字体的 <link>
      （jsDelivr，离线时回退系统字体）
 
 ERROR 必须修；WARN 需要判断。
@@ -140,6 +141,8 @@ def element_end(html, start, tag):
     pat = re.compile(rf"<(/?){tag}\b[^>]*>", re.I)
     depth = 0
     for m in pat.finditer(html, start):
+        if m.group(0).endswith("/>"):
+            continue  # 自闭合（SVG 里的 <g … />），不改变嵌套深度
         depth += -1 if m.group(1) else 1
         if depth == 0:
             return m.end()
@@ -339,6 +342,115 @@ def inline_images(html, base, errors):
     return IMG_RE.sub(repl, html), count
 
 
+# ── 分步图：构建时展开成并排的小图 ────────────────────────────────────────
+# 作者写一幅 <svg>，里面带 data-step 的元素是帧，<ol class="step-captions"> 的第 k 项是第 k 步的说明；
+# 构建把每一步各画一幅小图，连同说明排进 <ol class="step-frames">。成品里没有脚本和控件。
+STEPS_FIGURE_RE = re.compile(r'<figure\b[^>]*\bclass="[^"]*(?<![\w-])steps(?![\w-])[^"]*"[^>]*>', re.I)
+STEP_TAG_RE = re.compile(r'<([A-Za-z][\w:-]*)\b[^<>]*?\sdata-step="([^"]*)"[^<>]*?(/?)>')
+STEP_PART_RE = re.compile(r"\s*(\d+)\s*(?:(-)\s*(\d*))?\s*$")
+
+
+def step_ranges(spec):
+    """data-step 的值 → [(起, 止)]，止为 None 表示到最后一步；写法不对返回 None。"3"、"3-5"、"3-"、"1,4-6"。"""
+    out = []
+    for part in spec.split(","):
+        m = STEP_PART_RE.match(part)
+        if not m:
+            return None
+        a = int(m.group(1))
+        b = a if not m.group(2) else int(m.group(3)) if m.group(3) else None
+        if a < 1 or (b is not None and b < a):
+            return None
+        out.append((a, b))
+    return out
+
+
+def list_items(inner):
+    """<ol> 内部的直接子 <li> 的内容；嵌套列表里的 <li> 不算。"""
+    items, depth, start = [], 0, None
+    for m in re.finditer(r"<(/?)(li|ol|ul)\b[^>]*>", inner, re.I):
+        closing, tag = m.group(1), m.group(2).lower()
+        if tag == "li":
+            if not closing and depth == 0:
+                start = m.end()
+            elif closing and depth == 0 and start is not None:
+                items.append(inner[start : m.start()].strip())
+                start = None
+        else:
+            depth += -1 if closing else 1
+    return items
+
+
+def step_frame(svg, k, n):
+    """第 k 步的那幅图：去掉这一步不显示的帧，去掉 data-step；图内的 id 加后缀，各幅小图互不冲突。"""
+    out, pos = [], 0
+    for m in STEP_TAG_RE.finditer(svg):
+        if m.start() < pos:
+            continue  # 在一个已经去掉的帧里面
+        out.append(svg[pos : m.start()])
+        if any(a <= k <= (b or n) for a, b in step_ranges(m.group(2))):
+            out.append(re.sub(r'\sdata-step(?:-last)?(?:="[^"]*")?', "", m.group(0)))
+            pos = m.end()
+        else:
+            pos = m.end() if m.group(3) else element_end(svg, m.start(), m.group(1))
+    out.append(svg[pos:])
+    frame = "".join(out)
+    for i in sorted(set(re.findall(r'\bid="([^"]+)"', frame)), key=len, reverse=True):
+        frame = re.sub(rf'(\bid="|url\(#|href="#){re.escape(i)}(?=["\)])', rf"\g<1>{i}-s{k}", frame)
+    return re.sub(r'(<svg\b[^>]*\baria-label="[^"]*)"', rf'\g<1>（第 {k} 步，共 {n} 步）"', frame, count=1)
+
+
+def expand_steps(html, errors, warns):
+    islands = [m.span() for m in CODE_ISLAND_RE.finditer(html) if m.group(1).lower() != "svg"]
+    figures = [m for m in STEPS_FIGURE_RE.finditer(html) if not any(a <= m.start() < b for a, b in islands)]
+    count = 0
+    for no, fm in reversed(list(enumerate(figures, 1))):
+        where = f"第 {no} 幅分步图"
+        end = element_end(html, fm.start(), "figure")
+        body = html[fm.start() : end]
+        if '<ol class="step-frames"' in body:
+            continue  # 已展开
+        cap = re.search(r'<ol\b[^>]*\bclass="[^"]*\bstep-captions\b[^"]*"[^>]*>', body)
+        if not cap:
+            errors.append(f"{where}缺 <ol class=\"step-captions\">：每一步的说明写成其中的一个 <li>")
+            continue
+        cap_end = element_end(body, cap.start(), "ol")
+        caps = list_items(body[cap.end() : cap_end - len("</ol>")])
+        stage = re.search(r"<svg\b", body)
+        if not stage or stage.start() > cap.start():
+            errors.append(f"{where}里没有 <svg>：帧写在说明列表之前的一幅 <svg> 里")
+            continue
+        s0, s1 = stage.start(), element_end(body, stage.start(), "svg")
+        svg = body[s0:s1]
+        specs = [m.group(2) for m in STEP_TAG_RE.finditer(svg)]
+        bad = [x for x in specs if step_ranges(x) is None]
+        if not specs:
+            errors.append(f"{where}里没有帧：给 <svg> 里每一步要显示的元素加 data-step")
+            continue
+        if bad:
+            errors.append(f"{where}的 data-step=\"{bad[0]}\" 写法不对：写 3、3-5、3-（从第 3 步到最后一步）或 1,4-6")
+            continue
+        n = max(max(a, b or a) for x in specs for a, b in step_ranges(x))
+        covered = {k for x in specs for a, b in step_ranges(x) for k in range(a, (b or n) + 1)}
+        missing = [str(k) for k in range(1, n + 1) if k not in covered]
+        if missing:
+            errors.append(f"{where}的帧编号不连续：共 {n} 步，缺第 {'、'.join(missing[:8])} 步")
+            continue
+        if len(caps) != n:
+            errors.append(f"{where}有 {n} 步，说明却是 {len(caps)} 条：两者要一样多")
+            continue
+        if n == 1:
+            warns.append(f"{where}只有 1 步，用普通的 <figure> 就够了")
+        width = re.search(r'<svg\b[^>]*?\swidth="(\d+(?:\.\d+)?)"', svg)
+        col = f' style="--step-w: {round(float(width.group(1)) * 0.75)}px"' if width else ""
+        items = "\n".join(f"<li>{step_frame(svg, k, n)}{caps[k - 1]}</li>" for k in range(1, n + 1))
+        frames = f'<ol class="step-frames"{col}>\n{items}\n</ol>'
+        between = re.sub(r"<div\b[^>]*>\s*</div>", "", body[:s0] + body[s1 : cap.start()])  # 包着 <svg> 的空壳
+        html = html[: fm.start()] + between + frames + body[cap_end:] + html[end:]
+        count += 1
+    return html, count
+
+
 # ── 代码高亮与资源内联 ──────────────────────────────────────────────────
 def highlight_script(html, warns):
     wanted = {}
@@ -408,12 +520,12 @@ class Checker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
-        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0}
+        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "分步图": 0, "帧": 0}
         self.errors, self.text = [], []
         self.deep_heading = []
         self.external = []
         self.after_toggle = False  # 上一个标签是不是边注开关的 checkbox
-        self.raw_notes = self.raw_footnotes = 0
+        self.raw_notes = self.raw_footnotes = self.raw_steps = 0
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -432,6 +544,11 @@ class Checker(HTMLParser):
             self.stats["小节(h3)"] += 1
         if tag == "figure":
             self.stats["图"] += 1
+            self.stats["分步图"] += "steps" in cls
+        if tag == "li" and self.classes and "step-frames" in self.classes[-1]:
+            self.stats["帧"] += 1
+        if "data-step" in a:
+            self.raw_steps += 1
         if tag == "table":
             self.stats["表"] += 1
         if tag == "pre":
@@ -488,6 +605,9 @@ def check(html, errors, warns):
     if c.raw_footnotes:
         errors.append(f"有 {c.raw_footnotes} 处 <span class=\"footnote\"> 没有归位到章末：要么不在 <article class=\"chapter\"> 里，"
                       "要么开标签不是 <span class=\"footnote\"> 这个写法（不要加别的属性或 class）")
+    if c.raw_steps:
+        errors.append(f"有 {c.raw_steps} 处 data-step 没有展开成小图：它要写在 <figure class=\"steps\"> 的 <svg> 里；"
+                      "同时修掉上面关于分步图的 ERROR")
     if c.raw_notes:
         errors.append(f"有 {c.raw_notes} 处边注/旁注没有展开开关，窄屏下点不开：开标签只写 <span class=\"sidenote\"> 或 "
                       "<span class=\"marginnote\">，不要加别的属性或 class")
@@ -559,9 +679,10 @@ def main(argv):
         html = build_toc(html, errors)
         html, imgs = inline_images(html, page.parent, errors)
         html, wide = widen_code(html)
+        html, steps = expand_steps(html, errors, warns)
         html = inline_assets(html, warns, errors)
         page.write_text(html, encoding="utf-8")
-        print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个")
+        print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个，展开分步图 {steps} 幅")
 
     html = page.read_text(encoding="utf-8")
     stats = check(html, errors, warns)

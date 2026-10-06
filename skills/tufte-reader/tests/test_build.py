@@ -36,6 +36,13 @@ def run(html, files=None):
     return rc, page.read_text(encoding="utf-8"), out.getvalue()
 
 
+def steps_figure(frames=("1-", "2", "2-3"), caps=3):
+    groups = "".join(f'<g data-step="{f}"><rect id="r{i}" width="5" height="5" /></g>' for i, f in enumerate(frames))
+    return ('<figure class="steps"><span class="marginnote">图 1　题</span>'
+            f'<div class="scroll-x"><svg viewBox="0 0 10 10" width="200" role="img" aria-label="图">{groups}<circle r="1" /></svg></div>'
+            f'<ol class="step-captions">{"".join(f"<li>说明 {k + 1}。</li>" for k in range(caps))}</ol></figure>')
+
+
 class BuildTest(unittest.TestCase):
     def test_notes_footnotes_toc_nav(self):
         rc, html, out = run(PAGE.replace("BODY", (
@@ -148,8 +155,48 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("边注 2  旁注 4  脚注 2  块级公式 3  行内公式 70", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 6)
+        self.assertIn("图 2  页边图 0", out)
+        self.assertIn("边注 2  旁注 5  脚注 2  块级公式 3  行内公式 76  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 7)
+        self.assertNotIn('data-step="', html)
+
+    def test_steps_expand_to_small_multiples(self):
+        rc, first, out = run(PAGE.replace("BODY", steps_figure()))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("展开分步图 1 幅", out)
+        self.assertIn("分步图 1  帧 3", out)
+        body = first.split("<body", 1)[1]
+        self.assertNotIn("data-step", body)
+        self.assertNotIn("step-captions", body)
+        self.assertNotIn("scroll-x", body)
+        self.assertNotIn("<script>", body)
+        self.assertIn('<ol class="step-frames" style="--step-w: 150px">', body)
+        frames = body.split('<ol class="step-frames"', 1)[1].split("</ol>", 1)[0].split("<li>")[1:]
+        self.assertEqual(len(frames), 3)
+        # 每一步只留这一步显示的帧；不带 data-step 的元素每幅都在；id 加后缀互不冲突
+        self.assertEqual([f.count("<rect") for f in frames], [1, 3, 2])
+        self.assertTrue(all(f.count("<circle") == 1 for f in frames))
+        self.assertIn('id="r0-s1"', frames[0])
+        self.assertIn('id="r0-s3"', frames[2])
+        self.assertIn('aria-label="图（第 2 步，共 3 步）"', frames[1])
+        self.assertIn("说明 3。", frames[2])
+        rc, second, out = run(first)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(first, second)
+
+    def test_steps_errors(self):
+        cases = [
+            (steps_figure(frames=("1", "2", "4"), caps=4), "缺第 3 步"),
+            (steps_figure(caps=2), "有 3 步，说明却是 2 条"),
+            (steps_figure(frames=()), "里没有帧"),
+            (steps_figure(frames=("1", "3-2", "3")), "写法不对"),
+            (steps_figure().replace(' class="step-captions"', ""), "缺 <ol class=\"step-captions\">"),
+            ('<figure><svg viewBox="0 0 1 1" width="1" role="img" aria-label="图"><g data-step="1"></g></svg></figure>', "没有展开成小图"),
+        ]
+        for body, message in cases:
+            rc, _, out = run(PAGE.replace("BODY", body))
+            self.assertEqual(rc, 1, out)
+            self.assertIn(message, out)
 
 
 if __name__ == "__main__":
