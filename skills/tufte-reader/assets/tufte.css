@@ -517,6 +517,10 @@ pre > code {
   line-height: var(--leading-code);
   -webkit-text-size-adjust: 100%;
 }
+/* 长标识符中间没有可以折行的位置，窄屏下会撑宽整页；一行放不下时允许在任意字符处折行 */
+:not(pre) > code {
+  overflow-wrap: break-word;
+}
 .sans > code {
   font-size: var(--text-secondary);
 }

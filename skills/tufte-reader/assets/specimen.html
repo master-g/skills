@@ -339,6 +339,32 @@ for dx in (1, 0.1, 0.01, 0.001):
             <li>右上角还缺一小块（深色），面积 $(dx)^2$，可以略去。</li>
           </ol>
         </figure>
+        <p>嵌套的列表里，长的行内代码和行内公式在窄屏下都不能撑宽页面：</p>
+        <ul>
+          <li>
+            优化器
+            <ul>
+              <li>
+                创建
+                <ul>
+                  <li>
+                    写作
+                    <code>torch.optim.AdamW(model.parameters())</code
+                    >，注意力实现用
+                    <code>attn_implementation="flash_attention_2"</code
+                    >，每批轨迹训练
+                    <code>n_train_steps_per_rollout_batch</code> 步。
+                  </li>
+                  <li>
+                    两条路径的梯度相加（$\partial f/\partial x=\partial
+                    f/\partial a \cdot\partial a/\partial x + \partial
+                    f/\partial a\cdot \partial a/\partial x$）。
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
         <p>
           图也可以用脚本画。下面这幅出自图元库
           <code>scripts/figlib.py</code

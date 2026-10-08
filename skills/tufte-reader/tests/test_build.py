@@ -197,7 +197,7 @@ class BuildTest(unittest.TestCase):
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
         self.assertIn("图 3  页边图 0", out)
-        self.assertIn("边注 2  旁注 6  脚注 2  块级公式 3  行内公式 79  图内公式 6  分步图 1  帧 3", out)
+        self.assertIn("边注 2  旁注 6  脚注 2  块级公式 3  行内公式 80  图内公式 6  分步图 1  帧 3", out)
         self.assertEqual(html.count('<input type="checkbox"'), 8)
         self.assertNotIn('data-step="', html)
 
@@ -238,6 +238,16 @@ class BuildTest(unittest.TestCase):
             rc, _, out = run(PAGE.replace("BODY", body))
             self.assertEqual(rc, 1, out)
             self.assertIn(message, out)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+    def test_long_inline_math_by_width(self):
+        # 源码里可见字符只有 17 个，排出来约 17em：按宽度判成长公式；后面紧跟全角标点时不再包进不换行的 span
+        tex = r"\partial f/\partial x=\partial f/\partial a \cdot\partial a/\partial x + \partial f/\partial a\cdot \partial a/\partial x"
+        rc, html, out = run(PAGE.replace("BODY", f"<p>（${tex}$）短的 $a+b$。</p>"))
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(html.count('<span class="math-inline-long"><math'), 1)
+        self.assertNotIn('<span class="math-nobr">（<', html)
+        self.assertIn('<span class="math-nobr"><math', html)  # 短公式照常和句号粘在一起
 
     def test_fixed_colors_in_svg_warn(self):
         ok = ('<svg viewBox="0 0 9 9" width="90" role="img" aria-label="图"><rect width="5" height="5" fill="currentColor" '

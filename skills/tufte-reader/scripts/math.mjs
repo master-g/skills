@@ -37,8 +37,9 @@ const CJK = /[　-〿一-鿿＀-￯]/;
 const unescape = (t) =>
   t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 
-const visible = (t) =>
-  t.replace(/\\[a-zA-Z]+|\\./g, "").replace(/[{}\s^_&]/g, "").length;
+/* 行内公式估算宽度超过这么多 em 就算「长公式」。窄屏（390 宽）的正文栏约 20em，三层嵌套的列表里剩 15em 左右。
+   按宽度判断，不数源码字符：\partial、\cdot 这些命令在源码里不算字符，排出来却各占一个字宽。 */
+const INLINE_LONG_EM = 14;
 
 /* Firefox 内核把「文字 + 箭头 + 文字」这样的上下标当成一个可伸缩的运算符：标注不缩小，箭头被拉长，
    公式比 Chrome 里宽出一截（\\underbrace{…}_{\\text{the}\\to\\text{cat}} 实测宽 40%）。
@@ -86,8 +87,8 @@ const render = (tex, display, inFigure) => {
   const short = tex.length > 60 ? tex.slice(0, 60) + "…" : tex;
   if (/class="temml-error"|color:#b22222|merror/.test(out)) errors.push(short);
   if (display) return renderBlock(out, short);
-  // 行内 MathML 不会自动断行；超过约 25 个可见字符在手机上会撑宽页面，窄屏下改为可横向滚动
-  if (!display && !inFigure && visible(tex) > 25)
+  // 行内 MathML 不会自动断行，长的在手机上会撑宽页面，窄屏下改为可横向滚动
+  if (!display && !inFigure && estimate(out) > INLINE_LONG_EM)
     return `<span class="math-inline-long">${out}</span>`;
   return out;
 };
