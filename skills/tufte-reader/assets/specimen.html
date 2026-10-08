@@ -339,6 +339,196 @@ for dx in (1, 0.1, 0.01, 0.001):
             <li>右上角还缺一小块（深色），面积 $(dx)^2$，可以略去。</li>
           </ol>
         </figure>
+        <p>
+          图也可以用脚本画。下面这幅出自图元库
+          <code>scripts/figlib.py</code
+          >：图里的标签是编译过的公式，三种颜色区分三个阶次的量，明暗主题下各有一套。
+        </p>
+        <figure>
+          <span class="marginnote"
+            >图 3　按阶次给四块上色：$x^2$ 是原来的面积，两条 $x\,dx$
+            是第一阶的增量，$(dx)^2$ 是第二阶微小量。</span
+          >
+          <svg
+            viewBox="0 0 350 226"
+            width="402"
+            role="img"
+            aria-label="边长 x 加 dx 的正方形分成四块：x 的平方、两条 x 乘 dx 的长条、右上角 dx 的平方"
+            font-family='-apple-system, "PingFang SC", "Noto Sans CJK SC", sans-serif'
+            font-size="13"
+          >
+            <defs>
+              <marker
+                id="f1-arr"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M0 0L10 5L0 10z" fill="currentColor" />
+              </marker>
+            </defs>
+            <rect
+              x="40.0"
+              y="50.0"
+              width="150.0"
+              height="150.0"
+              rx="0"
+              fill="var(--fig-1, #1f5fa8)"
+              fill-opacity="0.25"
+              stroke="var(--fig-1, #1f5fa8)"
+              stroke-width="1"
+            />
+            <rect
+              x="190.0"
+              y="50.0"
+              width="34.0"
+              height="150.0"
+              rx="0"
+              fill="var(--fig-2, #d55e00)"
+              fill-opacity="0.25"
+              stroke="var(--fig-2, #d55e00)"
+              stroke-width="1"
+            />
+            <rect
+              x="40.0"
+              y="16.0"
+              width="150.0"
+              height="34.0"
+              rx="0"
+              fill="var(--fig-2, #d55e00)"
+              fill-opacity="0.25"
+              stroke="var(--fig-2, #d55e00)"
+              stroke-width="1"
+            />
+            <rect
+              x="190.0"
+              y="16.0"
+              width="34.0"
+              height="34.0"
+              rx="0"
+              fill="var(--fig-3, #2e9d4e)"
+              fill-opacity="0.25"
+              stroke="var(--fig-3, #2e9d4e)"
+              stroke-width="1"
+            />
+            <foreignObject
+              x="75.0"
+              y="102.5"
+              width="80.0"
+              height="45"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 15px"
+              >
+                $x^2$
+              </div></foreignObject
+            ><foreignObject
+              x="167.0"
+              y="108.5"
+              width="80.0"
+              height="33"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 11px"
+              >
+                $x\,dx$
+              </div></foreignObject
+            ><foreignObject
+              x="75.0"
+              y="16.5"
+              width="80.0"
+              height="33"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 11px"
+              >
+                $x\,dx$
+              </div></foreignObject
+            ><foreignObject
+              x="167.0"
+              y="19.5"
+              width="80.0"
+              height="27"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 9px"
+              >
+                $(dx)^2$
+              </div></foreignObject
+            ><foreignObject
+              x="75.0"
+              y="194.5"
+              width="80.0"
+              height="39"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 13px"
+              >
+                $x$
+              </div></foreignObject
+            ><foreignObject
+              x="167.0"
+              y="194.5"
+              width="80.0"
+              height="39"
+              overflow="visible"
+              ><div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="fig-math fig-math-middle"
+                style="font-size: 13px"
+              >
+                $dx$
+              </div></foreignObject
+            >
+            <polyline
+              points="250.0,33.0 226.0,33.0 226.0,33.0"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="0.8"
+              marker-end="url(#f1-arr)"
+            />
+            <text
+              x="254.0"
+              y="37.0"
+              text-anchor="start"
+              font-size="11"
+              fill="currentColor"
+            >
+              第二阶，略去
+            </text>
+            <line
+              x1="250.0"
+              y1="125.0"
+              x2="226.0"
+              y2="125.0"
+              stroke="currentColor"
+              stroke-width="0.8"
+              marker-end="url(#f1-arr)"
+            />
+            <text
+              x="254.0"
+              y="129.0"
+              text-anchor="start"
+              font-size="11"
+              fill="currentColor"
+            >
+              第一阶，共两条
+            </text>
+          </svg>
+        </figure>
       </section>
     </article>
 

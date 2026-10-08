@@ -196,9 +196,9 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 2  页边图 0", out)
-        self.assertIn("边注 2  旁注 5  脚注 2  块级公式 3  行内公式 76  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 7)
+        self.assertIn("图 3  页边图 0", out)
+        self.assertIn("边注 2  旁注 6  脚注 2  块级公式 3  行内公式 79  图内公式 6  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 8)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):
@@ -249,6 +249,28 @@ class BuildTest(unittest.TestCase):
         rc, _, out = run(PAGE.replace("BODY", f"<figure>{bad}</figure>"))
         self.assertEqual(rc, 0, out)
         self.assertIn("插图里有 2 处写死的颜色（#f00、red）", out)
+
+    def test_math_in_figure(self):
+        import figlib
+        fig = figlib.svg(200, 60, figlib.mathtext(100, 30, r"h_{T-1} < \frac{F}{4}") + figlib.text(10, 50, "标签"), "图")
+        rc, html, out = run(PAGE.replace("BODY", f"<figure>{fig}</figure><p>正文 $x$。</p>"))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("图内 1 个", out)
+        self.assertIn("行内公式 1  图内公式 1", out)
+        inner = html.split("<foreignObject x=", 1)[1].split("</foreignObject>", 1)[0]
+        self.assertIn("<math", inner)
+        self.assertNotIn("$", inner.split("<annotation", 1)[0])
+        self.assertNotIn("math-inline-long", inner)
+        rc, second, out = run(html)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(html, second)
+
+    def test_dollar_in_svg_text_is_error(self):
+        fig = '<svg viewBox="0 0 9 9" width="90" role="img" aria-label="图"><text x="1" y="5">$h_1$</text></svg>'
+        rc, _, out = run(PAGE.replace("BODY", f"<figure>{fig}</figure>"))
+        self.assertEqual(rc, 1, out)
+        self.assertIn("没有编译成公式", out)
+        self.assertIn("mathtext", out)
 
 
 if __name__ == "__main__":

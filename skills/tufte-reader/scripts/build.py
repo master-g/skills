@@ -87,15 +87,24 @@ def single_dollar_spans(text, allow_cjk=False):
             i += 1
 
 
+# <svg> 里只有 <foreignObject> 的内容是 HTML，公式写在那里（图元库的 mathtext）
+FOREIGN_RE = re.compile(r"<foreignObject\b[^>]*>(.*?)</foreignObject\s*>", re.S | re.I)
+
+
 def has_math_source(html):
-    text = CODE_ISLAND_RE.sub("", html)
+    text = CODE_ISLAND_RE.sub(lambda m: " ".join(FOREIGN_RE.findall(m.group(0))) if m.group(1).lower() == "svg" else "", html)
     return bool(BLOCK_MATH_RE.search(text)) or any(True for _ in single_dollar_spans(text))
 
 
+ANNOTATION_RE = re.compile(r"<annotation\b.*?</annotation\s*>", re.S)  # 编译产物里留着的 LaTeX 源
+
+
 def leftover_dollars(html):
-    """成品正文里仍然成对的 $：没被编译的公式。逐个文本片段扫描，不跨标签。"""
+    """成品正文里仍然成对的 $：没被编译的公式。逐个文本片段扫描，不跨标签。
+    插图也查：<svg> 的 <text> 里写了 $…$ 不会被编译，会原样显示出来。"""
     found = []
-    for piece in re.split(r"<[^>]+>", CODE_ISLAND_RE.sub("<i>", html)):
+    islands = CODE_ISLAND_RE.sub(lambda m: m.group(0) if m.group(1).lower() == "svg" else "<i>", html)
+    for piece in re.split(r"<[^>]+>", ANNOTATION_RE.sub("", islands)):
         for a, b in single_dollar_spans(piece, allow_cjk=True):
             found.append(" ".join(piece[max(0, a - 12) : b + 12].split()))
     return found
@@ -529,7 +538,7 @@ class Checker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
-        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "分步图": 0, "帧": 0}
+        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "图内公式": 0, "分步图": 0, "帧": 0}
         self.errors, self.text = [], []
         self.deep_heading = []
         self.external = []
@@ -565,7 +574,7 @@ class Checker(HTMLParser):
         if tag == "li" and (a.get("id") or "").startswith("fn-"):
             self.stats["脚注"] += 1
         if tag == "math":
-            self.stats["块级公式" if a.get("display") == "block" else "行内公式"] += 1
+            self.stats["图内公式" if "svg" in self.stack else "块级公式" if a.get("display") == "block" else "行内公式"] += 1
         if tag == "span" and "footnote" in cls:
             self.raw_footnotes += 1
         if tag == "span" and ("sidenote" in cls or "marginnote" in cls):
@@ -629,7 +638,8 @@ def check(html, errors, warns):
     left = leftover_dollars(html)
     if left:
         errors.append(f"正文里有 {len(left)} 处成对的 $ 没有编译成公式（" + "；".join(f"…{x[:60]}…" for x in left[:5])
-                      + "）：公式里的中文写进 \\text{}；确实要显示美元符号就写 &#36;")
+                      + "）：公式里的中文写进 \\text{}；确实要显示美元符号就写 &#36;；插图里的公式不能写在 <text> 里，"
+                      "放进 <foreignObject>（图元库的 mathtext）")
     # 两种残留：解析失败整段变红字 span；未知宏在 MathML 里变红色 mtext
     bad = re.findall(r'<span class="temml-error"[^>]*>(.*?)</span>', html, re.S) + \
         re.findall(r'<mtext style="color:#b22222;">(.*?)</mtext>', html, re.S)

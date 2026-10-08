@@ -4,7 +4,8 @@
    定界符：行内 \( … \) 或 $ … $（pandoc 规则：开 $ 后、闭 $ 前不能是空白，闭 $ 后不能紧跟数字，
    于是「$5 和 $8」不会被当成公式；内容含中文且不在 \text{} 里的也不算）；块级 \[ … \] 或 $$ … $$。
    $ … $ 内部可以换行（格式化工具会折行），连续空白按一个空格处理；内部出现 < 即跨越了标签，不算公式。
-   <pre> <code> <script> <style> <math> <svg> 内部不碰。
+   <pre> <code> <script> <style> <math> <svg> 内部不碰；只有 <svg> 里的 <foreignObject> 例外，那里是 HTML，
+   插图的公式标签写在里面（图元库的 mathtext），按行内公式编译。
    块级公式包进 <span class="math-display">：span 在 <p> 里也合法，窄栏里横向滚动而不是撑破版心。
    编译产物带 <annotation encoding="application/x-tex">，保留 LaTeX 源便于复查。 */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -27,7 +28,7 @@ if (!file) {
 }
 let html = readFileSync(file, "utf8");
 const SKIP = /(<(pre|code|script|style|math|svg)\b[\s\S]*?<\/\2\s*>)/g;
-const count = { inline: 0, block: 0 };
+const count = { inline: 0, block: 0, figure: 0 };
 const errors = [];
 const warns = [];
 const CJK = /[　-〿一-鿿＀-￯]/;
@@ -71,10 +72,10 @@ const portable = (mathml) => {
     );
 };
 
-const render = (tex, display) => {
+const render = (tex, display, inFigure) => {
   tex = unescape(tex.trim());
   if (!display) tex = tex.replace(/\s+/g, " ");
-  count[display ? "block" : "inline"]++;
+  count[inFigure ? "figure" : display ? "block" : "inline"]++;
   const out = portable(
     temml.renderToString(tex, {
       displayMode: display,
@@ -86,7 +87,7 @@ const render = (tex, display) => {
   if (/class="temml-error"|color:#b22222|merror/.test(out)) errors.push(short);
   if (display) return renderBlock(out, short);
   // 行内 MathML 不会自动断行；超过约 25 个可见字符在手机上会撑宽页面，窄屏下改为可横向滚动
-  if (!display && visible(tex) > 25)
+  if (!display && !inFigure && visible(tex) > 25)
     return `<span class="math-inline-long">${out}</span>`;
   return out;
 };
@@ -123,7 +124,7 @@ const renderBlock = (out, short) => {
 };
 
 /* 单 $ 扫描：被拒的候选只跳过开 $，不吞后文。与 build.py 的 single_dollar_spans 同一套规则。 */
-const singleDollar = (s) => {
+const singleDollar = (s, inFigure) => {
   let out = "",
     i = 0;
   while (i < s.length) {
@@ -142,7 +143,7 @@ const singleDollar = (s) => {
       !/\d/.test(s[b + 1] || "") &&
       !CJK.test(inner.replace(/\\text\{[^}]*\}/g, ""));
     if (ok) {
-      out += s.slice(i, a) + render(inner, false);
+      out += s.slice(i, a) + render(inner, false, inFigure);
       i = b + 1;
     } else {
       out += s.slice(i, a + 1);
@@ -155,7 +156,14 @@ const singleDollar = (s) => {
 html = html
   .split(SKIP)
   .map((seg, i) => {
-    if (i % 3 === 1) return seg; // 跳过块本体
+    if (i % 3 === 1)
+      // 跳过块本体；<svg> 里的 <foreignObject> 除外
+      return /^<svg\b/i.test(seg)
+        ? seg.replace(
+            /(<foreignObject\b[^>]*>)([\s\S]*?)(<\/foreignObject\s*>)/gi,
+            (_, open, body, close) => open + singleDollar(body, true) + close
+          )
+        : seg;
     if (i % 3 === 2) return ""; // 捕获的标签名
     seg = seg
       .replace(/\$\$([\s\S]+?)\$\$/g, (_, t) => render(t, true))
@@ -165,7 +173,10 @@ html = html
   })
   .join("");
 
-if ((count.inline || count.block) && !html.includes('data-tr="math"')) {
+if (
+  (count.inline || count.block || count.figure) &&
+  !html.includes('data-tr="math"')
+) {
   const tag = `<style data-tr="math">${CSS}</style>`;
   html = html.includes("<!--TR:CSS-->")
     ? html.replace("<!--TR:CSS-->", `${tag}\n    <!--TR:CSS-->`)
@@ -174,4 +185,7 @@ if ((count.inline || count.block) && !html.includes('data-tr="math"')) {
 writeFileSync(file, html);
 for (const e of errors) console.log(`ERROR 公式编译出错：${e}`);
 for (const w of warns) console.log(`WARN ${w}`);
-console.log(`公式    行内 ${count.inline} 个，块级 ${count.block} 个`);
+console.log(
+  `公式    行内 ${count.inline} 个，块级 ${count.block} 个` +
+    (count.figure ? `，图内 ${count.figure} 个` : "")
+);
