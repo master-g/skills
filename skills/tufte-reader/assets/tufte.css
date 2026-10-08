@@ -373,14 +373,20 @@ label.margin-toggle:not(.sidenote-number) {
   display: none;
 }
 
-/* 页边的注与图在本章内收住，不越进下一章 */
+/* 页边的注与图在本章内收住，不越进下一章。
+   视口外的章不排版：网络字体按 unicode-range 分片陆续到位，每到一批都会重排用到它的文字，
+   全书一起排时一本十来章的读本要在主线程上占几秒。没排过的章按 contain-intrinsic-size 估高占位，
+   排过一次后记住实际高度 */
 article.chapter {
   display: flow-root;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 10000px;
 }
 
-/* 每章从 1 起编号 */
+/* 每章从 1 起编号。章上的重置写在章内第一个元素（章题）上：content-visibility 带样式隔离，
+   写在 article 自己身上的 counter-reset 章内看不到，编号会全是 1 */
 body,
-article.chapter {
+article.chapter > :first-child {
   counter-reset: sidenote-counter;
 }
 
@@ -877,5 +883,8 @@ summary:focus-visible {
 @media print {
   .theme-toggle {
     display: none;
+  }
+  article.chapter {
+    content-visibility: visible;
   }
 }
