@@ -113,13 +113,51 @@
 
 - 页边图（原文的 `marginfigure`）挂在它所属的正文段落开头，不要单独放进一个空 `<p>`：空段落没有高度，图会一直浮到下一章。
 - 原文的 `figure*` 通栏图用 `figure.fullwidth`；原图宽度不到 1000px 的仍用普通 `figure`，放大会糊。
-- 普通 figure 的图题放在 figure 内的 `marginnote` 里，写「图 N　」（全角空格）加译文图题；图中文字不改图，必要时在图注里对照翻译关键标签。
+- 普通 figure 的图题放在 figure 内的 `marginnote` 里，写「图 N　」（全角空格）加译文图题；照搬的原图不改图中文字，必要时在图注里对照翻译关键标签。哪些图不照搬、要重画，见 [行文](style.md) 的「重画原图」。
 - `src` 写相对页面文件的本地路径，构建转成 data URI。外网图片先下载到本地，否则报 ERROR。
-- 矢量示意图可以直接写内联 `<svg>`，给 `width` 和 `aria-label`，颜色用 `currentColor` 以跟随明暗主题。
+- 矢量示意图写成内联 `<svg>`，给 `width` 和 `aria-label`。图多、或者图里有公式时用脚本画，见下面的「图元库」。
+- 颜色默认只用 `currentColor`，跟随明暗主题，深浅用 `fill-opacity` 区分。数据本身分成几类时（4 个设备、两类样本、前向值与梯度）用分类色 `var(--fig-1)` 到 `var(--fig-4)`，明暗主题各有一套；同一类的深浅仍用 `fill-opacity`。分类色不是唯一的区分手段：同时用编号、位置或文字标注，色觉缺陷的读者和黑白打印也要能看懂。超过 4 类时不加颜色，改用编号或行列标签。写死的颜色（`#f00`、`red`、`rgb(…)`）不跟随主题，构建发 WARN。
 - 内联 SVG 里的 `id`（`marker`、`linearGradient`、`clipPath` 等）在整个页面内必须唯一，带上图的编号作前缀：`<marker id="fig3-arrow">`。两幅图用了同一个 `id` 时，后一幅会引用到前一幅的定义，构建报 ERROR。
 - 读本只用静态图，不写脚本，不加滑块、按钮这类交互控件。要表现一个过程，把各个状态画成并排的小图，每幅配一句说明，写法见下面的「分步图」。
 - 宽图在手机上等比缩小后图内文字太小时，把 `<svg>` 或 `<img>` 包进 `<div class="scroll-x">`：窄屏下按原始宽度显示、横向滚动，宽屏不变。
-- `<svg>` 内部不编译公式，`$…$` 会原样显示。图里的数学符号直接写 Unicode 字符（`x₁`、`Σ`），或者放到图注里。
+- 图里的公式写在 `<foreignObject>` 里，构建照行内公式编译；图元库的 `mathtext()` 输出的就是这种写法。`<text>` 里不能写公式，写了 `$…$` 构建报 ERROR。只有一个下标或一个希腊字母的标签，也可以直接在 `<text>` 里写 Unicode 字符（`x₁`、`Σ`）。
+- 带透明底的位图，深色线条在暗色主题下看不清：先铺上白底再用（`sips -s format jpeg a.png --out a.jpg`），或者按「重画原图」重画。
+
+## 图元库
+
+`scripts/figlib.py` 是画内联 SVG 的图元库，只用 Python 标准库。作者在自己的脚本里调用它，章节源码里放占位符，拼页面时填回：
+
+```python
+import sys
+sys.path.insert(0, "<skill-path>/scripts")
+from figlib import *
+
+b = [
+    rect(20, 20, 34, 34, 0.3, color=1),                 # 1 号分类色，三成深
+    box(70, 24, None, 26, "编码器"),                     # 宽度按文字自适应
+    line(130, 37, 170, 37, arrow=True),
+    mathtext(200, 37, r"W^{(i)}_\text{up}"),            # 公式，垂直居中于 y=37
+]
+FIGS["shard"] = svg(260, 74, "".join(b), "矩阵的一片交给编码器")
+
+page = embed(源码, FIGS)   # 把 <!--FIG:shard--> 换成图
+```
+
+```html
+<figure>
+  <span class="marginnote">图 5　图题。</span>
+  <!--FIG:shard-->
+</figure>
+```
+
+- **坐标**是 `viewBox` 里的用户单位。`svg(w, h, body, label)` 的 `w`、`h` 是画布大小，页面上的显示宽度默认是 `w` 的 1.15 倍、不超过 600px（正文栏在 1280 宽的窗口里是 616px）；图里 13 号字显示出来约 15px。
+- **图元**：`text`、`mathtext`、`rect`、`circ`、`line`、`poly`（折线）、`elbow`（直角拐弯的连线）、`box`（带字的方块）、`boxes`（一行 token 方块）、`panel`（分组底板）、`cells`（网格，填充、颜色、标签都可以按行列给）、`heat`（矩阵热图）。各自的参数见源码里的说明。
+- **颜色**：每个图元都有 `color` 参数，不写是 `currentColor`，写 1 到 4 是分类色；`fill` 是 0 到 1 的不透明度。`rect(…, hatch=True)` 叠一层斜线，表示「被缓存」「被屏蔽」这类状态。
+- **id** 不用管：箭头和斜线的 `<defs>` 由 `svg()` 按需加上，图内所有 `id` 加上每幅图不同的前缀。全书的图要在同一个进程里画完，前缀才不会重复。
+- **文字宽度**：`tw(s, size)` 按字符类别估算一段文字多宽，`fit(s)` 再加上两侧留白；`box(…, w=None, …)` 用它定宽。估算在 macOS 的 Chrome 里校准过，多数标签误差在 ±8% 以内，两三个字符的短标签可以偏出 20%，所以它只用来定方块的宽度，对齐靠 `text-anchor`。
+- **公式**：`mathtext(x, y, tex, anchor)` 的 `y` 是公式的垂直中心，不是基线；`anchor` 决定 `x` 是公式的左端、中点还是右端。公式排出来多宽构建时并不知道（Firefox 内核还会比 Chrome 宽出一成多），放公式的位置四周要留出余量，装公式的方块自己给宽度。
+- **分步图**：`g(step, 内容)` 给一组图元标上步数，`rle([每一步的内容])` 把相邻相同的几步合并，`steps(w, h, body, label, 各步说明)` 输出整幅分步图，放进 `<figure class="steps">`。
+- **预览**：`python3 <skill-path>/scripts/figpreview.py 图.svg` 把一幅图单独构建，截出明暗两种主题的 PNG（`图.light.png`、`图.dark.png`），不用构建整本书。`--width 390` 看手机宽度，`--browser firefox` 换内核。它需要 Playwright 的命令行；没装时只生成预览页，自己用浏览器打开。预览页只有这一幅图，图在正文栏里的位置、与页边注的关系要到整页里看。`rsvg-convert` 这类工具不画 `<foreignObject>`，也取不到 CSS 变量，带公式或分类色的图不要用它预览。
 
 ## 分步图
 
@@ -154,7 +192,7 @@
 - **帧**：`<svg>` 里带 `data-step` 的元素。值写它出现在第几步：`3`、`3-5`、`3-`（从第 3 步到最后一步）、`1,4-6`。不带 `data-step` 的元素每一步都有。全部帧写在同一幅 `<svg>` 里，放在说明列表之前。
 - **不变的部分只写一次**：坐标轴、外框、不变的方块不加 `data-step`；出现后不再消失的用 `3-`。
 - **说明**：`<ol class="step-captions">` 的第 k 个 `<li>` 是第 k 步的说明，条数必须等于步数。步数是各帧里写出的最大编号，从 1 起连续，每一步至少有一个帧。
-- **高亮当前步**用 `fill-opacity` 的深浅，颜色仍然只用 `currentColor`。图内的 `id` 照常带图号前缀，构建会给每幅小图再加后缀。
+- **高亮当前步**用 `fill-opacity` 的深浅，不为了高亮换颜色。图内的 `id` 照常带图号前缀，构建会给每幅小图再加后缀。
 - **排版**：`<svg>` 的 `width` 决定小图多大。正文栏放得下两幅宽度为 `width` 四分之三的小图时并排成两列或更多，否则一列一幅；手机上总是一列。图里的字要在缩到四分之三时仍然看得清。
 - 图题照普通插图写在 `marginnote` 里。统计里分步图同时计入「图」和「分步图」，「帧」是各分步图的步数之和。
 - 构建检查：缺 `ol.step-captions`、没有帧、`data-step` 写法不对、编号不连续、说明条数与步数不等，都报 ERROR；`data-step` 写在 `figure.steps` 之外也报 ERROR。
@@ -253,4 +291,4 @@
 
 ## 构建负责的部分
 
-作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
+作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、插图里公式的编译、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。

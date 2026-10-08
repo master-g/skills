@@ -16,7 +16,7 @@ disable-model-invocation: true
 按材料来源取全文：
 
 - **arXiv**：优先取 LaTeX 源 `https://arxiv.org/e-print/<id>`（tar.gz，含公式、脚注和图文件），其次 `https://arxiv.org/html/<id>`，最后才用 PDF。源码里的 PDF 图转成 PNG（macOS 用 `sips -s format png a.pdf --out a.png`，其他系统用 `pdftoppm -png`）。
-- **其他网页**：用当前环境可用的正文提取工具，图片下载到输出目录的 `figures/`。
+- **其他网页**：用当前环境可用的正文提取工具，图片下载到输出目录的 `figures/`。来源或许可不明的图、简单的示意图不照搬，按 [行文](references/style.md) 的「重画原图」处理。
 - **PDF**：提取文本后按原文重写公式为 LaTeX；图片用 `pdfimages` 取出，或截取对应区域。
 - **本地文件、仓库文档**：直接读。
 
@@ -50,7 +50,7 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 构建需要 node，用来编译公式。修掉所有 ERROR，逐条判断 WARN。
 
-把构建输出的「统计」行和结构清单对照，每一处差异都要说得出原因。例如：原文的页边图计入「页边图」而不是「图」；原文第四级标题改成了 `newthought`，所以 h3 变少；原作者脚注按分流规则分成了边注和章末脚注，两者合计应等于原脚注数，另加译注条数；分步图同时计入「图」和「分步图」，「帧」是各分步图的步数之和。
+把构建输出的「统计」行和结构清单对照，每一处差异都要说得出原因。例如：原文的页边图计入「页边图」而不是「图」；原文第四级标题改成了 `newthought`，所以 h3 变少；原作者脚注按分流规则分成了边注和章末脚注，两者合计应等于原脚注数，另加译注条数；分步图同时计入「图」和「分步图」，「帧」是各分步图的步数之和；插图里的公式标签单独计入「图内公式」，不算在「行内公式」里。
 
 「行内公式」只统计编译成功的。正文里留下成对的 `$` 时构建报 ERROR 并给出上下文，按提示改完再构建。
 
@@ -66,6 +66,6 @@ python3 <skill-path>/scripts/build.py 页面.html
 
 调字号、行高、间距和栏宽，改 `assets/tufte.css` 开头 `:root` 里的 token（`--text-*`、`--leading-*`、`--space-*`，以及版面的 `--sheet-*`、`--col`、`--note-width` 等），各条规则只引用它们，不在规则里写新的数值。
 
-改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。改动涉及公式时，Chrome 之外再用 Firefox 内核的浏览器看一遍：两种内核排 MathML 的差别很大，出现过 Chrome 里正常、Firefox 里上下标不缩小以致编号压住公式的情况。
+改了 `assets/tufte.css`、`shell.html`、`shell.js` 或 `scripts/` 之后，运行 `python3 -m unittest discover -s <skill-path>/tests`。然后把 `assets/specimen.html` 复制到临时目录并构建，在 1280px 和 390px 两种宽度、明暗两种主题下各看一遍。specimen 包含全部元素，是这套版式的回归样张。改了 `scripts/figlib.py` 或插图的样式，用 `scripts/figpreview.py` 单独看受影响的图。改动涉及公式（包括插图里的公式）时，Chrome 之外再用 Firefox 内核的浏览器看一遍：两种内核排 MathML 的差别很大，出现过 Chrome 里正常、Firefox 里上下标不缩小以致编号压住公式的情况。
 
 无头 Chrome 的窗口最窄 500px，`--window-size=390,…` 截出的是按 500px 排版、右侧被裁掉的图。看 390px 要用能设置视口的浏览器工具，或者写一个只含 `<iframe src="specimen.html" width="390" height="844">` 的外层页面，对外层页面截图。

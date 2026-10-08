@@ -1,6 +1,8 @@
 """python3 -m unittest discover -s skills/tufte-reader/tests"""
 import re
+import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -72,6 +74,23 @@ class FiglibTest(unittest.TestCase):
         self.assertEqual(f.embed("x<!--FIG:a-->y", {"a": "FIG"}), "xFIGy")
         with self.assertRaises(KeyError):
             f.embed("<!--FIG:nope-->", {})
+
+
+@unittest.skipUnless(shutil.which("node"), "需要 node 编译公式")
+class PreviewTest(unittest.TestCase):
+    def test_preview_page_builds(self):
+        import figpreview
+
+        fig = f.svg(100, 40, f.mathtext(50, 20, "x_1") + f.rect(0, 0, 9, 9, 0.3, color=2), "图")
+        page, log = figpreview.preview_page(fig, Path(tempfile.mkdtemp()), "demo")
+        html = page.read_text(encoding="utf-8")
+        self.assertIn("<figure><svg", html)
+        self.assertIn("<math", html.split("<foreignObject x=", 1)[1])
+        self.assertIn("--fig-2:", html)
+        # 预览页没有章标题，只该有这一条 ERROR
+        errors = [line for line in log.splitlines() if line.startswith("ERROR")]
+        self.assertEqual(len(errors), 1, log)
+        self.assertIn("<h2>", errors[0])
 
 
 if __name__ == "__main__":
