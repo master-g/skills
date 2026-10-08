@@ -5,10 +5,10 @@
    章末脚注。
 
    中文化调整：
-   - 只用系统字体：拉丁 Palatino/Georgia，中文落到宋体系衬线，离线可读。
+   - 字体：拉丁 STIX Two Text、公式 STIX Two Math、中文思源宋体，联网加载；离线回退系统衬线和宋体。
    - CJK 行高 1.75；Tufte 原值 1.43 是拉丁书写习惯。
    - font-synthesis-style: none —— 中文没有斜体字形，浏览器会把宋体机械压斜；关掉后
-     拉丁 <em> 仍用 Palatino 真斜体，中文保持正体。中文强调用 <strong>。
+     拉丁 <em> 仍用 STIX Two Text 真斜体，中文保持正体。中文强调用 <strong>。
    - 颜色全部走 token，data-theme 切明暗；首绘前由 <head> 里的脚本定下。 */
 
 :root {
@@ -25,10 +25,10 @@
   --syn-func: #1f3f66;
   color-scheme: light;
 
-  /* 排在最前的 EB Garamond 和 Noto Serif SC 是网络字体（样式表由构建注入 <link>），
+  /* 排在最前的 STIX Two Text 和 Noto Serif SC 是网络字体（样式表由构建注入 <link>），
      离线或加载失败时依次回退到后面的系统字体 */
   --font-serif:
-    "EB Garamond", Palatino, "Palatino Linotype", "Palatino LT STD",
+    "STIX Two Text", Palatino, "Palatino Linotype", "Palatino LT STD",
     "Book Antiqua", Georgia, "Noto Serif SC", "Songti SC", "Noto Serif CJK SC",
     "Source Han Serif SC", "STSong", SimSun, serif;
   --font-sans:
@@ -58,7 +58,7 @@
   --text-small: 1rem; /* 行内代码、边注编号 */
   --text-code: 0.9rem; /* 代码块 */
 
-  /* ── 字重 ── 正文 400。粗体用 600：思源宋体和 EB Garamond 的 700 在手机高分屏上与正文反差过大。
+  /* ── 字重 ── 正文 400。粗体用 600：思源宋体和 STIX Two Text 的 700 在手机高分屏上与正文反差过大。
      改这里要同时改 build.py 里 FONT_CSS 加载的字重 */
   --weight-bold: 600;
 
@@ -104,6 +104,16 @@
   --syn-num: #ebcb8b;
   --syn-func: #8fb3d9;
   color-scheme: dark;
+}
+
+/* 公式字体 STIX Two Math，和正文的拉丁字母 STIX Two Text 同一副字，取 STIX 上游发布的文件。
+   不用 fontsource 的那份：它的样式表把 unicode-range 限在拉丁区，数学字母用不上；字体文件也去掉了 ss01，
+   排不出花体（见下面 .mathcal 的说明） */
+@font-face {
+  font-family: "STIX Two Math";
+  src: url("https://cdn.jsdelivr.net/gh/stipub/stixfonts@v2.13b171/fonts/static_otf_woff2/STIXTwoMath-Regular.woff2")
+    format("woff2");
+  font-display: swap;
 }
 
 html {
@@ -530,6 +540,12 @@ pre.fullwidth > code {
 
 math {
   font-family: var(--font-math);
+}
+/* \mathcal 和 \mathscr 都排成花体（STIX Two Math 的 ss01；不开是较朴素的书法体）。\mathcal 的 ss01
+   由 Temml 的样式给出；\mathscr 在 Temml 的样式里指向它自带的字体，读本不带那份字体，这里改回公式字体 */
+math .mathscr {
+  font-family: var(--font-math);
+  font-feature-settings: "ss01";
 }
 /* 行内公式与紧邻的全角标点：build 包成一组，标点不落到行首或行尾 */
 .math-nobr {
