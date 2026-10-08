@@ -648,7 +648,27 @@ def check(html, errors, warns):
     straight = re.findall(rf'"[^"\n]*[{CJK}][^"\n]*"', text)
     if straight:
         warns.append(f"中文引文用了直引号 {len(straight)} 处，改用「」")
+    fixed = fixed_colors(html)
+    if fixed:
+        warns.append(f"插图里有 {len(fixed)} 处写死的颜色（{'、'.join(dict.fromkeys(fixed))[:40]}），不跟随明暗主题："
+                     "改用 currentColor，数据分成几类时用 var(--fig-1) … var(--fig-4)")
     return c.stats
+
+
+# ── 插图颜色 ────────────────────────────────────────────────────────────
+# 写死的颜色不跟随明暗主题。允许的写法：currentColor、none、var(--…)（可以带回退值）、url(#…)
+SVG_RE = re.compile(r"<svg\b.*?</svg\s*>", re.S | re.I)
+PAINT_RE = re.compile(r'(?<![\w-])(?:fill|stroke|stop-color|flood-color|color)\s*(?:=\s*"([^"]*)"|:\s*([^;"]+))', re.I)
+PAINT_OK_RE = re.compile(r"\s*(?:none|currentcolor|inherit|transparent|context-(?:fill|stroke)|(?:var|url)\(.*\))\s*$", re.I | re.S)
+
+
+def fixed_colors(html):
+    found = []
+    for svg in SVG_RE.findall(html):
+        for tag in re.findall(r"<[^>]+>", svg):
+            found += [v.strip() for m in PAINT_RE.finditer(tag) for v in [m.group(1) or m.group(2) or ""]
+                      if not PAINT_OK_RE.match(v)]
+    return found
 
 
 # ── 打开 ────────────────────────────────────────────────────────────────

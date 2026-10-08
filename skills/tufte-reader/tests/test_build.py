@@ -239,6 +239,17 @@ class BuildTest(unittest.TestCase):
             self.assertEqual(rc, 1, out)
             self.assertIn(message, out)
 
+    def test_fixed_colors_in_svg_warn(self):
+        ok = ('<svg viewBox="0 0 9 9" width="90" role="img" aria-label="图"><rect width="5" height="5" fill="currentColor" '
+              'fill-opacity="0.2" stroke="var(--fig-1, #1f5fa8)" /><path d="M0 0" fill="none" stroke="url(#g)" /></svg>')
+        rc, _, out = run(PAGE.replace("BODY", f"<figure>{ok}</figure>"))
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("写死的颜色", out)
+        bad = ok.replace('fill="currentColor"', 'fill="#f00" style="stroke: red"')
+        rc, _, out = run(PAGE.replace("BODY", f"<figure>{bad}</figure>"))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("插图里有 2 处写死的颜色（#f00、red）", out)
+
 
 if __name__ == "__main__":
     unittest.main()

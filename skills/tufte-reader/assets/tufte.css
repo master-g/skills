@@ -23,6 +23,12 @@
   --syn-str: #3d5a2a;
   --syn-num: #6b4a12;
   --syn-func: #1f3f66;
+  /* 插图的分类色：数据本身分成几类时用（4 个设备、两类样本）。与底色的对比都在 3:1 以上，
+     红绿色觉缺陷下两两仍可区分；写在 SVG 的 fill / stroke 里，深浅用 fill-opacity */
+  --fig-1: #1f5fa8;
+  --fig-2: #d55e00;
+  --fig-3: #2e9d4e;
+  --fig-4: #882255;
   color-scheme: light;
 
   /* 排在最前的 STIX Two Text 和 Noto Serif SC 是网络字体（样式表由构建注入 <link>），
@@ -103,6 +109,10 @@
   --syn-str: #a3be8c;
   --syn-num: #ebcb8b;
   --syn-func: #8fb3d9;
+  --fig-1: #6cb6ee;
+  --fig-2: #f0835a;
+  --fig-3: #7ad08a;
+  --fig-4: #c777a8;
   color-scheme: dark;
 }
 
@@ -414,6 +424,22 @@ figure.fullwidth img {
 .fullwidth {
   max-width: 100%;
   clear: both;
+}
+
+/* 插图里的公式（图元库的 mathtext）：<foreignObject> 给的是一个足够宽的框，公式在框里按锚点对齐、垂直居中 */
+.fig-math {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  line-height: 1;
+  white-space: nowrap;
+}
+.fig-math-middle {
+  justify-content: center;
+}
+.fig-math-end {
+  justify-content: flex-end;
 }
 
 /* 分步图：构建把每一步各画一幅小图，连同说明并排排开。--step-w 是每幅小图的最小宽度，构建取原图宽度的四分之三：放得下两幅就并排，否则一列 */
