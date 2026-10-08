@@ -33,7 +33,8 @@ HL_DIR = VENDOR / "shj"
 MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
 
 CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
-CSS_TAG_RE = re.compile(r'<style data-tr="css">.*?</style>|<link data-tr="font"[^>]*>', re.S)
+CSS_TAG_RE = re.compile(
+    r'<style data-tr="css">.*?</style>|<link data-tr="font"[^>]*>|<script data-tr="font">.*?</script>', re.S)
 # 网络字体：西文 STIX Two Text、中文 Noto Serif SC，都是按 unicode-range 分片的样式表，不阻塞首绘；
 # 离线或加载失败时回退 tufte.css 里的系统字体。粗体加载 600，与 tufte.css 的 --weight-bold 一致
 FONT_CSS = [f"https://cdn.jsdelivr.net/npm/@fontsource/{name}@5.3.0/{w}.css"
@@ -41,6 +42,10 @@ FONT_CSS = [f"https://cdn.jsdelivr.net/npm/@fontsource/{name}@5.3.0/{w}.css"
             for w in weights]
 FONT_LINKS = "".join(
     f'<link data-tr="font" rel="stylesheet" href="{u}" media="print" onload="this.media=\'all\'">' for u in FONT_CSS)
+# 网络字体平时等到齐后才换上（见 shell.js）。这本读本的字体文件上次已经全部下完时，首绘前就启用：
+# 文件在缓存里，赶得上首绘，不必先排一遍系统字体再换。标记由 shell.js 写，键名两边要一致
+FONT_READY = ('<script data-tr="font">try{if(localStorage.getItem("tufte-reader-fonts:"+location.pathname))'
+              'document.documentElement.dataset.fonts="web"}catch(e){}</script>')
 JS_TAG_RE = re.compile(r'<script data-tr="(?:js|hl)">.*?</script>', re.S)
 
 SIZE_WARN = 5 * 1024 * 1024
@@ -503,7 +508,7 @@ def highlight_script(html, warns):
 
 
 def inline_assets(html, warns, errors):
-    css = FONT_LINKS + f'<style data-tr="css">{(ASSETS / "tufte.css").read_text(encoding="utf-8")}</style>'
+    css = FONT_READY + FONT_LINKS + f'<style data-tr="css">{(ASSETS / "tufte.css").read_text(encoding="utf-8")}</style>'
     if CSS_SLOT in html:
         html = html.replace(CSS_SLOT, css, 1)
     elif CSS_TAG_RE.search(html):

@@ -57,6 +57,8 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<a href="#two">第二章</a>', html)
         # 网络字体的样式表由构建注入，不算作者写的外链
         self.assertEqual(html.count('<link data-tr="font" rel="stylesheet" href="https://cdn.jsdelivr.net/'), 5)
+        # 首绘前启用已缓存字体的脚本同样由构建注入
+        self.assertEqual(html.count('<script data-tr="font">'), 1)
 
     def test_author_external_stylesheet_is_error(self):
         rc, _, out = run(PAGE.replace("<!--TR:CSS-->", '<link rel="stylesheet" href="https://example.org/a.css"><!--TR:CSS-->')

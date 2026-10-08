@@ -32,20 +32,20 @@
   --img-bg: transparent; /* 位图的底色：暗色主题下铺一层浅色，透明底上的深色线条才看得清 */
   color-scheme: light;
 
-  /* 排在最前的 STIX Two Text 和 Noto Serif SC 是网络字体（样式表由构建注入 <link>），
-     离线或加载失败时依次回退到后面的系统字体 */
+  /* 先用系统字体排版。网络字体（STIX Two Text、Noto Serif SC、STIX Two Math）不写在这里：
+     它们按 unicode-range 分成几十个文件，写进字体栈就会到一个换一批字，版面连着重绘。
+     shell.js 等全书用到的文件到齐后设 data-fonts="web"，由下面那条规则一次换上 */
   --font-serif:
-    "STIX Two Text", Palatino, "Palatino Linotype", "Palatino LT STD",
-    "Book Antiqua", Georgia, "Noto Serif SC", "Songti SC", "Noto Serif CJK SC",
-    "Source Han Serif SC", "STSong", SimSun, serif;
+    Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia,
+    "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", SimSun,
+    serif;
   --font-sans:
     "Gill Sans", "Gill Sans MT", Calibri, "PingFang SC", "Hiragino Sans GB",
     "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   --font-mono:
     Consolas, "Liberation Mono", Menlo, "SF Mono", Courier, "PingFang SC",
     monospace;
-  --font-math:
-    "STIX Two Math", "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
+  --font-math: "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
 
   /* ── 字号 ── 1rem = --text-root。正文、页边注、标题各一档，其余向这几档靠 */
   --text-root: 15px;
@@ -116,6 +116,16 @@
   --fig-4: #c777a8;
   --img-bg: #f3f2e8;
   color-scheme: dark;
+}
+
+/* 网络字体到齐后的字体栈：网络字体排在同类系统字体之前，其余顺序与 :root 里的一致 */
+:root[data-fonts="web"] {
+  --font-serif:
+    "STIX Two Text", Palatino, "Palatino Linotype", "Palatino LT STD",
+    "Book Antiqua", Georgia, "Noto Serif SC", "Songti SC", "Noto Serif CJK SC",
+    "Source Han Serif SC", "STSong", SimSun, serif;
+  --font-math:
+    "STIX Two Math", "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
 }
 
 /* 公式字体 STIX Two Math，和正文的拉丁字母 STIX Two Text 同一副字，取 STIX 上游发布的文件。
