@@ -42,7 +42,7 @@ argument-hint: "想重造什么？或给一个已有 topic 的 slug"
 
 参数空缺时问清三件事：重造什么、用什么语言和工具链、以什么判定做对了（oracle 的来源）。拿不准 oracle 来源时先搜一手材料再问。
 
-工作区建在 `<workspace_root>/<topic-slug>/`，我给了路径就用我的；建好后立刻写进登记表，`stage` 为「开题」。`git init`，写 `README.md`：一句话目标、语言与工具链、材料清单（占位）、oracle 来源、里程碑梯子（占位）；`.gitignore` 加 `sources/`（克隆的参考实现不进我的仓库，URL 与 commit 记在 README 里）。做第一次提交。
+工作区建在 `<workspace_root>/<topic-slug>/`，我给了路径就用我的；建好后立刻写进登记表，`stage` 为「开题」。`git init -b main`，写 `README.md`：一句话目标、语言与工具链、材料清单（占位）、oracle 来源、里程碑梯子（占位）；`.gitignore` 加 `sources/`（克隆的参考实现不进我的仓库，URL 与 commit 记在 README 里）。做第一次提交。
 
 然后停下，让我在**本会话**里跑 `/bootstrap-claude <工作区路径>` 初始化 CLAUDE.md 与 PROJECT_MEMORY.md（它接受目录参数，不用切目录或换会话），跨会话状态由 PROJECT_MEMORY.md 承载。我回来后核对 PROJECT_MEMORY.md 已存在，再问我是否建远端：要建就 `gh repo create <slug> --private --source . --push`，把 URL 写进登记表的 `remote`；不建写 `"none"`。开题完成时把 stage 改为「取材」。
 
