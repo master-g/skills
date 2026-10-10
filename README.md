@@ -26,6 +26,7 @@ npx skills add master-g/skills --skill '*' -g
 
 ## Included skills
 
+- `ad-astra`: pair-coach a from-scratch reimplementation (BPE, 6502, backtests…) from primary sources and an oracle, then settle it into Obsidian or shelf.
 - `autopilot`: keep pushing toward a stated goal until its acceptance checks pass or the user needs to take over.
 - `bootstrap-claude`: bootstrap and maintain project instructions and memory files.
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
