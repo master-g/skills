@@ -24,19 +24,19 @@ argument-hint: "想重造什么？或给一个已有 topic 的 slug"
 }
 ```
 
-`workspace_root` 是新 topic 的父目录；`shelf` 是书架仓库路径，沉淀时用；`workspaces` 是 topic 登记表，由本技能维护，每条形如 `"bpe-tokenizer": {"path": "~/github/bpe-tokenizer", "stage": "陪练", "created": "2026-10-10"}`。`stage` 只在步骤切换时更新，取值就是下面六个步骤的标题。
+`workspace_root` 是新 topic 的父目录；`shelf` 是书架仓库路径，沉淀时用；`workspaces` 是 topic 登记表，由本技能维护，每条形如 `"bpe-tokenizer": {"path": "~/github/bpe-tokenizer", "stage": "陪练", "remote": "none", "created": "2026-10-10"}`。`stage` 是正在进行的步骤，取值就是下面六个步骤的标题，只在步骤切换时更新；`remote` 是远端仓库 URL，`"none"` 表示我决定不建，字段缺失表示还没问过。
 
 ## 入口
 
-进度的真源在工作区的 PROJECT_MEMORY.md，登记表只记路径和粗粒度的 stage。按参数定位：
+进度的真源在工作区的 PROJECT_MEMORY.md，登记表只记路径、stage 和远端。按参数定位：
 
-- **无参数**，当前目录是登记过的工作区（路径匹配）：读 PROJECT_MEMORY.md 的「下次运行」块，从它指出的步骤接着做。
+- **无参数**，当前目录是登记过的工作区（路径匹配）：按登记的 stage 接上。stage 是「开题」时对照开题的完成标准，缺哪项补哪项（PROJECT_MEMORY.md 还没有就再提示一次 `/bootstrap-claude`，`remote` 缺失就问），齐了把 stage 改为「取材」继续；其他 stage 读 PROJECT_MEMORY.md 的「下次运行」块，从它指出的地方接着做。
 - **无参数**，当前目录不是工作区：列出登记表里的 topic 和各自 stage，问我是接着哪一个，还是开新题。
-- **参数是已登记的 slug**：切到那个工作区的路径，先读它的 CLAUDE.md 和 PROJECT_MEMORY.md（不在它里面启动时这两个文件没有自动加载），再接着做。
+- **参数是已登记的 slug**：以那个工作区的路径为工作目录，先读它的 CLAUDE.md 和 PROJECT_MEMORY.md（不在它里面启动时这两个文件没有自动加载），再按上面同样的方式接上。
 - **参数是新题**：从「开题」开始。
 - 我说"沉淀"：直接进「沉淀」。
 
-接着练最顺手的方式是在工作区里启动会话再跑 `/ad-astra`，这样 CLAUDE.md 自动加载；从别处用 slug 调用也行，多花一次读文件。
+同一会话里接着做不需要重新调用：开题中途我跑完 `/bootstrap-claude` 回来说"继续"，就按 stage 接上。换会话时在工作区里启动再跑 `/ad-astra`，CLAUDE.md 会自动加载。
 
 ## 1. 开题
 
@@ -44,9 +44,9 @@ argument-hint: "想重造什么？或给一个已有 topic 的 slug"
 
 工作区建在 `<workspace_root>/<topic-slug>/`，我给了路径就用我的；建好后立刻写进登记表，`stage` 为「开题」。`git init`，写 `README.md`：一句话目标、语言与工具链、材料清单（占位）、oracle 来源、里程碑梯子（占位）；`.gitignore` 加 `sources/`（克隆的参考实现不进我的仓库，URL 与 commit 记在 README 里）。做第一次提交。
 
-然后停下，让我在工作区里跑 `/bootstrap-claude` 初始化 CLAUDE.md 与 PROJECT_MEMORY.md，跨会话状态由后者承载。初始化完成后问我是否建远端：要建就 `gh repo create <slug> --private --source . --push`。
+然后停下，让我在**本会话**里跑 `/bootstrap-claude <工作区路径>` 初始化 CLAUDE.md 与 PROJECT_MEMORY.md（它接受目录参数，不用切目录或换会话），跨会话状态由 PROJECT_MEMORY.md 承载。我回来后核对 PROJECT_MEMORY.md 已存在，再问我是否建远端：要建就 `gh repo create <slug> --private --source . --push`，把 URL 写进登记表的 `remote`；不建写 `"none"`。开题完成时把 stage 改为「取材」。
 
-**完成标准**：README 的五项都有内容或明确占位；首次提交已做；PROJECT_MEMORY.md 存在；远端建与不建都已经我拍板。
+**完成标准**：README 的五项都有内容或明确占位；首次提交已做；PROJECT_MEMORY.md 存在；登记表有 `remote`，stage 为「取材」。
 
 ## 2. 取材
 
