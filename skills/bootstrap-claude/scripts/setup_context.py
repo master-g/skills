@@ -54,6 +54,7 @@ def match_section(heading: str, canonical: str) -> bool:
 
 
 PLACEHOLDER = "_待填写_"
+DEFAULT_MAX_LINES = 200  # Claude Code docs: keep each CLAUDE.md under ~200 lines; longer files lower adherence
 
 MEMORY_LINK = "PROJECT_MEMORY.md"
 CONV_HEADING_RE = re.compile(r"^##\s+.*(项目记忆|回写约定|project memory|writeback).*$", re.M | re.I)
@@ -299,7 +300,7 @@ def section_state(body: list) -> str:
     return "已填写"
 
 
-def cmd_validate(root: Path, max_bytes: int) -> int:
+def cmd_validate(root: Path, max_bytes: int, max_lines: int = DEFAULT_MAX_LINES) -> int:
     """Read-only quality check. Returns the number of FAILs."""
     checks = []  # (ok: bool, message: str)
     claude, agents = root / "CLAUDE.md", root / "AGENTS.md"
@@ -320,6 +321,9 @@ def cmd_validate(root: Path, max_bytes: int) -> int:
 
     if truth is not None:
         text = truth.read_text(encoding="utf-8")
+        n_lines = len(text.splitlines())
+        checks.append((n_lines <= max_lines,
+                       f"{truth.name}: {n_lines} 行 (max {max_lines}；超长降低遵循度，模块专属内容移到子目录文件或 .claude/rules/)"))
         bodies = section_bodies(text)
         for section in REQUIRED_SECTIONS:
             hit = next((t for t in bodies if match_section(t, section)), None)
@@ -361,8 +365,10 @@ def main():
                     help="replace a legacy (unmarked, diverged) 回写约定 block with the template "
                          "version; marked blocks upgrade automatically without this flag")
     ap.add_argument("--validate", action="store_true",
-                    help="read-only quality check: section fill state, import-pointer "
-                         "consistency, PROJECT_MEMORY.md size gate; exits 1 on any FAIL")
+                    help="read-only quality check: section fill state, pointer consistency, "
+                         "context file line gate, PROJECT_MEMORY.md size gate; exits 1 on any FAIL")
+    ap.add_argument("--max-lines", type=int, default=DEFAULT_MAX_LINES,
+                    help=f"context file line limit used by --validate (default {DEFAULT_MAX_LINES})")
     ap.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES,
                     help=f"PROJECT_MEMORY.md byte limit used by --validate (default {DEFAULT_MAX_BYTES})")
     args = ap.parse_args()
@@ -372,7 +378,7 @@ def main():
         print(f"ERROR: not a directory: {root}", file=sys.stderr)
         sys.exit(1)
     if args.validate:
-        sys.exit(1 if cmd_validate(root, args.max_bytes) else 0)
+        sys.exit(1 if cmd_validate(root, args.max_bytes, args.max_lines) else 0)
     project_name = args.project_name or root.name
     claude = root / "CLAUDE.md"
     agents = root / "AGENTS.md"

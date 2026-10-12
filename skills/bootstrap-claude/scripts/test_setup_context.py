@@ -109,4 +109,12 @@ with tempfile.TemporaryDirectory() as tmp:
     out = run(d, "--resolve-conflict", "claude")
     assert (d / "AGENTS.md.bak").read_text() == "# other\n" and "- go" in (d / "AGENTS.md").read_text(), out
     assert (d / "CLAUDE.md").read_text() == "@AGENTS.md\n"
+with tempfile.TemporaryDirectory() as tmp:
+    d = Path(tmp); f = d / "AGENTS.md"
+    # line gate: a ~290-line context file (250 filler + BASE + appended convention block)
+    # FAILs validate at the default 200 and passes with --max-lines 400
+    f.write_text(BASE + "".join(f"- filler {i}\n" for i in range(250)))
+    run(d)
+    v = run(d, "--validate"); assert "FAIL AGENTS.md:" in v and "行 (max 200" in v, v
+    v = run(d, "--validate", "--max-lines", "400"); assert "PASS AGENTS.md:" in v, v
 print("test_setup_context: ok")

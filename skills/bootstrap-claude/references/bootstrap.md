@@ -71,8 +71,7 @@ check that it's defined before writing it down.
 python3 <skill>/scripts/setup_context.py --dir <workspace> --validate
 ```
 
-Read-only. It reports each required section as 已填写 / 占位符 / 空, checks
-that CLAUDE.md is the `@AGENTS.md` import of AGENTS.md, and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
+Read-only. It reports each required section as 已填写 / 占位符 / 空, checks CLAUDE.md/AGENTS.md pointer consistency, gates the context file at 200 lines (`--max-lines` to override; move module-specific material into nested files or `.claude/rules/`, see Nested instruction files), and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
 Fix every FAIL before calling the bootstrap done — a surviving placeholder
 reads as "covered" when it isn't. Exit code 1 means at least one FAIL.
 
