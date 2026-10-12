@@ -18,12 +18,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-12] main；bootstrap-claude 五份 improve 计划已执行合入并推送，本仓库用新版脚本迁移为 AGENTS.md 真源并填满七节
-  验证：两组 test_*.py ok、make check 通过、setup_context.py --validate
+- [2026-10-12] main；improve 计划 001–006 全部合入（006 修 marked 约定块升级静默丢块内自定义行，起因是 DopaManga v2→v3 丢了 @PROJECT_MEMORY.md 导入），已 make install；未推送
+  验证：两组 test_*.py ok、make check 通过、用 DopaManga HEAD:AGENTS.md 复现确认被丢行已打印
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-12] 其他旧布局项目装新版后各跑一次 setup_context.py，看 git diff，填「导航」「工作流与陷阱」或写明暂无
-  setup_context.py 模块 docstring 仍写 five REQUIRED_SECTIONS，顺手改为 seven
+- [2026-10-12] 推送 main（含 006）；其他旧布局项目装新版后各跑一次 setup_context.py，看 git diff，填「导航」「工作流与陷阱」或写明暂无；已升到 v3 的仓库核对约定块内自定义行是否丢失

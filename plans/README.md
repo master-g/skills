@@ -18,6 +18,7 @@
 | 003  | 模板 v3：去掉个人路径、新增「导航」「工作流与陷阱」、maintain 加「晋升」        | P1       | M      | 001, 002   | DONE（2026-10-12，main 2c0c9f4）                                                                                                 |
 | 004  | `--validate` 对上下文文件加 200 行门禁                                          | P3       | S      | 002        | DONE（2026-10-12，main 29c94e0）                                                                                                 |
 | 005  | eval 3 的「今天」改为相对表述                                                   | P3       | S      | —          | DONE（2026-10-12，main 9df616c）                                                                                                 |
+| 006  | 约定块自动升级时打印被丢弃的块内旧行，新章节插在约定块之前                      | P1       | S      | 003        | DONE（2026-10-12，main c875250；Step 5 真实 DopaManga 复现由审阅者完成，执行者只跑了合成样例）                                   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -27,6 +28,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 003 依赖 001：新增的两个必填章节必须登记进 001 引入的 `SECTION_ALIASES`，否则 `match_section` 会 `KeyError`。依赖 002：003 的 eval 措辞与端到端验证都以 AGENTS.md 为真源。
 - 004 依赖 002：都改 `cmd_validate`，且测试以 AGENTS.md 为真源。
 - 005 与 002/003 改同一个 `evals.json` 的不同条目，任意顺序。
+- 006 依赖 003：缺陷在 003 的 v2→v3 升级中暴露（2026-10-12 DopaManga 仓库丢了块内的 `@PROJECT_MEMORY.md` 导入行和一条 PR 回写规则，输出却称 preserved）；006 由 `plan` 变体单独写成，不来自原审计。
 
 ## Verification baseline (recorded 2026-10-12)
 
