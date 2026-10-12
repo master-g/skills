@@ -33,10 +33,28 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from memory import check_memory, DEFAULT_MAX_BYTES  # noqa: E402
 ASSETS = SCRIPT_DIR.parent / "assets"
 REQUIRED_SECTIONS = ["技术栈", "命令", "代码风格", "禁止文件", "审查规则"]
+# Canonical section -> lowercase aliases. Matching is substring, case-insensitive,
+# against any heading line. Chinese names are the template's; English names cover
+# the common AGENTS.md vocabulary (see memory.py REPLACE_SECTIONS for the precedent).
+SECTION_ALIASES = {
+    "技术栈":  ["技术栈", "tech stack", "technology stack", "stack"],
+    "命令":    ["命令", "commands", "scripts", "build and test", "build & test"],
+    "代码风格": ["代码风格", "code style", "coding style", "style guide", "conventions"],
+    "禁止文件": ["禁止文件", "do not edit", "protected files", "forbidden files", "never edit"],
+    "审查规则": ["审查规则", "code review", "review rules", "reviewing", "pull request", "merge rules"],
+}
+
+
+def match_section(heading: str, canonical: str) -> bool:
+    """Does this heading line name the canonical section (by any alias)?"""
+    h = heading.lstrip("#").strip().lower()
+    return any(a in h for a in SECTION_ALIASES[canonical])
+
+
 PLACEHOLDER = "_待填写_"
 
 MEMORY_LINK = "PROJECT_MEMORY.md"
-CONV_HEADING_RE = re.compile(r"^##\s+.*(项目记忆|回写约定).*$", re.M)
+CONV_HEADING_RE = re.compile(r"^##\s+.*(项目记忆|回写约定|project memory|writeback).*$", re.M | re.I)
 CONV_MARKER_RE = re.compile(r"^<!-- bootstrap-claude convention v\d+ -->[ \t]*$", re.M)
 
 
@@ -54,10 +72,10 @@ def ultimate(p: Path):
     return rp if rp.is_file() else None
 
 
-def heading_present(text: str, keyword: str) -> bool:
+def heading_present(text: str, canonical: str) -> bool:
     for line in text.splitlines():
         s = line.lstrip()
-        if s.startswith("#") and keyword in s:
+        if s.startswith("#") and match_section(s, canonical):
             return True
     return False
 
@@ -275,11 +293,13 @@ def cmd_validate(root: Path, max_bytes: int) -> int:
         text = truth.read_text(encoding="utf-8")
         bodies = section_bodies(text)
         for section in REQUIRED_SECTIONS:
-            if section not in bodies:
+            hit = next((t for t in bodies if match_section(t, section)), None)
+            if hit is None:
                 checks.append((False, f"{section}: 缺失"))
             else:
-                state = section_state(bodies[section])
-                checks.append((state == "已填写", f"{section}: {state}"))
+                state = section_state(bodies[hit])
+                label = section if hit == section else f"{section} (匹配 ## {hit})"
+                checks.append((state == "已填写", f"{label}: {state}"))
         st = convention_state(text)
         label = st["state"] + ("" if st["state"] != "outdated" else (" (marked)" if st["marked"] else " (legacy)"))
         checks.append((st["state"] == "latest", f"项目记忆 (回写约定): {label}"))

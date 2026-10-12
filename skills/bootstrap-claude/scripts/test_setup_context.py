@@ -55,4 +55,17 @@ with tempfile.TemporaryDirectory() as tmp:
     f.write_text(BASE + "读 PROJECT_MEMORY.md 再开工。\n"); before = f.read_text()
     out = run(d); assert "unmanaged" in out and f.read_text() == before, out
     assert "FAIL 项目记忆" in run(d, "--validate")
+BASE_EN = ("# x\n\n## Tech Stack\n- go\n\n## Commands\n- make\n\n## Code Style\n- fmt\n\n"
+           "## Protected Files\n- dist\n\n## Code Review\n- ci\n\n")
+
+with tempfile.TemporaryDirectory() as tmp:
+    d = Path(tmp); f = d / "AGENTS.md"
+    # English headings are recognised by alias: nothing appended except the convention block
+    f.write_text(BASE_EN)
+    out = run(d); t = f.read_text()
+    assert "already has all required sections" in out, out
+    assert "_待填写_" not in t and "## 技术栈" not in t, t
+    v = run(d, "--validate")
+    assert "缺失" not in v and "占位符" not in v, v
+    assert "技术栈 (匹配 ## Tech Stack): 已填写" in v, v
 print("test_setup_context: ok")
