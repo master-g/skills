@@ -41,6 +41,28 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     d = Path(tmp); f = d / "AGENTS.md"
+    # project-custom lines INSIDE a marked block (before the marker) are dropped on upgrade,
+    # but printed so the operator can re-add them; lines that match the template are not printed
+    tpl_first = TPL.split("\n")[2]  # first body line of the template, identical in old and new
+    f.write_text(BASE + "## 项目记忆 (回写约定)\n\n" + tpl_first + "\n\n@PROJECT_MEMORY.md\n\n"
+                 "回写按 PR 合并后的状态写。\n<!-- bootstrap-claude convention v2 -->\n\n标记后的段落\n")
+    out = run(d); t = f.read_text()
+    assert "upgraded" in out and "AFTER the end marker" in out, out
+    assert "@PROJECT_MEMORY.md" in out and "回写按 PR 合并后的状态写。" in out, out
+    assert out.count(tpl_first) == 0, out  # template-identical line is not reported as dropped
+    assert "@PROJECT_MEMORY.md" not in t and "标记后的段落" in t and sc.convention_state(t)["state"] == "latest"
+
+with tempfile.TemporaryDirectory() as tmp:
+    d = Path(tmp); f = d / "AGENTS.md"
+    # a missing required section is inserted BEFORE the convention block, which stays last
+    f.write_text(BASE.replace("## 导航\n- src/\n\n", "") + TPL + "\n标记后的段落\n")
+    out = run(d); t = f.read_text()
+    assert "appended missing sections" in out and "导航" in out, out
+    assert t.index("## 导航") < t.index("## 项目记忆 (回写约定)") and "\n\n## 项目记忆" in t, t
+    assert t.rstrip().endswith("标记后的段落") and sc.convention_state(t)["state"] == "latest"
+
+with tempfile.TemporaryDirectory() as tmp:
+    d = Path(tmp); f = d / "AGENTS.md"
     # same text, no marker, custom trailing paragraph -> marker inserted before custom text (prefix rule)
     body = TPL.rstrip("\n").rsplit("\n", 1)[0]  # template without marker line
     f.write_text(BASE + body + "\n\n事实写回速查:\n- 决策 → ADR\n")

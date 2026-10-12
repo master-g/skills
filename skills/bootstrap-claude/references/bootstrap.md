@@ -19,9 +19,10 @@ truth and what's still a placeholder.
 
 「项目记忆 (回写约定)」一节的文字归本技能所有，以节末 `<!-- bootstrap-claude convention vN -->`
 标记为边界。脚本每次运行都把它和 `assets/CLAUDE.template.md` 比对并按状态处理：缺失就追加；
-文字相同但无标记就补标记；有标记或以模板正文开头的块直接升级，标记之后的项目自定义行保留；
+文字相同但无标记就补标记；有标记的块整块替换，块内不属于新模板的旧行打印出来由你补回标记之后，标记之后的文字保留；以模板正文开头的块补标记并保留尾随的自定义段；
 无标记且已分叉的旧块只报告 `OUTDATED (legacy)`，加 `--upgrade-convention` 才替换并打印旧文，
 被替换掉的自定义行由你补回标记之后；`unmanaged`（只提到 PROJECT_MEMORY 而无该节标题）不改。
+项目自定义内容一律写在结束标记之后，写在块内的会在下次升级时被替换。
 升级模板时改正文并把标记版本号加一。
 
 If it exits with a `CONFLICT` (both CLAUDE.md and AGENTS.md are independent real

@@ -4,13 +4,15 @@
 Idempotent — safe to run on every invocation. It guarantees that:
   1. A single *source-of-truth* context file exists with every `## ` section
      of assets/CLAUDE.template.md (the template is the only place section text
-     lives); the five REQUIRED_SECTIONS must be filled with real facts.
+     lives); the seven REQUIRED_SECTIONS must be filled with real facts.
   2. CLAUDE.md is the one-line `@AGENTS.md` import so Claude Code reads the same
      content; no symlinks are created.
   3. PROJECT_MEMORY.md exists with its four sections.
   4. The 「项目记忆 (回写约定)」 block matches the template (the skill owns that text):
-     missing -> appended; same text -> end marker added; bounded/prefixed block -> upgraded
-     losslessly; a diverged legacy block -> reported, replaced only with --upgrade-convention.
+     missing -> appended; same text -> end marker added; marked block -> replaced, in-block
+     lines missing from the new template printed; template-prefixed block -> end marker inserted
+     before its trailing custom text; a diverged legacy block -> reported, replaced only with
+     --upgrade-convention.
 
 Layout (AGENTS.md is always the source of truth; CLAUDE.md is the one-line `@AGENTS.md` import):
   - Neither exists / only a lone @AGENTS.md pointer      -> create AGENTS.md from template, write pointer
@@ -174,9 +176,10 @@ def convention_state(text: str) -> dict:
 
 
 def ensure_convention(truth: Path, actions: list, upgrade: bool):
-    """Keep the writeback block current. Marked or template-prefixed blocks upgrade
-    losslessly (custom text after the block survives); a legacy block that diverged
-    is replaced only with --upgrade-convention, and the old text is printed."""
+    """Keep the writeback block current. Marked blocks are replaced and any in-block lines
+    missing from the new template are printed; template-prefixed blocks get the end marker
+    inserted before their trailing custom text; a legacy block that diverged is replaced only
+    with --upgrade-convention, and the old text is printed."""
     text = truth.read_text(encoding="utf-8")
     st = convention_state(text)
     tpl = template_convention()
@@ -205,7 +208,16 @@ def ensure_convention(truth: Path, actions: list, upgrade: bool):
         custom = ("\n" + rem + "\n") if rem else ""  # one blank line, then the project's own text
         new = text[:st["start"]] + tpl.rstrip("\n") + "\n" + custom + text[st["end"]:]
         truth.write_text(new, encoding="utf-8")
-        actions.append("convention: upgraded (custom text after the block preserved)")
+        tpl_lines = set(tpl_body.splitlines())
+        dropped = [l for l in old_body.splitlines() if l.strip() and l not in tpl_lines]
+        if st["marked"] and dropped:
+            actions.append("convention: upgraded (marked block replaced; text after the end marker kept). "
+                           "These old in-block lines are not in the new template — re-add any that are "
+                           "your own AFTER the end marker:\n" + "\n".join("    " + l for l in dropped))
+        elif st["marked"]:
+            actions.append("convention: upgraded (marked block replaced; text after the end marker kept)")
+        else:
+            actions.append("convention: upgraded (end marker inserted; custom text after the template kept)")
         return
     if not upgrade:
         actions.append("convention: OUTDATED (legacy block, not marked) — read the section, then "
@@ -238,7 +250,7 @@ def ensure_claude_pointer(root: Path, actions: list):
 
 
 def ensure_sections(truth: Path, project_name: str, actions: list):
-    """Ensure the truth file has the five required sections + memory link.
+    """Ensure the truth file has the seven required sections + memory link.
     Empty file -> full template. Non-empty -> append only what's missing."""
     text = truth.read_text(encoding="utf-8") if truth.exists() else ""
     if not text.strip():
@@ -254,9 +266,16 @@ def ensure_sections(truth: Path, project_name: str, actions: list):
             additions.append("\n" + block)
             appended.append(title)
     if additions:
-        if not text.endswith("\n"):
-            text += "\n"
-        truth.write_text(text + "".join(additions), encoding="utf-8")
+        m = CONV_HEADING_RE.search(text)
+        if m:
+            # keep the writeback block last: new sections go before it, not after it
+            head = text[:m.start()].rstrip("\n") + "\n"
+            text = head + "".join(additions) + "\n" + text[m.start():]
+        else:
+            if not text.endswith("\n"):
+                text += "\n"
+            text += "".join(additions)
+        truth.write_text(text, encoding="utf-8")
         actions.append(f"appended missing sections to {truth.name}: {', '.join(appended)}")
     else:
         actions.append(f"{truth.name} already has all required sections (left untouched)")
