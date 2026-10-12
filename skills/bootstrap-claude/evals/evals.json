@@ -40,12 +40,12 @@
       "id": 3,
       "name": "writeback",
       "prompt": "Quick update before I close out: we ended up migrating textkit off poetry onto uv this session, because poetry's lockfile kept conflicting on the team and resolves were painfully slow. The build commands changed too (uv sync / uv run pytest). Can you record this in the project memory so the next session has it, and update the context file's commands?",
-      "expected_output": "PROJECT_MEMORY.md updated: a 失败尝试 entry about poetry's lockfile conflicts, and/or a 已验证的事实 entry that the project now uses uv. Entries are dated with today's date (2026-06-18) in the - [YYYY-MM-DD] format and appended without destroying the existing entries. AGENTS.md/命令 updated to uv sync / uv run pytest. `memory.py check` still passes (≤24 KB, no line over 300 chars, 上次会话/下次运行 single block).",
+      "expected_output": "PROJECT_MEMORY.md updated: a 失败尝试 entry about poetry's lockfile conflicts, and/or a 已验证的事实 entry that the project now uses uv. Entries are dated with the date the eval is run (today's date) in the - [YYYY-MM-DD] format and appended without destroying the existing entries. AGENTS.md/命令 updated to uv sync / uv run pytest. `memory.py check` still passes (≤24 KB, no line over 300 chars, 上次会话/下次运行 single block).",
       "files": ["evals/files/py-lib"],
       "expectations": [
         "PROJECT_MEMORY.md gained a new entry capturing the poetry→uv migration and the reason (lockfile conflicts / slow resolves)",
         "The new entry is in the 失败尝试 and/or 已验证的事实 section, in the '- [YYYY-MM-DD]' format",
-        "The new entry carries today's date 2026-06-18",
+        "The new entry carries the date the eval was run (today's date) in [YYYY-MM-DD] form — not a stale, invented, or copied date",
         "All pre-existing PROJECT_MEMORY.md entries (slugify Unicode fact, str.translate failure, etc.) are still present",
         "AGENTS.md (the source-of-truth context file, migrated from the fixture's CLAUDE.md) 命令 section now references uv (uv sync / uv run pytest) instead of poetry",
         "PROJECT_MEMORY.md still passes `scripts/memory.py check` (under 24 KB, no line over 300 chars, 上次会话 and 下次运行 each hold one block)"
