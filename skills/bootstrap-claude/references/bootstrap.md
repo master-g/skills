@@ -11,8 +11,8 @@ python3 <skill>/scripts/setup_context.py --dir <workspace>
 ```
 
 It ensures the context file has the five required sections and the memory
-writeback section from `assets/CLAUDE.template.md`, creates PROJECT_MEMORY.md, and reconciles the CLAUDE.md / AGENTS.md naming so both point
-at one source of truth (see [Compatibility](#compatibility) below). It **never
+writeback section from `assets/CLAUDE.template.md`, creates PROJECT_MEMORY.md, and makes AGENTS.md the single source of truth and CLAUDE.md a one-line
+`@AGENTS.md` import (migrating a legacy CLAUDE.md-as-real-file layout automatically; see [Compatibility](#compatibility) below). It **never
 overwrites** existing real content — it only appends missing sections and prints
 exactly what it changed. Read that output so you know which file is the source of
 truth and what's still a placeholder.
@@ -25,15 +25,17 @@ truth and what's still a placeholder.
 升级模板时改正文并把标记版本号加一。
 
 If it exits with a `CONFLICT` (both CLAUDE.md and AGENTS.md are independent real
-files), don't force it — show the user both and ask which should win, then re-run
-with `--resolve-conflict claude` or `--resolve-conflict agents`.
+files with content), the script refuses to guess. Show the user both, ask whose
+content should become AGENTS.md, then re-run with `--resolve-conflict claude` or
+`--resolve-conflict agents` (the other is backed up as `.bak`, and CLAUDE.md becomes
+the one-line import).
 
 ### Step 2: fill the sections with real facts
 
 The script leaves `_待填写_` placeholders. An empty skeleton is nearly useless —
 the value is in the content. Investigate the repo and replace the placeholders in
-the **source-of-truth file** (the one the script reported — edit that, not the
-symlink). Look for the evidence each section needs:
+the **source-of-truth file** (always `AGENTS.md`; editing the `@AGENTS.md` pointer in
+CLAUDE.md does nothing useful). Look for the evidence each section needs:
 
 - **技术栈** — language/framework versions from `package.json`, `pyproject.toml`,
   `go.mod`, `Cargo.toml`, lockfiles, `.tool-versions`, Dockerfiles.
@@ -60,26 +62,28 @@ python3 <skill>/scripts/setup_context.py --dir <workspace> --validate
 ```
 
 Read-only. It reports each required section as 已填写 / 占位符 / 空, checks
-CLAUDE.md/AGENTS.md link consistency, and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
+that CLAUDE.md is the `@AGENTS.md` import of AGENTS.md, and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
 Fix every FAIL before calling the bootstrap done — a surviving placeholder
 reads as "covered" when it isn't. Exit code 1 means at least one FAIL.
 
 ## Compatibility
 
-Many tools read `AGENTS.md`; Claude Code reads `CLAUDE.md`. To serve both without
-maintaining two copies, the skill keeps **one real file** and makes the other a
-symlink to it. `setup_context.py` resolves this automatically:
+Many tools read `AGENTS.md`; Claude Code reads `CLAUDE.md`, and expands `@path` imports
+in it. The skill therefore keeps **one real file, `AGENTS.md`**, and makes `CLAUDE.md`
+a one-line import `@AGENTS.md` — the layout the Claude Code docs recommend and the one
+Firefox uses. A plain text pointer (unlike a symlink) survives Windows checkouts without
+`core.symlinks`, and the file other agents read carries no Claude-specific framing.
+`setup_context.py` resolves every layout automatically and never creates symlinks:
 
-| Situation                                        | Source of truth       | Other file                                            |
-| ------------------------------------------------ | --------------------- | ----------------------------------------------------- |
-| Neither exists                                   | `CLAUDE.md` (created) | `AGENTS.md` → symlink to CLAUDE.md                    |
-| Only `CLAUDE.md` (real)                          | `CLAUDE.md`           | `AGENTS.md` → symlink to CLAUDE.md                    |
-| Only `AGENTS.md` (real)                          | `AGENTS.md`           | `CLAUDE.md` → symlink to AGENTS.md                    |
-| `AGENTS.md` real + `CLAUDE.md` already a symlink | `AGENTS.md`           | left as-is                                            |
-| Both already point to the same file              | that file             | left as-is                                            |
-| Both are independent real files                  | —                     | **CONFLICT** → ask the user, use `--resolve-conflict` |
+| Situation                                                | Result                                                                       |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Neither exists, or only a lone `@AGENTS.md` pointer      | `AGENTS.md` created from the template; `CLAUDE.md` = `@AGENTS.md`            |
+| Only `AGENTS.md` (real)                                  | left as-is; `CLAUDE.md` = `@AGENTS.md` written                               |
+| `AGENTS.md` real + `CLAUDE.md` already `@AGENTS.md`      | left as-is                                                                   |
+| `AGENTS.md` real + `CLAUDE.md` a symlink to it           | symlink replaced by the `@AGENTS.md` pointer                                 |
+| `CLAUDE.md` real, `AGENTS.md` missing or a symlink to it | **migrated**: content moves to `AGENTS.md`, `CLAUDE.md` becomes `@AGENTS.md` |
+| Both are independent real files                          | **CONFLICT** → ask the user, re-run with `--resolve-conflict claude\|agents` |
 
-The rule of thumb: **edit whichever file the script reports as the source of
-truth.** Editing the symlink works too (it writes through), but knowing which is
-real prevents confusion. PROJECT_MEMORY.md is always a single real file referenced
-from the context file.
+Always edit `AGENTS.md`. PROJECT_MEMORY.md is a single real file referenced from it.
+Claude Code ≥ 2.1.277 can also read `AGENTS.md` with no `CLAUDE.md` at all, but the docs
+note some sessions cannot, so the pointer stays.

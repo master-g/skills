@@ -1,6 +1,6 @@
-# {{PROJECT_NAME}} — Claude 项目上下文
+# {{PROJECT_NAME}} — 项目上下文
 
-> 项目指令与常用命令，供 Claude / AI 编码代理按任务需要查阅。
+> 项目指令与常用命令，供 AI 编码代理按任务需要查阅；Claude Code 经 CLAUDE.md 的 `@AGENTS.md` 导入读到同一份内容。
 > 跨会话记忆见 [PROJECT_MEMORY.md](./PROJECT_MEMORY.md)。
 
 ## 技术栈

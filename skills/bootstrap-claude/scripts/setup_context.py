@@ -5,19 +5,19 @@ Idempotent — safe to run on every invocation. It guarantees that:
   1. A single *source-of-truth* context file exists with every `## ` section
      of assets/CLAUDE.template.md (the template is the only place section text
      lives); the five REQUIRED_SECTIONS must be filled with real facts.
-  2. Both CLAUDE.md (Claude Code) and AGENTS.md (other agents) resolve to that
-     same content — whichever isn't the real file becomes a symlink to it.
+  2. CLAUDE.md is the one-line `@AGENTS.md` import so Claude Code reads the same
+     content; no symlinks are created.
   3. PROJECT_MEMORY.md exists with its four sections.
   4. The 「项目记忆 (回写约定)」 block matches the template (the skill owns that text):
      missing -> appended; same text -> end marker added; bounded/prefixed block -> upgraded
      losslessly; a diverged legacy block -> reported, replaced only with --upgrade-convention.
 
-Compatibility rules (from the user's spec), resolved automatically:
-  - AGENTS.md is a real file and CLAUDE.md is a symlink  -> truth = AGENTS.md
-  - No AGENTS.md (CLAUDE.md is/becomes the real file)    -> symlink AGENTS.md -> CLAUDE.md
-  - Only AGENTS.md exists                                -> symlink CLAUDE.md -> AGENTS.md
-  - Neither exists                                       -> create CLAUDE.md, symlink AGENTS.md -> CLAUDE.md
-  - Both are independent real files                      -> CONFLICT, refuse unless --resolve-conflict given
+Layout (AGENTS.md is always the source of truth; CLAUDE.md is the one-line `@AGENTS.md` import):
+  - Neither exists / only a lone @AGENTS.md pointer      -> create AGENTS.md from template, write pointer
+  - Only AGENTS.md (real)                                 -> write CLAUDE.md pointer
+  - AGENTS.md real + CLAUDE.md pointer or symlink to it   -> truth = AGENTS.md; a symlink is replaced by the pointer
+  - CLAUDE.md real, AGENTS.md missing or symlink to it    -> migrate: CLAUDE.md content moves to AGENTS.md, pointer written
+  - Both are independent real files                       -> CONFLICT, refuse unless --resolve-conflict given
 
 Existing real files are never overwritten — missing sections are appended,
 present content is left untouched.
@@ -70,6 +70,30 @@ def ultimate(p: Path):
     except OSError:
         return None
     return rp if rp.is_file() else None
+
+
+IMPORT_RE = re.compile(r"^@(?:\./)?AGENTS\.md\s*$")
+POINTER_TEXT = "@AGENTS.md\n"
+
+
+def is_import_pointer(p: Path) -> bool:
+    """True if `p` is a regular (non-symlink) file whose only non-blank,
+    non-comment content is the single line `@AGENTS.md` — Claude Code's
+    documented way to read AGENTS.md through CLAUDE.md."""
+    if p.is_symlink() or not p.is_file():
+        return False
+    lines = [l.strip() for l in p.read_text(encoding="utf-8").splitlines()]
+    lines = [l for l in lines if l and not l.startswith("<!--")]
+    return len(lines) == 1 and bool(IMPORT_RE.match(lines[0]))
+
+
+def resolve_pointer(p: Path, agents: Path):
+    """The real content file `p` stands for: an `@AGENTS.md` import resolves to
+    `agents`, a symlink is followed, a regular file is itself. None if missing,
+    dangling, or not a regular file."""
+    if is_import_pointer(p):
+        return ultimate(agents)
+    return ultimate(p)
 
 
 def heading_present(text: str, canonical: str) -> bool:
@@ -190,18 +214,24 @@ def ensure_convention(truth: Path, actions: list, upgrade: bool):
                    "custom lines AFTER the end marker)\n" + st["old"].rstrip("\n"))
 
 
-def ensure_partner_symlinks(root: Path, truth: Path, actions: list):
-    """Make whichever of CLAUDE.md / AGENTS.md is not the truth file a symlink
-    pointing at the truth file's name."""
-    for name in ("CLAUDE.md", "AGENTS.md"):
-        p = root / name
-        if ultimate(p) == truth:
-            continue  # already correct (it *is* the truth, or links to it)
-        if p.is_symlink() or not p.exists():
-            if p.is_symlink():
-                p.unlink()
-            os.symlink(truth.name, p)
-            actions.append(f"symlink: {name} -> {truth.name}")
+def ensure_claude_pointer(root: Path, actions: list):
+    """CLAUDE.md is always the one-line `@AGENTS.md` import: a plain text file
+    (survives Windows checkouts without core.symlinks) that Claude Code expands at
+    launch. A legacy symlink is replaced; a correct pointer is left alone."""
+    claude = root / "CLAUDE.md"
+    if is_import_pointer(claude):
+        return
+    if claude.is_symlink():
+        claude.unlink()
+        claude.write_text(POINTER_TEXT, encoding="utf-8")
+        actions.append("pointer: CLAUDE.md symlink replaced with @AGENTS.md import")
+        return
+    if not claude.exists():
+        claude.write_text(POINTER_TEXT, encoding="utf-8")
+        actions.append("pointer: CLAUDE.md -> @AGENTS.md")
+        return
+    # A regular CLAUDE.md with content can only reach here if main() left it (it never should).
+    actions.append("WARNING: CLAUDE.md is a regular file with content and was left untouched")
 
 
 def ensure_sections(truth: Path, project_name: str, actions: list):
@@ -271,23 +301,20 @@ def cmd_validate(root: Path, max_bytes: int) -> int:
     """Read-only quality check. Returns the number of FAILs."""
     checks = []  # (ok: bool, message: str)
     claude, agents = root / "CLAUDE.md", root / "AGENTS.md"
-    cu, au = ultimate(claude), ultimate(agents)
+    cu, au = resolve_pointer(claude, agents), ultimate(agents)
 
     if cu and au and cu != au:
         checks.append((False, "CLAUDE.md 与 AGENTS.md 指向不同内容 (CONFLICT)"))
         truth = None
     else:
-        truth = cu or au
+        truth = au
         if truth is None:
             checks.append((False, "缺少上下文文件 — 先运行 bootstrap"))
         else:
-            bad = [name for name, resolved in (("CLAUDE.md", cu), ("AGENTS.md", au))
-                   if resolved != truth]
-            if bad:
-                for name in bad:
-                    checks.append((False, f"{name} 缺失或未指向 {truth.name}"))
+            if cu != truth:
+                checks.append((False, "CLAUDE.md 缺失或不是指向 AGENTS.md 的 @AGENTS.md 导入"))
             else:
-                checks.append((True, f"symlink 一致: 真实文件为 {truth.name}"))
+                checks.append((True, "指向一致: 真实文件为 AGENTS.md，CLAUDE.md 为 @AGENTS.md 导入"))
 
     if truth is not None:
         text = truth.read_text(encoding="utf-8")
@@ -325,14 +352,14 @@ def main():
     ap.add_argument("--project-name", default=None,
                     help="name used in templates (default: directory name)")
     ap.add_argument("--resolve-conflict", choices=["claude", "agents"], default=None,
-                    help="when both CLAUDE.md and AGENTS.md are independent real "
-                         "files, pick which becomes the source of truth; the other "
-                         "is backed up to *.bak and replaced with a symlink")
+                    help="when both CLAUDE.md and AGENTS.md are independent real files, "
+                         "pick whose content becomes AGENTS.md; the other is backed up to "
+                         "*.bak and CLAUDE.md becomes the one-line @AGENTS.md import")
     ap.add_argument("--upgrade-convention", action="store_true",
                     help="replace a legacy (unmarked, diverged) 回写约定 block with the template "
                          "version; marked blocks upgrade automatically without this flag")
     ap.add_argument("--validate", action="store_true",
-                    help="read-only quality check: section fill state, symlink "
+                    help="read-only quality check: section fill state, import-pointer "
                          "consistency, PROJECT_MEMORY.md size gate; exits 1 on any FAIL")
     ap.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES,
                     help=f"PROJECT_MEMORY.md byte limit used by --validate (default {DEFAULT_MAX_BYTES})")
@@ -349,41 +376,51 @@ def main():
     agents = root / "AGENTS.md"
     actions: list = []
 
-    cu = ultimate(claude)
+    cu = resolve_pointer(claude, agents)
     au = ultimate(agents)
 
-    if cu and au and cu == au:
-        truth = cu
-    elif cu and au and cu != au:
+    if agents.is_symlink() and ultimate(agents) == ultimate(claude) and claude.is_file() and not claude.is_symlink():
+        agents.unlink()
+        au = None  # fall into the legacy-migration branch below
+
+    if cu and au and cu != au:
+        # Two independent real files. Refuse to guess.
         if not args.resolve_conflict:
             print(
                 "CONFLICT: CLAUDE.md and AGENTS.md are independent real files with "
                 "different content.\n"
                 f"  CLAUDE.md -> {cu}\n  AGENTS.md -> {au}\n"
                 "Refusing to guess. Re-run with --resolve-conflict claude|agents to pick "
-                "the source of truth (the other is backed up to *.bak and symlinked).",
+                "whose content becomes AGENTS.md (the other is backed up to *.bak; "
+                "CLAUDE.md becomes the one-line @AGENTS.md import).",
                 file=sys.stderr,
             )
             sys.exit(2)
-        keep, drop = (claude, agents) if args.resolve_conflict == "claude" else (agents, claude)
-        bak = drop.with_suffix(drop.suffix + ".bak")
-        os.replace(drop, bak)
-        actions.append(f"CONFLICT resolved: backed up {drop.name} -> {bak.name}")
-        truth = ultimate(keep)
+        if args.resolve_conflict == "claude":
+            bak = agents.with_suffix(agents.suffix + ".bak")
+            os.replace(agents, bak)
+            os.replace(claude, agents)
+            actions.append(f"CONFLICT resolved: backed up AGENTS.md -> {bak.name}; "
+                           "CLAUDE.md content moved to AGENTS.md")
+        else:
+            bak = claude.with_suffix(claude.suffix + ".bak")
+            os.replace(claude, bak)
+            actions.append(f"CONFLICT resolved: backed up CLAUDE.md -> {bak.name}")
     elif cu and not au:
-        truth = cu
-    elif au and not cu:
-        truth = au
-    else:
-        # Neither has real content. Clean up any dangling symlinks and init fresh.
-        for p in (claude, agents):
-            if p.is_symlink():
-                p.unlink()
-        claude.write_text(render("CLAUDE.template.md", project_name), encoding="utf-8")
-        actions.append("created CLAUDE.md from template")
-        truth = ultimate(claude)
+        # Legacy layout: CLAUDE.md holds the content (AGENTS.md missing or a symlink to it).
+        if agents.is_symlink():
+            agents.unlink()
+        os.replace(claude, agents)
+        actions.append("migrated: CLAUDE.md content moved to AGENTS.md (AGENTS.md is the source of truth)")
+    elif not au:
+        # Nothing real anywhere (fresh dir, dangling symlinks, or a lone @AGENTS.md pointer).
+        if agents.is_symlink():
+            agents.unlink()
+        agents.write_text(render("CLAUDE.template.md", project_name), encoding="utf-8")
+        actions.append("created AGENTS.md from template")
+    truth = ultimate(agents)
 
-    ensure_partner_symlinks(root, truth, actions)
+    ensure_claude_pointer(root, actions)
     ensure_sections(truth, project_name, actions)
     ensure_convention(truth, actions, args.upgrade_convention)
     ensure_memory(root, project_name, actions)
