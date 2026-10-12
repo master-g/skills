@@ -5,13 +5,14 @@
       "id": 1,
       "name": "greenfield-fill",
       "prompt": "I just cloned this acme-checkout repo and there's no Claude setup yet. Can you bootstrap it — set up the context file and a project memory file so future sessions know how to build, test and behave here? Fill them in with the actual stuff from the repo, don't leave it blank.",
-      "expected_output": "AGENTS.md (real, source of truth) + CLAUDE.md (one line: `@AGENTS.md`) + PROJECT_MEMORY.md created. The five sections are filled with REAL facts from the repo: TypeScript 5 / vitest / eslint+prettier; commands npm run build/test/lint; dist and package-lock listed as forbidden/generated; review rule that CI lint+tests must pass before merge. PROJECT_MEMORY.md has the four sections.",
+      "expected_output": "AGENTS.md (real, source of truth) + CLAUDE.md (one line: `@AGENTS.md`) + PROJECT_MEMORY.md created. The seven sections are filled with REAL facts from the repo: TypeScript 5 / vitest / eslint+prettier; commands npm run build/test/lint; dist and package-lock listed as forbidden/generated; review rule that CI lint+tests must pass before merge. PROJECT_MEMORY.md has the four sections.",
       "files": ["evals/files/node-app"],
       "expectations": [
         "AGENTS.md exists in the project and is a regular file (the source of truth)",
         "CLAUDE.md exists, is a regular file (not a symlink), and its only content is the line '@AGENTS.md'",
         "PROJECT_MEMORY.md exists and contains all four headings: 已验证的事实, 失败尝试, 上次会话, 下次运行",
-        "AGENTS.md contains all five headings: 技术栈, 命令, 代码风格, 禁止文件, 审查规则",
+        "AGENTS.md contains all seven headings: 技术栈, 导航, 命令, 工作流与陷阱, 代码风格, 禁止文件, 审查规则",
+        "The 工作流与陷阱 section names at least one operation that needs user confirmation before running (e.g. push / publish) with a reason, or explicitly says 暂无 — not a bare placeholder",
         "The 命令 section references the real scripts (build/test/lint), not invented ones — e.g. mentions vitest or 'npm run test' and eslint",
         "The 技术栈 section names TypeScript and the test runner (vitest), drawn from package.json/tsconfig",
         "The 禁止文件 section lists the generated dist/ directory and/or the lockfile",
@@ -29,7 +30,7 @@
         "AGENTS.md is still a regular file (not turned into a symlink)",
         "CLAUDE.md exists as a regular file whose only content is '@AGENTS.md' — not a symlink, not a copy",
         "The original AGENTS.md content (Go 1.22 / chi / sqlc / Postgres) is preserved, not deleted",
-        "AGENTS.md now contains the previously-missing headings: 命令, 代码风格, 禁止文件, 审查规则",
+        "AGENTS.md now contains the previously-missing headings: 导航, 命令, 工作流与陷阱, 代码风格, 禁止文件, 审查规则",
         "The 命令 section uses the real Makefile targets (go build / go test / golangci-lint), not invented commands",
         "PROJECT_MEMORY.md was created with its four sections",
         "Edits were made to AGENTS.md (the real file), not duplicated into CLAUDE.md as a separate copy"
@@ -54,13 +55,15 @@
       "id": 4,
       "name": "convention-upgrade",
       "prompt": "This repo was bootstrapped a while ago and I think the Claude setup is stale. Bring it up to the current convention without losing anything we wrote ourselves.",
-      "expected_output": "setup_context.py reports the 回写约定 block as outdated (legacy). After --upgrade-convention the section matches the template (byte gate, single-block 上次会话/下次运行, memory.py check command, end marker), while 技术栈/命令/代码风格/禁止文件/审查规则 keep their existing real content. --validate passes for the convention line. The fixture's CLAUDE.md is migrated: its content now lives in AGENTS.md and CLAUDE.md is the one-line `@AGENTS.md` import.",
+      "expected_output": "setup_context.py reports the 回写约定 block as outdated (legacy). After --upgrade-convention the section matches the template (byte gate, single-block 上次会话/下次运行, memory.py check command, end marker), while 技术栈/命令/代码风格/禁止文件/审查规则 keep their existing real content. --validate passes for the convention line. The fixture's CLAUDE.md is migrated: its content now lives in AGENTS.md and CLAUDE.md is the one-line `@AGENTS.md` import. The convention marker reads v3.",
       "files": ["evals/files/py-lib"],
       "expectations": [
         "The agent ran scripts/setup_context.py first rather than editing the file by hand",
         "AGENTS.md's 「项目记忆 (回写约定)」 section now ends with the '<!-- bootstrap-claude convention v' end marker",
         "CLAUDE.md is now a regular file containing only '@AGENTS.md'; no symlink exists",
         "The section mentions `memory.py check` and the 24 KB / 300-character limits, and no longer says 完成任务后回写 only",
+        "The 「项目记忆 (回写约定)」 section contains no '~/.claude/' path",
+        "The two v3 sections 导航 and 工作流与陷阱 were appended and are filled or explicitly marked 暂无",
         "The pre-existing 技术栈 (Python 3.11 / poetry / ruff), 命令, 代码风格, 禁止文件, 审查规则 content is unchanged",
         "`setup_context.py --validate` reports the convention as latest"
       ]

@@ -13,7 +13,7 @@ def run(d, *flags):
     return subprocess.run([sys.executable, str(HERE / "setup_context.py"), "--dir", str(d), *flags],
                           capture_output=True, text=True).stdout
 
-BASE = "# x\n\n## 技术栈\n- go\n\n## 命令\n- make\n\n## 代码风格\n- fmt\n\n## 禁止文件\n- dist\n\n## 审查规则\n- ci\n\n"
+BASE = "# x\n\n## 技术栈\n- go\n\n## 导航\n- src/\n\n## 命令\n- make\n\n## 工作流与陷阱\n- push 前先问\n\n## 代码风格\n- fmt\n\n## 禁止文件\n- dist\n\n## 审查规则\n- ci\n\n"
 
 with tempfile.TemporaryDirectory() as tmp:
     d = Path(tmp)
@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory() as tmp:
     f.write_text(BASE + "读 PROJECT_MEMORY.md 再开工。\n"); before = f.read_text()
     out = run(d); assert "unmanaged" in out and f.read_text() == before, out
     assert "FAIL 项目记忆" in run(d, "--validate")
-BASE_EN = ("# x\n\n## Tech Stack\n- go\n\n## Commands\n- make\n\n## Code Style\n- fmt\n\n"
+BASE_EN = ("# x\n\n## Tech Stack\n- go\n\n## Repo Map\n- src/\n\n## Commands\n- make\n\n## Workflow\n- ask before push\n\n## Code Style\n- fmt\n\n"
            "## Protected Files\n- dist\n\n## Code Review\n- ci\n\n")
 
 with tempfile.TemporaryDirectory() as tmp:

@@ -39,8 +39,18 @@ CLAUDE.md does nothing useful). Look for the evidence each section needs:
 
 - **技术栈** — language/framework versions from `package.json`, `pyproject.toml`,
   `go.mod`, `Cargo.toml`, lockfiles, `.tool-versions`, Dockerfiles.
+- **导航** — top-level directory layout; the docs maintainers say to read first
+  (`ARCHITECTURE.md`, `docs/` entry points, `CONTRIBUTING.md`); existing nested
+  instruction files (`find . -name AGENTS.md -o -name CLAUDE.md -not -path './node_modules/*'`);
+  any repo-specific search/index tool. A small single-package repo gets one line.
 - **命令** — real scripts: `package.json` "scripts", `Makefile`, `justfile`, CI
   workflows, README. Prefer the exact command someone runs to build/test/lint.
+- **工作流与陷阱** — CI config for slow steps and build/test variants; `CONTRIBUTING.md`
+  and PR templates for approval gates (what needs a human before it runs: push, publish,
+  paid CI, production config); scripts that touch shared state. Every entry carries its
+  reason — a rule without a reason reads as arbitrary and gets skipped. New repos
+  legitimately start with only the approval-gate line; the rest accrues from incidents
+  (see 项目记忆维护 → 晋升).
 - **代码风格** — linter/formatter configs (eslint, prettier, ruff, gofmt),
   `.editorconfig`, plus conventions you can see in the existing code.
 - **禁止文件** — generated output, lockfiles, vendored deps, secrets, migration
@@ -87,3 +97,14 @@ Firefox uses. A plain text pointer (unlike a symlink) survives Windows checkouts
 Always edit `AGENTS.md`. PROJECT_MEMORY.md is a single real file referenced from it.
 Claude Code ≥ 2.1.277 can also read `AGENTS.md` with no `CLAUDE.md` at all, but the docs
 note some sessions cannot, so the pointer stays.
+
+### Nested instruction files
+
+Claude Code loads a subdirectory's `CLAUDE.md` / `AGENTS.md` on demand when it reads or
+edits a file in that directory, and `.claude/rules/*.md` with a `paths:` frontmatter does
+the same by glob. Use them for module-specific commands and gotchas in large repos so the
+root stays under 200 lines. List in the root 「导航」 section which directories carry their
+own file, and open each child file with one line saying the root still applies
+(`../AGENTS.md 仍然适用`). Do **not** run `setup_context.py --dir <subdir>` to make one —
+it would lay down a full root skeleton plus a second PROJECT_MEMORY.md. Write the child
+file by hand.

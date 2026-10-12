@@ -32,12 +32,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from memory import check_memory, DEFAULT_MAX_BYTES  # noqa: E402
 ASSETS = SCRIPT_DIR.parent / "assets"
-REQUIRED_SECTIONS = ["技术栈", "命令", "代码风格", "禁止文件", "审查规则"]
+REQUIRED_SECTIONS = ["技术栈", "导航", "命令", "工作流与陷阱", "代码风格", "禁止文件", "审查规则"]
 # Canonical section -> lowercase aliases. Matching is substring, case-insensitive,
 # against any heading line. Chinese names are the template's; English names cover
 # the common AGENTS.md vocabulary (see memory.py REPLACE_SECTIONS for the precedent).
 SECTION_ALIASES = {
     "技术栈":  ["技术栈", "tech stack", "technology stack", "stack"],
+    "导航":       ["导航", "navigation", "repo map", "where things live", "architecture", "directory layout"],
+    "工作流与陷阱": ["工作流与陷阱", "工作流", "陷阱", "workflow", "gotchas", "pitfalls"],
     "命令":    ["命令", "commands", "scripts", "build and test", "build & test"],
     "代码风格": ["代码风格", "code style", "coding style", "style guide", "conventions"],
     "禁止文件": ["禁止文件", "do not edit", "protected files", "forbidden files", "never edit"],
