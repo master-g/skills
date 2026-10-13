@@ -9,6 +9,7 @@
 
 - [2026-10-12] bootstrap-claude 以 AGENTS.md 为唯一真源、CLAUDE.md 只写一行 @AGENTS.md、不建 symlink（Firefox 布局，Claude Code 文档推荐；plans/README.md 记有决定）
 - [2026-10-12] 英文仓库的英文模板（--lang en）暂不做：别名表已能识别英文标题，缺失章节仍以中文追加；等有真实需求再议（plans/README.md Open decisions）
+- [2026-10-13] guide-me 的高视角（趋势、前提重审、暂停/改范围）只做观察标出、取舍留给用户，不建独立技能也不并入 grilling；依据是本机 223 份实际输出里 0 份提过节奏、1 份重审目标，缺口是结构性的（第 2 步锚最新原话、第 3 步保用户决定）
 
 ## 失败尝试
 
@@ -18,11 +19,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-12] main；improve 计划 001–006 全部合入（006 修 marked 约定块升级静默丢块内自定义行，起因是 DopaManga v2→v3 丢了 @PROJECT_MEMORY.md 导入），已 make install；未推送
-  验证：两组 test_*.py ok、make check 通过、用 DopaManga HEAD:AGENTS.md 复现确认被丢行已打印
+- [2026-10-13] main；guide-me 加跨会话趋势行、反推第 0 问（前提是否仍成立）、下一步允许暂停/改范围，已 make install；improve 计划 001–006 已合入；未推送
+  验证：make check 通过；趋势行是否真引用 git 历史旧块、给出剩余量估算，需在 DopaManga 或 tobi 跑一次 /guide-me 才能确认
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-12] 推送 main（含 006）；其他旧布局项目装新版后各跑一次 setup_context.py，看 git diff，填「导航」「工作流与陷阱」或写明暂无；已升到 v3 的仓库核对约定块内自定义行是否丢失
+- [2026-10-13] 推送 main；在 DopaManga 或 tobi 跑一次 /guide-me 验收趋势行与第 0 问，没触发或空话就回来收窄措辞；其他旧布局项目装新版 bootstrap-claude 后各跑一次 setup_context.py 看 git diff，已升 v3 的仓库核对约定块内自定义行是否丢失
