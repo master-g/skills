@@ -70,7 +70,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 | Plan | Title                                                                                                    | Priority | Effort | Depends on | Status                                     |
 | ---- | -------------------------------------------------------------------------------------------------------- | -------- | ------ | ---------- | ------------------------------------------ |
 | 007  | tufte-reader 支持公有领域铜版画题图（扉页与选定章节）                                                    | P2       | M      | —          | DONE（worktree 提交 f2b4c12，待合入 main） |
-| 008  | plate.py 支持 Internet Archive 扫描本（IIIF 裁切），登记 Atalanta Fugiens 为首个条目并换成 1000px 高清版 | P2       | S      | 007        | TODO                                       |
+| 008  | plate.py 支持 Internet Archive 扫描本（IIIF 裁切），登记 Atalanta Fugiens 为首个条目并换成 1000px 高清版 | P2       | S      | 007        | DONE（worktree 提交 c51ac07，待合入 main） |
 | 009  | 加搜图脚本 find_plate.py：按主题词在 Commons 分类里找许可可用的高清题图                                  | P2       | S      | 007        | TODO                                       |
 
 ### Dependency notes
