@@ -134,6 +134,31 @@ class BuildTest(unittest.TestCase):
         self.assertNotIn("）</span><wbr>", html)  # 后面紧跟逗号，不能在这里断
         self.assertIn("看<wbr><span", html)
 
+    def test_plate_counted_apart_from_figures(self):
+        import base64
+
+        img = '<img src="figures/a.png" alt="画面" />'
+        body = (f'<figure class="plate" data-source="https://commons.wikimedia.org/wiki/File:X.jpeg" '
+                f'data-license="Public domain"><span class="marginnote">题图　说明。</span>{img}</figure>'
+                f'<figure><span class="marginnote">图 1　图题。</span>{img}</figure>')
+        rc, html, out = run(PAGE.replace("BODY", body), {"figures/a.png": base64.b64decode(PNG_1PX)})
+        self.assertEqual(rc, 0, out)
+        self.assertIn("  图 1  ", out)
+        self.assertIn("  题图 1  ", out)
+
+    def test_plate_without_source_is_error(self):
+        body = '<figure class="plate" data-license="Public domain"><img src="data:image/png;base64,AA" alt="画面" /></figure>'
+        rc, html, out = run(PAGE.replace("BODY", body))
+        self.assertEqual(rc, 1)
+        self.assertIn("题图缺 data-source 或 data-license", out)
+
+    def test_plate_todo_is_error(self):
+        body = ('<figure class="plate" data-source="https://x" data-license="CC0">'
+                '<img src="data:image/png;base64,AA" alt="TODO-题图：画面描述" /></figure>')
+        rc, html, out = run(PAGE.replace("BODY", body))
+        self.assertEqual(rc, 1)
+        self.assertIn("题图里还有 TODO-题图", out)
+
     def test_dollar_amounts_are_not_math(self):
         rc, html, out = run(PAGE.replace("BODY", "<p>早餐 $5，午餐 $8，合计 $13。写成 &#36;x&#36; 也不算公式。</p>"))
         self.assertEqual(rc, 0, out)
@@ -198,9 +223,9 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 3  页边图 0", out)
-        self.assertIn("边注 2  旁注 6  脚注 2  块级公式 3  行内公式 80  图内公式 6  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 8)
+        self.assertIn("图 3  页边图 0  题图 1", out)
+        self.assertIn("边注 2  旁注 7  脚注 2  块级公式 3  行内公式 80  图内公式 6  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 9)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):

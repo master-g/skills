@@ -30,6 +30,13 @@
   --fig-3: #2e9d4e;
   --fig-4: #882255;
   --img-bg: transparent; /* 位图的底色：暗色主题下铺一层浅色，透明底上的深色线条才看得清 */
+  /* 题图（figure.plate）：亮色主题把扫描的纸色乘进页面底色；暗色主题裱在压暗的旧纸色衬底上。
+     不反相：版画的明暗靠排线疏密，反相后像照相底片 */
+  --plate-width: 78%;
+  --plate-blend: multiply;
+  --plate-mount: transparent;
+  --plate-pad: 0;
+  --plate-filter: none;
   color-scheme: light;
 
   /* 先用系统字体排版。网络字体（STIX Two Text、Noto Serif SC、STIX Two Math）不写在这里：
@@ -115,6 +122,10 @@
   --fig-3: #7ad08a;
   --fig-4: #c777a8;
   --img-bg: #f3f2e8;
+  --plate-blend: normal;
+  --plate-mount: #e8e2d0;
+  --plate-pad: 0.9em;
+  --plate-filter: brightness(0.82) sepia(0.15);
   color-scheme: dark;
 }
 
@@ -439,6 +450,20 @@ figure.fullwidth {
 }
 figure.fullwidth img {
   width: 100%;
+}
+/* 题图居中；figure.plate 不另设 max-width，沿用 figure 的，窄屏下才能随 figure 放宽 */
+figure.plate img {
+  display: block;
+  width: var(--plate-width);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: var(--plate-pad);
+  background: var(--plate-mount);
+  mix-blend-mode: var(--plate-blend);
+  filter: var(--plate-filter);
+}
+.titlepage > figure.plate {
+  margin: var(--space-block) 0 var(--space-chapter);
 }
 .fullwidth {
   max-width: 100%;
@@ -786,6 +811,7 @@ summary:focus-visible {
   :root {
     --text-body: var(--text-body-narrow);
     --text-note: var(--text-note-narrow);
+    --plate-width: 100%;
   }
   body {
     width: auto;

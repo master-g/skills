@@ -543,7 +543,7 @@ class Checker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
-        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "图内公式": 0, "分步图": 0, "帧": 0}
+        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "题图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "图内公式": 0, "分步图": 0, "帧": 0}
         self.errors, self.text = [], []
         self.deep_heading = []
         self.external = []
@@ -565,7 +565,11 @@ class Checker(HTMLParser):
             self.stats["章"] += 1
         if tag == "h3":
             self.stats["小节(h3)"] += 1
-        if tag == "figure":
+        if tag == "figure" and "plate" in cls:
+            self.stats["题图"] += 1
+            if not (a.get("data-source") and a.get("data-license")):
+                self.errors.append("题图缺 data-source 或 data-license：用 scripts/plate.py 取图，它打印的写法带出处与许可")
+        elif tag == "figure":
             self.stats["图"] += 1
             self.stats["分步图"] += "steps" in cls
         if tag == "li" and self.classes and "step-frames" in self.classes[-1]:
@@ -636,6 +640,8 @@ def check(html, errors, warns):
                       "<span class=\"marginnote\">，不要加别的属性或 class")
     if re.search(r"<p\b[^>]*>(?:(?!</p>).)*?<(div|figure|pre|table|ol|ul|section|blockquote|details)\b", html, re.S):
         errors.append("<p> 里嵌了块级元素：浏览器会提前闭合 <p>，边注与版心随之错位；把块级元素移到段落之外")
+    if "TODO-题图" in html:
+        errors.append("题图里还有 TODO-题图：图注写出处与图题（或箴言）的译文，alt 写画面，CC BY 的图补上署名")
     if not re.search(r"<title>[^<]+</title>", html) or "中文标题 · 原文标题" in html:
         errors.append("<title> 还是骨架占位，换成「中文标题 · 原文标题」（原创撰写写「书名 · 副标题」）")
     if BLOCK_MATH_RE.search(CODE_ISLAND_RE.sub("", html)):

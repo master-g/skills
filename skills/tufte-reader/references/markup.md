@@ -198,6 +198,28 @@ page = embed(源码, FIGS)   # 把 <!--FIG:shard--> 换成图
 - 构建检查：缺 `ol.step-captions`、没有帧、`data-step` 写法不对、编号不连续、说明条数与步数不等，都报 ERROR；`data-step` 写在 `figure.steps` 之外也报 ERROR。
 - 展开之后源码里的那一幅 `<svg>` 和说明列表就没有了。要改帧，改展开前的源码再构建；已构建的页面里只能逐幅改小图。
 
+## 题图
+
+```html
+<figure
+  class="plate"
+  data-source="https://commons.wikimedia.org/wiki/File:…"
+  data-license="Public domain"
+>
+  <span class="marginnote"
+    >题图　出处、图题或箴言的译文、刻工与年份。图源
+    <a href="https://commons.wikimedia.org/wiki/File:…">Wikimedia Commons</a
+    >，公有领域。</span
+  >
+  <img src="figures/plates/atalanta-42.png" alt="画面描述" />
+</figure>
+```
+
+- 只在用户要求配题图时使用。写法由 `scripts/plate.py` 打印，选图、取图和图注的写法见 [题图](plates.md)。
+- 扉页题图放在 `header.titlepage` 里、`p.byline` 之后；章首题图放在该章 `<h2>` 之后、第一个 `<section>` 的开头。
+- 样式由 tufte.css 负责：亮色主题下扫描的纸色融进页面，暗色主题下裱在压暗的纸色衬底上。作者只写 `class="plate"`，不加别的样式。
+- `data-source` 与 `data-license` 缺一个，或页面里留着 `TODO-题图`，构建都报 ERROR。构建统计里题图单独计为「题图」，不计入「图」。
+
 ## 表格
 
 ```html
