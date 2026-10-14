@@ -50,14 +50,14 @@
 
 跨系列的大池子，搜主题时用 `deepcat:` 连子分类一起搜：Category:17th-century engravings（1356 文件、61 个子分类）、Category:Frontispieces（670 文件）、Category:Emblem books（180 个子分类）、Category:Scientific illustrations（403 文件、33 个子分类，许可混杂）。
 
-搜图用 Commons 的搜索 API：关键词加 `incategory:"<分类>"`（或 `deepcat:"<分类>"` 连子分类一起搜），一次返回尺寸和许可：
+搜图用 `scripts/find_plate.py`：关键词加 `--cat <分类>`（`--deep` 连子分类一起搜），一次取回尺寸和许可，只列出许可可用且宽度不小于 1000px 的图，按宽度从大到小排：
 
 ```sh
-curl -s -A "tufte-reader-plate/1.0 (https://github.com/master-g/skills)" \
-  "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=dragon+incategory:%22Musaeum+Hermeticum%22&prop=imageinfo&iiprop=size|url|extmetadata&iiextmetadatafilter=LicenseShortName"
+python3 <skill-path>/scripts/find_plate.py dragon --cat "Musaeum Hermeticum"
+python3 <skill-path>/scripts/find_plate.py alchemist --cat "Engravings in the Wellcome Collection" --deep
 ```
 
-结果里 `width`、`LicenseShortName`、`descriptionurl` 分别是宽度、许可和文件页面，按「选图」第 3 条筛。分类名不确定时，用 `list=search&srnamespace=14&srsearch=<关键词>` 搜分类，不要猜。
+没有合格结果时加 `--all` 看不合格的原因（许可、宽度、不是图片），再放宽 `--min-width`、换关键词或换分类。「文件」一列直接作 `plate.py` 的参数。分类名不确定时，用 Commons 的搜索 API `list=search&srnamespace=14&srsearch=<关键词>` 搜分类，不要猜。
 
 Science History Institute、Wellcome Collection、Biodiversity Heritage Library、Rijksmuseum 也有大量同类图。在这些站点看中的图，先在 Commons 上找同一幅；Commons 上没有的，按「取图」一节的规则处理，没有列出的来源就不用。
 
