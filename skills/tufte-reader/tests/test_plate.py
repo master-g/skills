@@ -59,5 +59,25 @@ class PlateTest(unittest.TestCase):
         self.assertFalse((d / "plates").exists())
 
 
+    def test_ia_source_in_allowlist(self):
+        rec, url = plate.ia_source("ia:atalantafugiensh00maie$185", "pct:3.9,19.1,73.5,50.8", 1000)
+        self.assertEqual(url, "https://iiif.archive.org/iiif/atalantafugiensh00maie$185/pct:3.9,19.1,73.5,50.8/1000,/0/default.jpg")
+        # 阅读器页面的叶号从 0 数，比 IIIF 少 1
+        self.assertEqual(rec["page"], "https://archive.org/details/atalantafugiensh00maie/page/n184/mode/1up")
+        self.assertEqual(plate.license_label(rec["license"]), "公有领域")
+        out = plate.snippet(rec, "x.png")
+        self.assertIn(">Internet Archive（Getty Research Institute 扫描）</a>，公有领域。", out)
+        self.assertNotIn("署名", out)
+
+    def test_ia_rejects_unlisted_item_and_bad_args(self):
+        out = io.StringIO()
+        with mock.patch.object(plate.urllib.request, "urlopen") as net, contextlib.redirect_stdout(out):
+            self.assertEqual(plate.main(["ia:someotherbook$12", "--region", "pct:1,2,3,4"]), plate.EXIT_LICENSE)
+            self.assertEqual(plate.main(["ia:atalantafugiensh00maie$185"]), 2)  # 缺 --region
+            self.assertEqual(plate.main(["ia:atalantafugiensh00maie$185", "--region", "full"]), 2)
+            self.assertEqual(plate.main(["ia:atalantafugiensh00maie", "--region", "pct:1,2,3,4"]), 2)  # 缺叶号
+        net.assert_not_called()
+        self.assertIn("不在 IA_ITEMS 白名单里", out.getvalue())
+
 if __name__ == "__main__":
     unittest.main()

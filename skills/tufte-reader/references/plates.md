@@ -63,16 +63,24 @@ Science History Institute、Wellcome Collection、Biodiversity Heritage Library�
 
 ## 取图
 
-在页面所在的目录里运行：
+在页面所在的目录里运行。Atalanta Fugiens 用图录「高清版」表里的参数，从 Internet Archive 取 1000px 的高清版（shell 里用单引号，`$` 不能被展开）：
 
 ```sh
-python3 <skill-path>/scripts/plate.py "File:Michael Maier Atalanta Fugiens Emblem 42.jpeg" -o figures/plates --name atalanta-42
+python3 <skill-path>/scripts/plate.py 'ia:atalantafugiensh00maie$185' --region pct:2.9,18.1,75.5,52.8 -o figures/plates --name atalanta-42
 ```
 
-- 脚本从 Wikimedia Commons 读这个文件的许可字段，只接受公有领域、无已知版权限制（No restrictions，图书馆批量上传的古籍插图常这样标）、CC0 和 CC BY。其余许可（包括 CC BY-SA、NC、ND）或字段缺失时拒绝并以退出码 3 结束：换一幅图，不要绕过脚本手动下载。
+其他图从 Wikimedia Commons 取，写文件名：
+
+```sh
+python3 <skill-path>/scripts/plate.py "File:<Commons 上的文件名>" -o figures/plates --name <文件名>
+```
+
+- Commons 的图：脚本读这个文件的许可字段，只接受公有领域、无已知版权限制（No restrictions，图书馆批量上传的古籍插图常这样标）、CC0 和 CC BY。其余许可（包括 CC BY-SA、NC、ND）或字段缺失时拒绝并以退出码 3 结束：换一幅图，不要绕过脚本手动下载。
+- Internet Archive 的图：IA 的元数据没有许可字段，脚本只放行 `plate.py` 里 `IA_ITEMS` 白名单登记过的条目，许可依据写在白名单里；目前只有 Atalanta Fugiens 的 Getty 扫描本，别的 IA 条目报退出码 3。`--region` 是画面在整页上的百分比位置，由 IIIF 服务器裁出来，不需要本地裁切工具。
+- 要用 IA 上别的扫描本（「系列」里的 Fludd、Kircher、Hooke 等在 IA 上都有）：按 `plate.py` 里 `IA_ITEMS` 上方注释的三条标准确认原作与扫描都属公有领域，请维护者认可后加一条登记，并在 `tests/test_plate.py` 里加一行断言。
 - 产出 `figures/plates/<name>.png`（有 ImageMagick 时拉伸色阶、压成 4 级灰度 PNG；macOS 没有 ImageMagick 时用 sips 转成 JPEG，纸面保留扫描的灰色，亮色主题下会露出一块浅灰底）、`<name>.json`（出处、许可、作者、取图日期），并打印一段可以直接粘贴的 `<figure class="plate">`。
 - 默认宽 1000px，单幅一般在 80–250 KB。超过 300 KB 时脚本发 WARN，加 `--width 800` 重取。
-- 图录里的单幅文件多数只有 600px 宽；扉页想要更清楚的，用「高清版」一栏的文件。
+- 图录主表里 Commons 的单幅文件只有约 600px 宽，在高分屏上发虚，只在 IA 取不到时作退路。
 
 ## 写法
 
@@ -88,7 +96,7 @@ python3 <skill-path>/scripts/plate.py "File:Michael Maier Atalanta Fugiens Emble
 
 ## 图录
 
-_Atalanta Fugiens_（《逃离的阿塔兰忒》），Michael Maier 著，Matthäus Merian 刻，Oppenheim：Johann Theodor de Bry，1618（初版 1617）。五十幅徽章，每幅配一句拉丁箴言，题为「论自然的奥秘」（De secretis Naturae）。下表的文件都在 Commons 的 `Category:Atalanta Fugiens` 里，取图前由 `plate.py` 检查许可。
+_Atalanta Fugiens_（《逃离的阿塔兰忒》），Michael Maier 著，Matthäus Merian 刻，Oppenheim：Johann Theodor de Bry，1618（初版 1617）。五十幅徽章，每幅配一句拉丁箴言，题为「论自然的奥秘」（De secretis Naturae）。取图默认用「高清版」表的 IA 参数；主表的文件在 Commons 的 `Category:Atalanta Fugiens` 里，是约 600px 的单图，作退路和对照。
 
 箴言的拉丁文按 1618 年版校订；中文是大意，写进图注前可以再润色。「适合的主题」是选图的提示，不是限定。
 
@@ -147,12 +155,57 @@ _Atalanta Fugiens_（《逃离的阿塔兰忒》），Michael Maier 著，Matth�
 
 第 11、12、25 幅的文件是整页扫描，含标题与箴言文字，竖幅；其余是只含画面的裁切图。Commons 上名为 `Michael Maier Atalanta Fugiens Emblem 11.jpeg` 的文件画的其实是第 25 幅，不要用。
 
-**高清版**（扉页用；比单幅文件大得多，取图时保持默认 `--width 1000`）：
+**高清版**：Internet Archive 上 Getty 研究所的扫描本（`atalantafugiensh00maie`，500ppi，未上色），经 IIIF 按区域裁出画面，默认 1000px 宽，带刻版的边框。「来源」一列是 `plate.py` 的第一个参数，「区域」一列是 `--region` 的值。
 
-| 幅  | 文件                                                       |
-| --- | ---------------------------------------------------------- |
-| 1   | File:Atalanta Fugiens Emblema I.jpg                        |
-| 2   | File:Atalanta Fugiens Emblema II.jpg                       |
-| 8   | File:Atalanta Fugiens. Emblema VIII (cropped).jpeg         |
-| 27  | File:Michael Maier. Atalanta Fugiens 1618 Emblem XXVII.JPG |
-| 42  | File:M.Maier. Atalanta Fugiens. 1618. Emblem XLII.JPG      |
+| 幅  | 来源                              | 区域                     |
+| --- | --------------------------------- | ------------------------ |
+| 1   | `'ia:atalantafugiensh00maie$21'`  | `pct:3.7,12.6,73.9,53.0` |
+| 2   | `'ia:atalantafugiensh00maie$25'`  | `pct:4.5,14.3,76.4,53.4` |
+| 3   | `'ia:atalantafugiensh00maie$29'`  | `pct:7.7,14.4,75.8,51.7` |
+| 4   | `'ia:atalantafugiensh00maie$33'`  | `pct:1.6,16.8,76.5,51.7` |
+| 5   | `'ia:atalantafugiensh00maie$37'`  | `pct:3.1,16.9,80.6,50.6` |
+| 6   | `'ia:atalantafugiensh00maie$41'`  | `pct:3.2,12.3,76.9,50.4` |
+| 7   | `'ia:atalantafugiensh00maie$45'`  | `pct:5.1,10.8,77.3,51.5` |
+| 8   | `'ia:atalantafugiensh00maie$49'`  | `pct:2.5,15.6,77.6,49.8` |
+| 9   | `'ia:atalantafugiensh00maie$53'`  | `pct:3.5,15.1,73.6,53.1` |
+| 10  | `'ia:atalantafugiensh00maie$57'`  | `pct:6.4,14.9,78.6,50.6` |
+| 11  | `'ia:atalantafugiensh00maie$61'`  | `pct:7.3,12.9,74.9,53.3` |
+| 12  | `'ia:atalantafugiensh00maie$65'`  | `pct:4.0,15.2,74.6,52.6` |
+| 13  | `'ia:atalantafugiensh00maie$69'`  | `pct:5.5,17.6,73.9,51.1` |
+| 14  | `'ia:atalantafugiensh00maie$73'`  | `pct:2.9,14.1,78.6,49.9` |
+| 15  | `'ia:atalantafugiensh00maie$77'`  | `pct:5.6,12.8,75.0,48.5` |
+| 16  | `'ia:atalantafugiensh00maie$81'`  | `pct:1.1,14.9,75.6,54.4` |
+| 17  | `'ia:atalantafugiensh00maie$85'`  | `pct:5.7,16.0,74.2,53.5` |
+| 18  | `'ia:atalantafugiensh00maie$89'`  | `pct:3.1,14.5,75.3,49.5` |
+| 19  | `'ia:atalantafugiensh00maie$93'`  | `pct:2.9,12.6,76.4,50.6` |
+| 20  | `'ia:atalantafugiensh00maie$97'`  | `pct:3.8,15.7,75.0,50.7` |
+| 21  | `'ia:atalantafugiensh00maie$101'` | `pct:5.2,15.8,74.5,53.6` |
+| 22  | `'ia:atalantafugiensh00maie$105'` | `pct:2.2,11.9,77.1,50.5` |
+| 23  | `'ia:atalantafugiensh00maie$109'` | `pct:1.7,13.9,78.2,50.4` |
+| 24  | `'ia:atalantafugiensh00maie$113'` | `pct:1.6,13.2,77.8,51.5` |
+| 25  | `'ia:atalantafugiensh00maie$117'` | `pct:4.0,16.0,78.2,50.2` |
+| 26  | `'ia:atalantafugiensh00maie$121'` | `pct:2.2,13.8,74.1,52.3` |
+| 27  | `'ia:atalantafugiensh00maie$125'` | `pct:4.4,15.2,74.2,52.9` |
+| 28  | `'ia:atalantafugiensh00maie$129'` | `pct:2.5,13.9,74.5,51.8` |
+| 29  | `'ia:atalantafugiensh00maie$133'` | `pct:3.7,13.7,73.9,51.7` |
+| 30  | `'ia:atalantafugiensh00maie$137'` | `pct:2.7,14.7,73.3,50.7` |
+| 31  | `'ia:atalantafugiensh00maie$141'` | `pct:1.4,15.6,78.2,51.6` |
+| 32  | `'ia:atalantafugiensh00maie$145'` | `pct:1.4,14.1,76.2,52.0` |
+| 33  | `'ia:atalantafugiensh00maie$149'` | `pct:5.5,12.8,74.7,53.0` |
+| 34  | `'ia:atalantafugiensh00maie$153'` | `pct:5.1,16.4,74.9,52.8` |
+| 35  | `'ia:atalantafugiensh00maie$157'` | `pct:6.4,17.1,76.9,51.6` |
+| 36  | `'ia:atalantafugiensh00maie$161'` | `pct:3.2,16.4,76.1,53.8` |
+| 37  | `'ia:atalantafugiensh00maie$165'` | `pct:3.5,15.2,74.8,53.9` |
+| 38  | `'ia:atalantafugiensh00maie$169'` | `pct:5.2,16.0,75.5,52.8` |
+| 39  | `'ia:atalantafugiensh00maie$173'` | `pct:6.2,15.2,75.5,53.0` |
+| 40  | `'ia:atalantafugiensh00maie$177'` | `pct:2.2,13.6,75.3,53.0` |
+| 41  | `'ia:atalantafugiensh00maie$181'` | `pct:7.3,17.3,73.4,52.7` |
+| 42  | `'ia:atalantafugiensh00maie$185'` | `pct:2.9,18.1,75.5,52.8` |
+| 43  | `'ia:atalantafugiensh00maie$189'` | `pct:3.9,14.3,73.7,52.5` |
+| 44  | `'ia:atalantafugiensh00maie$193'` | `pct:2.4,14.4,75.8,53.5` |
+| 45  | `'ia:atalantafugiensh00maie$197'` | `pct:7.7,14.8,75.0,53.0` |
+| 46  | `'ia:atalantafugiensh00maie$201'` | `pct:2.5,14.3,75.3,53.0` |
+| 47  | `'ia:atalantafugiensh00maie$205'` | `pct:7.1,14.4,74.9,53.5` |
+| 48  | `'ia:atalantafugiensh00maie$209'` | `pct:6.2,16.4,75.3,53.2` |
+| 49  | `'ia:atalantafugiensh00maie$213'` | `pct:7.7,13.8,74.8,53.5` |
+| 50  | `'ia:atalantafugiensh00maie$217'` | `pct:8.4,13.7,75.5,53.5` |
