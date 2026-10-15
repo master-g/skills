@@ -8,17 +8,21 @@
                                只接受 IA_ITEMS 白名单里的条目（IA 的元数据没有许可字段，许可依据写在白名单里）。
                                shell 里用单引号，否则 $<叶号> 会被展开
 
-许可不合格、IA 条目不在白名单里时拒绝，退出码 3，不下载。
+--region 对 Commons 的文件同样可用：整页扫描按百分比位置在本地裁出画面（需要 ImageMagick 的 magick），
+脚本按裁切比例向 Commons 多要像素，成品仍是 --width 宽。-h / --help 打印本说明。
+
+许可不合格、IA 条目不在白名单里时拒绝，退出码 3，不下载。成品几乎是一片纯色（透明底、空白页）时删掉成品，退出码 1。
 
 输出（默认在当前目录）：
   <文件名>.png 或 .jpg   有 ImageMagick 的 magick 时缩成 4 级灰度 PNG；否则 macOS 用 sips 转 JPEG；都没有时保留原图
-  <文件名>.json         出处、许可、作者、取图日期
+  <文件名>.json         出处、许可、作者、取图日期；Commons 的图还有图源尺寸，裁过的有 --region
   标准输出              <figure class="plate"> 写法，TODO-题图 处由作者改写
 
 用法与选图见 references/plates.md。
 """
 import datetime
 import json
+import math
 import os
 import re
 import shutil
@@ -123,14 +127,38 @@ def ia_source(spec, region, width):
     return rec, f"https://iiif.archive.org/iiif/{item}${leaf}/{region}/{width},/0/default.jpg"
 
 
-def shrink(raw, out_stem, width):
-    """缩到 width 宽（只缩不放），返回成品路径。"""
+def crop_geometry(w, h, region):
+    """pct:x,y,w,h 在 w×h 像素的图上 → ImageMagick 的 -crop 几何串（像素）。"""
+    x, y, cw, ch = (float(v) for v in region[4:].split(","))
+    return f"{round(w * cw / 100)}x{round(h * ch / 100)}+{round(w * x / 100)}+{round(h * y / 100)}"
+
+
+def shrink(raw, out_stem, width, region=None):
+    """（按 region 裁切后）缩到 width 宽（只缩不放），返回成品路径；成品不可用时返回 None（已打印 ERROR）。"""
     magick, sips = shutil.which("magick"), shutil.which("sips")
     if magick:
         dst = out_stem.with_suffix(".png")
+        # 透明底先合成到白底，否则灰度量化后是一片透明/纯灰
+        cmd = [magick, str(raw), "-background", "white", "-alpha", "remove", "-alpha", "off"]
+        if region:
+            w, h = subprocess.run([magick, str(raw), "-format", "%w %h", "info:"], capture_output=True, text=True,
+                                  check=True).stdout.split()
+            cmd += ["-crop", crop_geometry(int(w), int(h), region), "+repage"]
         # 扫描的纸色常偏灰：先拉伸色阶，把纸面推到近白，亮色主题的 multiply 才看不出方框；再量化成 4 级灰度
-        subprocess.run([magick, str(raw), "-resize", f"{width}x>", "-colorspace", "gray", "-auto-level",
-                        "-level", "15%,80%", "-colors", "4", str(dst)], check=True)
+        cmd += ["-resize", f"{width}x>", "-colorspace", "gray", "-auto-level", "-level", "15%,80%", "-colors", "4",
+                str(dst)]
+        subprocess.run(cmd, check=True)
+        std = float(subprocess.run([magick, str(dst), "-format", "%[fx:standard_deviation]", "info:"],
+                                   capture_output=True, text=True, check=True).stdout or 0)
+        if std < 0.02:
+            print(f"ERROR 成品几乎是一片纯色（标准差 {std:.3f}）：透明底、空白页或裁错了区域，已删除；换一幅图或改 --region")
+            dst.unlink()
+            raw.unlink()
+            return None
+    elif region:
+        print("ERROR 裁切 Commons 的图需要 ImageMagick 的 magick；装上再取，或换一幅不用裁的图")
+        raw.unlink()
+        return None
     elif sips:
         dst = out_stem.with_suffix(".jpg")
         subprocess.run([sips, "--resampleWidth", str(width), "-s", "format", "jpeg", "-s", "formatOptions", "50",
@@ -164,31 +192,44 @@ def main(argv):
             opts[a] = next(it, None)
         else:
             args.append(a)
+    if any(a in ("-h", "--help") for a in argv):
+        print(__doc__)
+        return 0
     if len(args) != 1 or not (opts["--width"] or "").isdigit():
         print(__doc__)
         return 2
+    if opts["--region"] is not None and not REGION_RE.match(opts["--region"]):
+        print(f"ERROR --region 写成 pct:x,y,w,h（画面在整页上的百分比位置）：{opts['--region']}")
+        return 2
     width = int(opts["--width"])
+    region = opts["--region"]
 
     if args[0].startswith("ia:"):
         if not IA_RE.match(args[0]):
             print(f"ERROR IA 来源写成 'ia:<条目>$<叶号>'（shell 里用单引号）：{args[0]}")
             return 2
-        if not REGION_RE.match(opts["--region"] or ""):
+        if not region:
             print("ERROR IA 来源要给 --region pct:x,y,w,h（画面在整页上的百分比位置，见 references/plates.md 的图录）")
             return 2
-        rec, url = ia_source(args[0], opts["--region"], width)
+        rec, url = ia_source(args[0], region, width)
+        region = None  # IIIF 已在服务器端裁好
         if rec is None:
             print(f"ERROR {args[0]} 不在 IA_ITEMS 白名单里：IA 的条目没有许可字段，登记前先确认原作与扫描都属公有领域")
             return EXIT_LICENSE
         title = args[0]
     else:
         title = args[0] if args[0].startswith("File:") else "File:" + args[0]
+        # 要裁切时按比例多要像素，裁完仍有 width 宽；Commons 的缩略图不会超过原图尺寸
+        ask = math.ceil(width * 100 / float(region.split(",")[2])) if region else width
         try:
-            title, info = query(title, width)
+            title, info = query(title, ask)
         except (LookupError, OSError) as e:
             print(f"ERROR {e}")
             return 1
         rec = record(title, info)
+        rec["source_width"], rec["source_height"] = info.get("width"), info.get("height")
+        if region:
+            rec["region"] = region
         if license_label(rec["license"]) is None:
             print(f"ERROR 许可「{rec['license'] or '缺失'}」不在可用范围（公有领域、无已知版权限制、CC0、CC BY）内，换一幅图：{rec['page']}")
             return EXIT_LICENSE
@@ -206,7 +247,9 @@ def main(argv):
     except OSError as e:
         print(f"ERROR 下载失败：{e}")
         return 1
-    img = shrink(raw, out_dir / name, width)
+    img = shrink(raw, out_dir / name, width, region)
+    if img is None:
+        return 1
     rec["file"] = img.name
     (out_dir / f"{name}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

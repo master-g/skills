@@ -15,6 +15,7 @@ import find_plate  # noqa: E402
 def page(title, width, license, mime="image/jpeg"):
     return {"title": title, "imageinfo": [{"width": width, "height": width, "mime": mime,
                                             "descriptionurl": "https://commons.wikimedia.org/wiki/" + title.replace(" ", "_"),
+                                            "thumburl": "https://thumb.example/" + title[5:].replace(" ", "_"),
                                             "extmetadata": {"LicenseShortName": {"value": license}}}]}
 
 
@@ -31,6 +32,8 @@ def run(argv, resp=RESP):
 
     def fake_urlopen(req, timeout=0):
         calls.append(req.full_url)
+        if "thumb.example" in req.full_url:
+            return io.BytesIO(b"\x89PNG fake")
         return io.BytesIO(json.dumps(resp).encode())
 
     with mock.patch("urllib.request.urlopen", fake_urlopen), contextlib.redirect_stdout(out):
@@ -79,8 +82,38 @@ class FindPlateTest(unittest.TestCase):
         self.assertIn("加 --all", out)
         self.assertNotIn("| 宽×高", out)
 
+    def test_help_and_category_only(self):
+        rc, out, calls = run(["--help"])
+        self.assertEqual((rc, calls), (0, []))
+        self.assertIn("find_plate.py 关键词", out)
+        rc, out, calls = run(["--cat", "Agostino Ramelli"])
+        self.assertEqual(rc, 0)
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(calls[0]).query)
+        self.assertEqual(q["gsrsearch"], ['incategory:"Agostino Ramelli"'])
+        self.assertEqual(q["iiurlwidth"], ["320"])
+
+    def test_duplicates_keep_widest(self):
+        resp = {"query": {"pages": {"1": page("File:Plate 7.jpg", 1200, "Public domain"),
+                                    "2": page("File:Plate 7.tif", 3000, "Public domain", "image/tiff"),
+                                    "3": page("File:Other.jpg", 1500, "CC0")}}}
+        rc, out, _ = run(["x"], resp)
+        self.assertIn("结果  2 个，可用 2 个", out)
+        self.assertIn("| 3000×3000 | Public domain | File:Plate 7.tif |", out)
+        self.assertNotIn("File:Plate 7.jpg", out)
+
+    def test_thumb_downloads_shown_rows(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(find_plate.shutil, "which", return_value=None):
+            rc, out, calls = run(["x", "--thumb", d])  # 假缩略图不是真图片，不拼总览
+            self.assertEqual(rc, 0)
+            got = sorted(p.name for p in Path(d).glob("*.jpg"))
+            self.assertEqual(got, ["01-a.jpg", "02-f.jpg", "03-e.jpg"])  # 只下载合格的三幅，按表格顺序编号
+            self.assertEqual(sum("thumb.example" in c for c in calls), 3)
+            self.assertIn("缩略图  3 张", out)
+
     def test_usage_errors_do_not_touch_network(self):
-        for argv in ([], ["--cat", "X"], ["x", "--min-width", "big"], ["x", "--limit", ""]):
+        for argv in ([], ["--deep"], ["x", "--min-width", "big"], ["x", "--limit", ""]):
             rc, out, calls = run(argv)
             self.assertEqual(rc, 2, argv)
             self.assertEqual(calls, [], argv)

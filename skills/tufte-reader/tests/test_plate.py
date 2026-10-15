@@ -17,6 +17,59 @@ def rec(license="Public domain", attribution=False, artist="Michael Maier"):
 
 
 class PlateTest(unittest.TestCase):
+    def test_help_exits_zero_without_network(self):
+        out = io.StringIO()
+        with mock.patch("urllib.request.urlopen") as net, contextlib.redirect_stdout(out):
+            self.assertEqual(plate.main(["--help"]), 0)
+            self.assertEqual(plate.main(["File:X.jpeg", "--region", "bad"]), 2)
+        net.assert_not_called()
+        self.assertIn("plate.py 来源", out.getvalue())
+
+    def test_crop_geometry(self):
+        self.assertEqual(plate.crop_geometry(2000, 1000, "pct:10,20,50,25"), "1000x250+200+200")
+        self.assertEqual(plate.crop_geometry(3000, 4000, "pct:2.9,18.1,75.5,52.8"), "2265x2112+87+724")
+
+    def test_region_asks_commons_for_enough_pixels(self):
+        seen = {}
+
+        def fake_query(title, width):
+            seen["width"] = width
+            raise LookupError("stop here")  # 只验证请求宽度，不往下走
+
+        out = io.StringIO()
+        with mock.patch.object(plate, "query", fake_query), contextlib.redirect_stdout(out):
+            self.assertEqual(plate.main(["File:X.jpeg", "--region", "pct:10,10,40,50"]), 1)
+        self.assertEqual(seen["width"], 2500)  # 1000 / 40%
+
+    @unittest.skipUnless(plate.shutil.which("magick"), "需要 ImageMagick")
+    def test_shrink_flattens_alpha_and_rejects_blank(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            # 透明底的灰度 PNG：黑线画在透明上
+            subprocess.run(["magick", "-size", "400x300", "xc:none", "-fill", "black", "-draw", "line 0,0 400,300",
+                            "-draw", "circle 200,150 250,150", "-colorspace", "gray", str(d / "ga.png")], check=True)
+            out = plate.shrink(d / "ga.png", d / "a", 300)
+            self.assertEqual(out, d / "a.png")
+            info = subprocess.run(["magick", str(out), "-format", "%[channels] %[fx:standard_deviation]", "info:"],
+                                  capture_output=True, text=True, check=True).stdout.split()
+            self.assertFalse(info[0].startswith("graya"), info)
+            self.assertGreater(float(info[1]), 0.1)
+            # 空白页：报 ERROR、不留成品
+            subprocess.run(["magick", "-size", "400x300", "xc:white", str(d / "blank.png")], check=True)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertIsNone(plate.shrink(d / "blank.png", d / "b", 300))
+            self.assertIn("ERROR 成品几乎是一片纯色", buf.getvalue())
+            self.assertFalse((d / "b.png").exists())
+            # 裁切：取左上四分之一（里面画了一条对角线，裁出来不是纯色）
+            subprocess.run(["magick", "-size", "400x300", "xc:white", "-fill", "black", "-draw", "line 0,0 199,149",
+                            str(d / "src.png")], check=True)
+            out = plate.shrink(d / "src.png", d / "q", 1000, "pct:0,0,50,50")
+            size = subprocess.run(["magick", str(out), "-format", "%w %h", "info:"], capture_output=True, text=True,
+                                  check=True).stdout.split()
+            self.assertEqual(size, ["200", "150"])  # 只缩不放，裁出的 200×150 原样保留
+
     def test_license_allowlist(self):
         self.assertEqual(plate.license_label("Public domain"), "公有领域")
         self.assertEqual(plate.license_label("PDM-owner"), "公有领域")

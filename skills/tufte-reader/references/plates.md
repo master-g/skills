@@ -7,8 +7,8 @@
 选图从章节的主题出发，风格由「系列」一节把关：16–18 世纪的铜版画、蚀刻和木刻，炼金术、自然哲学、博物、解剖、机械一类的书籍插图，黑线条印在纸上。_Atalanta Fugiens_（1618）是这种风格的代表，不是唯一的来源。
 
 1. 读结构清单，给扉页和准备配图的几章各写一两个主题词：扉页取全书主旨，章首取这一章最核心的意象或动作（结合、拆解、观察、循环、传输……）。
-2. 按主题词找画面：先看「系列」表里哪些系列的主题对得上，到那几个分类里搜；炼金寓意类的主题也查「图录」的「适合的主题」一栏。搜法见「系列」一节末尾。寓意对不上就不配这一章，不要为了配图而牵强。
-3. 候选图过三道筛：许可（公有领域、无已知版权限制、CC0、CC BY，取图脚本会再查一次）；分辨率（题图在页面上约 480 CSS 像素宽，高分屏需要 1000px 以上的图源，600px 的图会发虚）；画面（线条清楚、未手工上色、不带大段正文文字；整页扫描要能裁出完整画面）。
+2. 按主题词找画面：先看「系列」表里哪些系列的主题对得上，到那几个分类里搜；炼金寓意类的主题也查「图录」的「适合的主题」一栏。搜法见「系列」一节末尾；选图前用 `--thumb` 取缩略图总览看一眼，不要只凭文件名和尺寸挑。寓意对不上就不配这一章，不要为了配图而牵强。
+3. 候选图过三道筛：许可（公有领域、无已知版权限制、CC0、CC BY，取图脚本会再查一次）；分辨率（题图在页面上约 480 CSS 像素宽，高分屏需要 1000px 以上的图源，600px 的图会发虚）；画面（线条清楚、未手工上色、不带大段正文文字）。整页扫描只要画面完整就能用：取图时给 `--region` 按百分比裁出画面，Commons 和 IA 的图都可以裁。
 4. 一本读本里的题图风格要统一：同一时代、同一技法（都是铜版画，或都是木刻），不必出自同一本书。
 5. 选定后写进结构清单：扉页用哪一幅，哪几章配题图、各用哪一幅、各自的许可。
 
@@ -38,6 +38,9 @@
 | Comenius, _Orbis sensualium pictus_                                                                                                                           | 1658 及后印 | Category:Orbis pictus                                                                                  | 70 文件，公有领域                                             | 百科式的物与名、教学、日常器物                           |
 | J. J. Scheuchzer, _Physica sacra_                                                                                                                             | 1731–1735   | Category:Physica sacra, by Scheuchzer                                                                  | 32 文件，几乎全部 CC BY（要署名）                             | 自然史、化石与地层、带装饰边框的巴洛克构图               |
 | Wellcome Collection 的版画                                                                                                                                    | 1500–1900   | Category:Engravings in the Wellcome Collection                                                         | 3085 文件加 5 个子分类，全部 CC BY 4.0（要署名），2000px 以上 | 医学、炼金士与学者、器具、讽刺画；用 `deepcat:` 搜       |
+| Johannes Hevelius, _Machina coelestis_                                                                                                                        | 1673        | Category:Machina Coelestis by Johannes Hevelius                                                        | 10 文件，公有领域，约 850px（偏小）                           | 观测、仪器操作、望远镜与象限仪                           |
+| Stradanus 设计、Collaert 等刻, _Nova Reperta_（《新发现》）                                                                                                   | 1590 年代   | Category:Nova Reperta                                                                                  | 38 文件，CC0 与公有领域为主，3500px                           | 发明与工艺：印刷、蒸馏、磁针、航海、火药                 |
+| Abraham Bosse 的蚀刻                                                                                                                                          | 1630–1650   | Category:Abraham Bosse                                                                                 | 237 文件加 11 个子分类，CC0 为主，3500px                      | 作坊与工序、印刷、日常与职业                             |
 
 木刻（线条更粗、更古拙，一本读本里不与铜版画混用）：
 
@@ -50,14 +53,15 @@
 
 跨系列的大池子，搜主题时用 `deepcat:` 连子分类一起搜：Category:17th-century engravings（1356 文件、61 个子分类）、Category:Frontispieces（670 文件）、Category:Emblem books（180 个子分类）、Category:Scientific illustrations（403 文件、33 个子分类，许可混杂）。
 
-搜图用 `scripts/find_plate.py`：关键词加 `--cat <分类>`（`--deep` 连子分类一起搜），一次取回尺寸和许可，只列出许可可用且宽度不小于 1000px 的图，按宽度从大到小排：
+搜图用 `scripts/find_plate.py`：关键词加 `--cat <分类>`（`--deep` 连子分类一起搜；只给 `--cat` 就列出整个分类），一次取回尺寸和许可，只列出许可可用且宽度不小于 1000px 的图，按宽度从大到小排，同一幅的 `.tif`/`.jpg` 重复只留最宽的。加 `--thumb <目录>` 把列出的图下载成缩略图并拼一张总览（按表格顺序，每行 5 幅），整页扫描、带正文的页面一眼能看出来：
 
 ```sh
-python3 <skill-path>/scripts/find_plate.py dragon --cat "Musaeum Hermeticum"
+python3 <skill-path>/scripts/find_plate.py dragon --cat "Musaeum Hermeticum" --thumb /tmp/cand
 python3 <skill-path>/scripts/find_plate.py alchemist --cat "Engravings in the Wellcome Collection" --deep
+python3 <skill-path>/scripts/find_plate.py --cat "Agostino Ramelli" --thumb /tmp/cand
 ```
 
-没有合格结果时加 `--all` 看不合格的原因（许可、宽度、不是图片），再放宽 `--min-width`、换关键词或换分类。「文件」一列直接作 `plate.py` 的参数。分类名不确定时，用 Commons 的搜索 API `list=search&srnamespace=14&srsearch=<关键词>` 搜分类，不要猜。
+没有合格结果时加 `--all` 看不合格的原因（许可、宽度、不是图片），再放宽 `--min-width`、换关键词或换分类。「系列」表之外的主题（天文仪器、工序、航海……）到 Category:17th-century engravings 或 Category:Frontispieces 用 `--deep` 搜，关键词用英文或拉丁文。「文件」一列直接作 `plate.py` 的参数。分类名不确定时，用 Commons 的搜索 API `list=search&srnamespace=14&srsearch=<关键词>` 搜分类，不要猜。
 
 Science History Institute、Wellcome Collection、Biodiversity Heritage Library、Rijksmuseum 也有大量同类图。在这些站点看中的图，先在 Commons 上找同一幅；Commons 上没有的，按「取图」一节的规则处理，没有列出的来源就不用。
 
@@ -75,19 +79,20 @@ python3 <skill-path>/scripts/plate.py 'ia:atalantafugiensh00maie$185' --region p
 python3 <skill-path>/scripts/plate.py "File:<Commons 上的文件名>" -o figures/plates --name <文件名>
 ```
 
-- Commons 的图：脚本读这个文件的许可字段，只接受公有领域、无已知版权限制（No restrictions，图书馆批量上传的古籍插图常这样标）、CC0 和 CC BY。其余许可（包括 CC BY-SA、NC、ND）或字段缺失时拒绝并以退出码 3 结束：换一幅图，不要绕过脚本手动下载。
+- Commons 的图：脚本读这个文件的许可字段，只接受公有领域、无已知版权限制（No restrictions，图书馆批量上传的古籍插图常这样标）、CC0 和 CC BY。其余许可（包括 CC BY-SA、NC、ND）或字段缺失时拒绝并以退出码 3 结束：换一幅图，不要绕过脚本手动下载。整页扫描加 `--region pct:x,y,w,h` 在本地裁出画面（需要 ImageMagick），百分比看缩略图估一次、取出来看成品再微调。
 - Internet Archive 的图：IA 的元数据没有许可字段，脚本只放行 `plate.py` 里 `IA_ITEMS` 白名单登记过的条目，许可依据写在白名单里；目前只有 Atalanta Fugiens 的 Getty 扫描本，别的 IA 条目报退出码 3。`--region` 是画面在整页上的百分比位置，由 IIIF 服务器裁出来，不需要本地裁切工具。
 - 要用 IA 上别的扫描本（「系列」里的 Fludd、Kircher、Hooke 等在 IA 上都有）：按 `plate.py` 里 `IA_ITEMS` 上方注释的三条标准确认原作与扫描都属公有领域，请维护者认可后加一条登记，并在 `tests/test_plate.py` 里加一行断言。
 - 产出 `figures/plates/<name>.png`（有 ImageMagick 时拉伸色阶、压成 4 级灰度 PNG；macOS 没有 ImageMagick 时用 sips 转成 JPEG，纸面保留扫描的灰色，亮色主题下会露出一块浅灰底）、`<name>.json`（出处、许可、作者、取图日期），并打印一段可以直接粘贴的 `<figure class="plate">`。
 - 默认宽 1000px，单幅一般在 80–250 KB。超过 300 KB 时脚本发 WARN，加 `--width 800` 重取。
 - 图录主表里 Commons 的单幅文件只有约 600px 宽，在高分屏上发虚，只在 IA 取不到时作退路。
+- 成品几乎是一片纯色（透明底、空白页、裁错区域）时脚本报 ERROR 并删掉成品，退出码 1；`<name>.json` 里记有图源尺寸和裁切区域。
 
 ## 写法
 
 把脚本打印的写法放到位置上，再改掉所有 `TODO-题图`：构建在页面里看到 `TODO-题图` 就报 ERROR。
 
 - **扉页题图**：放在 `header.titlepage` 里、`p.byline` 之后。
-- **章首题图**：放在该章 `<h2>` 之后、第一个 `<section>` 的开头。
+- **章首题图**：放在该章 `<h2>` 后面那个 `<section>` 的里面，作为它的第一个子元素（`<h2>` 和 `<section>` 之间不放，`<p>` 里也不放）。
 - **图注**：`题图　` 加出处（书名、页码或幅次）、图题或箴言的译文（有的话）、刻工与年份，最后是脚本生成的图源与许可。例：「题图　《逃离的阿塔兰忒》第 42 幅：『行于化学者，当以自然为向导，理性为手杖，经验为眼镜，阅读为明灯。』Matthäus Merian 刻，1618。图源 Wikimedia Commons，公有领域。」CC BY 的图要写署名，脚本取不到干净的署名时留了 `TODO-题图：署名`，到文件页面上查实再填。
 - **alt**：描述画面本身（人物、动作、器物），不写寓意。
 - `data-source` 和 `data-license` 由脚本写好，不要删：构建靠它们检查题图有没有出处。

@@ -216,7 +216,7 @@ page = embed(源码, FIGS)   # 把 <!--FIG:shard--> 换成图
 ```
 
 - 只在用户要求配题图时使用。写法由 `scripts/plate.py` 打印，选图、取图和图注的写法见 [题图](plates.md)。
-- 扉页题图放在 `header.titlepage` 里、`p.byline` 之后；章首题图放在该章 `<h2>` 之后、第一个 `<section>` 的开头。
+- 扉页题图放在 `header.titlepage` 里、`p.byline` 之后；章首题图放在该章 `<h2>` 后面那个 `<section>` 的里面，作为它的第一个子元素。
 - 样式由 tufte.css 负责：亮色主题下扫描的纸色融进页面，暗色主题下裱在压暗的纸色衬底上。作者只写 `class="plate"`，不加别的样式。
 - `data-source` 与 `data-license` 缺一个，或页面里留着 `TODO-题图`，构建都报 ERROR。构建统计里题图单独计为「题图」，不计入「图」。
 
