@@ -893,7 +893,8 @@ kbd,
    数字是衬线大字，单位进 <small>：数字走拉丁字形可以收字距，汉字单位不能。
    184<small>万条/日</small> 读作一个量，整串放大会让"万条/日"跟数字抢大小。
    上限 2.75rem 低于首屏 h1，h1 始终是页面最大字。 */
-.stat-num {
+.stat-num,
+.metric-band .stat-num {
   font-family: var(--font-serif);
   font-size: clamp(1.75rem, 4vw, 2.75rem);
   font-weight: 500;
@@ -910,7 +911,7 @@ kbd,
   font-weight: inherit;
 }
 .stat-num small {
-  font-size: 0.5em;
+  font-size: max(0.5em, 0.8125rem); /* 大数被压小时单位不跟着缩到看不清 */
   font-weight: 500;
   letter-spacing: 0;
   margin-inline-start: 0.12em;
@@ -2067,20 +2068,32 @@ body[data-recipe] main > section:first-child > .lede {
   background: var(--color-card);
 }
 
-[data-recipe="status-report"] .metric-band,
+/* 指标带不再只属于 status-report：任何配方的首屏或证据段都用它，页面不要自造 .stat-band */
+.metric-band,
 .recipe-matrix > [data-recipe="status-report"] .metric-band {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: 0.75rem; /* 面色分格，不画边线；auto-fit 折行后不会留下空格子 */
 }
-[data-recipe="status-report"] .metric-band > * {
+.metric-band > * {
   min-width: 0;
   padding: 1rem;
   background: var(--color-card);
   border-radius: var(--radius);
 }
-[data-recipe="status-report"] .metric-band strong {
+.metric-band strong {
   display: block;
+}
+.metric-band > * > * {
+  margin-block: 0;
+}
+.metric-band > * > * + * {
+  margin-block-start: 0.35rem;
+}
+/* 格内除大数以外的段落是标签或注记：小一号、次要色。写成 .metric-band p 会连大数一起改掉 */
+.metric-band > * > p:not(.stat-num) {
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
 }
 
 [data-recipe="incident-report"] .incident-timeline,

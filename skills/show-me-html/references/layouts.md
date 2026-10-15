@@ -236,7 +236,7 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码�
 
 调研 / 数据类状态页改用「报告节律」（见全局版式约定）：每节眉标提问、标题作答、证据下面跟 `.src`。
 
-- 指标块：`.card[data-size=sm]` 或 `.metric-band`，大数写 `.stat-num`（单位进 `<small>`，见 components.md「大数」）+ 变化量（涨跌用 `.badge[data-variant]`）。
+- 指标块：`.metric-band`（components.md「大数」下的「指标带」，任何配方通用）或 `.card[data-size=sm]`，大数写 `.stat-num`（单位进 `<small>`，见 components.md「大数」）+ 变化量（涨跌用 `.badge[data-variant]`）。
 - 全页只读，不要放假按钮。
 
 ### `incident-report` · 复盘一次故障

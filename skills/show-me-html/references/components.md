@@ -96,6 +96,26 @@
 没有单位就不写 `small`。指标带、卡片里的 KPI、暗卡里的决定性数字都用这一个类；
 `<strong>` 可加可不加，字重由 `.stat-num` 定。
 
+### 指标带
+
+一排并列的大数用 `.metric-band`，所有配方都能用；每格一个块，大数加标签，可再跟一行注记：
+
+```html
+<div class="metric-band">
+  <div>
+    <p class="stat-num">1<small>s</small></p>
+    <p>每集预加载的数据量</p>
+  </div>
+  <div>
+    <p class="stat-num">720<small>p</small></p>
+    <p>ABR 自动档上限</p>
+  </div>
+</div>
+```
+
+格内大数以外的 `<p>` 自动是小号次要色标签，标签写在大数上面还是下面都行。不要自造 `.stat-band` 一类的外壳，也不要写 `.xxx p { font-size }`：
+这条选择器会连 `.stat-num`（它也是 `<p>`）一起压小。构建的渲染检查发现 `.stat-num` 小于 1.75rem 或正文小于 10px 时会报 ERROR。
+
 ## 徽章
 
 ```html
