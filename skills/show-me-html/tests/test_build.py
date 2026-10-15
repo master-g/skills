@@ -350,6 +350,24 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual("字号低于下限：F1（#tiny） 最小 5 < 半宽下限 6.5" in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
+    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    def test_render_check_flags_shrunk_stat_num(self):
+        """页面 <style> 写 .band p 会连 .stat-num 一起压小（2026-10 实例：12.8px 的大数、6.4px 的单位）。"""
+        band = """<section><div class="metric-band"><div><p class="stat-num">720<small>p</small></p>
+          <p>ABR 自动档上限</p></div></div></section>"""
+        for style, flagged in ((".metric-band p { font-size: 0.8rem; }", False),
+                               (".band p { font-size: 0.8rem; }", True)):
+            with self.subTest(style=style):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8")
+                markup = band if not flagged else band.replace('class="metric-band"', 'class="band"')
+                html = html.replace("</main>", markup + "</main>").replace(
+                    "</head>", f"<style>{style}</style></head>")
+                page.write_text(html, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                self.assertEqual("正文字号过小：.stat-num「720p」" in result.stdout, flagged, result.stdout)
+                self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
+
     def test_gallery_loops_are_registered_for_pause(self):
         """循环必须登记进 keep：reveal 靠它在图滚出视口时停表，漏登记的会一直逼出重绘。"""
         for src in sorted((SKILL / "assets" / "gallery").glob("*.html")):

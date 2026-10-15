@@ -834,7 +834,31 @@ PROBE = """
         small.push(f.dataset.chart + (svg ? '（#' + svg.id + '）' : '') + ' 最小 ' + min + ' < ' + (wide ? '通栏' : '半宽') + '下限 ' + floor);
       }
     });
-    document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；');
+    // 正文文字字号下限（不含图内 SVG 与公式）：页面 <style> 用宽选择器压掉骨架字号时，构建要看得见。
+    // 只量自己直接带文字的可见元素；收起的 <details> 内容尺寸为 0，自动跳过
+    var text = [], doc = document.getElementById('doc') || document.body;
+    var name = function(el){
+      return el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim()
+        ? '.' + el.className.trim().split(/\\s+/).slice(0,2).join('.') : '');
+    };
+    var shown = function(el){ var r = el.getBoundingClientRect(); return r.width >= 2 && r.height >= 2; };
+    doc.querySelectorAll('*').forEach(function(el){
+      if (el.closest('svg, math')) return;
+      var own = false;
+      for (var n = el.firstChild; n; n = n.nextSibling)
+        if (n.nodeType === 3 && n.textContent.trim()) { own = true; break; }
+      if (!own || !shown(el)) return;
+      var fs = parseFloat(getComputedStyle(el).fontSize);
+      if (fs < 10) text.push(name(el) + ' ' + fs + 'px「' + el.textContent.trim().slice(0, 12) + '」 < 10px');
+    });
+    // 大数契约（components.md「大数」）：.stat-num 最小 1.75rem。更小说明被页面样式覆盖了
+    doc.querySelectorAll('.stat-num').forEach(function(el){
+      if (!shown(el)) return;
+      var fs = parseFloat(getComputedStyle(el).fontSize);
+      if (fs < 27.5) text.push('.stat-num「' + el.textContent.trim().slice(0, 12) + '」' + fs + 'px < 1.75rem');
+    });
+    document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；')
+      + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '');
   }, 1500);
 });</script>
 """
@@ -1006,7 +1030,7 @@ def render_check(page, widths=(500, 1280)):
                     capture_output=True, text=True, timeout=90).stdout
             except Exception as e:
                 return [f"渲染检查跑不起来：{e}"], [], False
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
@@ -1025,6 +1049,10 @@ def render_check(page, widths=(500, 1280)):
             small = htmllib.unescape(m.group(4).strip())  # --dump-dom 把 <title> 里的 < 转义了
             if small and w == max(widths):  # viewBox 单位与视口宽度无关，报一次
                 issues.append(f"图内字号低于下限：{small}。装不下改 <title> hover 出，不缩字号硬塞（charts.md「文字」）")
+            text = htmllib.unescape(m.group(5).strip())
+            if text and w == max(widths):
+                issues.append(f"正文字号过小：{text}。多半是页面 <style> 的宽选择器（如 .xxx p）压掉了骨架字号，"
+                              "改窄选择器或换骨架组件（components.md「大数」「指标带」）")
     return issues, measured, True
 
 
