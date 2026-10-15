@@ -53,7 +53,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 ## tufte-reader（2026-10-14，基线 `55a66e8`）
 
-由 improve 技能应维护者的两项请求生成：(1) 评估把脚本从 Python 迁到 bun + TypeScript 的投入产出；(2) 按文章主题给读本配风格接近 _Atalanta Fugiens_（1618）的旧版画题图（16–18 世纪的铜版画、蚀刻、木刻；炼金术、自然哲学、博物、机械一类），只用公有领域或宽松许可的图。(1) 的结论是不做，记在下面的 rejected 一节；(2) 写成 007（元素、样式、构建检查、取图脚本、图录）。advisor 在 scratchpad 的仓库副本里套用了 007 的全部改动并跑通（43 个测试 OK、specimen 0 ERROR、图录 55 个文件经 Commons 核对），附件在 `plans/007-tufte-reader-plates/`。之后据一条旁路提醒补了 008：单幅图只有约 600px，高分屏发虚，改从 IA 取高清版；调研中还发现 Commons 上标作第 11 幅的文件其实是第 25 幅，已在 007 的图录里改正。第二轮维护者指出第一轮把范围收窄到了 Atalanta 一本书，于是把图录的「选图」改成以主题为入口、「其他系列」扩成 22 个核实过的 Commons 分类（仍在 007 附件里），008 改为通用的 IA 来源机制，新增 009 的搜图脚本，并应旁路提醒放行了「No restrictions」许可。advisor 在 scratchpad 的仓库副本里跑通了三份计划叠加后的状态：50 个测试 OK，图录核对通过（007 版 55 个文件、008 版 50 个文件，分类 22 个），搜图脚本联网实测 3 组关键词。
+由 improve 技能应维护者的两项请求生成：(1) 评估把脚本从 Python 迁到 bun + TypeScript 的投入产出；(2) 按文章主题给读本配风格接近 _Atalanta Fugiens_（1618）的旧版画题图（16–18 世纪的铜版画、蚀刻、木刻；炼金术、自然哲学、博物、机械一类），只用公有领域或宽松许可的图。(1) 的结论是不做，记在下面的 rejected 一节；(2) 写成 007（元素、样式、构建检查、取图脚本、图录）。advisor 在 scratchpad 的仓库副本里套用了 007 的全部改动并跑通（43 个测试 OK、specimen 0 ERROR、图录 55 个文件经 Commons 核对），附件在 `plans/007-tufte-reader-plates/`。之后据一条旁路提醒补了 008：单幅图只有约 600px，高分屏发虚，改从 IA 取高清版；调研中还发现 Commons 上标作第 11 幅的文件其实是第 25 幅，已在 007 的图录里改正。第二轮维护者指出第一轮把范围收窄到了 Atalanta 一本书，于是把图录的「选图」改成以主题为入口、「其他系列」扩成 22 个核实过的 Commons 分类（仍在 007 附件里），008 改为通用的 IA 来源机制，新增 009 的搜图脚本，并应旁路提醒放行了「No restrictions」许可。advisor 在 scratchpad 的仓库副本里跑通了三份计划叠加后的状态：50 个测试 OK，图录核对通过（007 版 55 个文件、008 版 50 个文件，分类 22 个），搜图脚本联网实测 3 组关键词。007–009 执行并合入后，advisor 派四个 sonnet worker 各写了一本带题图的 3 章样例读本（显微、机械、炼金、天文），四本都从主题出发选图、没有退回 Atalanta；它们共同撞上的脚本缺陷和文档含糊处写成 013。
 
 ### Decisions recorded (2026-10-14, by the maintainer)
 
@@ -67,18 +67,54 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 ### Execution order & status
 
-| Plan | Title                                                                                                    | Priority | Effort | Depends on | Status                                     |
-| ---- | -------------------------------------------------------------------------------------------------------- | -------- | ------ | ---------- | ------------------------------------------ |
-| 007  | tufte-reader 支持公有领域铜版画题图（扉页与选定章节）                                                    | P2       | M      | —          | DONE（已合入，f2b4c12）                    |
-| 008  | plate.py 支持 Internet Archive 扫描本（IIIF 裁切），登记 Atalanta Fugiens 为首个条目并换成 1000px 高清版 | P2       | S      | 007        | DONE（已合入，c51ac07）                    |
-| 009  | 加搜图脚本 find_plate.py：按主题词在 Commons 分类里找许可可用的高清题图                                  | P2       | S      | 007        | DONE（worktree 提交 de66080，待合入 main） |
+| Plan | Title                                                                                                    | Priority | Effort | Depends on    | Status                  |
+| ---- | -------------------------------------------------------------------------------------------------------- | -------- | ------ | ------------- | ----------------------- |
+| 007  | tufte-reader 支持公有领域铜版画题图（扉页与选定章节）                                                    | P2       | M      | —             | DONE（已合入，f2b4c12） |
+| 008  | plate.py 支持 Internet Archive 扫描本（IIIF 裁切），登记 Atalanta Fugiens 为首个条目并换成 1000px 高清版 | P2       | S      | 007           | DONE（已合入，c51ac07） |
+| 009  | 加搜图脚本 find_plate.py：按主题词在 Commons 分类里找许可可用的高清题图                                  | P2       | S      | 007           | DONE（已合入，de66080） |
+| 013  | 题图脚本按四本样例的反馈打磨：透明底、Commons 裁切、缩略图预览、帮助与文档措辞                           | P2       | S      | 007, 008, 009 | TODO                    |
 
 ### Dependency notes
 
 - 008 依赖 007：补丁以 007 的附件为基准，改的是 007 新建的 `plate.py`、`test_plate.py`、`plates.md`。
 - 009 依赖 007（复用 `plate.py` 的许可白名单，改 `plates.md`「系列」末尾一段）；与 008 互不依赖，建议在 008 之后执行，计划里的测试数按这个顺序写。
+- 013 依赖 007–009 全部合入（基线 `3b4c69d`）：覆盖 `plate.py`、`find_plate.py` 和两份测试，按锚点改三份文档。
 
 ### Findings considered and rejected
 
 - **把 tufte-reader 的 Python 脚本迁到 bun + TypeScript**：投入大于收益，维护者确认没有具体的推动理由。本机实测：specimen（89 条公式）完整构建 0.14 秒，35 个测试 1.5 秒；`math.mjs` 换 bun 运行输出逐字节相同，只省约 60 毫秒；node 本来就是编译公式的硬依赖，node 26 能直接运行 `.ts`，所以 bun 不带来新能力。真正的成本在 `build.py` 的 `Checker`：它建在 `html.parser.HTMLParser` 上，Node 和 Bun 的标准库没有对应的 HTML 解析器，只能违反「Node 脚本只用标准库」的约定引入依赖，或者手写一个在不规范 HTML 上与原来行为一致的解析器。`figlib.py` 是子 agent 在 `.figs.py` 里 import 的写作接口，换语言要改写这套写法和所有写着 `python3` 的文档。以后出现具体理由（某个环境没有 python3、要用 TS 写图）再议；届时目标是 node + TS 而不是 bun，第一步移植 `Checker`，并以 specimen 构建输出逐字节一致作为门禁。
 - **`$` 公式扫描在 `build.py` 和 `math.mjs` 里各有一份**：现有的端到端测试先用 node 编译、再用 Python 的 `leftover_dollars` 查漏，已经覆盖了两份实现跑偏的情况，不需要单独加对拍测试。
+
+---
+
+## show-me-html（2026-10-14，基线 `55a66e8`）
+
+由 improve 技能应维护者的请求生成。维护者反馈用本技能生成的 `reelshort-tech-notes.html`（feature-explainer 配方）开头指标带字太小，「1s」的 s 几乎看不见，表格与内容的密度也不均衡，请求分析哪些属于模板问题。实测发现页面内联的 CSS 与仓库当前版本逐字相同，`build.py` 对这页零 WARN 通过。指标带的大数只有 12.8px、单位 6.4px，原因是页面自写的 `.stat-band p` 压过了骨架的 `.stat-num`；骨架缺一个通用指标带组件，模型只能自造。审计还发现：`.item-group` 文档里的 `<hr />` 没有样式，渲染成一个小点，冻结场景 bb65054 轮里也是这样；`.src` 的大写变换会改写行内代码。advisor 在 scratchpad 的仓库副本里套用了 010 和 011，单元测试 46 个 OK，五个冻结场景、两个夹具页、gallery 全图页都没有误报，前后截图核对过。
+
+### Decisions recorded
+
+- 010 / 011 的执行顺序与审计时的口头编号相反：零判断的 CSS 修正排在前面（010），指标带与检查排在后面（011）。
+- 011 的新检查报 ERROR 还是 WARN：advisor 建议 ERROR（与图内字号下限一致），**待维护者确认**；没有记录时按 ERROR 执行。
+- 012 的方案：待维护者看过样张后在这里记下（base / A / B / A+B）。
+
+### Execution order & status
+
+| Plan | Title                                                              | Priority | Effort | Depends on      | Status                  |
+| ---- | ------------------------------------------------------------------ | -------- | ------ | --------------- | ----------------------- |
+| 010  | 修好条目组分隔线、来源行里的代码与中文字号、图示分区框内的标签遮罩 | P1       | S      | —               | DONE（已合入，ea8fb6e） |
+| 011  | 指标带成为通用组件，构建检查拦下被压小的大数与过小的正文字         | P1       | M      | 010（建议顺序） | TODO                    |
+| 012  | 表格密度：先做对比样张由维护者选方案，再实现                       | P2       | S      | —               | TODO                    |
+
+### Dependency notes
+
+- 010 与 011 都改 `show-me.css`，规则位置不重叠。011 Step 6 的场景高度预期值是按「先 010 后 011」写的。
+- 012 与两者没有规则重叠；排在最后，是为了避免三份计划同时改 `show-me.css`。012 有一个必停点：样张交给维护者选定方案之后才实现。
+- 三份计划的场景轮次都复用主检出目录 `skills/show-me-html/scenarios/rounds/2026-09-23-bb65054/` 下的页面，重新构建即可，不用重新生成。
+
+### Findings considered and rejected
+
+- **在 `.stat-num` 上提高优先级（如 `p.stat-num`、`main .stat-num`）**：与页面的 `.stat-band p` 同为 (0,1,1)，页面 `<style>` 排在后面，照样会输；骨架有意让 `.stat-num` 保持低优先级。改为 011 的组件内加固（`.metric-band .stat-num`）加检查。
+- **当页补丁 `.stat-band .stat-num { … }`**：MAINTENANCE.md 禁止调用方补丁。维护者那一页要单独修：把 `stat-band` 换成 `metric-band`，删掉页面自写的样式块。这不属于计划范围。
+- **表格调列宽（首列 nowrap、非末列 `width:1%` + nowrap）**：两种在样张里都更差，见 012 Step 1。宽屏下列宽不均主要来自内容。
+- **新增「调研笔记」配方 / 密度规则**：证据只有这一页（模型把调研笔记套进了 feature-explainer，一页里叠了指标带、暗卡、管线图、条目组和三张表），建议维护者记进 MAINTENANCE.md「观察名单」，复现后再定（improve 不改技能文件）。
+- **图示 SVG 文字 9.5px**：符合 diagrams.md「任何文字不小于 9px」，不改。
