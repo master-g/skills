@@ -27,12 +27,12 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-15] main；improve 010–013 由 sonnet 执行者在 worktree 完成、审阅后合入（010 show-me-html CSS 修正、011 指标带与字号检查、013 题图脚本打磨）；012 做完样张后维护者选 base 记 REJECTED；已 make install tufte-reader；已推送
+- [2026-10-15] main；improve 010–013 由 sonnet 执行者在 worktree 完成、审阅后合入（010 show-me-html CSS 修正、011 指标带与字号检查、013 题图脚本打磨）；012 做完样张后维护者选 base 记 REJECTED；已 make install tufte-reader；已推送；之后用 013 版脚本重跑四本样例（15 幅重取与旧图 RMSE 全 0，机械第 2 章用 --region 从整页扫描补裁出磨坊齿轮图，四本 0 ERROR），样例按维护者决定丢弃不入库
   验证：show-me-html 46 测试 OK、tufte-reader 57 测试 OK、make check 通过、五个冻结场景自检通过且探针无问题、013 联网实测（Ramelli 整页 --region 裁出 1000×981 磨坊图、--thumb 总览图、图录 50 文件 25 分类）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-15] 用 013 版脚本写一本带题图的读本走一遍（find_plate.py --thumb 预览 → plate.py --region 裁切 → 构建），看 agent 是否按 plates.md 新流程选图；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
+- [2026-10-15] 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
 - guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff
