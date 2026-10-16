@@ -29,13 +29,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-16] main，已提交、已 rsync 安装副本、未推送；show-me-html 交接 1–3 项（交接文档 ~/Downloads/htmls/show-me-html-handoff/HANDOFF.md）：目录 h3 按当前节折叠、按版心定目录去留（窄档 9rem+1.5rem，按 Windows 滚动条下 48rem@1024 放得下定）与阅读进度线、`.diagram-wide/.diagram-narrow` 宽窄两版图及 build.py 渲染字号（500/1024/1280）与 SVG 重复 id 检查；顺带修了点目录后激活项落在上一节
-  验证：show-me-html 48 测试 OK（改了 legacy_license 测试辅助函数的重复 id）、make check 通过、冻结场景轮次 `scenarios/rounds/2026-10-16-7454494-handoff`（对 -base 比较，SUMMARY.md 有结论）五页无问题
+- [2026-10-16] main，已提交、已 make install 两个技能、未推送；improve plan 014：show-me-html 与 tufte-reader 默认输出文件名改为 `YYYY-MM-DD-<标题>.html`（细节见 plans/014-date-prefixed-output-filenames.md）
+  验证：执行 agent 在 worktree 改、审阅重跑通过：make check、prettier、新规则 grep 两文件各 1、旧规则 grep 无命中；安装副本 grep `date +%F` 各 1
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-16] show-me-html：推送待用户要求；候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
+- [2026-10-16] 日期前缀文件名冒烟未做：空目录各调用一次 show-me-html / tufte-reader、不指定文件名，看是否 `<今天>-<英文标题>.html`、中文标题意译是否像样、tufte-reader 的 .work/ 是否同前缀
+  show-me-html：推送待用户要求；候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
   tufte-reader 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
   guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff

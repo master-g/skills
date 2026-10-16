@@ -118,3 +118,24 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - **表格调列宽（首列 nowrap、非末列 `width:1%` + nowrap）**：两种在样张里都更差，见 012 Step 1。宽屏下列宽不均主要来自内容。
 - **新增「调研笔记」配方 / 密度规则**：证据只有这一页（模型把调研笔记套进了 feature-explainer，一页里叠了指标带、暗卡、管线图、条目组和三张表），建议维护者记进 MAINTENANCE.md「观察名单」，复现后再定（improve 不改技能文件）。
 - **图示 SVG 文字 9.5px**：符合 diagrams.md「任何文字不小于 9px」，不改。
+
+---
+
+## 输出文件名日期前缀（2026-10-16，基线 `84632f4`）
+
+由 improve 技能的 `plan` 变体应维护者请求生成：show-me-html 与 tufte-reader 默认输出文件名补日期前缀，形如 `2026-10-16-<标题>.html`。只改两个 SKILL.md 各一段，脚本不动；截图名与 tufte-reader 工作区从页面名派生，自动继承前缀。
+
+### Decisions recorded（2026-10-16，维护者确认）
+
+- 格式 `YYYY-MM-DD-<kebab 标题>.html`，沿用 `scenarios/rounds/2026-09-23-…` 的 ISO 日期写法。
+- 「默认」指用户没给完整文件名：给了完整文件名照用；只给目录时在该目录里用默认名。
+- 日期取本机当天（文档写明 `date +%F`），不让模型凭记忆写。
+- 修改、续写已有页面沿用原文件名，避免每轮反馈换名、tufte-reader 每天多一个 `.work/`。
+- 标题部分用英文 kebab-case，中文标题意译成简短英文（不用拼音、不保留中文）。
+- 冻结场景页、gallery 的 `all-charts.html`、specimen 保持固定名字。
+
+### Execution order & status
+
+| Plan | Title                                                       | Priority | Effort | Depends on | Status                            |
+| ---- | ----------------------------------------------------------- | -------- | ------ | ---------- | --------------------------------- |
+| 014  | 两个技能的默认输出文件名带日期前缀 `YYYY-MM-DD-<标题>.html` | P2       | S      | —          | DONE（已合入，763d3cb + 03890c2） |
