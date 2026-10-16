@@ -224,7 +224,8 @@ class BuildCliTests(unittest.TestCase):
         self.assertIn("图表运行时", result.stdout)
 
     def chart_figure(self, chart):
-        return self.FIGURE.replace('data-chart="F1"', f'data-chart="{chart}"')
+        # 同页多张图的 id 各带前缀，否则会撞上重复 id 检查
+        return self.FIGURE.replace('data-chart="F1"', f'data-chart="{chart}"').replace('"x', f'"{chart}').replace(" x-", f" {chart}-")
 
     def test_legacy_license_notice_is_kept_verbatim(self):
         """此前交付的页面带着许可声明：重新构建不再增删它，也不再发许可 WARN。"""
@@ -367,6 +368,31 @@ class BuildCliTests(unittest.TestCase):
                 result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
                 self.assertEqual("正文字号过小：.stat-num「720p」" in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
+
+    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    def test_render_check_measures_only_the_shown_diagram_variant(self):
+        """宽窄两版图：500px 只量窄版、1024/1280 只量宽版，被媒体查询隐藏的那版不报。"""
+        for label, size, flagged in (("ok", None, ()), ("narrow", '13"', ("500px",)),
+                                     ("wide", '12"', ("1024px", "1280px"))):
+            with self.subTest(variant=label):
+                page = self.copy_fixture("diagram-variants.html")
+                if size:
+                    html = page.read_text(encoding="utf-8")
+                    page.write_text(html.replace('font-size="' + size, 'font-size="5"'), encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                for w in ("500px", "1024px", "1280px"):
+                    self.assertEqual(f"{w} 下示意图字号渲染后低于 8px：{'窄版' if label == 'narrow' else '宽版'}"
+                                     in result.stdout, w in flagged, result.stdout)
+                self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
+
+    def test_duplicate_svg_ids_fail(self):
+        """宽窄两版共用 marker id 时，窄版的 url(#…) 会指到隐藏的宽版里。"""
+        page = self.copy_fixture("diagram-variants.html")
+        html = page.read_text(encoding="utf-8")
+        page.write_text(html.replace("flow-n-arrow", "flow-arrow"), encoding="utf-8")
+        result = run_build(page)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("SVG 里有重复 id：flow-arrow", result.stdout)
 
     def test_gallery_loops_are_registered_for_pause(self):
         """循环必须登记进 keep：reveal 靠它在图滚出视口时停表，漏登记的会一直逼出重绘。"""

@@ -257,6 +257,7 @@ def check_font_stacks(html, warns, errors):
 SVG_BLOCK_RE = re.compile(r"<svg\b([^>]*)>(.*?)</svg>", re.S | re.I)
 LINE_TAG_RE = re.compile(r"<line\b[^>]*?/?>", re.I)
 LINE_ATTR_RE = re.compile(r'\b(x[12]|y[12])="(-?[\d.]+)"')
+SVG_ID_RE = re.compile(r'\sid="([^"]+)"')
 
 
 def check_svgs(html, warns, errors):
@@ -293,6 +294,13 @@ def check_svgs(html, warns, errors):
             shown = "、".join(diagonals[:3]) + (f" 等 {len(diagonals)} 处" if len(diagonals) > 3 else "")
             errors.append(f"SVG 里有斜线直连：{shown}。不共轴的节点之间必须走圆角直角肘形线"
                           "（references/diagrams.md 规则 1 有 path 公式），斜线没有例外")
+
+    # 同一张图画宽窄两版时最容易撞 id：url(#arrow) 会指向排在前面、可能正被隐藏的那一版
+    ids = [i for m in SVG_BLOCK_RE.finditer(html) for i in SVG_ID_RE.findall(m.group(0))]
+    dup = list(dict.fromkeys(i for i in ids if ids.count(i) > 1))
+    if dup:
+        errors.append(f"SVG 里有重复 id：{'、'.join(dup[:5])}。marker 引用会指错图、读屏会读错标题；"
+                      "每张图（含宽窄两版）的 id 用各自的前缀（references/diagrams.md「窄屏另画一版」）")
 
 
 # ── <main> 直接子元素 ────────────────────────────────────────────────────
@@ -857,8 +865,25 @@ PROBE = """
       var fs = parseFloat(getComputedStyle(el).fontSize);
       if (fs < 27.5) text.push('.stat-num「' + el.textContent.trim().slice(0, 12) + '」' + fs + 'px < 1.75rem');
     });
+    // 宽窄两版的示意图（diagrams.md「窄屏另画一版」）：量当前显示那一版渲染后的字号，
+    // 被媒体查询隐藏的那一版没有盒子，跳过。和上面的 viewBox 单位不同，这里随视口变，每档都报
+    var diag = [];
+    document.querySelectorAll('.diagram-wide, .diagram-narrow').forEach(function(v){
+      (v.tagName.toLowerCase() === 'svg' ? [v] : Array.from(v.querySelectorAll('svg'))).forEach(function(s){
+        if (!s.getClientRects().length || !shown(s)) return;
+        var min = Infinity;
+        s.querySelectorAll('text, tspan').forEach(function(t){
+          var m = t.getScreenCTM();
+          if (!m || !t.textContent.trim()) return;
+          min = Math.min(min, parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b));
+        });
+        if (min < 8) diag.push((v.classList.contains('diagram-wide') ? '宽版' : '窄版')
+          + (s.id ? '#' + s.id : '') + ' 最小 ' + min.toFixed(1) + 'px');
+      });
+    });
     document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；')
-      + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '');
+      + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '')
+      + '|' + diag.join('；');
   }, 1500);
 });</script>
 """
@@ -1008,7 +1033,7 @@ def find_chrome():
 
 
 # 无头 Chrome 把窗口宽度钳在 500px，比这更窄的视口测不到 —— 390px 只能人眼验。
-def render_check(page, widths=(500, 1280)):
+def render_check(page, widths=(500, 1024, 1280)):
     """返回 (issues, measured, ran)。ran=False 表示没有浏览器，这道关没跑。"""
     import html as htmllib, subprocess, tempfile
     chrome = find_chrome()
@@ -1030,7 +1055,7 @@ def render_check(page, widths=(500, 1280)):
                     capture_output=True, text=True, timeout=90).stdout
             except Exception as e:
                 return [f"渲染检查跑不起来：{e}"], [], False
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
@@ -1053,6 +1078,10 @@ def render_check(page, widths=(500, 1280)):
             if text and w == max(widths):
                 issues.append(f"正文字号过小：{text}。多半是页面 <style> 的宽选择器（如 .xxx p）压掉了骨架字号，"
                               "改窄选择器或换骨架组件（components.md「大数」「指标带」）")
+            diag = htmllib.unescape(m.group(6).strip())
+            if diag:
+                issues.append(f"{cw}px 下示意图字号渲染后低于 8px：{diag}。宽版缩得太小就画窄版，"
+                              "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）")
     return issues, measured, True
 
 

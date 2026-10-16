@@ -112,6 +112,7 @@
   --page: 60rem;
   --gutter: clamp(1rem, 3vw, 2rem);
   --toc-w: 13rem;
+  --toc-gap: 3rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -1018,30 +1019,38 @@ main {
 main {
   padding-block: 2.5rem 6rem;
 }
-/* ≥80rem 且目录存在（body.has-toc，由骨架 JS 开门）时：三列栅格，内容列仍是 --page 宽并居中于视口，
-   目录住在右侧页边。右列保底 --toc-w + 3rem；视口不够宽时左列先让，内容只偏移必要的量。 */
-@media (min-width: 80rem) {
-  body.has-toc .chrome-inner,
-  body.has-toc .layout {
+/* 版心右侧放得下目录时（body.toc-side，由骨架 JS 按 --page + 目录 + 两侧 gutter 与视口宽度比较后开门）：
+   三列栅格，内容列仍是 --page 宽并居中于视口，目录住在右侧页边。右列保底 --toc-w + --toc-gap；
+   视口不够宽时左列先让，内容只偏移必要的量。断点不能写成媒体查询：@media 不认 var()，页面还会自己改 --page。
+   宽档放不下时 JS 再试窄档（body.toc-compact），两档都放不下就隐藏目录，不挤压正文。
+   只作用于屏幕：打印时目录本来就隐藏，栅格留着会白占一列纸宽。 */
+/* 窄档按 48rem 长文在 1024px 视口、带 17px 常驻滚动条（Windows）时仍放得下来定：768 + 168 + 两侧 gutter ≈ 997px */
+body.toc-compact {
+  --toc-w: 9rem;
+  --toc-gap: 1.5rem;
+}
+@media screen {
+  body.toc-side .chrome-inner,
+  body.toc-side .layout {
     max-width: none;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, var(--page)) minmax(
-        calc(var(--toc-w) + 3rem),
+        calc(var(--toc-w) + var(--toc-gap)),
         1fr
       );
     column-gap: 0;
   }
-  body.has-toc .chrome-title,
-  body.has-toc main {
+  body.toc-side .chrome-title,
+  body.toc-side main {
     grid-column: 2;
   }
-  body.has-toc .chrome-actions,
-  body.has-toc .toc {
+  body.toc-side .chrome-actions,
+  body.toc-side .toc {
     grid-column: 3;
-    padding-inline-start: 3rem;
-    width: calc(var(--toc-w) + 3rem);
+    padding-inline-start: var(--toc-gap);
+    width: calc(var(--toc-w) + var(--toc-gap));
   }
-  body.has-toc .chrome-actions {
+  body.toc-side .chrome-actions {
     margin-inline-start: 0;
   }
 }
@@ -1518,6 +1527,22 @@ math.tml-display {
   height: auto;
   margin-top: 0.75rem;
 }
+/* 宽窄两版图（diagrams.md「窄屏另画一版」）：横向图在手机宽度下字会缩到读不了时，另画一版纵向的。
+   两版都写在页面里，按视口只显示一版；隐藏的那版是 display:none，读屏和 Tab 都跳过它。
+   !important 用来压过 .fig svg 的 display:block 和页面自己的 display 写法。 */
+.diagram-narrow {
+  display: none !important;
+}
+@media (max-width: 640px) {
+  .diagram-wide {
+    display: none !important;
+  }
+  .diagram-narrow {
+    display: block !important;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+}
 .fig svg text {
   font-family: var(--font-mono);
   user-select: none;
@@ -1735,12 +1760,12 @@ code,
 }
 
 /* ── 右侧目录。结构参考 VitePress outline：hairline 轨道 + 滑动指示条 + 嵌套链接。
-     骨架 JS 扫描 #doc 的 h2/h3 生成条目；≥80rem 且条目 ≥2 时出现，否则整块不存在。 ── */
+     骨架 JS 扫描 #doc 的 h2/h3 生成条目；条目 ≥2 且版心右侧放得下（body.toc-side）时出现。 ── */
 .toc {
   display: none;
 }
-@media (min-width: 80rem) {
-  body.has-toc .toc {
+@media screen {
+  body.toc-side .toc {
     display: block;
   }
 }
@@ -1780,6 +1805,34 @@ code,
 .toc-list .toc-list {
   padding-inline-start: 1rem;
 }
+/* h3 小节收在所属 h2 下面，只展开当前节和键盘焦点所在的组（JS 切 .open 与父链接的 aria-expanded）。
+   收起用 visibility:hidden，Tab 不会落到看不见的链接上；Tab 到 h2 链接时这一组先展开，再 Tab 就进得去。
+   展开时 visibility 立即生效，收起时等高度动画结束再隐藏。 */
+.toc-subs {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.25s var(--ease-expo),
+    visibility 0s linear 0.25s;
+}
+.toc-subs.open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.25s var(--ease-expo),
+    visibility 0s;
+}
+.toc-subs > .toc-list {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toc-subs,
+  .toc-subs.open {
+    transition: none;
+  }
+}
 .toc-list li + li {
   margin-block-start: 0;
 }
@@ -1797,6 +1850,26 @@ code,
 .toc-link.active {
   color: var(--color-foreground);
   transition: color 0.25s;
+}
+/* 目录内层和收起组都裁切溢出，外扩的焦点环会被切掉一截，收到链接框里面 */
+.toc-link:focus-visible {
+  outline-offset: -2px;
+}
+/* 目录隐藏时的阅读进度：工具条下边线上的一条，不占版面。由骨架 JS 创建并随滚动设 scaleX，
+   没有过渡，减少动态效果时也没有要关的动画。 */
+.read-progress {
+  display: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+body.has-toc:not(.toc-side) .read-progress {
+  display: block;
 }
 @media (max-width: 640px) {
   :root {

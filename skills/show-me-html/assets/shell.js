@@ -436,12 +436,15 @@
 })();
 
 /* ── 右侧目录：扫描 #doc 的 h2/h3 生成条目，指示条随滚动滑动到当前节。
-移植自 VitePress 的 outline：scroll（throttle 100ms）+ 标题绝对位置比较。
-标题加 data-toc-skip 可豁免；点击时立即定位指示条，平滑滚动途中不跟跳。 ── */
+移植自 VitePress 的 outline：scroll（rAF 节流）+ 标题绝对位置比较。
+标题加 data-toc-skip 可豁免；点击时立即定位指示条，平滑滚动途中不跟跳。
+h3 收在所属 h2 下面，只展开当前节和键盘焦点所在的组。
+目录只在版心右侧放得下时显示；放不下时工具条下边线改为阅读进度。 ── */
 (function () {
   var doc = document.getElementById("doc");
   var aside = document.querySelector(".toc");
   if (!doc || !aside) return;
+  var inner = aside.querySelector(".toc-inner");
   var list = aside.querySelector(".toc-list");
   var marker = aside.querySelector(".toc-marker");
   var headings = Array.from(doc.querySelectorAll("h2, h3")).filter(
@@ -459,9 +462,11 @@
   );
   if (headings.length < 2) return;
 
-  /* h3 嵌进前一个 h2 的子列表；没有前置 h2 的 h3 按顶层处理 */
+  /* h3 嵌进前一个 h2 的子列表；没有前置 h2 的 h3 按顶层处理。
+     子列表外包一层 .toc-subs 做收起动画（grid 行 0fr ↔ 1fr），只给真有 h3 的 h2 建 */
   var n = 0,
-    sub = null;
+    group = null,
+    groups = [];
   headings.forEach(function (h) {
     if (!h.id) h.id = "toc-" + ++n;
     var li = document.createElement("li");
@@ -470,23 +475,60 @@
     a.href = "#" + h.id;
     a.textContent = a.title = h.textContent.trim();
     li.appendChild(a);
-    if (h.tagName === "H2" || !sub) {
+    if (h.tagName === "H2" || !group) {
       list.appendChild(li);
-      sub = null;
-      if (h.tagName === "H2") {
-        sub = document.createElement("ul");
-        sub.className = "toc-list nested";
-        li.appendChild(sub);
-      }
-    } else {
-      sub.appendChild(li);
+      group = h.tagName === "H2" ? { li: li, link: a, box: null } : null;
+      return;
     }
+    if (!group.box) {
+      group.box = document.createElement("div");
+      group.box.className = "toc-subs";
+      group.ul = document.createElement("ul");
+      group.ul.className = "toc-list nested";
+      group.box.appendChild(group.ul);
+      group.li.appendChild(group.box);
+      group.link.setAttribute("aria-expanded", "false");
+      groups.push(group);
+    }
+    group.ul.appendChild(li);
   });
   document.body.classList.add("has-toc");
 
-  var mq = matchMedia("(min-width: 80rem)");
-  var prev = null,
+  var chrome = document.querySelector(".page-chrome");
+  var bar = null;
+  if (chrome) {
+    bar = document.createElement("div");
+    bar.className = "read-progress";
+    bar.setAttribute("aria-hidden", "true");
+    bar.setAttribute("data-md-skip", "");
+    chrome.appendChild(bar);
+  }
+
+  var side = false,
+    prev = null,
     skipOnce = false;
+
+  /* 放得下 = 版心 + 目录列 + 两侧 gutter ≤ 视口宽。用一个隐藏探针让浏览器自己算这几个变量：
+     页面可能改写 --page，rem / vw / 100% 都由它换算；--page:100% 时探针宽过视口，目录自然不出 */
+  var probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;height:0;" +
+    "width:calc(var(--page) + var(--toc-w) + var(--toc-gap) + 2 * var(--gutter))";
+  function fits(compact) {
+    document.body.classList.toggle("toc-compact", compact);
+    return probe.offsetWidth <= document.documentElement.clientWidth;
+  }
+  function layout() {
+    document.body.appendChild(probe);
+    var on = fits(false) || fits(true);
+    probe.remove();
+    if (!on) document.body.classList.remove("toc-compact");
+    if (on !== side) {
+      side = on;
+      document.body.classList.toggle("toc-side", on);
+    }
+    geom = null;
+  }
 
   function topOf(el) {
     var t = 0;
@@ -497,6 +539,55 @@
       el = el.offsetParent;
     }
     return t;
+  }
+
+  function rootItem(el) {
+    while (el && el.parentElement !== list) el = el.parentElement;
+    return el;
+  }
+
+  /* 展开的组 = 当前节所在的组 ∪ 键盘焦点所在的组；.open 与 aria-expanded 同源。
+     只认 :focus-visible：鼠标点过的链接留着焦点，不该在滚走之后还撑开那一组 */
+  function sync() {
+    var f = document.activeElement,
+      kbd = false;
+    if (f && aside.contains(f)) {
+      try {
+        kbd = f.matches(":focus-visible");
+      } catch (e) {
+        kbd = true;
+      }
+    }
+    var cur = rootItem(prev),
+      focused = kbd ? rootItem(f) : null;
+    groups.forEach(function (g) {
+      var open = g.li === cur || g.li === focused;
+      g.box.classList.toggle("open", open);
+      g.link.setAttribute("aria-expanded", String(open));
+    });
+  }
+
+  /* 指示条的参照是 .toc-inner（sticky，自身可滚动）：按两者的视口坐标差算，与嵌套层级无关。
+     animate=false 时不走 top 过渡，用于组展开、收起途中逐帧贴住激活项 */
+  function place(animate) {
+    if (!prev || !side) {
+      marker.style.top = "";
+      marker.style.opacity = "0";
+      return;
+    }
+    var top =
+      prev.getBoundingClientRect().top -
+      inner.getBoundingClientRect().top -
+      inner.clientTop +
+      inner.scrollTop +
+      (prev.offsetHeight - marker.offsetHeight) / 2;
+    if (!animate) marker.style.transition = "none";
+    marker.style.top = top + "px";
+    marker.style.opacity = "1";
+    if (!animate) {
+      void marker.offsetTop; /* 先让无过渡的位置生效，再恢复过渡 */
+      marker.style.transition = "";
+    }
   }
 
   function activate(hash) {
@@ -511,30 +602,35 @@
         }
       }
     }
-    if (prev) {
-      prev.classList.add("active");
-      /* 链接的 offsetParent 是 .toc-list，指示条的参照是 .toc-inner，两者原点要补齐 */
-      marker.style.top =
-        prev.offsetTop +
-        (prev.offsetParent ? prev.offsetParent.offsetTop : 0) +
-        (prev.offsetHeight - marker.offsetHeight) / 2 +
-        "px";
-      marker.style.opacity = "1";
-    } else {
-      marker.style.top = "";
-      marker.style.opacity = "0";
-    }
+    if (prev) prev.classList.add("active");
+    sync();
+    place(true);
+  }
+
+  /* 组的高度在动画里逐帧变化：每帧（布局之后、绘制之前）把指示条贴回激活项 */
+  if (window.ResizeObserver && groups.length) {
+    var ro = new ResizeObserver(function () {
+      place(false);
+    });
+    groups.forEach(function (g) {
+      ro.observe(g.box);
+    });
   }
 
   var geom =
     null; /* 缓存的标题几何：resize 后失效，滚动时不再逐个读 offsetTop */
   function measure() {
+    /* 判定线 = 锚点跳转后标题停下的位置：html 的 scroll-padding-top（让出 sticky 工具条）加标题自己的
+       scroll-margin-top。只算后者时，点目录跳过去的那一节停在线下，激活的会是上一节 */
+    var pad =
+      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+      0;
     geom = headings
       .map(function (h) {
         return {
           id: h.id,
           top: topOf(h),
-          sm: parseFloat(getComputedStyle(h).scrollMarginTop) || 0,
+          sm: pad + (parseFloat(getComputedStyle(h).scrollMarginTop) || 0),
         };
       })
       .filter(function (x) {
@@ -546,7 +642,7 @@
   }
 
   function setActive() {
-    if (!mq.matches) return;
+    if (!side) return;
     if (skipOnce) {
       skipOnce = false;
       return;
@@ -569,12 +665,29 @@
     activate(active ? "#" + active : null);
   }
 
+  /* 阅读进度：读到 #doc 底边算 100%，直接赋值、不带过渡 */
+  function progress() {
+    if (side || !bar) return;
+    var end = doc.getBoundingClientRect().bottom + scrollY - innerHeight;
+    var t = end > 0 ? Math.min(1, Math.max(0, scrollY / end)) : 1;
+    bar.style.transform = "scaleX(" + t + ")";
+  }
+
+  function update() {
+    setActive();
+    progress();
+  }
+
   aside.addEventListener("click", function (e) {
     var a = e.target instanceof Element ? e.target.closest("a") : null;
     if (a && a.hash) {
       skipOnce = true;
       activate(a.hash);
     }
+  });
+  aside.addEventListener("focusin", sync);
+  aside.addEventListener("focusout", function () {
+    setTimeout(sync, 0); /* focusout 时焦点还没落到下一个元素上 */
   });
   var ticking = false;
   addEventListener(
@@ -584,16 +697,21 @@
       ticking = true;
       requestAnimationFrame(function () {
         ticking = false;
-        setActive();
+        update();
       });
     },
     { passive: true }
   );
   addEventListener("resize", function () {
-    geom = null;
-    setActive();
+    layout();
+    update();
+    place(false);
   });
-  addEventListener("load", setActive); /* 等浏览器恢复滚动位置后再定位一次 */
-  mq.addEventListener("change", setActive);
-  setActive();
+  addEventListener("load", function () {
+    /* 等浏览器恢复滚动位置后再定位一次 */
+    layout();
+    update();
+  });
+  layout();
+  update();
 })();

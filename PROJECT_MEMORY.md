@@ -13,6 +13,8 @@
 - [2026-10-14] tufte-reader 题图：选图以文章主题为入口、风格由 plates.md「系列」清单把关，不限于 Atalanta Fugiens（用户举例是风格参照不是范围）；许可只收公有领域/PDM/No restrictions/CC0/CC BY（署名）；暗色主题「亮融暗裱」不反相；IA 来源只按 plate.py 的 IA_ITEMS 白名单逐条放行（plans/README.md tufte-reader 节）
 - [2026-10-14] tufte-reader 脚本不迁 bun/TS：成本在 Checker 依赖 html.parser，收益只省几十毫秒；以后有具体理由再议，目标是 node+TS、先移植 Checker（plans/README.md rejected）
 - [2026-10-15] show-me-html 指标带 `.metric-band` 对所有配方通用，页面不自造 .stat-band；渲染检查对 .stat-num < 1.75rem 或正文 < 10px 报 ERROR 不是 WARN（维护者确认）；表格密度维持现状（plans/README.md show-me-html 节）
+- [2026-10-16] show-me-html 目录只在「版心+目录+留白」放得下时出现，72rem 页面在 1280 下隐藏目录、显示进度线，不挤正文也不加第三档（用户确认）；窄档 9rem+1.5rem 为 Windows 滚动条下 48rem@1024 留余量
+- [2026-10-16] show-me-html 目录指示条逐帧对准要在页面之后注册的 ResizeObserver 里量；rAF 里读会早于页面的贴回一帧，收起动画中看似偏 50px；场景探针的页高差 ~30px 多为 Google Fonts 加载时机，先同页多次加载确认
 
 ## 失败尝试
 
@@ -27,12 +29,13 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-15] main；improve 010–013 由 sonnet 执行者在 worktree 完成、审阅后合入（010 show-me-html CSS 修正、011 指标带与字号检查、013 题图脚本打磨）；012 做完样张后维护者选 base 记 REJECTED；已 make install tufte-reader；已推送；之后用 013 版脚本重跑四本样例（15 幅重取与旧图 RMSE 全 0，机械第 2 章用 --region 从整页扫描补裁出磨坊齿轮图，四本 0 ERROR），样例按维护者决定丢弃不入库
-  验证：show-me-html 46 测试 OK、tufte-reader 57 测试 OK、make check 通过、五个冻结场景自检通过且探针无问题、013 联网实测（Ramelli 整页 --region 裁出 1000×981 磨坊图、--thumb 总览图、图录 50 文件 25 分类）
+- [2026-10-16] main，已提交、已 rsync 安装副本、未推送；show-me-html 交接 1–3 项（交接文档 ~/Downloads/htmls/show-me-html-handoff/HANDOFF.md）：目录 h3 按当前节折叠、按版心定目录去留（窄档 9rem+1.5rem，按 Windows 滚动条下 48rem@1024 放得下定）与阅读进度线、`.diagram-wide/.diagram-narrow` 宽窄两版图及 build.py 渲染字号（500/1024/1280）与 SVG 重复 id 检查；顺带修了点目录后激活项落在上一节
+  验证：show-me-html 48 测试 OK（改了 legacy_license 测试辅助函数的重复 id）、make check 通过、冻结场景轮次 `scenarios/rounds/2026-10-16-7454494-handoff`（对 -base 比较，SUMMARY.md 有结论）五页无问题
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-15] 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
-- guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff
+- [2026-10-16] show-me-html：推送待用户要求；候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
+  tufte-reader 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
+  guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff
