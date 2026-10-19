@@ -36,6 +36,28 @@ class FiglibTest(unittest.TestCase):
     def test_text_is_escaped(self):
         self.assertIn(">a &lt; b &amp; c</text>", f.text(0, 0, "a < b & c"))
 
+    def test_chart_style(self):
+        self.assertIn('>年限 <tspan font-style="italic">t</tspan></text>', f.text(0, 0, "年限 <i>t</i>"))
+        self.assertIn("style=\"font-family:var(--font-serif, serif)\"", f.svg(9, 9, "", "图", serif=True))
+        self.assertIn(f"font-family='{f.SANS}'", f.svg(9, 9, "", "图"))
+        # 强调色取页面的 --mark，带箭头时 defs 里有对应的箭头
+        fig = f.svg(9, 9, f.line(0, 0, 5, 5, arrow=True, color="accent"), "图")
+        self.assertIn("var(--mark, #7a1f1f)", fig)
+        self.assertIn("arraccent", fig)
+        css = (Path(f.__file__).parent.parent / "assets" / "tufte.css").read_text(encoding="utf-8")
+        self.assertIn(f"--mark: {f.ACCENT};", css)
+
+    def test_axes_and_curve(self):
+        out, X, Y = f.axes(50, 20, 200, 100, (0, 10), (-1, 1), [0, 5, 10], [-1, 0, 1], xlabel="<i>t</i>")
+        self.assertEqual((X(0), X(10), Y(-1), Y(1)), (50, 250, 120, 20))
+        # 轴线离开绘图区 7，从第一个刻度画到最后一个
+        self.assertIn('x1="50.0" y1="127.0" x2="250.0" y2="127.0"', out)
+        self.assertIn('x1="43.0" y1="120.0" x2="43.0" y2="20.0"', out)
+        self.assertIn(">−1</text>", out)
+        self.assertIn('font-style="italic"', out)
+        c = f.curve(lambda t: t / 10, 0, 10, X, Y, n=2)
+        self.assertIn('points="50.0,70.0 150.0,45.0 250.0,20.0"', c)
+
     def test_text_width(self):
         self.assertEqual(f.tw("编码器", 10), 30)
         self.assertAlmostEqual(f.tw("abc", 10, mono=True), 18.06)

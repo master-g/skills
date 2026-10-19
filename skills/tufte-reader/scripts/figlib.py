@@ -11,9 +11,11 @@ references/markup.md 的「图元库」。
 
 约定：
 - 每个图元返回一段 SVG 字符串，坐标是 viewBox 里的用户单位；svg() 把它们包成一幅图。
-- 颜色：color=None 用 currentColor，跟随明暗主题；color=1…4 用 tufte.css 的分类色 --fig-1 … --fig-4。
+- 颜色：color=None 用 currentColor，跟随明暗主题；color=1…4 用 tufte.css 的分类色 --fig-1 … --fig-4；
+  color="accent" 用页面的朱砂色 --mark，曲线图里唯一的强调色。
   深浅一律用 fill（0–1 的不透明度）表示，所以同一种分类色可以有任意多档深浅。
 - 箭头、斜线填充的 <defs> 由 svg() 按需加上；图内所有 id 由 svg() 加上每幅图不同的前缀，作者不用管。
+- 曲线图用 axes() 画坐标轴、curve() 画函数曲线，svg(…, serif=True) 让图里的字跟正文同一套衬线字。
 - 公式用 mathtext()：它输出 <foreignObject> 里的 $…$，由 build.py 编译成 MathML。<text> 里不能写公式。
 """
 import re
@@ -21,7 +23,7 @@ import unicodedata
 from html import escape
 
 __all__ = ["FIGS", "SANS", "MONO", "tw", "fit", "paint", "svg", "embed", "text", "mathtext", "rect", "circ", "line",
-           "poly", "elbow", "box", "boxes", "panel", "cells", "heat", "g", "rle", "steps"]
+           "poly", "elbow", "box", "boxes", "panel", "cells", "heat", "axes", "curve", "g", "rle", "steps"]
 
 FIGS = {}
 SANS = '-apple-system, "PingFang SC", "Noto Sans CJK SC", sans-serif'
@@ -30,11 +32,14 @@ MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
 # 分类色的回退值，取 tufte.css 亮色主题的 --fig-1 … --fig-4。页面里有变量时用变量；
 # 单独打开一幅 SVG（或 rsvg-convert）取不到变量，画成回退色
 FALLBACK = {1: "#1f5fa8", 2: "#d55e00", 3: "#2e9d4e", 4: "#882255"}
+ACCENT = "#7a1f1f"  # tufte.css 亮色主题的 --mark
 
 
 def paint(color=None):
     """color → 可以写进 fill / stroke 的值。"""
-    return "currentColor" if color is None else f"var(--fig-{color}, {FALLBACK[color]})"
+    if color is None:
+        return "currentColor"
+    return f"var(--mark, {ACCENT})" if color == "accent" else f"var(--fig-{color}, {FALLBACK[color]})"
 
 
 # ── 文字宽度 ────────────────────────────────────────────────────────────
@@ -79,27 +84,29 @@ def _marker(color):
             ).format(k=color or "", p=paint(color))
 
 
-DEFS = {f"arr{k or ''}": _marker(k) for k in (None, *FALLBACK)}
+DEFS = {f"arr{k or ''}": _marker(k) for k in (None, *FALLBACK, "accent")}
 DEFS["hatch"] = ('<pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
                  '<line x1="0" y1="0" x2="0" y2="5" stroke="currentColor" stroke-width="1.6"/></pattern>')
 _ID_RE = re.compile(r'\bid="([^"]+)"')
 _count = [0]
 
 
-def _canvas(w, h, body, label, width):
+def _canvas(w, h, body, label, width, serif=False):
     used = "".join(d for k, d in DEFS.items() if f"url(#{k})" in body)
     body = (f"<defs>{used}</defs>" if used else "") + body
     _count[0] += 1
     for i in sorted(set(_ID_RE.findall(body)), key=len, reverse=True):
         body = re.sub(rf'(\bid="|url\(#|href="#){re.escape(i)}(?=["\)])', rf"\g<1>f{_count[0]}-{i}", body)
+    font = 'style="font-family:var(--font-serif, serif)"' if serif else f"font-family='{SANS}'"
     return (f'<svg viewBox="0 0 {w} {h}" width="{width or min(600, round(w * 1.15))}" role="img" '
-            f'aria-label="{escape(label)}" font-family=\'{SANS}\' font-size="13">{body}</svg>')
+            f'aria-label="{escape(label)}" {font} font-size="13">{body}</svg>')
 
 
-def svg(w, h, body, label, width=None):
+def svg(w, h, body, label, width=None, serif=False):
     """把图元拼成的 body 包成一幅图。w、h 是 viewBox 的大小；width 是页面上的显示宽度（px），
-    默认是 w 的 1.15 倍、不超过 600（正文栏在 1280 宽的窗口里是 616）。label 写图说了什么，给读屏用。"""
-    return _canvas(w, h, body, label, width)
+    默认是 w 的 1.15 倍、不超过 600（正文栏在 1280 宽的窗口里是 616）。label 写图说了什么，给读屏用。
+    serif=True 时图里的字用页面的衬线字体（曲线图用），否则用无衬线（示意图用）。"""
+    return _canvas(w, h, body, label, width, serif)
 
 
 def embed(html, figs=FIGS):
@@ -117,11 +124,16 @@ def _stroke(sw, dash, op, color):
 
 
 def text(x, y, s, anchor="start", size=13, font=None, op=1, weight=None, color=None):
-    """一行文字，y 是基线。anchor：start / middle / end。s 按纯文本处理，不能写标签和公式。"""
+    """一行文字，y 是基线。anchor：start / middle / end。s 按纯文本处理，不能写公式；
+    只认一种标记 <i>…</i>，排成斜体，给变量名用（"年限 <i>t</i>"）。"""
     extra = (f" font-family='{font}'" if font else "") + (f' fill-opacity="{op}"' if op != 1 else "") \
         + (f' font-weight="{weight}"' if weight else "")
     return (f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" font-size="{size}" fill="{paint(color)}"{extra}>'
-            f"{escape(str(s), quote=False)}</text>")
+            f"{_italic(escape(str(s), quote=False))}</text>")
+
+
+def _italic(s):
+    return s.replace("&lt;i&gt;", '<tspan font-style="italic">').replace("&lt;/i&gt;", "</tspan>")
 
 
 def mathtext(x, y, tex, anchor="middle", size=13, color=None):
@@ -242,6 +254,32 @@ def heat(M, x, y, cell=34, rows=None, cols=None, fmt="{:.2f}", size=11, maxv=Non
     for j, s in enumerate(cols or []):
         out.append(text(x + j * cell + cell / 2, y - 8, s, "middle", 12, MONO))
     return "".join(out)
+
+
+# ── 曲线图（markup.md 的「曲线图」）──────────────────────────────────────
+def axes(x0, y0, w, h, xr, yr, xt, yt, xfmt="{:g}", yfmt="{:g}", xlabel="", ylabel="", gap=7):
+    """曲线图的坐标轴：绘图区左上角 (x0, y0)、宽 w、高 h，xr、yr 是两轴的数据范围，xt、yt 是刻度值。
+    轴线离开绘图区 gap，只从第一个刻度画到最后一个；没有网格。xlabel 写在横轴下方，ylabel 写在纵轴上方，
+    都可以用 <i>…</i>。返回 (svg, X, Y)：X、Y 把数据坐标换成画布坐标。下方留 50、上方留 26 放标签。"""
+    X = lambda v: x0 + (v - xr[0]) / (xr[1] - xr[0]) * w
+    Y = lambda v: y0 + h - (v - yr[0]) / (yr[1] - yr[0]) * h
+    num = lambda fmt, v: fmt.format(v).replace("-", "−")
+    bx, ly = y0 + h + gap, x0 - gap
+    out = [line(X(min(xt)), bx, X(max(xt)), bx, 0.6), line(ly, Y(min(yt)), ly, Y(max(yt)), 0.6)]
+    for v in xt:
+        out += [line(X(v), bx, X(v), bx + 4, 0.6), text(X(v), bx + 18, num(xfmt, v), "middle", 12)]
+    for v in yt:
+        out += [line(ly - 4, Y(v), ly, Y(v), 0.6), text(ly - 7, Y(v) + 4, num(yfmt, v), "end", 12)]
+    if xlabel:
+        out.append(text(x0 + w / 2, bx + 38, xlabel, "middle"))
+    if ylabel:
+        out.append(text(ly, y0 - 12, ylabel))
+    return "".join(out), X, Y
+
+
+def curve(f, a, z, X, Y, n=120, sw=0.9, **kw):
+    """函数 f 在 [a, z] 上的曲线，取 n 段折线；X、Y 来自 axes()。其余参数同 poly。"""
+    return poly([(X(a + (z - a) * i / n), Y(f(a + (z - a) * i / n))) for i in range(n + 1)], sw, **kw)
 
 
 # ── 分步图（markup.md 的「分步图」）─────────────────────────────────────

@@ -574,6 +574,18 @@ for dx in (1, 0.1, 0.01, 0.001):
             </text>
           </svg>
         </figure>
+        <p>
+          曲线图用图元库的 <code>axes()</code> 和 <code>curve()</code>
+          画：图里的字与正文同一套衬线字，坐标轴离开原点、没有网格，只有正文在讲的那条曲线用朱砂色。
+        </p>
+        <figure>
+          <span class="marginnote"
+            >图 4　取 $x = 1$，第一阶的 $2x\,dx$ 随 $dx$ 成正比增长，第二阶的
+            $(dx)^2$ 贴着横轴起步。</span
+          >
+          <!-- prettier-ignore -->
+          <svg viewBox="0 0 400 250" width="460" role="img" aria-label="x 取 1 时，第一阶的 2x dx 随 dx 线性增长，第二阶的 (dx) 平方贴着横轴起步，dx 等于 0.1 时只有 0.01" style="font-family:var(--font-serif, serif)" font-size="13"><line x1="50.0" y1="203.0" x2="318.0" y2="203.0" stroke="currentColor" stroke-width="0.6"/><line x1="43.0" y1="196.0" x2="43.0" y2="26.0" stroke="currentColor" stroke-width="0.6"/><line x1="50.0" y1="203.0" x2="50.0" y2="207.0" stroke="currentColor" stroke-width="0.6"/><text x="50.0" y="221.0" text-anchor="middle" font-size="12" fill="currentColor">0</text><line x1="184.0" y1="203.0" x2="184.0" y2="207.0" stroke="currentColor" stroke-width="0.6"/><text x="184.0" y="221.0" text-anchor="middle" font-size="12" fill="currentColor">0.5</text><line x1="318.0" y1="203.0" x2="318.0" y2="207.0" stroke="currentColor" stroke-width="0.6"/><text x="318.0" y="221.0" text-anchor="middle" font-size="12" fill="currentColor">1</text><line x1="39.0" y1="196.0" x2="43.0" y2="196.0" stroke="currentColor" stroke-width="0.6"/><text x="36.0" y="200.0" text-anchor="end" font-size="12" fill="currentColor">0</text><line x1="39.0" y1="111.0" x2="43.0" y2="111.0" stroke="currentColor" stroke-width="0.6"/><text x="36.0" y="115.0" text-anchor="end" font-size="12" fill="currentColor">1</text><line x1="39.0" y1="26.0" x2="43.0" y2="26.0" stroke="currentColor" stroke-width="0.6"/><text x="36.0" y="30.0" text-anchor="end" font-size="12" fill="currentColor">2</text><text x="184.0" y="241.0" text-anchor="middle" font-size="13" fill="currentColor">增量 <tspan font-style="italic">dx</tspan>（取 <tspan font-style="italic">x</tspan> = 1）</text><text x="43.0" y="14.0" text-anchor="start" font-size="13" fill="currentColor">略去前后的两项</text><polyline points="50.0,196.0 318.0,26.0" fill="none" stroke="currentColor" stroke-width="0.9"/><polyline points="50.0,196.0 56.7,195.9 63.4,195.8 70.1,195.5 76.8,195.2 83.5,194.7 90.2,194.1 96.9,193.4 103.6,192.6 110.3,191.7 117.0,190.7 123.7,189.6 130.4,188.3 137.1,187.0 143.8,185.6 150.5,184.0 157.2,182.4 163.9,180.6 170.6,178.8 177.3,176.8 184.0,174.8 190.7,172.6 197.4,170.3 204.1,167.9 210.8,165.4 217.5,162.8 224.2,160.1 230.9,157.3 237.6,154.4 244.3,151.3 251.0,148.2 257.7,144.9 264.4,141.6 271.1,138.1 277.8,134.6 284.5,130.9 291.2,127.1 297.9,123.3 304.6,119.3 311.3,115.2 318.0,111.0" fill="none" stroke="var(--mark, #7a1f1f)" stroke-width="1.4"/><text x="325.0" y="30.0" text-anchor="start" font-size="13" fill="currentColor">2<tspan font-style="italic">x</tspan> <tspan font-style="italic">dx</tspan></text><text x="325.0" y="115.0" text-anchor="start" font-size="13" fill="var(--mark, #7a1f1f)">(<tspan font-style="italic">dx</tspan>)²</text><circle cx="76.8" cy="195.2" r="2.6" fill="var(--mark, #7a1f1f)" fill-opacity="1" stroke="var(--mark, #7a1f1f)" stroke-width="0"/><line x1="79.8" y1="193.2" x2="197.4" y2="187.5" stroke="currentColor" stroke-width="0.5"/><text x="200.1" y="191.5" text-anchor="start" font-size="13" fill="currentColor"><tspan font-style="italic">dx</tspan> = 0.1 时只有 0.01</text></svg>
+        </figure>
       </section>
     </article>
 

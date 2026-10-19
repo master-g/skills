@@ -223,9 +223,9 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 3  页边图 0  题图 1", out)
-        self.assertIn("边注 2  旁注 7  脚注 2  块级公式 3  行内公式 80  图内公式 6  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 9)
+        self.assertIn("图 4  页边图 0  题图 1", out)
+        self.assertIn("边注 2  旁注 8  脚注 2  块级公式 3  行内公式 84  图内公式 6  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 10)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):
