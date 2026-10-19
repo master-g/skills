@@ -32,14 +32,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-19] main，已提交、已 make install tufte-reader、未推送；figlib 加 axes()/curve()、svg(serif=True)、color="accent"、text 的 <i>…</i>，markup.md 新增「曲线图」，specimen 加图 4
-  验证：unittest 59 项 OK、make check 通过、specimen 构建 0 ERROR 0 WARN；图 4 在 1280 明暗与 390 亮色截图核对；Firefox 未看（图里没有公式）
+- [2026-10-19] main，已提交、已 make install tufte-reader、未推送；figlib 曲线图（axes/curve、serif、accent、<i>）与 markup.md「曲线图」，之后 axes() 允许空刻度（瀑布图类别轴），shelf financial-math 七幅图已按此重画
+  验证：unittest 全过、make check 通过、specimen 0/0；图 4 与 financial-math 七幅在 1280 明暗、390 截图核对；Firefox 未看（图里没有公式）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-19] shelf 图表改用 A 风格待用户要求：financial-math 的 figs.py 把自写 frame()/curve() 换成 figlib 的 axes()/curve() 加 serif=True、去掉分类色；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，要先迁移；alisas 已引用 figlib
+- [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
   日期前缀文件名冒烟未做：空目录各调用一次 show-me-html / tufte-reader、不指定文件名，看是否 `<今天>-<英文标题>.html`、中文标题意译是否像样、tufte-reader 的 .work/ 是否同前缀
   show-me-html：推送待用户要求；候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
   tufte-reader 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）

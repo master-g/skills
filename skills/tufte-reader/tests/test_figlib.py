@@ -55,6 +55,7 @@ class FiglibTest(unittest.TestCase):
         self.assertIn('x1="43.0" y1="120.0" x2="43.0" y2="20.0"', out)
         self.assertIn(">−1</text>", out)
         self.assertIn('font-style="italic"', out)
+        self.assertEqual(f.axes(0, 0, 10, 10, (0, 1), (0, 1), [], [0, 1])[0].count("<line"), 3)  # 只有纵轴
         c = f.curve(lambda t: t / 10, 0, 10, X, Y, n=2)
         self.assertIn('points="50.0,70.0 150.0,45.0 250.0,20.0"', c)
 

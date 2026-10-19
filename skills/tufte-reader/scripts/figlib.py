@@ -260,12 +260,12 @@ def heat(M, x, y, cell=34, rows=None, cols=None, fmt="{:.2f}", size=11, maxv=Non
 def axes(x0, y0, w, h, xr, yr, xt, yt, xfmt="{:g}", yfmt="{:g}", xlabel="", ylabel="", gap=7):
     """曲线图的坐标轴：绘图区左上角 (x0, y0)、宽 w、高 h，xr、yr 是两轴的数据范围，xt、yt 是刻度值。
     轴线离开绘图区 gap，只从第一个刻度画到最后一个；没有网格。xlabel 写在横轴下方，ylabel 写在纵轴上方，
-    都可以用 <i>…</i>。返回 (svg, X, Y)：X、Y 把数据坐标换成画布坐标。下方留 50、上方留 26 放标签。"""
+    都可以用 <i>…</i>。刻度为空的那条轴不画（柱状图的类别轴）。返回 (svg, X, Y)：X、Y 把数据坐标换成画布坐标。下方留 50、上方留 26 放标签。"""
     X = lambda v: x0 + (v - xr[0]) / (xr[1] - xr[0]) * w
     Y = lambda v: y0 + h - (v - yr[0]) / (yr[1] - yr[0]) * h
     num = lambda fmt, v: fmt.format(v).replace("-", "−")
     bx, ly = y0 + h + gap, x0 - gap
-    out = [line(X(min(xt)), bx, X(max(xt)), bx, 0.6), line(ly, Y(min(yt)), ly, Y(max(yt)), 0.6)]
+    out = ([line(X(min(xt)), bx, X(max(xt)), bx, 0.6)] if xt else []) + ([line(ly, Y(min(yt)), ly, Y(max(yt)), 0.6)] if yt else [])
     for v in xt:
         out += [line(X(v), bx, X(v), bx + 4, 0.6), text(X(v), bx + 18, num(xfmt, v), "middle", 12)]
     for v in yt:
