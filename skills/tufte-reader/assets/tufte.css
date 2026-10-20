@@ -458,6 +458,73 @@ figure svg {
   --ondine-heading-weight: var(--weight-bold);
   --ondine-bold-weight: var(--weight-bold);
 }
+/* Mermaid 图的源码开关（构建生成，不用脚本）：勾上 checkbox 时源码代替图显示。开关在图的右下方，
+   平时隐藏；鼠标悬停、键盘聚焦或正显示源码时出现，没有悬停的触屏设备上淡淡地一直显示 */
+.mermaid-figure {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+.mermaid-figure > pre.mermaid,
+.mermaid-toggle:checked ~ svg {
+  display: none;
+}
+.mermaid-toggle:checked ~ pre.mermaid {
+  display: block;
+}
+/* 源码的样子与代码块相同 */
+.mermaid-figure > pre.mermaid {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--leading-code);
+  overflow-x: auto;
+}
+input.mermaid-toggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.mermaid-switch {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.3rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  font-family: var(--font-figure);
+  font-size: var(--text-small);
+  line-height: var(--leading-note);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.mermaid-switch::before {
+  content: "源码";
+}
+.mermaid-toggle:checked + .mermaid-switch::before {
+  content: "图";
+}
+.mermaid-figure:hover > .mermaid-switch,
+.mermaid-toggle:focus-visible + .mermaid-switch,
+.mermaid-toggle:checked + .mermaid-switch {
+  opacity: 1;
+}
+.mermaid-switch:hover {
+  color: var(--fg);
+}
+.mermaid-toggle:focus-visible + .mermaid-switch {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+@media (hover: none) {
+  .mermaid-switch {
+    opacity: 0.6;
+  }
+}
 figcaption {
   float: right;
   clear: right;
@@ -881,8 +948,21 @@ summary:focus-visible {
     overflow-x: auto;
   }
   figure .scroll-x > svg,
-  figure .scroll-x > img {
+  figure .scroll-x > img,
+  figure .scroll-x > .mermaid-figure,
+  figure .scroll-x > .mermaid-figure > svg {
     max-width: none;
+  }
+  /* 源码开关排在图下方，要留在滚动区域里面：给它留出底边，贴着底边放；
+     靠左，不用滚到宽图的最右端才看得见 */
+  figure .scroll-x > .mermaid-figure {
+    padding-bottom: 2rem;
+  }
+  figure .scroll-x .mermaid-switch {
+    top: auto;
+    bottom: 0;
+    right: auto;
+    left: 0;
   }
   figcaption {
     max-width: none;
@@ -941,6 +1021,14 @@ summary:focus-visible {
 @media print {
   .theme-toggle {
     display: none;
+  }
+  /* 打印只出图：屏幕上切到了源码也一样 */
+  .mermaid-switch,
+  .mermaid-toggle:checked ~ pre.mermaid {
+    display: none;
+  }
+  .mermaid-toggle:checked ~ svg {
+    display: block;
   }
   article.chapter {
     content-visibility: visible;

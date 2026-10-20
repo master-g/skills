@@ -3,11 +3,13 @@
 
    编译器是 vendor 的 ondine（Rust 写的 Mermaid 编译器，wasm）：语法按 Mermaid，布局与外观是 ondine 自己的。
    SVG 的颜色、字体、线宽读 --ondine-* 变量，tufte.css 把它们接到页面的 token 上，切换明暗主题不用重新编译。
+   源码留在页面里，是图的唯一来源：每次构建先拆掉上一次的产物，再从源码重新编译，改图只改源码。
+   产物是 div.mermaid-figure：checkbox 和它的 label（「源码」开关，tufte.css 让它平时隐藏、悬停时出现）、SVG、
+   原样的 <pre class="mermaid">（平时隐藏，勾选后代替 SVG 显示）。不用脚本，与边注的 ⊕ 同一种做法。
    源码按 HTML 写：< 和 & 写成 &lt; &amp;（标签里换行写 &lt;br&gt;），编译前还原。
    排版宽度：普通插图按正文栏，横向的流程图放不下时 ondine 自动改成纵向；figure.fullwidth 里的按通栏。
    图题（figure 里的 marginnote 或 figcaption）写进 aria-label；源码写了 accTitle 的，ondine 自己给 <title>。
-   图内 id 的前缀取自源码的哈希：重复构建不变，不同的图不重复。 */
-import { createHash } from "node:crypto";
+   图内 id 与开关的 id 按图在页面里的次序编号：每次全部重新编译，次序不变，重复构建的结果也不变。 */
 import { readFileSync, writeFileSync } from "node:fs";
 import { create, RenderError } from "../assets/vendor/ondine/Render.js";
 
@@ -28,7 +30,11 @@ const wasm = readFileSync(
 );
 const ondine = create({ modules: { all: new WebAssembly.Module(wasm) } });
 
+// 拆掉上一次的产物，只留源码。拆的时候认宽松的写法：开标签写错的也要拆开，免得留下旧图，交给检查报错
+const UNWRAP_RE =
+  /<div class="mermaid-figure"\s*>[\s\S]*?(<pre\b[^>]*\bclass="[^"]*\bmermaid\b[^>]*>[\s\S]*?<\/pre\s*>)\s*<\/div\s*>/g;
 const html = readFileSync(file, "utf8");
+const bare = html.replace(UNWRAP_RE, "$1");
 const errors = [];
 const warns = [];
 let ok = 0;
@@ -52,7 +58,7 @@ const caption = (figure) => {
     : "";
 };
 
-const out = html.replace(
+const out = bare.replace(
   /<pre class="mermaid"\s*>([\s\S]*?)<\/pre\s*>/g,
   (whole, body, at, s) => {
     seq++;
@@ -68,18 +74,24 @@ const out = html.replace(
     const src = unescape(body)
       .replace(/^\s*\n/, "")
       .trimEnd();
-    const prefix = `m${createHash("sha1").update(src).digest("hex").slice(0, 8)}-`;
     try {
-      const r = ondine.render(src, { idPrefix: prefix, maxWidth: max });
+      const r = ondine.render(src, { idPrefix: `mmd${seq}-`, maxWidth: max });
       ok++;
       if (r.width > max)
         warns.push(
           `Mermaid 图${where}排出来宽 ${Math.round(r.width)}px，超过${wide ? "通栏" : "正文栏"}的 ${max}px，会缩小显示：` +
             "缩短标签或用 &lt;br&gt; 断行、改成纵向（TD），或放进 figure.fullwidth"
         );
-      return cap && !r.svg.includes("aria-labelledby=")
-        ? r.svg.replace("<svg ", `<svg aria-label="${cap}" `)
-        : r.svg;
+      // ondine 把 max-width:100% 写在 SVG 的内联样式里，会压过 tufte.css 里 .scroll-x 的 max-width:none；
+      // 去掉它，尺寸交给 tufte.css 的 figure svg（同样是 max-width:100%、height:auto）
+      let svg = r.svg.replace('style="max-width:100%;height:auto;', 'style="');
+      if (cap && !svg.includes("aria-labelledby="))
+        svg = svg.replace("<svg ", `<svg aria-label="${cap}" `);
+      const id = `mmd-${seq}`;
+      return (
+        `<div class="mermaid-figure"><input type="checkbox" id="${id}" class="mermaid-toggle" />` +
+        `<label for="${id}" class="mermaid-switch" title="在图与 Mermaid 源码之间切换"></label>${svg}${whole}</div>`
+      );
     } catch (e) {
       if (!(e instanceof RenderError)) throw e;
       // 消息形如「Parse error on line 4: / 源码 / ^ / Expecting …」，最后一行是要点

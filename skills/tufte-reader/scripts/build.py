@@ -6,7 +6,8 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
 
 合成：
   1. LaTeX → MathML（node + vendor 的 Temml）；公式与紧邻的全角标点之间禁止断行
-  2. Mermaid 源码（<pre class="mermaid">）→ 内联 SVG（node + vendor 的 ondine）
+  2. Mermaid 源码（<pre class="mermaid">）→ 内联 SVG（node + vendor 的 ondine）；源码留在页面里，
+     每次构建从它重新编译，阅读时可切换查看
   3. <span class="sidenote|marginnote"> 补全 label + checkbox
   4. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
   5. 填 <nav class="toc">
@@ -123,13 +124,14 @@ def compile_math(page, errors, warns):
 
 
 # ── Mermaid ─────────────────────────────────────────────────────────────
-# 开标签的写法不对时 mermaid.mjs 认不出，留在页面里；检查用宽松的写法把它们也找出来
-MERMAID_SRC_RE = re.compile(r'<pre class="mermaid"\s*>')
+# 源码留在页面里，每次构建都从它重新编译（见 mermaid.mjs）。开标签写法不对的源码 mermaid.mjs 只拆掉旧图、
+# 不编译，留下一个没有 div.mermaid-figure 包着的 <pre>；检查用宽松的写法把这些也数进来
 MERMAID_ANY_RE = re.compile(r'<pre\b[^>]*\bclass="[^"]*\bmermaid\b')
+MERMAID_DONE = '<div class="mermaid-figure">'
 
 
 def compile_mermaid(page, errors, warns):
-    if MERMAID_SRC_RE.search(page.read_text(encoding="utf-8")):
+    if MERMAID_ANY_RE.search(page.read_text(encoding="utf-8")):
         run_node(MERMAID_SCRIPT, page, "Mermaid 图", "SVG", "Mermaid 图", errors, warns)
 
 
@@ -595,7 +597,7 @@ class Checker(HTMLParser):
             self.raw_steps += 1
         if tag == "table":
             self.stats["表"] += 1
-        if tag == "pre":
+        if tag == "pre" and "mermaid" not in cls:  # Mermaid 图留在页面里的源码不算代码块
             self.stats["代码块"] += 1
         if tag == "li" and (a.get("id") or "").startswith("fn-"):
             self.stats["脚注"] += 1
@@ -657,7 +659,7 @@ def check(html, errors, warns):
                       "<span class=\"marginnote\">，不要加别的属性或 class")
     if re.search(r"<p\b[^>]*>(?:(?!</p>).)*?<(div|figure|pre|table|ol|ul|section|blockquote|details)\b", html, re.S):
         errors.append("<p> 里嵌了块级元素：浏览器会提前闭合 <p>，边注与版心随之错位；把块级元素移到段落之外")
-    raw_mermaid = len(MERMAID_ANY_RE.findall(html))
+    raw_mermaid = len(MERMAID_ANY_RE.findall(html)) - html.count(MERMAID_DONE)
     if raw_mermaid:
         errors.append(f"有 {raw_mermaid} 幅 Mermaid 图没有编译成 SVG：开标签只写 <pre class=\"mermaid\">，"
                       "不要加别的属性或 class；同时修掉上面关于 Mermaid 图的 ERROR")

@@ -225,7 +225,7 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(build.leftover_dollars(html), [])
         self.assertIn("图 5  页边图 0  题图 1", out)
         self.assertIn("边注 2  旁注 9  脚注 2  块级公式 3  行内公式 86  图内公式 6  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 11)
+        self.assertEqual(html.count('<input type="checkbox"'), 12)
         self.assertIn("Mermaid 编译 1 幅", out)
         self.assertIn('class="ondine ondine-flowchart"', html)
         self.assertNotIn('data-step="', html)
@@ -318,12 +318,33 @@ class BuildTest(unittest.TestCase):
         rc, html, out = run(PAGE.replace("BODY", fig))
         self.assertEqual(rc, 0, out)
         self.assertIn("Mermaid 编译 1 幅", out)
-        self.assertNotIn('<pre class="mermaid"', html)
+        self.assertIn("代码块 0", out)  # 留在页面里的源码不算代码块
+        self.assertIn('<div class="mermaid-figure"><input type="checkbox" id="mmd-1" class="mermaid-toggle" />'
+                      '<label for="mmd-1" class="mermaid-switch"', html)
         svg = html.split('<svg aria-label="图 1 每轮把 dx 缩小。" xmlns="http://www.w3.org/2000/svg" class="ondine ondine-flowchart"', 1)[1]
         self.assertEqual(svg.split("</svg>", 1)[0].count("<tspan"), 2)  # &lt;br&gt; 还原成换行
+        self.assertNotIn("max-width:100%", svg.split(">", 1)[0])  # 尺寸交给 tufte.css，.scroll-x 才管得住
+        # 源码原样留在图后面
+        self.assertIn('</svg><pre class="mermaid">\nflowchart TD\n  A[取材] --> B[第一行&lt;br&gt;第二行]\n</pre></div>', html)
         rc, second, out = run(html)
         self.assertEqual(rc, 0, out)
         self.assertEqual(html, second)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
+    def test_mermaid_recompiles_from_kept_source(self):
+        fig = '<figure><pre class="mermaid">flowchart TD\n  A[旧标签] --> B[乙]</pre></figure>'
+        _, first, _ = run(PAGE.replace("BODY", fig + fig))
+        self.assertIn('id="mmd-2"', first)  # 相同的源码按次序编号，id 不重复
+        rc, second, out = run(first.replace("A[旧标签]", "A[新标签]", 1))  # 只改第一幅的源码
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(second.count('<div class="mermaid-figure">'), 2)
+        self.assertEqual(second.count('<text class="ondine-label" x="0" y="5.6" text-anchor="middle">新标签</text>'), 1)
+        self.assertEqual(second.count("旧标签"), 2)  # 第二幅的图与源码
+        # 改坏已编译的图：旧图拆掉，源码留下，报错
+        rc, third, out = run(second.replace("新标签]", "新标签", 1))
+        self.assertEqual(rc, 1, out)
+        self.assertEqual(third.count('<div class="mermaid-figure">'), 1)
+        self.assertIn("有 1 幅 Mermaid 图没有编译成 SVG", out)
 
     @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
     def test_mermaid_width_follows_figure(self):

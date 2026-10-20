@@ -118,7 +118,7 @@
 - 矢量示意图写成内联 `<svg>`，给 `width` 和 `aria-label`。图多、或者图里有公式时用脚本画，见下面的「图元库」。流程图、时序图这类结构图写 Mermaid 源码，见下面的「Mermaid 图」。
 - 颜色默认只用 `currentColor`，跟随明暗主题，深浅用 `fill-opacity` 区分。数据本身分成几类时（4 个设备、两类样本、前向值与梯度）用分类色 `var(--fig-1)` 到 `var(--fig-4)`，明暗主题各有一套；同一类的深浅仍用 `fill-opacity`。分类色不是唯一的区分手段：同时用编号、位置或文字标注，色觉缺陷的读者和黑白打印也要能看懂。超过 4 类时不加颜色，改用编号或行列标签。写死的颜色（`#f00`、`red`、`rgb(…)`）不跟随主题，构建发 WARN。
 - 内联 SVG 里的 `id`（`marker`、`linearGradient`、`clipPath` 等）在整个页面内必须唯一，带上图的编号作前缀：`<marker id="fig3-arrow">`。两幅图用了同一个 `id` 时，后一幅会引用到前一幅的定义，构建报 ERROR。
-- 读本只用静态图，不写脚本，不加滑块、按钮这类交互控件。要表现一个过程，把各个状态画成并排的小图，每幅配一句说明，写法见下面的「分步图」。
+- 读本只用静态图，作者不写脚本，不加滑块、按钮这类交互控件（Mermaid 图的源码开关由构建生成，不用脚本）。要表现一个过程，把各个状态画成并排的小图，每幅配一句说明，写法见下面的「分步图」。
 - 宽图在手机上等比缩小后图内文字太小时，把 `<svg>` 或 `<img>` 包进 `<div class="scroll-x">`：窄屏下按原始宽度显示、横向滚动，宽屏不变。
 - 图里的公式写在 `<foreignObject>` 里，构建照行内公式编译；图元库的 `mathtext()` 输出的就是这种写法。`<text>` 里不能写公式，写了 `$…$` 构建报 ERROR。只有一个下标或一个希腊字母的标签，也可以直接在 `<text>` 里写 Unicode 字符（`x₁`、`Σ`）。
 - 暗色主题下位图铺一层浅色的底，透明底上的深色线条照样看得清；不透明的图不受影响。为暗色背景画的透明底浅色图会因此看不清，这种图先自己合成到深色底上再用。
@@ -198,10 +198,12 @@ flowchart TD
 </figure>
 ```
 
-- **编译**：构建用 vendor 的 ondine 把 `<pre class="mermaid">` 换成 `<svg class="ondine">`，把图题的文字写进 `aria-label`，给图内的 `id` 加前缀，这些作者都不用管。开标签只写 `<pre class="mermaid">` 这一种形式，加别的属性或 class 构建认不出，报 ERROR。编译是一次性的：已编译的图要改，把整个 `<svg>` 换回改过的 `<pre class="mermaid">` 再构建，与公式相同。
+- **编译**：构建用 vendor 的 ondine 把源码编译成 `<svg class="ondine">`，和源码一起包进 `div.mermaid-figure`，把图题的文字写进 `aria-label`，给图内的 `id` 加前缀，这些作者都不用管。开标签只写 `<pre class="mermaid">` 这一种形式，加别的属性或 class 构建认不出，报 ERROR。
+- **源码留在页面里**：`<pre class="mermaid">` 编译后原样保留，是这幅图唯一的来源，每次构建都拆掉上一次的图、从它重新编译。要改图，就改已构建页面里这段源码再构建，不动 SVG：对 SVG 的手改下次构建就没了。
+- **源码开关**：读者把鼠标移到图上，图的右下方出现「源码」，点一下换成源码，再点「图」换回来；键盘聚焦时也会出现，触屏上一直淡淡地显示。打印只出图。开关是 checkbox 加 CSS，与边注的 ⊕ 一样不用脚本。
 - **转义**：源码按 HTML 写，`<` 写成 `&lt;`，`&` 写成 `&amp;`，箭头 `-->` 里的 `>` 照写。节点标签里换行写 `&lt;br&gt;`。
 - **中文标签**：ondine 只在空格处折行，中文标签不会自动断开，一长串会把方框撑得很宽。一个节点写十个字以内，长的用 `&lt;br&gt;` 断成两行。
-- **宽度**：普通插图按正文栏宽（600px）排，横向（`LR`）的流程图放不下时自动改成纵向；要保持横排就放进 `figure.fullwidth`，按通栏宽（980px）排。排出来仍然超宽的发 WARN，图会等比缩小。宽图在手机上字太小时包进 `<div class="scroll-x">`，同普通插图。
+- **宽度**：普通插图按正文栏宽（600px）排，横向（`LR`）的流程图放不下时自动改成纵向；要保持横排就放进 `figure.fullwidth`，按通栏宽（980px）排。排出来仍然超宽的发 WARN，图会等比缩小。宽图在手机上字太小时把 `<pre class="mermaid">` 包进 `<div class="scroll-x">`，同普通插图。
 - **外观**：ondine 不是 Mermaid 本身，语法照 Mermaid，布局和画法是它自己的：方角的框、圆角的正交连线。字体、线宽、颜色由 tufte.css 接到页面上，与图元库的示意图同一种无衬线字；`%%{init}%%` 和 Mermaid 的主题变量不起作用。`classDef`、`style` 里写的颜色不跟随主题，构建发 WARN；要区分几类节点，用 `subgraph` 分组，或在标签里写明。
 - **语法错误**：构建报 ERROR，指明是哪幅图（取图题的开头）、源码第几行第几列和那一行，这幅图留着源码不编译。
 - **范围**：结构图用 Mermaid。带坐标轴、要读数值的图（折线、散点、柱状）照上面的「曲线图」用图元库画，不用 Mermaid 的 `xychart`、`pie`；标签里有公式的图也用图元库，Mermaid 的标签里写 `$…$` 构建报 ERROR。实测能编译的图型：`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`classDiagram`、`erDiagram`、`timeline`、`mindmap`、`gantt`、`block`、`architecture-beta`、`gitGraph`。
@@ -361,4 +363,4 @@ flowchart TD
 
 ## 构建负责的部分
 
-作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、插图里公式的编译、Mermaid 源码编译成的 SVG、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
+作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、插图里公式的编译、Mermaid 图的 SVG、`div.mermaid-figure` 与源码开关、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
