@@ -12,13 +12,14 @@
    - 颜色全部走 token，data-theme 切明暗；首绘前由 <head> 里的脚本定下。 */
 
 :root {
-  --bg: #fffff8;
-  --fg: #111;
-  --muted: #5c5c56;
-  --rule: #cfcfc6;
-  --code-bg: #f3f2e8;
+  --bg: #fbf8f1;
+  --fg: #2b2824;
+  --muted: #5c5850;
+  --rule: #d6d1c4;
+  --code-bg: #f1ede2;
   --mark: #7a1f1f;
-  --syn-cmnt: #8a8a80;
+  --strong: currentColor; /* 粗体颜色：亮色主题与所在文字同色，只靠字重区分 */
+  --syn-cmnt: #7d786e;
   --syn-kwd: #7a1f1f;
   --syn-str: #3d5a2a;
   --syn-num: #6b4a12;
@@ -110,13 +111,14 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #151515;
-  --fg: #ddd;
-  --muted: #9a9a92;
-  --rule: #3a3a36;
-  --code-bg: #1f1f1d;
+  --bg: #1c1b19;
+  --fg: #d4cfc4;
+  --muted: #9a958a;
+  --rule: #3b3934;
+  --code-bg: #252420;
   --mark: #d08770;
-  --syn-cmnt: #7c7c74;
+  --strong: #dfc69c; /* 浅字在深底上 600 与 400 的字重差不明显，改用低饱和琥珀色区分 */
+  --syn-cmnt: #868177;
   --syn-kwd: #d08770;
   --syn-str: #a3be8c;
   --syn-num: #ebcb8b;
@@ -272,6 +274,7 @@ a:visited {
 strong,
 b {
   font-weight: var(--weight-bold);
+  color: var(--strong);
 }
 
 /* 段首小标题：Tufte 原版是 small-caps 加 1.2em，中文没有小型大写，只剩字号突变，
@@ -279,6 +282,7 @@ b {
 span.newthought {
   font-weight: var(--weight-bold);
   font-size: 1.1em;
+  color: var(--strong);
 }
 
 .sans {

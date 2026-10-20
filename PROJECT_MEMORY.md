@@ -19,6 +19,7 @@
 - [2026-10-20] tufte-reader 的 Mermaid 图由 vendor 的 ondine 0.0.1（wevm，Rust→wasm，MIT）编译成 SVG；用户选 vendor 而非按需 npm 安装；源码留在页面里、每次构建重编，悬停出现纯 CSS 的源码开关（Lucide code/workflow 图标，画法同明暗切换按钮，用户看图确认）、打印只出图；只用于结构图，数据图仍走 figlib 曲线图
 - [2026-10-20] flopwire（代理间消息与转录检索）不接入 farm：子代理里的 hook 不投递、pi 不在支持列表、herdr pane 已能 agent prompt；借三点写成 plans/015（进程组收尾）、016（转录核对写入与用量，只做 Claude Code 后端）
 - [2026-10-20] 用户清空了「下次运行」积压：guide-me 验收、tufte-reader 冷启动验收与 plates.md 审阅、日期前缀文件名冒烟、reelshort 页重建、show-me-html 单图导出 PNG 与导读元信息行、codebase-to-book 改用 ondine、真实 /farm 与 send-to-obsidian X 链接实测，都不再跟进，用户再提才做
+- [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：10-19 只改了安装副本、shelf 五页按它重建，10-20 install 时被仓库旧值覆盖；用户选移植进仓库，值取自 shelf 已提交成品
 - [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
 
 ## 失败尝试
