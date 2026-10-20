@@ -1,10 +1,13 @@
 ---
 name: url-to-kami
 license: MIT
-description: 将网页内容排版为 Kami HTML/PDF；用于用户明确要求文档排版、打印或 PDF 转换时。
+deprecated: true
+description: "DEPRECATED — 改用 show-me-html。原用途：将网页内容排版为 Kami HTML/PDF；用于用户明确要求文档排版、打印或 PDF 转换时。"
 ---
 
-# URL to Kami
+# URL to Kami (DEPRECATED)
+
+> **历史档案，不是活动技能入口。** 本文件改名后不再作为 SKILL.md 发现。替代技能是 [`show-me-html`](../../show-me-html/SKILL.md)：把网页材料做成单文件 HTML 页面时用它。
 
 读取网页材料，使用已安装的 Kami 模板生成中文文档。仅阅读、总结或保存原始文字的请求不触发排版。
 用户已明确选择交付格式、语言或输出目录时，沿用其选择。

@@ -53,7 +53,7 @@ When embedding Substack images into a Kami HTML template for Chrome Headless PDF
 
 ```html
 <figure>
-  <img src="file:///tmp/article_image.png" alt="Description">
+  <img src="file:///tmp/article_image.png" alt="Description" />
   <figcaption>Caption text</figcaption>
 </figure>
 ```

@@ -42,7 +42,7 @@ npx skills add master-g/skills --skill '*' -g
 - `show-me-html`: create offline-readable HTML explanations using an owned editorial visual system.
 - `storm`: research and write citation-grounded articles using the STORM method.
 - `tufte-reader`: translate or organize papers and technical docs, or write an original primer from sources, as a Tufte-style single-file Chinese reading edition with sidenotes, MathML formulas, and a light/dark toggle.
-- `url-to-kami`: extract a URL and typeset it with the Kami design system.
+- `url-to-kami`: **DEPRECATED** — superseded by `show-me-html`; kept as `skills/deprecated/url-to-kami/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `wtf`: **DEPRECATED** — rarely needed now that model prose is clearer by default; kept as `skills/deprecated/wtf/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `x-to-markdown`: convert X posts, threads, and articles to Markdown.
 
