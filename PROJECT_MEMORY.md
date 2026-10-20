@@ -34,7 +34,7 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-20] main，三次提交、已 make install tufte-reader、未推送；Mermaid 图（mermaid.mjs + vendor/ondine）、源码留存与开关（div.mermaid-figure、.mermaid-*），开关改为 18px 纯图标；specimen 图 5
+- [2026-10-20] main，三次提交、已 make install tufte-reader、已推送；Mermaid 图（mermaid.mjs + vendor/ondine）、源码留存与开关（div.mermaid-figure、.mermaid-*），开关改为 18px 纯图标；specimen 图 5
   验证：unittest 63 个全过、make check 通过、specimen 0/0 且重复构建逐字节相同；1280 明暗悬停/源码、打印仿真、390 触屏截图与计算样式核对；Firefox 未看
 
 ## 下次运行
