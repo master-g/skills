@@ -29,6 +29,8 @@
   --fig-2: #d55e00;
   --fig-3: #2e9d4e;
   --fig-4: #882255;
+  /* Mermaid 图的线宽：图元库的线宽 1 按 1.15 倍显示，两种示意图看上去一样粗 */
+  --mermaid-stroke: 1.15px;
   --img-bg: transparent; /* 位图的底色：暗色主题下铺一层浅色，透明底上的深色线条才看得清 */
   /* 题图（figure.plate）：亮色主题把扫描的纸色乘进页面底色；暗色主题裱在压暗的旧纸色衬底上。
      不反相：版画的明暗靠排线疏密，反相后像照相底片 */
@@ -53,6 +55,8 @@
     Consolas, "Liberation Mono", Menlo, "SF Mono", Courier, "PingFang SC",
     monospace;
   --font-math: "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
+  /* 示意图的字：与图元库 scripts/figlib.py 的 SANS 相同，用系统无衬线字（Gill Sans 的数字 1 像字母 I） */
+  --font-figure: -apple-system, "PingFang SC", "Noto Sans CJK SC", sans-serif;
 
   /* ── 字号 ── 1rem = --text-root。正文、页边注、标题各一档，其余向这几档靠 */
   --text-root: 15px;
@@ -435,6 +439,24 @@ figure svg {
   display: block;
   max-width: 100%;
   height: auto;
+}
+/* Mermaid 图（构建时由 ondine 编译成 SVG）：颜色、字体、线宽读 --ondine-* 变量，这里接到页面的 token 上，
+   明暗主题跟着切换。与图元库的示意图一样用无衬线字和分类色 */
+.ondine {
+  --ondine-bg: var(--bg);
+  --ondine-fg: var(--fg);
+  --ondine-muted: var(--muted);
+  --ondine-accent: var(--mark);
+  --ondine-critical: var(--mark);
+  --ondine-series-1: var(--fig-1);
+  --ondine-series-2: var(--fig-2);
+  --ondine-series-3: var(--fig-3);
+  --ondine-series-4: var(--fig-4);
+  --ondine-font: var(--font-figure);
+  --ondine-stroke: var(--mermaid-stroke);
+  --ondine-title-weight: var(--weight-bold);
+  --ondine-heading-weight: var(--weight-bold);
+  --ondine-bold-weight: var(--weight-bold);
 }
 figcaption {
   float: right;

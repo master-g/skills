@@ -223,9 +223,11 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 4  页边图 0  题图 1", out)
-        self.assertIn("边注 2  旁注 8  脚注 2  块级公式 3  行内公式 84  图内公式 6  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 10)
+        self.assertIn("图 5  页边图 0  题图 1", out)
+        self.assertIn("边注 2  旁注 9  脚注 2  块级公式 3  行内公式 86  图内公式 6  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 11)
+        self.assertIn("Mermaid 编译 1 幅", out)
+        self.assertIn('class="ondine ondine-flowchart"', html)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):
@@ -308,6 +310,41 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(rc, 1, out)
         self.assertIn("没有编译成公式", out)
         self.assertIn("mathtext", out)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
+    def test_mermaid_compiles_to_svg(self):
+        fig = ('<figure><span class="marginnote"\n>图 1　每轮把 $dx$ 缩小。</span\n>'
+               '<pre class="mermaid">\nflowchart TD\n  A[取材] --> B[第一行&lt;br&gt;第二行]\n</pre></figure>')
+        rc, html, out = run(PAGE.replace("BODY", fig))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("Mermaid 编译 1 幅", out)
+        self.assertNotIn('<pre class="mermaid"', html)
+        svg = html.split('<svg aria-label="图 1 每轮把 dx 缩小。" xmlns="http://www.w3.org/2000/svg" class="ondine ondine-flowchart"', 1)[1]
+        self.assertEqual(svg.split("</svg>", 1)[0].count("<tspan"), 2)  # &lt;br&gt; 还原成换行
+        rc, second, out = run(html)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(html, second)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
+    def test_mermaid_width_follows_figure(self):
+        chain = "flowchart LR\n  " + " --> ".join(f"N{i}[第 {i} 步]" for i in range(8))
+        rc, html, out = run(PAGE.replace("BODY", f'<figure><pre class="mermaid">{chain}</pre></figure>'
+                                                 f'<figure class="fullwidth"><pre class="mermaid">{chain}</pre></figure>'))
+        self.assertEqual(rc, 0, out)
+        widths = [float(w) for w in build.re.findall(r'class="ondine ondine-flowchart" viewBox="0 0 [\d.]+ [\d.]+" width="([\d.]+)"', html)]
+        self.assertLessEqual(widths[0], 600)  # 正文栏放不下，改成纵向
+        self.assertGreater(widths[1], 600)  # 通栏放得下，仍是横向
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
+    def test_mermaid_errors(self):
+        bad = '<figure><span class="marginnote">图 2　坏图。</span><pre class="mermaid">flowchart LR\n  A[甲] --></pre></figure>'
+        rc, html, out = run(PAGE.replace("BODY", bad))
+        self.assertEqual(rc, 1, out)
+        self.assertIn("Mermaid 图「图 2 坏图。」编译失败，源码第 3 行", out)
+        self.assertIn('<pre class="mermaid">', html)  # 编译失败的留着源码
+        rc, _, out = run(PAGE.replace("BODY", '<figure><pre class="mermaid wide">flowchart LR\n  A --> B</pre></figure>'))
+        self.assertEqual(rc, 1, out)
+        self.assertIn("有 1 幅 Mermaid 图没有编译成 SVG", out)
 
 
 if __name__ == "__main__":

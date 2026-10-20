@@ -6,12 +6,13 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
 
 合成：
   1. LaTeX → MathML（node + vendor 的 Temml）；公式与紧邻的全角标点之间禁止断行
-  2. <span class="sidenote|marginnote"> 补全 label + checkbox
-  3. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
-  4. 填 <nav class="toc">
-  5. 本地图片转 data URI
-  6. 分步图（figure.steps）展开成并排的小图，每一步一幅，成品里没有脚本和控件
-  7. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言；注入网络字体的 <link>
+  2. Mermaid 源码（<pre class="mermaid">）→ 内联 SVG（node + vendor 的 ondine）
+  3. <span class="sidenote|marginnote"> 补全 label + checkbox
+  4. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号
+  5. 填 <nav class="toc">
+  6. 本地图片转 data URI
+  7. 分步图（figure.steps）展开成并排的小图，每一步一幅，成品里没有脚本和控件
+  8. 内联 tufte.css、骨架脚本，以及页面用到的代码高亮语言；注入网络字体的 <link>
      （jsDelivr，离线时回退系统字体）
 
 ERROR 必须修；WARN 需要判断。
@@ -31,6 +32,7 @@ ASSETS = ROOT / "assets"
 VENDOR = ASSETS / "vendor"
 HL_DIR = VENDOR / "shj"
 MATH_SCRIPT = ROOT / "scripts" / "math.mjs"
+MERMAID_SCRIPT = ROOT / "scripts" / "mermaid.mjs"
 
 CSS_SLOT, JS_SLOT = "<!--TR:CSS-->", "<!--TR:JS-->"
 CSS_TAG_RE = re.compile(
@@ -116,15 +118,30 @@ def leftover_dollars(html):
 
 
 def compile_math(page, errors, warns):
-    if not has_math_source(page.read_text(encoding="utf-8")):
-        return
+    if has_math_source(page.read_text(encoding="utf-8")):
+        run_node(MATH_SCRIPT, page, "LaTeX 公式", "MathML", "公式", errors, warns)
+
+
+# ── Mermaid ─────────────────────────────────────────────────────────────
+# 开标签的写法不对时 mermaid.mjs 认不出，留在页面里；检查用宽松的写法把它们也找出来
+MERMAID_SRC_RE = re.compile(r'<pre class="mermaid"\s*>')
+MERMAID_ANY_RE = re.compile(r'<pre\b[^>]*\bclass="[^"]*\bmermaid\b')
+
+
+def compile_mermaid(page, errors, warns):
+    if MERMAID_SRC_RE.search(page.read_text(encoding="utf-8")):
+        run_node(MERMAID_SCRIPT, page, "Mermaid 图", "SVG", "Mermaid 图", errors, warns)
+
+
+def run_node(script, page, source, target, what, errors, warns):
+    """用 node 跑就地改写页面的编译脚本；它输出的 ERROR / WARN 行并入构建结果，其余行照印。"""
     node = shutil.which("node")
     if not node:
-        errors.append("页面里有 LaTeX 公式，但找不到 node 来编译成 MathML；装 Node.js 后重跑")
+        errors.append(f"页面里有 {source}，但找不到 node 来编译成 {target}；装 Node.js 后重跑")
         return
-    out = subprocess.run([node, str(MATH_SCRIPT), str(page)], capture_output=True, text=True)
+    out = subprocess.run([node, str(script), str(page)], capture_output=True, text=True)
     if out.returncode != 0:
-        errors.append("公式编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
+        errors.append(f"{what}编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
         return
     for line in out.stdout.splitlines():
         if line.startswith("ERROR"):
@@ -640,6 +657,10 @@ def check(html, errors, warns):
                       "<span class=\"marginnote\">，不要加别的属性或 class")
     if re.search(r"<p\b[^>]*>(?:(?!</p>).)*?<(div|figure|pre|table|ol|ul|section|blockquote|details)\b", html, re.S):
         errors.append("<p> 里嵌了块级元素：浏览器会提前闭合 <p>，边注与版心随之错位；把块级元素移到段落之外")
+    raw_mermaid = len(MERMAID_ANY_RE.findall(html))
+    if raw_mermaid:
+        errors.append(f"有 {raw_mermaid} 幅 Mermaid 图没有编译成 SVG：开标签只写 <pre class=\"mermaid\">，"
+                      "不要加别的属性或 class；同时修掉上面关于 Mermaid 图的 ERROR")
     if "TODO-题图" in html:
         errors.append("题图里还有 TODO-题图：图注写出处与图题（或箴言）的译文，alt 写画面，CC BY 的图补上署名")
     if not re.search(r"<title>[^<]+</title>", html) or "中文标题 · 原文标题" in html:
@@ -723,6 +744,7 @@ def main(argv):
 
     if "--check-only" not in flags:
         compile_math(page, errors, warns)
+        compile_mermaid(page, errors, warns)  # 在公式之后：图题里的公式已经编译，取得出文字
         html = glue_math_punctuation(page.read_text(encoding="utf-8"))
         html, notes = expand_notes(html)
         html, fns = place_footnotes(html, errors)

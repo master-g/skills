@@ -115,7 +115,7 @@
 - 原文的 `figure*` 通栏图用 `figure.fullwidth`；原图宽度不到 1000px 的仍用普通 `figure`，放大会糊。
 - 普通 figure 的图题放在 figure 内的 `marginnote` 里，写「图 N　」（全角空格）加译文图题；照搬的原图不改图中文字，必要时在图注里对照翻译关键标签。哪些图不照搬、要重画，见 [行文](style.md) 的「重画原图」。
 - `src` 写相对页面文件的本地路径，构建转成 data URI。外网图片先下载到本地，否则报 ERROR。
-- 矢量示意图写成内联 `<svg>`，给 `width` 和 `aria-label`。图多、或者图里有公式时用脚本画，见下面的「图元库」。
+- 矢量示意图写成内联 `<svg>`，给 `width` 和 `aria-label`。图多、或者图里有公式时用脚本画，见下面的「图元库」。流程图、时序图这类结构图写 Mermaid 源码，见下面的「Mermaid 图」。
 - 颜色默认只用 `currentColor`，跟随明暗主题，深浅用 `fill-opacity` 区分。数据本身分成几类时（4 个设备、两类样本、前向值与梯度）用分类色 `var(--fig-1)` 到 `var(--fig-4)`，明暗主题各有一套；同一类的深浅仍用 `fill-opacity`。分类色不是唯一的区分手段：同时用编号、位置或文字标注，色觉缺陷的读者和黑白打印也要能看懂。超过 4 类时不加颜色，改用编号或行列标签。写死的颜色（`#f00`、`red`、`rgb(…)`）不跟随主题，构建发 WARN。
 - 内联 SVG 里的 `id`（`marker`、`linearGradient`、`clipPath` 等）在整个页面内必须唯一，带上图的编号作前缀：`<marker id="fig3-arrow">`。两幅图用了同一个 `id` 时，后一幅会引用到前一幅的定义，构建报 ERROR。
 - 读本只用静态图，不写脚本，不加滑块、按钮这类交互控件。要表现一个过程，把各个状态画成并排的小图，每幅配一句说明，写法见下面的「分步图」。
@@ -179,6 +179,33 @@ FIGS["discount"] = svg(430, 250, b, "两条折现因子曲线……", serif=True
 - **标注**：曲线的名字和数值写在曲线末端或旁边，与曲线同色，图里不放图例。
 - **字号**：刻度 12、标签 13。画布宽 400 到 430 时，手机上缩到约四分之三，刻度数字约 9px，这是下限；标签放不下就加宽画布、减少刻度。
 - **示意性的函数图**（只讲形状、不读数，例如梯度下降、牛顿法的切线）可以省去刻度，关键点用斜体字母 <i>A</i>、<i>B</i> 标出，在图注里说明各字母。
+
+## Mermaid 图
+
+流程图、时序图、状态图、类图、ER 图、时间线、思维导图这类结构图，用 Mermaid 写源码，构建时编译成内联 SVG。页面不带 Mermaid 的脚本，图的颜色跟着明暗主题切换。
+
+```html
+<figure>
+  <span class="marginnote">图 6　读本的生成流程。</span>
+  <pre class="mermaid">
+flowchart TD
+  A[取材] --> B{是否 arXiv}
+  B -- 是 --> C[取 LaTeX 源]
+  B -- 否 --> D[正文提取]
+  C --> E[结构清单&lt;br&gt;与术语表]
+  D --> E
+</pre>
+</figure>
+```
+
+- **编译**：构建用 vendor 的 ondine 把 `<pre class="mermaid">` 换成 `<svg class="ondine">`，把图题的文字写进 `aria-label`，给图内的 `id` 加前缀，这些作者都不用管。开标签只写 `<pre class="mermaid">` 这一种形式，加别的属性或 class 构建认不出，报 ERROR。编译是一次性的：已编译的图要改，把整个 `<svg>` 换回改过的 `<pre class="mermaid">` 再构建，与公式相同。
+- **转义**：源码按 HTML 写，`<` 写成 `&lt;`，`&` 写成 `&amp;`，箭头 `-->` 里的 `>` 照写。节点标签里换行写 `&lt;br&gt;`。
+- **中文标签**：ondine 只在空格处折行，中文标签不会自动断开，一长串会把方框撑得很宽。一个节点写十个字以内，长的用 `&lt;br&gt;` 断成两行。
+- **宽度**：普通插图按正文栏宽（600px）排，横向（`LR`）的流程图放不下时自动改成纵向；要保持横排就放进 `figure.fullwidth`，按通栏宽（980px）排。排出来仍然超宽的发 WARN，图会等比缩小。宽图在手机上字太小时包进 `<div class="scroll-x">`，同普通插图。
+- **外观**：ondine 不是 Mermaid 本身，语法照 Mermaid，布局和画法是它自己的：方角的框、圆角的正交连线。字体、线宽、颜色由 tufte.css 接到页面上，与图元库的示意图同一种无衬线字；`%%{init}%%` 和 Mermaid 的主题变量不起作用。`classDef`、`style` 里写的颜色不跟随主题，构建发 WARN；要区分几类节点，用 `subgraph` 分组，或在标签里写明。
+- **语法错误**：构建报 ERROR，指明是哪幅图（取图题的开头）、源码第几行第几列和那一行，这幅图留着源码不编译。
+- **范围**：结构图用 Mermaid。带坐标轴、要读数值的图（折线、散点、柱状）照上面的「曲线图」用图元库画，不用 Mermaid 的 `xychart`、`pie`；标签里有公式的图也用图元库，Mermaid 的标签里写 `$…$` 构建报 ERROR。实测能编译的图型：`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`classDiagram`、`erDiagram`、`timeline`、`mindmap`、`gantt`、`block`、`architecture-beta`、`gitGraph`。
+- 统计里 Mermaid 图计入「图」；构建另打一行「Mermaid 编译 N 幅」。
 
 ## 分步图
 
@@ -334,4 +361,4 @@ FIGS["discount"] = svg(430, 250, b, "两条折现因子曲线……", serif=True
 
 ## 构建负责的部分
 
-作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、插图里公式的编译、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
+作者不写：边注的 `label` + `checkbox`、章末 `section.footnotes`、目录内容、图片 data URI、公式外面的 `math-nobr` 与 `math-inline-long`、插图里公式的编译、Mermaid 源码编译成的 SVG、内联的 CSS 与脚本、字体的 `<link>`、分步图展开后的 `ol.step-frames`。已构建的页面可以直接编辑正文再重跑构建；新加的注释与脚注按同样写法插入即可。
