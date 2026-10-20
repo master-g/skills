@@ -34,8 +34,8 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-20] main，两次 chore 提交、未推送；url-to-kami（改用 show-me-html）与 x-to-markdown（很少单独用）经 make deprecate 归档到 skills/deprecated/ 并卸载本机副本；send-to-obsidian 抓取表删去 x-to-markdown 并已 make install
-  验证：make check 通过（118 个文件）；~/.claude/skills 与 ~/.agents/skills 里两者已不存在，send-to-obsidian 安装副本与仓库一致
+- [2026-10-20] main，三次提交、未推送：url-to-kami（改用 show-me-html）与 x-to-markdown（很少单独用）经 make deprecate 归档并卸载本机副本；send-to-obsidian 新增 references/x-links.md，X 链接直接调 xtomd.com，回退 autocli 与浏览器工具，已 make install
+  验证：make check 通过（119 个文件）；xtomd 示例链接返回 200 且含 markdown/url/author；send-to-obsidian 安装副本与仓库一致；未实际写入 vault 跑一遍
 
 ## 下次运行
 
