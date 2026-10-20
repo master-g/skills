@@ -4,8 +4,10 @@
    编译器是 vendor 的 ondine（Rust 写的 Mermaid 编译器，wasm）：语法按 Mermaid，布局与外观是 ondine 自己的。
    SVG 的颜色、字体、线宽读 --ondine-* 变量，tufte.css 把它们接到页面的 token 上，切换明暗主题不用重新编译。
    源码留在页面里，是图的唯一来源：每次构建先拆掉上一次的产物，再从源码重新编译，改图只改源码。
-   产物是 div.mermaid-figure：checkbox 和它的 label（「源码」开关，tufte.css 让它平时隐藏、悬停时出现）、SVG、
+   产物是 div.mermaid-figure：checkbox 和它的 label（源码开关，tufte.css 让它平时隐藏、悬停时出现）、SVG、
    原样的 <pre class="mermaid">（平时隐藏，勾选后代替 SVG 显示）。不用脚本，与边注的 ⊕ 同一种做法。
+   开关是纯图标，画法与明暗切换按钮相同：Lucide（ISC，许可见 vendor/LICENSE-lucide.txt）的 code 与 workflow，
+   显示「点了会切到的」那一态。
    源码按 HTML 写：< 和 & 写成 &lt; &amp;（标签里换行写 &lt;br&gt;），编译前还原。
    排版宽度：普通插图按正文栏，横向的流程图放不下时 ondine 自动改成纵向；figure.fullwidth 里的按通栏。
    图题（figure 里的 marginnote 或 figcaption）写进 aria-label；源码写了 accTitle 的，ondine 自己给 <title>。
@@ -29,6 +31,17 @@ const wasm = readFileSync(
   )
 );
 const ondine = create({ modules: { all: new WebAssembly.Module(wasm) } });
+
+const icon = (cls, body) =>
+  `<svg class="${cls}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ` +
+  `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+const SWITCH_ICONS =
+  icon("to-source", '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>') +
+  icon(
+    "to-figure",
+    '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/>' +
+      '<rect width="8" height="8" x="13" y="13" rx="2"/>'
+  );
 
 // 拆掉上一次的产物，只留源码。拆的时候认宽松的写法：开标签写错的也要拆开，免得留下旧图，交给检查报错
 const UNWRAP_RE =
@@ -89,8 +102,8 @@ const out = bare.replace(
         svg = svg.replace("<svg ", `<svg aria-label="${cap}" `);
       const id = `mmd-${seq}`;
       return (
-        `<div class="mermaid-figure"><input type="checkbox" id="${id}" class="mermaid-toggle" />` +
-        `<label for="${id}" class="mermaid-switch" title="在图与 Mermaid 源码之间切换"></label>${svg}${whole}</div>`
+        `<div class="mermaid-figure"><input type="checkbox" id="${id}" class="mermaid-toggle" aria-label="显示 Mermaid 源码" />` +
+        `<label for="${id}" class="mermaid-switch" title="在图与 Mermaid 源码之间切换">${SWITCH_ICONS}</label>${svg}${whole}</div>`
       );
     } catch (e) {
       if (!(e instanceof RenderError)) throw e;

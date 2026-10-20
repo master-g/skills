@@ -16,7 +16,7 @@
 - [2026-10-16] show-me-html 目录只在「版心+目录+留白」放得下时出现，72rem 页面在 1280 下隐藏目录、显示进度线，不挤正文也不加第三档（用户确认）；窄档 9rem+1.5rem 为 Windows 滚动条下 48rem@1024 留余量
 - [2026-10-16] show-me-html 目录指示条逐帧对准要在页面之后注册的 ResizeObserver 里量；rAF 里读会早于页面的贴回一帧，收起动画中看似偏 50px；场景探针的页高差 ~30px 多为 Google Fonts 加载时机，先同页多次加载确认
 - [2026-10-19] tufte-reader 曲线图定为「A 书页」：页面衬线字、墨线、离开原点的坐标轴、至多一处朱砂（--mark）强调；用户在 A / B 铜版 / C 几何三份样张中选 A；示意图仍用无衬线和分类色，未扩及（markup.md「曲线图」）
-- [2026-10-20] tufte-reader 的 Mermaid 图由 vendor 的 ondine 0.0.1（wevm，Rust→wasm，MIT）编译成 SVG；用户选 vendor 而非按需 npm 安装；源码留在页面里、每次构建重编，悬停出现纯 CSS 的「源码」开关、打印只出图（用户要求）；只用于结构图，数据图仍走 figlib 曲线图
+- [2026-10-20] tufte-reader 的 Mermaid 图由 vendor 的 ondine 0.0.1（wevm，Rust→wasm，MIT）编译成 SVG；用户选 vendor 而非按需 npm 安装；源码留在页面里、每次构建重编，悬停出现纯 CSS 的源码开关（Lucide code/workflow 图标，画法同明暗切换按钮，用户看图确认）、打印只出图；只用于结构图，数据图仍走 figlib 曲线图
 
 ## 失败尝试
 
@@ -34,8 +34,8 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-20] main，两次提交、已 make install tufte-reader、未推送；Mermaid 图（mermaid.mjs + vendor/ondine）及源码留存与开关（div.mermaid-figure、tufte.css 的 .mermaid-*），specimen 图 5
-  验证：unittest 63 个全过、make check 通过、specimen 0/0 且重复构建逐字节相同；1280 默认/悬停/源码、打印仿真、390 触屏截图与计算样式核对；Firefox 未看
+- [2026-10-20] main，三次提交、已 make install tufte-reader、未推送；Mermaid 图（mermaid.mjs + vendor/ondine）、源码留存与开关（div.mermaid-figure、.mermaid-*），开关改为 18px 纯图标；specimen 图 5
+  验证：unittest 63 个全过、make check 通过、specimen 0/0 且重复构建逐字节相同；1280 明暗悬停/源码、打印仿真、390 触屏截图与计算样式核对；Firefox 未看
 
 ## 下次运行
 

@@ -487,26 +487,24 @@ input.mermaid-toggle {
   opacity: 0;
   pointer-events: none;
 }
+/* 开关是纯图标，与明暗切换按钮同一种画法：灰色线条图标，悬停变深，没有边框和底色。
+   显示「点了会切到的」那一态：看图时是 </>（源码），看源码时是流程图 */
 .mermaid-switch {
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 0.3rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--rule);
+  padding: 0.3rem;
   color: var(--muted);
-  font-family: var(--font-figure);
-  font-size: var(--text-small);
-  line-height: var(--leading-note);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
-.mermaid-switch::before {
-  content: "源码";
+.mermaid-switch > .to-figure,
+.mermaid-toggle:checked + .mermaid-switch > .to-source {
+  display: none;
 }
-.mermaid-toggle:checked + .mermaid-switch::before {
-  content: "图";
+.mermaid-toggle:checked + .mermaid-switch > .to-figure {
+  display: block;
 }
 .mermaid-figure:hover > .mermaid-switch,
 .mermaid-toggle:focus-visible + .mermaid-switch,

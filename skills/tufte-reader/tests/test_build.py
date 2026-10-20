@@ -319,7 +319,7 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(rc, 0, out)
         self.assertIn("Mermaid 编译 1 幅", out)
         self.assertIn("代码块 0", out)  # 留在页面里的源码不算代码块
-        self.assertIn('<div class="mermaid-figure"><input type="checkbox" id="mmd-1" class="mermaid-toggle" />'
+        self.assertIn('<div class="mermaid-figure"><input type="checkbox" id="mmd-1" class="mermaid-toggle" aria-label="显示 Mermaid 源码" />'
                       '<label for="mmd-1" class="mermaid-switch"', html)
         svg = html.split('<svg aria-label="图 1 每轮把 dx 缩小。" xmlns="http://www.w3.org/2000/svg" class="ondine ondine-flowchart"', 1)[1]
         self.assertEqual(svg.split("</svg>", 1)[0].count("<tspan"), 2)  # &lt;br&gt; 还原成换行
