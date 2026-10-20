@@ -34,7 +34,7 @@ SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头
 | tmux  | `tmux new-window -d -c "$PWD" -n farm-<task> "sh '<skill>/headless.sh' run <task> <model>"`                            |
 | none  | `nohup sh '<skill>/headless.sh' run <task> <model> >/dev/null 2>&1 &`                                                  |
 
-**无头派发**(tmux、none,以及任何在 pane 里跑 `pi -p` 的场景)一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit` 清掉上一轮标记。
+**无头派发**(tmux、none,以及任何在 pane 里跑 `pi -p` 的场景)一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 和 pi 的进程组 id 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid,pgid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit .farm/<task>.pgid` 清掉上一轮标记。要提前结束无头 worker,运行 `sh '<skill>/headless.sh' stop <task>`:它结束 pi 和它派生的全部进程(先 TERM,10 秒后仍在就 KILL),打印 `stopped` 或 `killed`;任务已结束时打印 `not-running`。
 
 **herdr pane 复用**(单 worker 时一个 farm 会话只维护一个 worker pane;池见下文「池」):
 
@@ -69,12 +69,12 @@ modelflag(pane 交互 / 无头):
 
 worker 结束(herdr:`agent prompt` 返回;无头:`headless.sh wait` 返回 `done`)后进入 SKILL.md「门禁」。无头等待是分段的,每段最长 100 秒,按结果分支:
 
-| `sh '<skill>/headless.sh' wait <task>` | 含义与动作                                                                                                                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `done <code>`(退出码 0)                | worker 已退出,进入门禁                                                                                                                                                            |
-| `running`(2)                           | 再调一次;累计超过 30 分钟仍 running → 读 `.farm/<task>.log` 尾部,向用户报告并问是否继续等                                                                                         |
-| `not-started`(3)                       | 15 秒内脚本没写 pid,启动命令从未执行:查 tmux 窗口 / 后台命令输出 / pane 内容找原因,修正后重发(pane 里重发前先 `herdr pane send-keys <pane> ctrl+c` 清掉提示符残留),不计入修正轮次 |
-| `dead`(4)                              | 进程消失且没写退出码(被杀或崩溃):读 log,按门禁的「报告缺失」处理                                                                                                                  |
+| `sh '<skill>/headless.sh' wait <task>` | 含义与动作                                                                                                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `done <code>`(退出码 0)                | worker 已退出,进入门禁                                                                                                                                                                 |
+| `running`(2)                           | 再调一次;累计超过 30 分钟仍 running → 读 `.farm/<task>.log` 尾部,向用户报告并问是否继续等;用户决定不再等 → `sh '<skill>/headless.sh' stop <task>`,该任务按门禁的升级处理,附上 log 尾部 |
+| `not-started`(3)                       | 15 秒内脚本没写 pid,启动命令从未执行:查 tmux 窗口 / 后台命令输出 / pane 内容找原因,修正后重发(pane 里重发前先 `herdr pane send-keys <pane> ctrl+c` 清掉提示符残留),不计入修正轮次      |
+| `dead`(4)                              | 外层 sh 消失且没写退出码(被 KILL 或崩溃),pi 可能还在运行:先 `sh '<skill>/headless.sh' stop <task>` 结束残留进程,再读 log,按门禁的「报告缺失」处理                                      |
 
 ## 收尾
 
@@ -82,7 +82,7 @@ herdr:汇报时问用户是否关闭 worker pane(`herdr pane close <pane-id>`);�
 
 ## 池
 
-k ≥ 2 时在 [worker 池](pool.md) 之上补充本后端的做法。子任务 i 的 headless 标记是 `.farm/<task>-<i>.{pid,exit,log}`。
+k ≥ 2 时在 [worker 池](pool.md) 之上补充本后端的做法。子任务 i 的 headless 标记是 `.farm/<task>-<i>.{pid,exit,log,pgid}`,提前结束用 `sh '<skill>/headless.sh' stop <task>-<i>`。
 
 派发:
 
