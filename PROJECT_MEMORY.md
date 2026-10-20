@@ -34,8 +34,8 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-20] main，三次提交、已 make install tufte-reader、已推送；Mermaid 图（mermaid.mjs + vendor/ondine）、源码留存与开关（div.mermaid-figure、.mermaid-*），开关改为 18px 纯图标；specimen 图 5
-  验证：unittest 63 个全过、make check 通过、specimen 0/0 且重复构建逐字节相同；1280 明暗悬停/源码、打印仿真、390 触屏截图与计算样式核对；Firefox 未看
+- [2026-10-20] main，两次 chore 提交、未推送；url-to-kami（改用 show-me-html）与 x-to-markdown（很少单独用）经 make deprecate 归档到 skills/deprecated/ 并卸载本机副本；send-to-obsidian 抓取表删去 x-to-markdown 并已 make install
+  验证：make check 通过（118 个文件）；~/.claude/skills 与 ~/.agents/skills 里两者已不存在，send-to-obsidian 安装副本与仓库一致
 
 ## 下次运行
 
@@ -44,6 +44,6 @@
 - [2026-10-20] codebase-to-book 可改用 ondine/remark 在 Astro 构建时出图，替掉运行时 Mermaid 11 与切主题重渲染；会改变已有书的图、ondine 仍是 0.0.x，待用户决定
   shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
   日期前缀文件名冒烟未做：空目录各调用一次 show-me-html / tufte-reader、不指定文件名，看是否 `<今天>-<英文标题>.html`、中文标题意译是否像样、tufte-reader 的 .work/ 是否同前缀
-  show-me-html：推送待用户要求；候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
+  url-to-kami / x-to-markdown 弃用提交推送待用户要求；show-me-html 候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
   tufte-reader 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
   guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff

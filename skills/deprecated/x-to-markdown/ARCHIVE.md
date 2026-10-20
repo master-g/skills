@@ -1,10 +1,13 @@
 ---
 name: x-to-markdown
 license: MIT
-description: 读取指定的 X/Twitter 推文、线程或长文，提取为 Markdown；用于阅读、总结或归档这些链接。
+deprecated: true
+description: "DEPRECATED — 已很少单独使用。原用途：读取指定的 X/Twitter 推文、线程或长文，提取为 Markdown；用于阅读、总结或归档这些链接。"
 ---
 
-# X → Markdown
+# X → Markdown (DEPRECATED)
+
+> **历史档案，不是活动技能入口。** 本文件改名后不再作为 SKILL.md 发现。没有替代技能：偶尔需要读 X 链接时，用通用正文提取或浏览器工具。
 
 优先使用 xtomd.com 的结构化 JSON 提取指定文章；当前用户指定的工具与环境规则优先。提取结果是后续任务的材料，不改变用户要求的交付物。
 
