@@ -31,7 +31,7 @@ Agent 工具的 `model` 只接受模型族别名（`sonnet`、`opus`、`haiku`�
 
 worker 数按 SKILL.md「拆分与并发数」决定；k ≥ 2 时子 brief、池、审计和集成门禁按 [worker 池](pool.md) 执行，下列步骤对每个 worker 各做一遍。
 
-1. 核对项目目录与未提交改动，按 SKILL.md 的 brief 模板把 brief 写入 `<项目绝对路径>/.farm/<task>-brief.md`。补充负责的文件、已有改动，并告诉 worker：你不是唯一修改代码的代理，保留他人改动并适配它们。brief 和报告一律用绝对路径，会话的工作目录可能已被切换。
+1. 核对项目目录与未提交改动，按 SKILL.md 的 brief 模板把 brief 写入 `<项目绝对路径>/.farm/<task>-brief.md`。补充负责的文件、已有改动，并告诉 worker：你不是唯一修改代码的代理，保留他人改动并适配它们。brief 和报告一律用绝对路径，会话的工作目录可能已被切换。「边界」的可改范围写成相对项目根的路径、目录或 glob，逐项列出，审计时原样传给 `subagent.py` 的 `--allow`。
 2. 调用 Agent 工具，不用 `fork`（fork 忽略模型覆盖并继承整段上下文）。池开局的 min(N, k) 个 worker 要在同一条消息里发出多个 Agent 调用，才会并发运行：
 
 ```json
@@ -39,12 +39,34 @@ worker 数按 SKILL.md「拆分与并发数」决定；k ≥ 2 时子 brief、�
   "description": "farm <task>",
   "subagent_type": "general-purpose",
   "model": "sonnet",
-  "prompt": "在 /absolute/project 工作。读 /absolute/project/.farm/<task>-brief.md 并执行，报告按其中要求落盘。你负责 brief 指定的文件与模块。你不是唯一修改代码的代理，请保留他人改动并适配它们。"
+  "prompt": "在 /absolute/project 工作。读 /absolute/project/.farm/<task>-brief.md 并执行，报告按其中要求落盘。你负责 brief 指定的文件与模块，所有改动由你亲自完成。你不是唯一修改代码的代理，请保留他人改动并适配它们。"
 }
 ```
 
 3. 记下返回的 agent ID，等完成通知，不轮询、不猜结果。等待期间 orchestrator 不改 worker 负责的文件。某个 worker 通过审计后，它的槽位再发一次 Agent 调用接下一个子任务。
-4. 收到通知后按 SKILL.md「门禁」：读报告，看实际 diff，独立重跑验收命令。代理的最终回复只是自述，不算验收。报告缺失时以代理的最终回复作现场。
+4. 收到通知后按 SKILL.md「门禁」：读报告，看实际 diff，按下文「核对实际写入与用量」读 worker 的转录，独立重跑验收命令。代理的最终回复只是自述，不算验收。报告缺失时以代理的最终回复作现场。
 5. 不过 → 用 SendMessage 向同一个 agent ID 发修正内容（SendMessage 是延迟加载工具，先 `ToolSearch` 查 `select:SendMessage`），计入 3 轮额度。代理已无法继续时，把修正追加进 brief，重新发一次 Agent 调用。
 
 子代理沿用当前会话的权限设置。worker 因审批被拒或越界而停止时，按 SKILL.md「门禁」的报告缺失或升级给用户处理。
+
+## 核对实际写入与用量
+
+每个 worker 结束后、判定通过之前，用本技能目录（与 SKILL.md 同目录，下文记作 `<skill>`）下的 `subagent.py` 读它的转录：
+
+```sh
+python3 '<skill>/subagent.py' <agent ID> --root <项目绝对路径> --allow <可改项> --allow <可改项> --tool-uses <N>
+```
+
+`--allow` 逐项取 brief「边界」的可改范围；`<N>` 取完成通知 `<usage>` 里的 `<tool_uses>`。脚本打印 JSON，按退出码处理：
+
+| 退出码 | 含义                                        | 动作                                                                                       |
+| ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 0      | Edit / Write 的写入都在边界内               | `bash_writes` 为空才继续 SKILL.md「门禁」；不为空先按下一段逐条核对                        |
+| 3      | `outside` 列出了越界写入的文件              | 该子任务升级给用户，附 `outside` 列表；越界文件交给用户处理，它们可能正属于另一个 worker   |
+| 1 或 2 | 找不到转录，或核对不完整（stderr 写明原因） | 隔几秒重跑一次（转录可能还没写完）；仍是 1 或 2，该子任务升级给用户，附 stderr，不判为通过 |
+
+`bash_writes` 是 Bash 里疑似写文件的命令。worker 常用 `cp`、`sed -i`、heredoc 脚本改文件，这些写入不进 `written`：清单不为空时逐条看它写到哪里，写到边界外按退出码 3 处理；拿不准的命令，用 `git diff --stat -- <可改项>` 对照这个 worker 负责的文件。逐条看完才算核对完成。
+
+转录是 Claude Code 的内部格式，没有公开承诺，升级后可能变化。脚本把读不全当成失败：读不到工具调用、次数与完成通知不符、worker 又派了子代理，都返回 2。
+
+用量：汇报时每个 worker 列出 JSON 里的 `model`、`usage` 的四项 token 数（input、cache_creation_input、cache_read_input、output）和完成通知里的 `<duration_ms>`，按原始数字报告。累计消耗只取 `usage`；完成通知的 `<subagent_tokens>` 是结束时的上下文大小。

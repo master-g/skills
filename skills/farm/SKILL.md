@@ -133,6 +133,7 @@ k ≥ 2 时，逐个审计之后还有集成门禁，见 [worker 池](references
 
 - 每个子任务的状态（通过 / 升级）和用掉的修正轮次。
 - 改动摘要（git 仓库用 `git diff --stat`）和门禁的实际输出。
+- 每个 worker 的模型、token 用量和耗时：后端文件写了取法的按它取（Claude Code 后端见 [Claude Code 原生 worker 用例](references/claude-code-worker.md)「核对实际写入与用量」），其他后端写「未统计」。
 - 限制：没运行的检查、worker 报告里的未决问题。
 - 下一步建议：只列本次结果直接引出的事项，例如升级项需要用户决定什么、通过的改动是否提交、方案里还没派发的部分。
 

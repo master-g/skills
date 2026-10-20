@@ -29,7 +29,7 @@
 
 - 安装依赖: `npm install`（只装格式化与钩子）
 - 构建: 无
-- 测试: 无统一测试；带脚本的技能自带 `python3 skills/<name>/scripts/test_*.py`（如 bootstrap-claude 的 `test_setup_context.py`、`test_memory.py`，各打印 `…: ok`）
+- 测试: 无统一测试；带脚本的技能自带 `python3 skills/<name>/scripts/test_*.py`（如 bootstrap-claude 的 `test_setup_context.py`、`test_memory.py`，各打印 `…: ok`）；farm 的脚本在技能根目录，测试是 `python3 skills/farm/test_subagent.py`
 - Lint / 格式化: `make check`（引用与链接检查）；`npx prettier --write <file>`
 - 安装到本机: `make install SKILL=<name> SOURCE=.`；列出可用技能 `make list`
 
