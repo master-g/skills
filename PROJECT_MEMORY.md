@@ -17,6 +17,8 @@
 - [2026-10-16] show-me-html 目录指示条逐帧对准要在页面之后注册的 ResizeObserver 里量；rAF 里读会早于页面的贴回一帧，收起动画中看似偏 50px；场景探针的页高差 ~30px 多为 Google Fonts 加载时机，先同页多次加载确认
 - [2026-10-19] tufte-reader 曲线图定为「A 书页」：页面衬线字、墨线、离开原点的坐标轴、至多一处朱砂（--mark）强调；用户在 A / B 铜版 / C 几何三份样张中选 A；示意图仍用无衬线和分类色，未扩及（markup.md「曲线图」）
 - [2026-10-20] tufte-reader 的 Mermaid 图由 vendor 的 ondine 0.0.1（wevm，Rust→wasm，MIT）编译成 SVG；用户选 vendor 而非按需 npm 安装；源码留在页面里、每次构建重编，悬停出现纯 CSS 的源码开关（Lucide code/workflow 图标，画法同明暗切换按钮，用户看图确认）、打印只出图；只用于结构图，数据图仍走 figlib 曲线图
+- [2026-10-20] flopwire（代理间消息与转录检索）不接入 farm：子代理里的 hook 不投递、pi 不在支持列表、herdr pane 已能 agent prompt；借三点写成 plans/015（进程组收尾）、016（转录核对写入与用量，只做 Claude Code 后端）
+- [2026-10-20] 用户清空了「下次运行」积压：guide-me 验收、tufte-reader 冷启动验收与 plates.md 审阅、日期前缀文件名冒烟、reelshort 页重建、show-me-html 单图导出 PNG 与导读元信息行、codebase-to-book 改用 ondine、真实 /farm 与 send-to-obsidian X 链接实测，都不再跟进，用户再提才做
 
 ## 失败尝试
 
@@ -29,21 +31,17 @@
 - [2026-10-19] 图表复古化：老式数字不可用（当前字体栈无 onum，截图两组相同）；feTurbulence 墨迹滤镜 1280 下肉眼无差且会扭糊 foreignObject 公式；B 铜版沿线文字在 390 约 8px 不可读
 - [2026-10-19] 手写进 specimen.html 的 figlib SVG 被 prettier 拆开 <text> 里的 <tspan>，换行渲染成空格（「( dx )²」）；这类 SVG 前加 <!-- prettier-ignore -->
 - [2026-10-20] beautiful-mermaid（pretty-mermaid 的底层）不适合读本：SVG 里 @import Google Fonts（外链）、写死 --bg:#FFFFFF 盖住页面变量、图型少；官方 Mermaid 要运行时 JS 或无头浏览器
+- [2026-10-20] macOS 上复制出来的 /bin/sleep 一运行就被系统 kill，冒烟测试要找可按路径标记的子进程时改用 `perl -e "sleep 300" <标记路径>`（plans/015 的 smoke.sh）
 
 ## 上次会话
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-20] main，三次提交、未推送：url-to-kami（改用 show-me-html）与 x-to-markdown（很少单独用）经 make deprecate 归档并卸载本机副本；send-to-obsidian 新增 references/x-links.md，X 链接直接调 xtomd.com，回退 autocli 与浏览器工具，已 make install
-  验证：make check 通过（119 个文件）；xtomd 示例链接返回 200 且含 markdown/url/author；send-to-obsidian 安装副本与仓库一致；未实际写入 vault 跑一遍
+- [2026-10-20] main，已推送：url-to-kami、x-to-markdown 弃用；send-to-obsidian 直接调 xtomd.com 取 X 链接；farm 借鉴 flopwire 的 plans/015、016 经 improve execute 审阅后 cherry-pick 合入，Claude Code worker 改文件用 Edit / Write（claude-code-worker.md「派发」），已 make install SKILL=farm SOURCE=.，worktree 与临时分支已清理
+  验证：make check 通过（119 个文件）；python3 skills/farm/test_subagent.py ok；plans/015 的 smoke.sh 对安装副本 16 项全过；安装副本与仓库 diff 为空；没跑过真实 /farm，send-to-obsidian 没实际写入 vault
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-20] codebase-to-book 可改用 ondine/remark 在 Astro 构建时出图，替掉运行时 Mermaid 11 与切主题重渲染；会改变已有书的图、ondine 仍是 0.0.x，待用户决定
-  shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
-  日期前缀文件名冒烟未做：空目录各调用一次 show-me-html / tufte-reader、不指定文件名，看是否 `<今天>-<英文标题>.html`、中文标题意译是否像样、tufte-reader 的 .work/ 是否同前缀
-  url-to-kami / x-to-markdown 弃用提交推送待用户要求；show-me-html 候选第 4 项单图导出 PNG（先把计算样式内联）、第 5 项导读元信息行未做
-  tufte-reader 冷启动验收：由不带本会话上下文的执行者只读 SKILL.md 与 plates.md，给一个新主题写一本 3 章带题图短读本，看是否走 --thumb 预览和 --region 裁切、是否退回 Atalanta、图注是否合规，缺口写成下一份计划；审阅 plates.md 里 50 条中文大意与「适合的主题」草稿；维护者的 reelshort-tech-notes.html 把 stat-band 换成 metric-band、删自写样式块后重建（011 之后会报 ERROR）
-  guide-me 的验收仍未做：在 DopaManga 或 tobi 跑一次 /guide-me 看趋势行与第 0 问，旧布局项目装新版 bootstrap-claude 后跑 setup_context.py 看 diff
+- [2026-10-20] 无排定任务。shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移

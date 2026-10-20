@@ -31,7 +31,7 @@ Agent 工具的 `model` 只接受模型族别名（`sonnet`、`opus`、`haiku`�
 
 worker 数按 SKILL.md「拆分与并发数」决定；k ≥ 2 时子 brief、池、审计和集成门禁按 [worker 池](pool.md) 执行，下列步骤对每个 worker 各做一遍。
 
-1. 核对项目目录与未提交改动，按 SKILL.md 的 brief 模板把 brief 写入 `<项目绝对路径>/.farm/<task>-brief.md`。补充负责的文件、已有改动，并告诉 worker：你不是唯一修改代码的代理，保留他人改动并适配它们。brief 和报告一律用绝对路径，会话的工作目录可能已被切换。「边界」的可改范围写成相对项目根的路径、目录或 glob，逐项列出，审计时原样传给 `subagent.py` 的 `--allow`。
+1. 核对项目目录与未提交改动，按 SKILL.md 的 brief 模板把 brief 写入 `<项目绝对路径>/.farm/<task>-brief.md`。补充负责的文件、已有改动，并告诉 worker：你不是唯一修改代码的代理，保留他人改动并适配它们。brief 和报告一律用绝对路径，会话的工作目录可能已被切换。「边界」的可改范围写成相对项目根的路径、目录或 glob，逐项列出，审计时原样传给 `subagent.py` 的 `--allow`。「边界」里再写一句：改文件用 Edit / Write；只能靠 Bash 改的（批量替换、移动、生成文件），把命令和写到的路径列进报告。这样写入才进转录，下文的核对才查得到。
 2. 调用 Agent 工具，不用 `fork`（fork 忽略模型覆盖并继承整段上下文）。池开局的 min(N, k) 个 worker 要在同一条消息里发出多个 Agent 调用，才会并发运行：
 
 ```json
@@ -65,7 +65,7 @@ python3 '<skill>/subagent.py' <agent ID> --root <项目绝对路径> --allow <�
 | 3      | `outside` 列出了越界写入的文件              | 该子任务升级给用户，附 `outside` 列表；越界文件交给用户处理，它们可能正属于另一个 worker   |
 | 1 或 2 | 找不到转录，或核对不完整（stderr 写明原因） | 隔几秒重跑一次（转录可能还没写完）；仍是 1 或 2，该子任务升级给用户，附 stderr，不判为通过 |
 
-`bash_writes` 是 Bash 里疑似写文件的命令。worker 常用 `cp`、`sed -i`、heredoc 脚本改文件，这些写入不进 `written`：清单不为空时逐条看它写到哪里，写到边界外按退出码 3 处理；拿不准的命令，用 `git diff --stat -- <可改项>` 对照这个 worker 负责的文件。逐条看完才算核对完成。
+`bash_writes` 是 Bash 里疑似写文件的命令；`cp`、`sed -i`、heredoc 脚本的写入不进 `written`。清单不为空时逐条看它写到哪里，先对照报告里 worker 列出的 Bash 改动，写到边界外按退出码 3 处理；拿不准的命令，用 `git diff --stat -- <可改项>` 对照这个 worker 负责的文件。逐条看完才算核对完成。
 
 转录是 Claude Code 的内部格式，没有公开承诺，升级后可能变化。脚本把读不全当成失败：读不到工具调用、次数与完成通知不符、worker 又派了子代理，都返回 2。
 
