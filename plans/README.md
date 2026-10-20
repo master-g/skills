@@ -139,3 +139,34 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 | Plan | Title                                                       | Priority | Effort | Depends on | Status                            |
 | ---- | ----------------------------------------------------------- | -------- | ------ | ---------- | --------------------------------- |
 | 014  | 两个技能的默认输出文件名带日期前缀 `YYYY-MM-DD-<标题>.html` | P2       | S      | —          | DONE（已合入，763d3cb + 03890c2） |
+
+---
+
+## farm 借鉴 flopwire（2026-10-20，基线 `a05d72d`）
+
+由 improve 技能的 `plan` 变体应维护者请求生成。起因是评估 [flopwire](https://github.com/flopwire/flopwire)（给 AI 代理用的消息总线与转录检索，Apache-2.0）对 farm 有没有借鉴意义。结论是不把 flopwire 接进 farm，但借三个做法：无头 worker 按进程组收尾（来自它的 `scripts/nightly-codex.py`）、从转录核对 worker 实际改了什么（来自它从 commit 反查会话的思路）、汇报 worker 用量（同一脚本按会话汇总 token）。advisor 在临时目录里复现了 015 的问题（按 `.pid` kill 后 pi 和它的子进程仍在运行），附件脚本跑通 16 项冒烟测试，现行脚本同一套测试 13 项 FAIL；016 的附件脚本对本机一个真实子代理转录读到 39 次工具调用，与完成通知一致。两份计划都在仓库导出的临时副本里按步骤执行过，全部验证命令的预期值已核对。
+
+### Decisions recorded（2026-10-20，维护者）
+
+- 先做进程组收尾（015），再做转录核对（016）。
+- 转录核对只做 Claude Code 原生后端；pi、codex、Codex App 的转录格式不同，以后有需要再加。
+- 转录格式没有公开承诺：读不到工具调用、次数与完成通知不符、worker 又派了子代理，都算核对失败，不判为通过（来自一条旁路提醒，维护者采纳）。
+- 016 的集成门禁 `git status` 核对是 advisor 加的、不依赖后端的兜底，维护者可以删掉这一步而不影响其余部分。
+- Claude Code worker 改文件用 Edit / Write，只能靠 Bash 改的把命令和路径列进报告（2026-10-20 合并后决定，写在 `claude-code-worker.md`「派发」）。依据：执行 015、016 的两个 sonnet 执行者工具调用全是 Bash（4 次、12 次），转录核对的 `written` 两次都为空，越界判断全靠人工看 `bash_writes`。
+
+### Execution order & status
+
+| Plan | Title                                                                    | Priority | Effort | Depends on | Status                                                        |
+| ---- | ------------------------------------------------------------------------ | -------- | ------ | ---------- | ------------------------------------------------------------- |
+| 015  | 无头 worker 能被完整停下：pi 自成进程组，`headless.sh` 加 `stop`         | P1       | S      | —          | DONE（审阅通过，2026-10-20 cherry-pick 到 main 为 `9be6618`） |
+| 016  | Claude Code 下按转录核对每个 worker 实际写了哪些文件，并汇报 worker 用量 | P2       | M      | —          | DONE（审阅通过，2026-10-20 cherry-pick 到 main 为 `6f1a059`） |
+
+### Dependency notes
+
+- 015 改 `headless.sh` 和 `references/cli-worker.md`，016 改 `SKILL.md`、`references/claude-code-worker.md`、`references/pool.md`、`AGENTS.md` 并新建两个脚本，文件不重叠，顺序任意；按维护者的优先级先 015。
+
+### Findings considered and rejected
+
+- **把 flopwire 作为 farm 的依赖**：Claude Code 子代理里的 hook 不投递消息、子代理发出的消息算作父会话（flopwire `notes/message-bus/plan.md`），所以原生后端的 worker 收不到；pi 不在它支持的 harness 里；herdr pane 里的 worker 已能用 `herdr agent prompt` 发修正。farm 的设计也是 worker 之间不通信。
+- **运行中插话（mid-turn steering）**：同上，到不了 farm 的 worker；farm 的修正在 worker 结束后发，够用。
+- **pid 重用防护（记录进程启动时间）**：015 只在 `.exit` 已存在时拒绝 `stop`，剩下的窗口很小，写进 015 的 Maintenance notes，没有实现。
