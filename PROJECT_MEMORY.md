@@ -21,6 +21,7 @@
 - [2026-10-20] 用户清空了「下次运行」积压：guide-me 验收、tufte-reader 冷启动验收与 plates.md 审阅、日期前缀文件名冒烟、reelshort 页重建、show-me-html 单图导出 PNG 与导读元信息行、codebase-to-book 改用 ondine、真实 /farm 与 send-to-obsidian X 链接实测，都不再跟进，用户再提才做
 - [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：仓库历史里从无这套值，10-19 shelf 五页按安装副本重建，后来安装副本也回到旧值（推测是 install 覆盖，未证实）；用户选移植进仓库，值取自 shelf 已提交成品
 - [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
+- [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 
 ## 失败尝试
 
@@ -42,11 +43,10 @@
 - [2026-10-20] main：url-to-kami、x-to-markdown 弃用；send-to-obsidian 直接调 xtomd.com 取 X 链接；farm 的 plans/015、016 审阅后 cherry-pick 合入，worker 改文件用 Edit / Write（claude-code-worker.md「派发」），已 make install SKILL=farm SOURCE=.
   清理：worktree、临时分支和已合并的 exp/garamond-math 已删；TODO.md 并入「下次运行」后删除
   验证：make check 通过（119 个文件）；python3 skills/farm/test_subagent.py ok；plans/015 的 smoke.sh 对安装副本 16 项全过；安装副本与仓库 diff 为空；没跑过真实 /farm，send-to-obsidian 没实际写入 vault
-  推送：c46754b 及之前已推送，并入 TODO.md 的提交未推送
+  推送：全部已推送（并入 TODO.md 的是 54abf27）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-20] tufte-reader 做一本书从头到尾太慢，考虑用子代理分章并行写（来自 TODO.md，10-12）；构建脚本本身不慢：shelf 四本书重建 0.3–1.0 s，how-llms-work 把 1014 个公式还原成 LaTeX 后重编 0.8 s
-  继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）
+- [2026-10-20] 继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）
