@@ -333,14 +333,14 @@ class BuildCliTests(unittest.TestCase):
 
     @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
     def test_render_check_flags_chart_text_below_font_floor(self):
-        """半宽卡图内字号下限 6.5：图滚入视野才画，探针要先强制画出来再量。"""
+        """图内字号下限 9（viewBox 单位）：图滚入视野才画，探针要先强制画出来再量。"""
         # 图放在首屏之外：reveal 不会自己画它
         chart = """<section><div style="height: 3000px"></div><figure class="fig" data-chart="F1"><div class="fig-box">
           <svg id="tiny" viewBox="0 0 400 320" role="img" aria-labelledby="tiny-t tiny-d"><title id="tiny-t">t</title>
           <desc id="tiny-d">d</desc></svg></div></figure></section>"""
         script = """<script>showMeChart.reveal(document.getElementById("tiny"), (s) =>
           showMeChart.txt(s, { x: 20, y: 40, "font-size": SIZE }, "label"));</script>"""
-        for size, flagged in (("5", True), ("6.5", False)):
+        for size, flagged in (("8", True), ("9", False)):
             with self.subTest(size=size):
                 page = self.copy_fixture()
                 html = page.read_text(encoding="utf-8")
@@ -348,7 +348,7 @@ class BuildCliTests(unittest.TestCase):
                     "<!--SHOW-ME:JS-->", "<!--SHOW-ME:JS-->" + script.replace("SIZE", size))
                 page.write_text(html, encoding="utf-8")
                 result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
-                self.assertEqual("字号低于下限：F1（#tiny） 最小 5 < 半宽下限 6.5" in result.stdout, flagged, result.stdout)
+                self.assertEqual("字号低于下限：F1（#tiny） 最小 8 < 下限 9" in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
     @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")

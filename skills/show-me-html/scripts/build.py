@@ -828,18 +828,18 @@ PROBE = """
       over.push('定尺卡溢出：内容 ' + s.scrollHeight + 'px > 卡高 ' + s.clientHeight + 'px，换更少的内容或另一张卡，不缩字号');
   });
   var sw = de.scrollWidth, cw = de.clientWidth;
-  // 字号下限（charts.md「文字」，viewBox 单位）：图只在滚入视野时才画，先强制全画，等入场定时器跑完再量
+  // 字号下限（charts.md「文字」，viewBox 单位，半宽与通栏都是 9）：图只在滚入视野时才画，先强制全画，等入场定时器跑完再量
   document.querySelectorAll('figure[data-chart] svg').forEach(function(s){ if (s._replay) s._replay(); });
   setTimeout(function(){
     var small = [];
     document.querySelectorAll('figure[data-chart]').forEach(function(f){
-      var wide = f.classList.contains('wide'), floor = wide ? 5.5 : 6.5, min = Infinity;
+      var floor = 9, min = Infinity;
       f.querySelectorAll('svg text, svg tspan').forEach(function(t){
         if (t.textContent.trim()) min = Math.min(min, parseFloat(getComputedStyle(t).fontSize));
       });
       if (min < floor) {
         var svg = f.querySelector('svg[id]');
-        small.push(f.dataset.chart + (svg ? '（#' + svg.id + '）' : '') + ' 最小 ' + min + ' < ' + (wide ? '通栏' : '半宽') + '下限 ' + floor);
+        small.push(f.dataset.chart + (svg ? '（#' + svg.id + '）' : '') + ' 最小 ' + min + ' < 下限 ' + floor);
       }
     });
     // 正文文字字号下限（不含图内 SVG 与公式）：页面 <style> 用宽选择器压掉骨架字号时，构建要看得见。
