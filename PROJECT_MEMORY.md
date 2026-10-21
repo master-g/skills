@@ -44,11 +44,12 @@
 
 - [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」「SWE 类评分」「产出物类评分」「标准答案类评分」五张 grilling 票；评委看图方式（GLM-5.3 不能看图、pi 会静默丢图）与审查题的缺陷候选（blame 追溯，未逐条人工核对）分别记在两张评分票的 Answer
   验证：pre-commit 的 prettier 与 make check 通过；CLI 调用写法与评委看图均未实跑
+  停在：已认领「用真实配置把 v1 的三个 CLI 各无头跑通一次」，冒烟脚本 `.scratch/llm-bench/smoke/smoke.sh` 已干跑，等用户亲手执行
   推送：未推送；地图、research 分支都只在本地（仓库公开，用户要求研究分支不推送）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩「用真实配置把 v1 的三个 CLI 各无头跑通一次」（HITL，用户亲手执行命令，含三个评委的看图实测），它解锁「运行隔离、联网与启动方式」，两者之后才轮到「任务定义样张」
+- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩「用真实配置把 v1 的三个 CLI 各无头跑通一次」（已认领；用户跑 `bash .scratch/llm-bench/smoke/smoke.sh all` 后，代理读 `~/.cache/bench-smoke/` 写 Answer 与额度估算），它解锁「运行隔离、联网与启动方式」，两者之后才轮到「任务定义样张」
   继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）
