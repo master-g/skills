@@ -42,7 +42,7 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）先画图并关闭 4 张研究票（文档在本地 `research/bench-*` 分支），再按 wayfinder 解决「harness 复用现成框架还是自建」：自建、本机真实配置、不用 Docker；据此改写隔离票、术语表「选手」，新开 task 票「用真实配置把五个 CLI 各无头跑通一次」
+- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」两张 grilling 票；核实了订阅可跑 `claude -p`、用户是 Max 20x（研究文档写的 5x 有误），记在 CLI 无头调用票的 Answer
   验证：pre-commit 的 prettier 与 make check 通过；研究结论均为读文档与源码所得，CLI 调用写法未实跑
   推送：未推送；地图、research 分支都只在本地（仓库公开，用户要求研究分支不推送）
 
@@ -50,5 +50,5 @@
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿依次是「v1 选手名册与预算」、三张评分票、「用真实配置把五个 CLI 各无头跑通一次」（HITL，用户亲手执行命令）
+- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿依次是三张评分票（SWE、产出物、标准答案）与「用真实配置把 v1 的三个 CLI 各无头跑通一次」（HITL，用户亲手执行命令）
   继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）

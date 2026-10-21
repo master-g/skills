@@ -28,6 +28,7 @@ Label: wayfinder:map
 - [公开 repo 的 SWE 任务候选](issues/03-swe-candidates.md)：候选集中在 emukc（issue 题面现成），抽查 66 对里 31 对可直接作 oracle、28 对要在题面写明接口；emukc 测试依赖不入库的 16 MB 第三方数据
 - [现成 agent 评测框架与评分做法](issues/04-existing-frameworks.md)：Harbor 是唯一文档覆盖本机五个 CLI 的框架（Docker、订阅登录、可读 skills/、可重评）；评分做法：隐藏测试、rubric 拆条 + 跨家族 judge + 换序成对比较、审查按语义匹配算查准查全
 - [harness 复用现成框架还是自建](issues/05-harness-build-or-reuse.md)：自建，`bench/` 里用 Python（uv，可用第三方包）；选手在本机用真实配置直跑，不用 Docker，现成框架只借评分做法
+- [v1 选手名册与预算](issues/07-contender-roster.md)：六个选手——Claude Code + Opus / Fable / Sonnet、Codex + gpt-6-astra、pi + GLM-5.3 / Kimi K3，日常默认档；一轮每个订阅不超过周额度 25%
 
 ## Not yet specified
 
@@ -42,3 +43,4 @@ Label: wayfinder:map
 - farm 技能：不作为测试对象，也不与 bench 集成（用户：「不测 farm」）。
 - 私有 repo 的任务：本仓库公开，用户选择只用公开 repo。
 - 公开排行榜、统计显著性检验：用途是个人选型。
+- v1 名册之外的选手：ollama 本地模型、第三方中转、cursor-agent，以及用户未选的 opencode 与 DeepSeek（见「[v1 选手名册与预算](issues/07-contender-roster.md)」）。

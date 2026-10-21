@@ -19,4 +19,4 @@ bench 的 harness 是直接用现成框架（「[现成 agent 评测框架与评
 - 路线：在 `bench/` 里用 Python 自建 runner（临时任务目录 → 调用真实 CLI → 收转录与用量 → 跑 verifier / judge → 写结果）。不套 inspect_ai 或 promptfoo：在本机直跑模式下它们都只给 subprocess / exec 钩子，五家调用差异照样手写；自建还能让 judge 直接走 CLI 订阅，不必另配 API key。
 - 从研究里借的做法（不借运行时）：SWE 用 F2P / P2P 判据；rubric 拆条、每条单独交给 judge；结果记录 CLI 版本、模型、token、花费与各阶段耗时；能对已有运行只重跑评分。
 - 「七个场景里哪些框架装不下」随自建路线失效，不再需要回答。
-- 新开「[用真实配置把五个 CLI 各无头跑通一次](12-cli-smoke-run.md)」核实研究里未实跑的命令；「[运行隔离、联网与启动方式](06-isolation-network-launch.md)」按本结论改写（去掉配置基线与容器，加日常状态污染）。
+- 新开「[用真实配置把 v1 的三个 CLI 各无头跑通一次](12-cli-smoke-run.md)」核实研究里未实跑的命令；「[运行隔离、联网与启动方式](06-isolation-network-launch.md)」按本结论改写（去掉配置基线与容器，加日常状态污染）。
