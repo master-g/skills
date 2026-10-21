@@ -1005,12 +1005,13 @@
           const most = Math.max(...STORES.map((r) => r[2]));
           reveal($("storefan"), (s) => {
             // 扇面：圆心在下方正中，辐条张开近 200°，最早的店在左
-            const CX = 200,
+            // 左端「人民广场780」按 10 号字约 58 宽，圆心右移、半径收一点，两端标签才不出框
+            const CX = 208,
               CY = 226,
               A0 = 177,
               A1 = 363,
               R0 = 62,
-              R1 = 150,
+              R1 = 140,
               DOT = 8,
               RING_AT = 369,
               RING_ANCHOR = "start";
@@ -1057,7 +1058,8 @@
               const [x, y] = P(R1, RING_AT);
               txt(
                 s,
-                tick({ x, y: y + 2.2, "text-anchor": RING_ANCHOR }),
+                // 「2026」与「今天」两道弧只差约 20，9 号字横着放不下，今天下移一行
+                tick({ x, y: y + 12, "text-anchor": RING_ANCHOR }),
                 "今天"
               );
             }
@@ -1107,7 +1109,13 @@
               });
               tip(big, `${name} · ${ym(m)}开业 · 日均 ${cups} 杯`);
               // 店名 + 杯数写在今天弧外
-              const [lx, ly] = P(R1 + 7, a);
+              // 正上方三枚店名按中点对齐、互相挨着：隔一个抬高半行
+              const [lx, ly] = P(
+                R1 +
+                  7 +
+                  (Math.abs(Math.cos(a * D2R)) <= 0.3 ? (i % 2) * 16 : 0),
+                a
+              );
               const t = txt(
                 s,
                 label({
@@ -1327,7 +1335,7 @@
             peaks.forEach((p) => {
               txt(
                 s,
-                value({ x: x(p.d), y: y(p.hi) - 14, "text-anchor": "middle" }),
+                value({ x: x(p.d), y: y(p.hi) - 19, "text-anchor": "middle" }),
                 `${p.hi}°`
               );
               txt(
@@ -1551,7 +1559,7 @@
                 c = Math.cos(la * D2R),
                 sn = Math.sin(la * D2R),
                 anchor = c > 0.3 ? "start" : c < -0.3 ? "end" : "middle",
-                dy = sn < -0.7 ? -9 : sn > 0.7 ? 6 : 0;
+                dy = sn < -0.7 ? -13 : sn > 0.7 ? 6 : 0;
               el(s, "line", {
                 x1: hx,
                 y1: hy,
@@ -1583,7 +1591,11 @@
               );
               txt(
                 s,
-                value({ x: tx, y: ty + dy + 9, "text-anchor": anchor }),
+                value({
+                  x: tx,
+                  y: ty + dy + G.type.label * 1.25,
+                  "text-anchor": anchor,
+                }),
                 n
               );
             });
@@ -1920,14 +1932,14 @@
                 s,
                 label({
                   x: 336,
-                  y: ey - 1,
+                  y: ey - 3,
                   fill: w ? G.ink.data : G.ink.strong,
                 }),
                 `${name}仓`
               );
               txt(
                 s,
-                tick({ x: 336, y: ey + 8 }),
+                tick({ x: 336, y: ey + 10 }),
                 `${(total / 1000).toFixed(1)}k 单`
               );
             });
@@ -2480,7 +2492,7 @@
                   x: x1,
                   y: FOOT + 8,
                   "text-anchor": "end",
-                  "font-size": 6.5,
+                  "font-size": 9,
                   transform: `rotate(-72 ${x1.toFixed(1)} ${FOOT + 8})`,
                 }),
                 dish
@@ -2501,7 +2513,7 @@
                 s,
                 label({
                   x: sx(k),
-                  y: TOP - rad(count[0]) - 16,
+                  y: TOP - rad(count[0]) - 19,
                   "text-anchor": "middle",
                   fill: G.ink.strong,
                 }),
@@ -2615,7 +2627,7 @@
               );
               txt(
                 s,
-                value({ x: x(i), y: bot + 24, "text-anchor": "middle" }),
+                value({ x: x(i), y: bot + 27, "text-anchor": "middle" }),
                 fmt(n)
               );
             });
@@ -3057,7 +3069,7 @@
               s,
               tick({
                 x: (x(c0) + x(c1)) / 2,
-                y: by + 20,
+                y: by + 24,
                 "text-anchor": "middle",
               }),
               `${md(days[best[0]].t)}—${md(days[best[1] - 1].t)}`
@@ -3146,7 +3158,7 @@
             }
             txt(
               s,
-              tick({ x: X1, y: floor + 22, "text-anchor": "end" }),
+              tick({ x: X1, y: floor + 26, "text-anchor": "end" }),
               "送达时长 · 分钟"
             );
             AREAS.forEach(([name], r) => {
@@ -3290,7 +3302,7 @@
                 s,
                 label({
                   x: x(a),
-                  y: TOP - 26,
+                  y: TOP - 35,
                   "text-anchor": "middle",
                   fill: G.ink.strong,
                 }),
@@ -3298,13 +3310,13 @@
               );
               txt(
                 s,
-                tick({ x: x(a), y: TOP - 17, "text-anchor": "middle" }),
+                tick({ x: x(a), y: TOP - 21, "text-anchor": "middle" }),
                 unit
               );
               const [lo, hi] = range[a];
               txt(
                 s,
-                tick({ x: x(a), y: TOP - 6, "text-anchor": "middle" }),
+                tick({ x: x(a), y: TOP - 8, "text-anchor": "middle" }),
                 up ? hi : lo
               );
               txt(
