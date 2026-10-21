@@ -1126,8 +1126,8 @@
               "stroke-width": G.line.base,
               "stroke-dasharray": "4 3",
             });
-            txt(s, tick({ x: X1 + 16, y: y(norm) - 2 }), "日均");
-            txt(s, value({ x: X1 + 16, y: y(norm) + 7 }), norm);
+            txt(s, tick({ x: X1 + 16, y: y(norm) - 4 }), "日均");
+            txt(s, value({ x: X1 + 16, y: y(norm) + 9 }), norm);
             el(s, "path", {
               d:
                 "M" +
@@ -1197,7 +1197,7 @@
             back = days.filter((c) => c.i > SHUT[1] && c.off).slice(0, 2);
           reveal($("wetland"), (s) => {
             const X0 = 42,
-              X1 = 340,
+              X1 = 324, // 右侧留出 9 号字的「周末均 11.3」
               Y0 = 200,
               TOP = 30,
               MAX = 12;
@@ -1236,9 +1236,9 @@
                 "stroke-width": G.line.grid,
               });
               const hit = el(s, "rect", {
-                x: x(c.i) - 3.6,
+                x: x(c.i) - 3,
                 y: TOP,
-                width: 7.2,
+                width: 6,
                 height: Y0 - TOP,
                 fill: "none",
                 "pointer-events": "all",
@@ -1304,12 +1304,12 @@
             const gap = (x(SHUT[0]) + x(SHUT[1])) / 2;
             txt(
               s,
-              label({ x: gap, y: Y0 - 30, "text-anchor": "middle" }),
+              label({ x: gap, y: Y0 - 34, "text-anchor": "middle" }),
               "台风"
             );
             txt(
               s,
-              label({ x: gap, y: Y0 - 20, "text-anchor": "middle" }),
+              label({ x: gap, y: Y0 - 21, "text-anchor": "middle" }),
               "闭园"
             );
             // 闭园前周末均值导轨
@@ -1322,10 +1322,10 @@
               "stroke-width": G.line.base,
               "stroke-dasharray": "4 3",
             });
-            txt(s, tick({ x: X1 + 8, y: y(norm) - 2 }), "闭园前");
+            txt(s, tick({ x: X1 + 8, y: y(norm) - 4 }), "闭园前");
             txt(
               s,
-              tick({ x: X1 + 8, y: y(norm) + 7 }),
+              tick({ x: X1 + 8, y: y(norm) + 9 }),
               `周末均 ${norm.toFixed(1)}`
             );
             back.forEach((c, k) =>
@@ -1434,14 +1434,10 @@
               });
               const anchor = right ? "start" : "end",
                 tx = hx + (right ? 3 : -3);
+              txt(s, label({ x: tx, y: ly1 - 3, "text-anchor": anchor }), name);
               txt(
                 s,
-                label({ x: tx, y: ly1 - 1.5, "text-anchor": anchor }),
-                name
-              );
-              txt(
-                s,
-                value({ x: tx, y: ly1 + 8.5, "text-anchor": anchor }),
+                value({ x: tx, y: ly1 + 10, "text-anchor": anchor }),
                 `${pct}%`
               );
               k0 += pct;
@@ -2966,7 +2962,7 @@
                 tx = i < 3 ? x(i) - 2 : x(i);
               txt(
                 s,
-                tick({ x: tx, y: yt - 32, "text-anchor": anchor }),
+                tick({ x: tx, y: yt - 35, "text-anchor": anchor }),
                 `第 ${c.w} 周 ${t}`
               );
               txt(
@@ -2997,10 +2993,10 @@
               stroke: G.ink.quiet,
               "stroke-width": G.line.grid,
             });
-            txt(s, tick({ x: x(FEST - 1) + 4, y: floor + 2 }), "春节当周");
+            txt(s, tick({ x: x(FEST - 1) + 4, y: floor + 3 }), "春节当周");
             txt(
               s,
-              value({ x: x(FEST - 1) + 4, y: floor + 12 }),
+              value({ x: x(FEST - 1) + 4, y: floor + 16 }),
               `${fmt(f.total)} 万 · 平时的 ${Math.round((f.total / usual) * 100)}%`
             );
             weeks.forEach((c, i) => {
