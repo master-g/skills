@@ -1213,7 +1213,7 @@
               {
                 x: 200,
                 y: 312,
-                "font-size": 7,
+                "font-size": 9,
                 "font-weight": 600,
                 fill: I30,
                 "text-anchor": "middle",
@@ -1492,7 +1492,7 @@
                 {
                   x: X0 - 6,
                   y: y + 3,
-                  "font-size": 8,
+                  "font-size": 9,
                   fill: I30,
                   "text-anchor": "end",
                 },
@@ -1549,7 +1549,7 @@
                 {
                   x: X0 - 6,
                   y: fy(v) + 3,
-                  "font-size": 8,
+                  "font-size": 9,
                   fill: MUTED,
                   "text-anchor": "end",
                 },
@@ -1585,7 +1585,7 @@
                 {
                   x: x(i),
                   y: BOT + 14,
-                  "font-size": 8,
+                  "font-size": 9,
                   fill: MUTED,
                   "text-anchor": "middle",
                 },
@@ -1597,7 +1597,7 @@
               {
                 x: X0,
                 y: TOP + RH + 14,
-                "font-size": 7,
+                "font-size": 9,
                 "font-weight": 600,
                 fill: I30,
                 "letter-spacing": ".12em",
@@ -1609,7 +1609,7 @@
               {
                 x: X0,
                 y: BOT - FH - 8,
-                "font-size": 7,
+                "font-size": 9,
                 "font-weight": 600,
                 fill: I30,
                 "letter-spacing": ".12em",
@@ -1656,7 +1656,7 @@
                 g,
                 {
                   y: -Math.sqrt(d[3]) * 0.7 - 5,
-                  "font-size": 8.5,
+                  "font-size": 9,
                   fill: MUTED,
                   "text-anchor": "middle",
                 },
@@ -1694,7 +1694,7 @@
                     {
                       x: 360,
                       y: 284,
-                      "font-size": 8,
+                      "font-size": 9,
                       fill: I30,
                       "text-anchor": "end",
                     },
@@ -1705,7 +1705,7 @@
                     {
                       x: 34,
                       y: 52,
-                      "font-size": 8,
+                      "font-size": 9,
                       fill: I30,
                       "text-anchor": "end",
                     },
@@ -1781,7 +1781,7 @@
               {
                 x: 200,
                 y: 306,
-                "font-size": 8,
+                "font-size": 9,
                 "font-weight": 600,
                 fill: I30,
                 "text-anchor": "middle",
@@ -1856,7 +1856,7 @@
                 {
                   x: pos ? cx - 10 : cx + 10,
                   y: y + 3.5,
-                  "font-size": 8.5,
+                  "font-size": 9,
                   "font-weight": 600,
                   fill: I70,
                   "text-anchor": pos ? "end" : "start",
@@ -1885,7 +1885,7 @@
               {
                 x: 200,
                 y: 292,
-                "font-size": 7,
+                "font-size": 9,
                 fill: I45,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
@@ -2103,7 +2103,7 @@
                 {
                   x: X0 - 4,
                   y: y + 3,
-                  "font-size": 7.5,
+                  "font-size": 9,
                   fill: I45,
                   "text-anchor": "end",
                 },
@@ -2133,7 +2133,7 @@
                   {
                     x: x + bw * 0.35,
                     y: base + 12,
-                    "font-size": 7.5,
+                    "font-size": 9,
                     fill: I45,
                     "text-anchor": "middle",
                   },
@@ -2145,7 +2145,7 @@
               {
                 x: 200,
                 y: 250,
-                "font-size": 7,
+                "font-size": 9,
                 fill: I45,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
@@ -2169,10 +2169,11 @@
             ["Other", 6, 7],
           ];
           reveal($("custompie"), (s) => {
-            const cx = 186,
+            // 9 号字的「Chat 12% · 11m」写在左侧外圈，圆心右移、半径收到 100 才不出框
+            const cx = 190,
               cy = 166,
-              R = 108,
-              r0 = 26,
+              R = 100,
+              r0 = 24,
               SCALE = 45,
               rOf = (m) => r0 + ((R - r0) * m) / SCALE;
             const byShare = [...D].sort((a, b) => b[1] - a[1]),
@@ -2189,7 +2190,7 @@
               });
               txt(
                 s,
-                { x: cx + 4, y: cy - rOf(m) - 3, "font-size": 7, fill: I30 },
+                { x: cx + 4, y: cy - rOf(m) - 3, "font-size": 9, fill: I30 },
                 m + "m"
               );
             });
@@ -2216,15 +2217,15 @@
                 {
                   x: lx,
                   y: ly + 3,
-                  "font-size": 8.5,
+                  "font-size": 9,
                   "font-weight": 600,
                   fill: I70,
                   "text-anchor":
-                    Math.abs(c) < 0.25 ? "middle" : c > 0 ? "start" : "end",
+                    Math.abs(c) < 0.1 ? "middle" : c > 0 ? "start" : "end",
                   class: "fade",
                   style: `animation-delay:${0.5 + i * 0.13}s`,
                 },
-                `${n}  ${share}% · ${mins}m`
+                `${n} ${share}% · ${mins}m`
               );
             });
           });
@@ -2304,7 +2305,7 @@
                 {
                   x: x(h),
                   y: y0(6) + 24,
-                  "font-size": 8.5,
+                  "font-size": 9,
                   fill: MUTED,
                   "text-anchor": "middle",
                 },
@@ -2357,7 +2358,7 @@
                 {
                   x: x(v),
                   y: 296,
-                  "font-size": 8.5,
+                  "font-size": 9,
                   fill: MUTED,
                   "text-anchor": "middle",
                 },
@@ -2396,7 +2397,7 @@
               {
                 x: X1,
                 y: 312,
-                "font-size": 7,
+                "font-size": 9,
                 "font-weight": 600,
                 fill: I30,
                 "text-anchor": "end",
@@ -2643,7 +2644,7 @@
                 {
                   x: X0 + ((i * 30) / (N - 1)) * (X1 - X0),
                   y: 250,
-                  "font-size": 8,
+                  "font-size": 9,
                   fill: I45,
                 },
                 m
@@ -3135,7 +3136,7 @@
                   {
                     x: cx(t),
                     y: cy(r) + 3.5,
-                    "font-size": name.length > 3 ? 8 : 9.5,
+                    "font-size": name.length > 3 ? 9 : 9.5,
                     "font-weight": star ? 600 : 400,
                     fill: star ? "var(--color-card)" : I70,
                     "text-anchor": "middle",
@@ -3289,8 +3290,8 @@
                 "text-anchor": side < 0 ? "end" : "start",
               };
               const cy = top + (n * k) / 2;
-              txt(inner, label({ ...at, y: cy - 1 }), name);
-              txt(inner, tick({ ...at, y: cy + 8 }), sub);
+              txt(inner, label({ ...at, y: cy - 3 }), name);
+              txt(inner, tick({ ...at, y: cy + 10 }), sub);
               return g;
             };
             const sNodes = SRC.map((name, i) =>
