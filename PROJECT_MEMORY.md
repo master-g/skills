@@ -42,12 +42,12 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票、「harness 复用现成框架还是自建」等五张 grilling 票，以及 task 票「用真实配置把 v1 的三个 CLI 各无头跑通一次」：用户亲手跑 `.scratch/llm-bench/smoke/smoke.sh all`，16 次调用全过，结果与额度换算写在该票
-  验证：pre-commit 的 prettier 与 make check 通过；冒烟原始输出只在本机 `~/.cache/bench-smoke/`；codex 沙箱里起无头 Chrome 仍未验证
+- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）又关闭 grilling 票「运行隔离、联网与启动方式」（任务目录、关跨会话记忆、三家不设沙箱、不拦网审越界、四线并发等，细节在该票）；此前已关 4 张研究票、5 张 grilling 票与冒烟 task 票
+  验证：用户确认后跑 `codex sandbox -P :workspace --log-denials`（不调模型），日常 workspace-write 沙箱里渲染检查失败、网络被拒；pre-commit 的 prettier 与 make check 通过
   推送：未推送（用户 10-21 定：地图走完再定推送策略）；research 分支只在本地
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿是「运行隔离、联网与启动方式」（grilling，冒烟实测已记进它的 Question），之后是「任务定义样张」
+- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩 prototype 票「任务定义样张」，结票后迷雾里的首批任务、运行记录等再毕业成票
