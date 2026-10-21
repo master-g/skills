@@ -22,7 +22,7 @@
 - [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：仓库历史里从无这套值，10-19 shelf 五页按安装副本重建，后来安装副本也回到旧值（推测是 install 覆盖，未证实）；用户选移植进仓库，值取自 shelf 已提交成品
 - [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
 - [2026-10-21] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core：两技能页面只见 bash/sql/diff/text 和零星 py/ts/rs/go，无 JSX/TSX；它最快（32 KB 1.5 ms，Kirari 4.0、Prism 2.2）。页面常出现 JSX/TSX 或 C#/Kotlin/Swift/Ruby 时换 Kirari（TSX 分词好、接法相同），先等它稳定（10-18 才发布）；Shiki 要构建期 Node 或每页 72 KB+，排除（用户认同）
-- [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行
+- [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；main 上的 bench 提交维持不推送，地图走完再定推送策略（10-21 确认，期间 main 整体推不出去）；推进地图的代理不替用户启动选手运行
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 
 ## 失败尝试
@@ -44,7 +44,7 @@
 
 - [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」「SWE 类评分」「产出物类评分」「标准答案类评分」五张 grilling 票；评委看图方式（GLM-5.3 不能看图、pi 会静默丢图）与审查题的缺陷候选（blame 追溯，未逐条人工核对）分别记在两张评分票的 Answer
   验证：pre-commit 的 prettier 与 make check 通过；CLI 调用写法与评委看图均未实跑
-  停在：已认领「用真实配置把 v1 的三个 CLI 各无头跑通一次」，冒烟脚本 `.scratch/llm-bench/smoke/smoke.sh` 已干跑，等用户亲手执行
+  停在：已认领「用真实配置把 v1 的三个 CLI 各无头跑通一次」，冒烟脚本 `.scratch/llm-bench/smoke/smoke.sh` 已干跑，等用户亲手执行；用户 10-21 删掉了 ad-astra 待办（「你再提才做」）
   推送：未推送；地图、research 分支都只在本地（仓库公开，用户要求研究分支不推送）
 
 ## 下次运行
@@ -52,4 +52,3 @@
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩「用真实配置把 v1 的三个 CLI 各无头跑通一次」（已认领；用户跑 `bash .scratch/llm-bench/smoke/smoke.sh all` 后，代理读 `~/.cache/bench-smoke/` 写 Answer 与额度估算），它解锁「运行隔离、联网与启动方式」，两者之后才轮到「任务定义样张」
-  继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）
