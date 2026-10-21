@@ -1127,7 +1127,11 @@
               "stroke-dasharray": "4 3",
             });
             txt(s, tick({ x: X1 + 16, y: y(norm) - 4 }), "日均");
-            txt(s, value({ x: X1 + 16, y: y(norm) + 9 }), norm);
+            txt(
+              s,
+              value({ x: X1 + 16, y: y(norm) - 4 + G.type.label * 1.25 }),
+              norm
+            );
             el(s, "path", {
               d:
                 "M" +
@@ -1309,7 +1313,11 @@
             );
             txt(
               s,
-              label({ x: gap, y: Y0 - 21, "text-anchor": "middle" }),
+              label({
+                x: gap,
+                y: Y0 - 34 + G.type.label * 1.25,
+                "text-anchor": "middle",
+              }),
               "闭园"
             );
             // 闭园前周末均值导轨
@@ -1325,7 +1333,7 @@
             txt(s, tick({ x: X1 + 8, y: y(norm) - 4 }), "闭园前");
             txt(
               s,
-              tick({ x: X1 + 8, y: y(norm) + 9 }),
+              tick({ x: X1 + 8, y: y(norm) - 4 + G.type.tick * 1.25 }),
               `周末均 ${norm.toFixed(1)}`
             );
             back.forEach((c, k) =>
@@ -1437,7 +1445,11 @@
               txt(s, label({ x: tx, y: ly1 - 3, "text-anchor": anchor }), name);
               txt(
                 s,
-                value({ x: tx, y: ly1 + 10, "text-anchor": anchor }),
+                value({
+                  x: tx,
+                  y: ly1 - 3 + G.type.label * 1.25,
+                  "text-anchor": anchor,
+                }),
                 `${pct}%`
               );
               k0 += pct;
@@ -2962,7 +2974,11 @@
                 tx = i < 3 ? x(i) - 2 : x(i);
               txt(
                 s,
-                tick({ x: tx, y: yt - 35, "text-anchor": anchor }),
+                tick({
+                  x: tx,
+                  y: yt - 22 - G.type.label * 1.25,
+                  "text-anchor": anchor,
+                }),
                 `第 ${c.w} 周 ${t}`
               );
               txt(
@@ -2996,7 +3012,7 @@
             txt(s, tick({ x: x(FEST - 1) + 4, y: floor + 3 }), "春节当周");
             txt(
               s,
-              value({ x: x(FEST - 1) + 4, y: floor + 16 }),
+              value({ x: x(FEST - 1) + 4, y: floor + 3 + G.type.label * 1.25 }),
               `${fmt(f.total)} 万 · 平时的 ${Math.round((f.total / usual) * 100)}%`
             );
             weeks.forEach((c, i) => {

@@ -3291,7 +3291,7 @@
               };
               const cy = top + (n * k) / 2;
               txt(inner, label({ ...at, y: cy - 3 }), name);
-              txt(inner, tick({ ...at, y: cy + 10 }), sub);
+              txt(inner, tick({ ...at, y: cy - 3 + G.type.label * 1.25 }), sub);
               return g;
             };
             const sNodes = SRC.map((name, i) =>

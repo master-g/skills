@@ -891,7 +891,15 @@
                   bg.setAttribute("height", b.height + 2);
                 } else {
                   txt(g, label({ ...at, y: y - 1, style: halo }), name);
-                  txt(g, tick({ ...at, y: y + 12, style: halo }), n);
+                  txt(
+                    g,
+                    tick({
+                      ...at,
+                      y: y - 1 + G.type.label * 1.25,
+                      style: halo,
+                    }),
+                    n
+                  );
                 }
                 return node;
               })

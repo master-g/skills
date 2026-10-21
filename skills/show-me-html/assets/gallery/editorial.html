@@ -1335,7 +1335,11 @@
             peaks.forEach((p) => {
               txt(
                 s,
-                value({ x: x(p.d), y: y(p.hi) - 19, "text-anchor": "middle" }),
+                value({
+                  x: x(p.d),
+                  y: y(p.hi) - 6 - G.type.label * 1.25,
+                  "text-anchor": "middle",
+                }),
                 `${p.hi}°`
               );
               txt(
@@ -1939,7 +1943,7 @@
               );
               txt(
                 s,
-                tick({ x: 336, y: ey + 10 }),
+                tick({ x: 336, y: ey - 3 + G.type.label * 1.25 }),
                 `${(total / 1000).toFixed(1)}k 单`
               );
             });
@@ -2513,7 +2517,7 @@
                 s,
                 label({
                   x: sx(k),
-                  y: TOP - rad(count[0]) - 19,
+                  y: TOP - rad(count[0]) - 6 - G.type.label * 1.25,
                   "text-anchor": "middle",
                   fill: G.ink.strong,
                 }),
@@ -2627,7 +2631,11 @@
               );
               txt(
                 s,
-                value({ x: x(i), y: bot + 27, "text-anchor": "middle" }),
+                value({
+                  x: x(i),
+                  y: bot + 14 + G.type.label * 1.25,
+                  "text-anchor": "middle",
+                }),
                 fmt(n)
               );
             });
@@ -3069,7 +3077,7 @@
               s,
               tick({
                 x: (x(c0) + x(c1)) / 2,
-                y: by + 24,
+                y: by + 11 + G.type.label * 1.25,
                 "text-anchor": "middle",
               }),
               `${md(days[best[0]].t)}—${md(days[best[1] - 1].t)}`
@@ -3158,7 +3166,11 @@
             }
             txt(
               s,
-              tick({ x: X1, y: floor + 26, "text-anchor": "end" }),
+              tick({
+                x: X1,
+                y: floor + 12 + G.type.tick * 1.25,
+                "text-anchor": "end",
+              }),
               "送达时长 · 分钟"
             );
             AREAS.forEach(([name], r) => {
@@ -3302,7 +3314,7 @@
                 s,
                 label({
                   x: x(a),
-                  y: TOP - 35,
+                  y: TOP - 8 - G.type.tick * 1.25 - G.type.label * 1.25,
                   "text-anchor": "middle",
                   fill: G.ink.strong,
                 }),
@@ -3310,7 +3322,11 @@
               );
               txt(
                 s,
-                tick({ x: x(a), y: TOP - 21, "text-anchor": "middle" }),
+                tick({
+                  x: x(a),
+                  y: TOP - 8 - G.type.tick * 1.25,
+                  "text-anchor": "middle",
+                }),
                 unit
               );
               const [lo, hi] = range[a];
