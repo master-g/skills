@@ -3084,7 +3084,7 @@
             );
             txt(
               s,
-              tick({ x: x(51) + P / 2, y: by + 11, "text-anchor": "end" }),
+              tick({ x: edge(0), y: by + 11, "text-anchor": "start" }),
               `全年 ${days.filter((d) => d.km).length} 天 · ${fmt(days.reduce((a, d) => a + d.km, 0))} 公里`
             );
           });
