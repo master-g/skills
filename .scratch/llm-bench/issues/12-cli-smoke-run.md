@@ -1,7 +1,7 @@
 # 用真实配置把 v1 的三个 CLI 各无头跑通一次
 
 Type: task
-Status: claimed
+Status: resolved
 Blocked by: 05, 07
 Map: [地图](../map.md)
 
@@ -18,6 +18,20 @@ Map: [地图](../map.md)
 - 额度：跑前跑后各记一次各订阅的周额度快照，连同每次运行的 token 与花费字段；再结合本地历史转录换算「每 1% 周额度约多少 token」，估一轮在每个订阅 25% 的上限内能放几道题（含三个评委的评分），指出瓶颈订阅（2026-10-21 按用户要求加入，「v1 选手名册与预算」与「产出物类评分」的额度约束都还没有用量数字支撑）。
 
 HITL：用户全局规则要求调用 claude / codex 前逐次确认，所以由代理写好逐条命令清单，用户亲手执行或逐条确认后执行。结果写进本票的 Answer。
+
+## Answer
+
+2026-10-21 18:55–19:00 用户在终端亲手执行 `bash .scratch/llm-bench/smoke/smoke.sh all`，16 次调用全部退出码 0，单次 7–46 秒；输出在本机 `~/.cache/bench-smoke/`，不入库。版本：Claude Code 2.1.306、codex-cli 0.163.0、pi 1.3.0。
+
+- 无头命令：脚本里的写法都能无人值守跑完并改文件（claude `-p --permission-mode bypassPermissions --output-format stream-json --verbose`；codex `exec -C <目录> -m gpt-6-astra --json -o`，沿用配置里的 workspace-write 沙箱与 never 审批；pi `--mode json --model <provider/id>`，没有审批）。六个选手都只改了 notes.txt。
+- 实际档位：Opus 5.5 xhigh、Fable 5.1 high、Sonnet 5.5 medium（Claude 转录的 `perTurnEffort`；「[v1 选手名册与预算](07-contender-roster.md)」推断 Fable 走 medium，实为 high）；gpt-6-astra medium（rollout 的 `turn_context`）；GLM-5.3 与 Kimi K3 都是 thinking max，pi 里 Kimi K3 的 id 是 `kimi-coding/k3`。Claude 的 init 消息不带档位，runner 要从转录读。
+- 显式调用技能：claude `/show-me-html …`、codex `$show-me-html …`、pi `/skill:show-me-html …` 都生效，六个选手都答出 SKILL.md 的第一个二级标题。
+- 构建：gpt-6-astra 用 show-me-html 做出 page.html，自己跑 `build.py --no-render` 通过；脚本事后在沙箱外跑 `--check-only` 也通过，含 500 / 1024 / 1280 渲染检查。它主动跳过了渲染，所以 codex 沙箱里能否起无头 Chrome 仍未验证。
+- 评委看图：Fable（Read 工具读 PNG）、gpt-6-astra（`-i`）、Kimi K3（`@shot.png`）都答出「7429、红色」，Kimi 的运行里没有 image omitted。
+- 用量字段：claude 结果有 `total_cost_usd` 与分模型 `modelUsage`，每次运行还输出一条 `rate_limit_event`，带 5 小时与 7 天窗口的小数用量；codex 的 `turn.completed.usage` 只有 token，rollout 的 `token_count.rate_limits` 带周窗口 `used_percent`；pi 每条消息有 token 与按价目表折算的 cost。Kimi 与智谱的额度只能从各自接口读，都是整数百分比。
+- 单次开销：真实配置让每次调用先带 3–9 万 token 的固定上下文（Claude 加载 164 个技能、10 个插件、2 个 MCP 服务器）。七次 Claude 调用按 API 价折算共约 2.4 美元（Fable 每次约 0.58、Opus 0.22、Sonnet 0.11），7 天窗口从 0.11 到 0.12；codex 构建那次让周用量从 27% 到 28%；智谱 5 小时窗从 0 到 1%，Kimi 周用量不变。
+- 日常状态（运行期间 3321 个文件有改动，其余来自同时在跑的其他会话）：每次会话的转录；codex 每在一个新目录运行就往 `~/.codex/config.toml` 追加一条 `[projects."<任务目录>"]` 信任记录（这次 3 条，配置文件 hash 因此改变），启动时还刷新 `~/.codex/.tmp/marketplaces`（约 3100 个文件）；pi 的 hermes 记忆扩展把会话记进 `sessions.db`，context-mode 扩展写了 86 个会话文件（USER.md 未改）；Claude 每次触发 6 个 SessionStart hook，其中一个往会话注入「PONYTAIL MODE ACTIVE」。codex memories 没有变化，任务目录里没有 pi-lens 残留。
+- 额度插曲：Claude 的周用量在同一窗口（10-16 12:00 起）里，从 14:03 缓存的 60% 变成 18:54 刷新后的 12%，Fable 单独额度从 6% 归零，原因未知（推测官方重置或调整）。下面 Comments 里 Max 的「每 1% 约 9.9M」以 60% 为分母，已不可靠；Kimi、智谱、Codex 的换算不受影响，Kimi 仍是瓶颈。
 
 ## Comments
 

@@ -42,13 +42,12 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」「SWE 类评分」「产出物类评分」「标准答案类评分」五张 grilling 票；评委看图方式（GLM-5.3 不能看图、pi 会静默丢图）与审查题的缺陷候选（blame 追溯，未逐条人工核对）分别记在两张评分票的 Answer
-  验证：pre-commit 的 prettier 与 make check 通过；CLI 调用写法与评委看图均未实跑
-  停在：已认领「用真实配置把 v1 的三个 CLI 各无头跑通一次」，冒烟脚本 `.scratch/llm-bench/smoke/smoke.sh` 已干跑，等用户亲手执行；用户 10-21 删掉了 ad-astra 待办（「你再提才做」）
-  推送：未推送；地图、research 分支都只在本地（仓库公开，用户要求研究分支不推送）
+- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票、「harness 复用现成框架还是自建」等五张 grilling 票，以及 task 票「用真实配置把 v1 的三个 CLI 各无头跑通一次」：用户亲手跑 `.scratch/llm-bench/smoke/smoke.sh all`，16 次调用全过，结果与额度换算写在该票
+  验证：pre-commit 的 prettier 与 make check 通过；冒烟原始输出只在本机 `~/.cache/bench-smoke/`；codex 沙箱里起无头 Chrome 仍未验证
+  推送：未推送（用户 10-21 定：地图走完再定推送策略）；research 分支只在本地
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩「用真实配置把 v1 的三个 CLI 各无头跑通一次」（已认领；用户跑 `bash .scratch/llm-bench/smoke/smoke.sh all` 后，代理读 `~/.cache/bench-smoke/` 写 Answer 与额度估算），它解锁「运行隔离、联网与启动方式」，两者之后才轮到「任务定义样张」
+- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿是「运行隔离、联网与启动方式」（grilling，冒烟实测已记进它的 Question），之后是「任务定义样张」

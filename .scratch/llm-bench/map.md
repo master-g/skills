@@ -32,11 +32,12 @@ Label: wayfinder:map
 - [SWE 类评分](issues/08-grading-swe.md)：F2P + P2P 全过才算已解决、另列 F2P 比例；质量分与耗时花费单列；收 A、B 级（题面写明签名），不收 D 级；P2P 限定到相关 crate / 测试文件
 - [产出物类评分](issues/09-grading-artifacts.md)：逐份评，rubric 拆成是非题；Fable 5.1、gpt-6-astra、Kimi K3 三家族评审团多数票，用户盲抽查校准；技能检查单列交付合格率；事实闭卷对照资料包；评分计入 25% 额度
 - [标准答案类评分](issues/10-grading-reference.md)：审查用真实缺陷、截取引入提交出题，主分是已知缺陷在前 5 条里的命中率，误报单列；问答拆成要点与「不该出现的说法」是非题，引用文件行号并机械核对
+- [用真实配置把 v1 的三个 CLI 各无头跑通一次](issues/12-cli-smoke-run.md)：16 次无头调用全过，三家显式调用技能、三个评委看图都生效；实际档位 Opus xhigh、Fable high、Sonnet 与 astra medium、pi 两个 max；codex 会往 config.toml 加信任记录，pi 记忆扩展会记下 bench 会话；codex 沙箱里起无头 Chrome 仍未验证
 
 ## Not yet specified
 
 - 各场景的首批任务：SWE 任务从候选里挑哪几个、各几道；阿波罗读本的 brief 与资料包；show-me-html 用什么资料包；中文写作出什么题、配什么资料包；代码审查从约 10 条真实缺陷候选里挑哪几条、各截取哪些文件（候选见「[标准答案类评分](issues/10-grading-reference.md)」）；代码库问答出哪些题。SWE 挑题时尽量选修复日期晚于各模型训练截止的，减少「背过答案」。
-- 运行记录：每次运行记哪些字段（模型 ID、CLI 版本、日期、耗时、token / 花费）、存哪、产物是否提交、怎么跨时间对比；配置指纹（CLI 版本、扩展清单、配置文件 hash），让跨时间对比能发现配置漂移；结果查看页长什么样。
+- 运行记录：每次运行记哪些字段（模型 ID、CLI 版本、日期、耗时、token / 花费）、存哪、产物是否提交、怎么跨时间对比；配置指纹（CLI 版本、扩展清单、配置文件 hash），让跨时间对比能发现配置漂移（codex 每次运行都往 config.toml 追加项目信任记录，指纹要排除它）；结果查看页长什么样。
 - 评委提示词与各任务 rubric 的条目；用户每轮抽查多少判决、不一致到什么程度要改 rubric；每个任务重复跑几次、方差怎么呈现。
 - 仓库接入：AGENTS.md 的导航与技术栈、README、Makefile 入口、`bench/` 的工具链约定（仓库现有脚本只用 Python / Node 标准库）。
 - 新模型或 CLI 新版本发布时的重跑流程。
