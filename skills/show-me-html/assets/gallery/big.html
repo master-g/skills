@@ -383,7 +383,7 @@
                   {
                     x: lx,
                     y: ly,
-                    "font-size": 8.5,
+                    "font-size": 9,
                     "font-weight": 600,
                     fill: I60,
                     "text-anchor": flip ? "end" : "start",
@@ -890,8 +890,8 @@
                   bg.setAttribute("width", b.width + 3);
                   bg.setAttribute("height", b.height + 2);
                 } else {
-                  txt(g, label({ ...at, y: y + 1, style: halo }), name);
-                  txt(g, tick({ ...at, y: y + 9, style: halo }), n);
+                  txt(g, label({ ...at, y: y - 1, style: halo }), name);
+                  txt(g, tick({ ...at, y: y + 12, style: halo }), n);
                 }
                 return node;
               })
