@@ -172,16 +172,35 @@ PROBE = """
     var q = function(f, sel){ var n = f.querySelector(sel); return n ? n.textContent.replace(/\\s+/g, ' ').trim() : ''; };
     var out = figs.map(function(f){
       var svgs = [].slice.call(f.querySelectorAll('svg'));
-      var marks = 0, fonts = [];
+      var marks = 0, fonts = [], overlaps = [], clipped = [];
       svgs.forEach(function(s){
         marks += s.querySelectorAll('*:not(title):not(desc)').length;
+        var sr = s.getBoundingClientRect(), boxes = [];
         s.querySelectorAll('text').forEach(function(t){
-          if (t.textContent.trim()) fonts.push(parseFloat(getComputedStyle(t).fontSize));
+          if (!t.textContent.trim()) return;
+          fonts.push(parseFloat(getComputedStyle(t).fontSize));
+          // 文字重叠与越界（charts.md「交付前自检」第 3 条）：只比水平文字，旋转文字的外接框天然互相交叠
+          var m = t.getScreenCTM(), r = t.getBoundingClientRect(), cs = getComputedStyle(t);
+          if (!m || Math.abs(m.b) > 1e-3 || Math.abs(m.c) > 1e-3 || r.width < 1 || cs.display === 'none' || parseFloat(cs.opacity) === 0) return;
+          var name = '';
+          for (var n = t.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 || n.nodeName === 'tspan') name += n.textContent;
+          name = name.trim().slice(0, 12);
+          if (r.left < sr.left - 1 || r.right > sr.right + 1 || r.top < sr.top - 1 || r.bottom > sr.bottom + 1) clipped.push(name);
+          boxes.push({r: r, s: name});
         });
+        for (var i = 0; i < boxes.length; i++) for (var j = i + 1; j < boxes.length; j++) {
+          var a = boxes[i].r, b = boxes[j].r;
+          var w = Math.min(a.right, b.right) - Math.max(a.left, b.left), h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          // 同字同位是描边衬底的复本，不算重叠；交叠面积超过较小那个框的 15%% 才算
+          if (w > 0 && h > 0 && w * h > 0.15 * Math.min(a.width * a.height, b.width * b.height)
+              && !(boxes[i].s === boxes[j].s && Math.abs(a.left - b.left) < 1 && Math.abs(a.top - b.top) < 1))
+            overlaps.push(boxes[i].s + ' × ' + boxes[j].s);
+        }
       });
       return {id: f.dataset.chart, wide: f.classList.contains('wide'), h: Math.ceil(f.getBoundingClientRect().height),
         name: q(f, '.fig-id'), title: q(f, '.fig-title'), sub: q(f, '.fig-sub'), cap: q(f, 'figcaption'),
-        svgs: svgs.length, marks: marks, minFont: fonts.length ? Math.min.apply(null, fonts) : null};
+        svgs: svgs.length, marks: marks, minFont: fonts.length ? Math.min.apply(null, fonts) : null,
+        overlaps: overlaps, clipped: clipped};
     });
     var p = document.createElement('pre'); p.id = '__probe';
     p.textContent = JSON.stringify({figs: out, errs: window.__errs});
@@ -253,6 +272,10 @@ def shots(page, out, index):
                 notes.append("空图")
             if f["minFont"] is not None and f["minFont"] < MIN_FONT[size]:
                 notes.append(f"最小字号 {f['minFont']:g} 低于{'通栏' if f['wide'] else '半宽'}下限 {MIN_FONT[size]:g}")
+            if f["overlaps"]:
+                notes.append(f"文字重叠 {len(f['overlaps'])} 处：" + "；".join(f["overlaps"][:4]))
+            if f["clipped"]:
+                notes.append(f"文字越出图框 {len(f['clipped'])} 处：" + "；".join(f["clipped"][:4]))
             missing = [t for t in ("light", "dark") if not made[(fid, t)]]
             if missing:
                 notes.append("截图失败：" + "、".join(missing))
