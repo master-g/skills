@@ -12,7 +12,7 @@ Label: wayfinder:map
 - 按票的 `Type:` 行执行：grilling 票调用 grilling 与 domain-modeling；research 票调用 research；prototype 票调用 prototype。
 - 跟踪器是本地 Markdown，约定见 `~/.claude/skills/setup-matt-pocock-skills/issue-tracker-local.md`；`Status:` 取 open / claimed / resolved。
 - 项目目录定为仓库根的 `bench/`；不叫 evals（已被技能内部的 eval 占用）。
-- 选手 = agent CLI + 模型 + 关键配置，允许「固定 CLI、只换模型」的对照组。本机有 claude、codex、pi、cursor-agent、opencode、ollama。
+- 选手 = agent CLI（连同本机实际配置）+ 模型 + 推理档位，在本机直跑、不用 Docker；允许「固定 CLI、只换模型」的对照组。本机有 claude、codex、pi、cursor-agent、opencode、ollama。
 - v1 七个场景：tufte-reader 写阿波罗登月读本、修 issue、实现 feature、show-me-html 页面、代码审查、中文写作 / 文档、代码库理解 / 问答。harness 与任务格式要能容纳新场景。
 - 任务只取自 `/Users/mg/github` 下的公开 repo（emukc、skills、cmg、kloud、pi-wingman 等），任务和产物都可提交。
 - farm 的无头红线不约束 bench，bench 的运行可以无人值守；隔离与启动方式见「[运行隔离、联网与启动方式](issues/06-isolation-network-launch.md)」。
@@ -27,11 +27,12 @@ Label: wayfinder:map
 - [各 CLI 加载技能的方式](issues/02-skill-loading.md)：五个 CLI 都原生支持技能且都能显式调用 tufte-reader / show-me-html，但写法各异、「只许显式调用」的规则不一，技能场景一律显式调用并记录技能 hash
 - [公开 repo 的 SWE 任务候选](issues/03-swe-candidates.md)：候选集中在 emukc（issue 题面现成），抽查 66 对里 31 对可直接作 oracle、28 对要在题面写明接口；emukc 测试依赖不入库的 16 MB 第三方数据
 - [现成 agent 评测框架与评分做法](issues/04-existing-frameworks.md)：Harbor 是唯一文档覆盖本机五个 CLI 的框架（Docker、订阅登录、可读 skills/、可重评）；评分做法：隐藏测试、rubric 拆条 + 跨家族 judge + 换序成对比较、审查按语义匹配算查准查全
+- [harness 复用现成框架还是自建](issues/05-harness-build-or-reuse.md)：自建，`bench/` 里用 Python（uv，可用第三方包）；选手在本机用真实配置直跑，不用 Docker，现成框架只借评分做法
 
 ## Not yet specified
 
 - 各场景的首批任务：SWE 任务从候选里挑哪几个、各几道；阿波罗读本的 brief 与素材；show-me-html 用什么素材；中文写作出什么题；代码审查的缺陷 diff 从哪来；代码库问答的题目与参考答案。
-- 运行记录：每次运行记哪些字段（模型 ID、CLI 版本、日期、耗时、token / 花费）、存哪、产物是否提交、怎么跨时间对比；结果查看页长什么样。
+- 运行记录：每次运行记哪些字段（模型 ID、CLI 版本、日期、耗时、token / 花费）、存哪、产物是否提交、怎么跨时间对比；配置指纹（CLI 版本、扩展清单、配置文件 hash），让跨时间对比能发现配置漂移；结果查看页长什么样。
 - judge 提示词与 rubric 的细节；每个任务重复跑几次、方差怎么呈现。
 - 仓库接入：AGENTS.md 的导航与技术栈、README、Makefile 入口、`bench/` 的工具链约定（仓库现有脚本只用 Python / Node 标准库）。
 - 新模型或 CLI 新版本发布时的重跑流程。
