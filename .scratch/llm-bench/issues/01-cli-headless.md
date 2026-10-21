@@ -29,3 +29,4 @@ Map: [地图](../map.md)
 - 本机配置会污染选手：pi 装了 23 个扩展包、opencode 挂了 superpowers 插件、codex 开着 memories 与 hooks；codex 沙箱被 config 改成 `workspace-write`，cursor 沙箱被关。claude `--safe-mode` 能干净运行但会连技能一起关掉。
 - 副作用：`pi --help` 会让 pi-lens 扩展在当前目录写出 `.pi-lens-probe-home/`。`ollama list` 为空（服务未运行，没有本地模型）。
 - 未查清：claude 文档里的 `--max-turns` 等旗标在 2.1.306 的 `--help` 里没有；cursor-agent 不加 `--force` 能否写文件；订阅 provider 下 cost 字段含义；pi 的 openai-codex 登录与智谱条款是否允许 pi。
+- 补充核实（2026-10-21，一手来源）：订阅用户可以用 `claude -p`，用量从订阅额度扣。依据：帮助文章「Use the Claude Agent SDK with your Claude plan」10-07 更新称「You can still use the Claude Agent SDK, `claude -p`, and third-party apps with your subscription limits」；6-15 原定把 SDK / `-p` 拆到单独额度的改动当天暂停。`CLAUDE_CODE_OAUTH_TOKEN`（`claude setup-token`）官方注明用于脚本与 CI。限制：`--bare` 不读 OAuth，且文档称将来会成为 `-p` 默认；额度与 claude.ai 共用 5 小时与周限额，按「ordinary, individual usage」设计。Max 5x 另有每月 $100 API 额度（关联 Console 组织后用 API key），可供 `--bare` 或 judge 使用。
