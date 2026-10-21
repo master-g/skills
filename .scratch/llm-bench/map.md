@@ -29,10 +29,11 @@ Label: wayfinder:map
 - [现成 agent 评测框架与评分做法](issues/04-existing-frameworks.md)：Harbor 是唯一文档覆盖本机五个 CLI 的框架（Docker、订阅登录、可读 skills/、可重评）；评分做法：隐藏测试、rubric 拆条 + 跨家族 judge + 换序成对比较、审查按语义匹配算查准查全
 - [harness 复用现成框架还是自建](issues/05-harness-build-or-reuse.md)：自建，`bench/` 里用 Python（uv，可用第三方包）；选手在本机用真实配置直跑，不用 Docker，现成框架只借评分做法
 - [v1 选手名册与预算](issues/07-contender-roster.md)：六个选手——Claude Code + Opus / Fable / Sonnet、Codex + gpt-6-astra、pi + GLM-5.3 / Kimi K3，日常默认档；一轮每个订阅不超过周额度 25%
+- [SWE 类评分](issues/08-grading-swe.md)：F2P + P2P 全过才算已解决、另列 F2P 比例；质量分与耗时花费单列；收 A、B 级（题面写明签名），不收 D 级；P2P 限定到相关 crate / 测试文件
 
 ## Not yet specified
 
-- 各场景的首批任务：SWE 任务从候选里挑哪几个、各几道；阿波罗读本的 brief 与素材；show-me-html 用什么素材；中文写作出什么题；代码审查的缺陷 diff 从哪来；代码库问答的题目与参考答案。
+- 各场景的首批任务：SWE 任务从候选里挑哪几个、各几道；阿波罗读本的 brief 与素材；show-me-html 用什么素材；中文写作出什么题；代码审查的缺陷 diff 从哪来；代码库问答的题目与参考答案。SWE 挑题时尽量选修复日期晚于各模型训练截止的，减少「背过答案」。
 - 运行记录：每次运行记哪些字段（模型 ID、CLI 版本、日期、耗时、token / 花费）、存哪、产物是否提交、怎么跨时间对比；配置指纹（CLI 版本、扩展清单、配置文件 hash），让跨时间对比能发现配置漂移；结果查看页长什么样。
 - judge 提示词与 rubric 的细节；每个任务重复跑几次、方差怎么呈现。
 - 仓库接入：AGENTS.md 的导航与技术栈、README、Makefile 入口、`bench/` 的工具链约定（仓库现有脚本只用 Python / Node 标准库）。

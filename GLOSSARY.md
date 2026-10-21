@@ -19,3 +19,11 @@ _Avoid_: case、eval
 **运行**:
 一个选手做一个任务的一次尝试，连同它的产物。
 _Avoid_: trial、rollout、session
+
+**隐藏测试**:
+SWE 任务的评判依据：取自真实修复提交、不给选手看的测试，分修复前失败修复后通过的 F2P 与修复前后都通过的 P2P 两组。
+_Avoid_: oracle 测试、hidden tests
+
+**已解决**:
+一次 SWE 运行的隐藏测试 F2P 与 P2P 全部通过。
+_Avoid_: 通过、resolved、pass
