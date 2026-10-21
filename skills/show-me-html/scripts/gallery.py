@@ -31,8 +31,8 @@ FAMILIES = (
     ("glance", "快读型 · Glance"),
     ("big", "交互大图 · Big"),
 )
-# 字号下限（viewBox 单位），见 charts.md「文字」：半宽卡 6.5、通栏 5.5
-MIN_FONT = {"half": 6.5, "wide": 5.5}
+# 字号下限（viewBox 单位），见 charts.md「文字」：图内任何文字不小于 9，半宽与通栏相同
+MIN_FONT = {"half": 9, "wide": 9}
 # 单看模式的截图宽度：通栏按版心宽，半宽卡按双栏里的一格；无头 Chrome 窗口最窄 500px
 SHOT_W = {"wide": 1000, "half": 500}
 PAD = 12
