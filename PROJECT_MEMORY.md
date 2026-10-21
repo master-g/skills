@@ -42,7 +42,7 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）又关闭 grilling 票「运行隔离、联网与启动方式」（任务目录、关跨会话记忆、三家不设沙箱、不拦网审越界、四线并发等，细节在该票）；此前已关 4 张研究票、5 张 grilling 票与冒烟 task 票
+- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）又关闭 grilling 票「运行隔离、联网与启动方式」（细节在该票）；此前已关 4 张研究票、5 张 grilling 票与冒烟 task 票。之后盘点一次，用户随即冻结地图，留待后续
   验证：用户确认后跑 `codex sandbox -P :workspace --log-denials`（不调模型），日常 workspace-write 沙箱里渲染检查失败、网络被拒；pre-commit 的 prettier 与 make check 通过
   推送：未推送（用户 10-21 定：地图走完再定推送策略）；research 分支只在本地
 
@@ -50,4 +50,6 @@
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿只剩 prototype 票「任务定义样张」，结票后迷雾里的首批任务、运行记录等再毕业成票
+- [2026-10-21] bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
+  待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
+  待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments

@@ -31,3 +31,7 @@ Map: [地图](../map.md)
 - 清理：运行结束、产物与转录拷进运行记录之后，做三件事：从 `~/.codex/config.toml` 删掉指向本轮任务目录的 `[projects]` 段，只动这些段，改前备份；删掉任务目录；删掉 `~/.claude/projects` 下对应任务目录的文件夹。codex 的 rollout 不删，它在 codex 状态库里有登记，删了文件会留下悬空记录。codex 的插件市场缓存、pi 的 context-mode 会话文件不处理。
 - 启动：用户在终端亲手执行一条命令，跑整轮，入口名归地图上的仓库接入。runner 在前台运行、防休眠、按线打印进度。启动前先打印各订阅的周用量与重置时间，用户确认后才开跑。运行中某条线本轮累计用到周额度的 25%，就停下该线剩余的运行，记为「未跑：额度」。这 25% 含该线上的评委调用（「[产出物类评分](09-grading-artifacts.md)」已定评分计入额度），每轮题量由地图上的校准轮按此反推。启动前还要检查本机有没有技能构建需要的 python3、node 与 Chrome。
 - 不改的：Claude 的 6 个 SessionStart hook（其中一个往会话里注入 ponytail 模式），以及三家各约 5 KB 的全局指令文件（`~/.claude/CLAUDE.md`、`~/.codex/AGENTS.md`、`~/.pi/agent/AGENTS.md`），都按真实配置保留。任务目录要不要放一份 AGENTS.md 盖住全局指令，交给「[任务定义样张](11-task-format-prototype.md)」。
+
+## Comments
+
+2026-10-21 结票后盘点：Answer 里「pi 不加载 hermes 记忆扩展」的写法未查实。`pi --help` 只有一次关掉全部扩展的 `--no-extensions`，或用 `-e` 逐个加载；settings 里有 `-builtin:mcp` 这种排除写法，能否用于 npm 包未知。查法是只读看 pi 文档与 settings 语法，不调模型。做不到的话，要在「pi 关掉全部扩展」和「接受 hermes 串扰」之间重选。
