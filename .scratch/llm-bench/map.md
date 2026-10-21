@@ -23,6 +23,11 @@ Label: wayfinder:map
 
 <!-- 每张已关闭的票一行：[票名](issues/NN-slug.md)：一行要点 -->
 
+- [各 CLI 的无头调用、选模型与权限旗标](issues/01-cli-headless.md)：五个 CLI 都能一条命令无头跑完并出 JSONL；差别在权限放行、用量字段（codex、cursor 无花费）与本机全局配置对选手的污染
+- [各 CLI 加载技能的方式](issues/02-skill-loading.md)：五个 CLI 都原生支持技能且都能显式调用 tufte-reader / show-me-html，但写法各异、「只许显式调用」的规则不一，技能场景一律显式调用并记录技能 hash
+- [公开 repo 的 SWE 任务候选](issues/03-swe-candidates.md)：候选集中在 emukc（issue 题面现成），抽查 66 对里 31 对可直接作 oracle、28 对要在题面写明接口；emukc 测试依赖不入库的 16 MB 第三方数据
+- [现成 agent 评测框架与评分做法](issues/04-existing-frameworks.md)：Harbor 是唯一文档覆盖本机五个 CLI 的框架（Docker、订阅登录、可读 skills/、可重评）；评分做法：隐藏测试、rubric 拆条 + 跨家族 judge + 换序成对比较、审查按语义匹配算查准查全
+
 ## Not yet specified
 
 - 各场景的首批任务：SWE 任务从候选里挑哪几个、各几道；阿波罗读本的 brief 与素材；show-me-html 用什么素材；中文写作出什么题；代码审查的缺陷 diff 从哪来；代码库问答的题目与参考答案。
