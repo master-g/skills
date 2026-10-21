@@ -1,7 +1,7 @@
 # 产出物类评分
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 04
 Map: [地图](../map.md)
 
@@ -14,3 +14,19 @@ tufte-reader 读本、show-me-html 页面、中文写作这三类没有唯一正
 - 视觉怎么呈现给评委：截图、明暗主题、窄屏。
 
 补充：这里定下的 judge 人选与防偏差做法，也用于「[SWE 类评分](08-grading-swe.md)」的质量分。
+
+## Answer
+
+2026-10-21 与用户逐项确认。三个产出物场景通用；评审团、人工抽查与版本做法也用于「[SWE 类评分](08-grading-swe.md)」的质量分。
+
+- 评分形式：逐份评。每个任务一份 rubric，拆成是非题逐条判，得分为通过条数占比；v1 不做成对比较。依据（「[现成 agent 评测框架与评分做法](04-existing-frameworks.md)」）：被操纵时成对偏好约 35% 翻转、逐份约 9%；逐份分数是绝对值，新选手只评自己的产出就能跨时间对比。
+- 评审团：Claude Code + Fable 5.1、Codex + gpt-6-astra、pi + Kimi K3，三家族各一个，用日常默认档；每条是非题三票取多数，所有选手由同一评审团评，同家族评委只占一票。选 Fable 而非 Opus：它有单独周限额，不占 Opus 与 Sonnet 共用的额度。不用 GLM-5.3：它只支持文本，pi 会把图换成「image omitted」而不报错；harness 每轮开始前核对评委模型配置的输入含 image。
+- 人工：用户每轮盲抽查一部分判决，与评委不一致的条目改写 rubric 措辞；用户不逐份打分或排名。
+- 评委输入：产出物、资料包、rubric、选手的最终回复（tufte-reader 的交付说明在里面），去掉 CLI、模型名等身份痕迹；不给过程转录。文字类条目按 HTML 正文判，截图只用于视觉类条目。
+- 交付合格：harness 用本轮固定的技能版本对产出跑 `build.py --check-only`（show-me-html 另加渲染检查），只检查、不替选手构建；ERROR 为 0 算交付合格，单列合格率，WARN 数只展示。不合格的产出照样评 rubric；没有产出文件记未交付、不评。中文写作没有技能脚本，没有这一列，中西文空格、全角标点等排版问题写进 rubric。
+- 事实准确：闭卷。每个任务自带固定的资料包，评委对照核对；资料包之外的具体数字、人名、日期算编造。阿波罗读本因此要先备资料包（如 NASA 公版任务报告）。
+- 截图：show-me-html 页面给 1280 浅色、1280 深色、390 浅色三张整页图；读本整本截不下，固定抽扉页与目录、第一章、插图最多的一章，每段截同样三种。截图脚本借 `skills/show-me-html/scripts/probe_round.mjs` 打开页面与截图的代码：它本身只认五个场景页，暗色靠 `show-me-theme` 键，tufte-reader 用的是 `tufte-reader-theme`。读本也做横向溢出检查。
+- 版本：每份结果记评委模型 ID、CLI 版本、rubric 版本；换评委或改 rubric 后对已存的全部产出重评，新旧分数不混排。
+- 呈现：每个场景按全部是非题等权的总通过率排序，并列技能遵循、行文、事实、视觉各维度通过率，以及交付合格率、字数、耗时与 token；不加权合成。字数并列，用来看出靠篇幅多过条目的情况。
+- 额度：选手运行、评分、重评合计计入每个订阅周额度 25% 的上限，任务数按此反推。
+- 未实跑的事实（子代理读本机配置、`--help` 与官方文档所得）：`claude -p` 由 Read 工具读 PNG；`codex exec -i <file>`，`~/.codex/models_cache.json` 写明 gpt-6-astra 收图；`pi -p @shot.png`，发送前缩到 2000×2000 以内；GLM-5.3 在 `~/.pi/agent/models-store.json` 里只有 `input:["text"]`。实测并入「[用真实配置把 v1 的三个 CLI 各无头跑通一次](12-cli-smoke-run.md)」。本机现有读本 7–12 章、正文 3.9 万–12.8 万字符。

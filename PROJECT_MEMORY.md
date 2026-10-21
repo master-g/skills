@@ -42,13 +42,13 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」「SWE 类评分」三张 grilling 票；核实了订阅可跑 `claude -p`、用户是 Max 20x（研究文档写的 5x 有误），记在 CLI 无头调用票的 Answer
-  验证：pre-commit 的 prettier 与 make check 通过；研究结论均为读文档与源码所得，CLI 调用写法未实跑
+- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）已关闭 4 张研究票与「harness 复用现成框架还是自建」「v1 选手名册与预算」「SWE 类评分」「产出物类评分」四张 grilling 票；评委看图方式（GLM-5.3 不能看图、pi 会静默丢图）是读本机配置与文档所得，记在「产出物类评分」的 Answer
+  验证：pre-commit 的 prettier 与 make check 通过；CLI 调用写法与评委看图均未实跑
   推送：未推送；地图、research 分支都只在本地（仓库公开，用户要求研究分支不推送）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿依次是「产出物类评分」（judge 人选也管 SWE 质量分）、「标准答案类评分」与「用真实配置把 v1 的三个 CLI 各无头跑通一次」（HITL，用户亲手执行命令）
+- [2026-10-21] 推进 bench 地图：`/wayfinder .scratch/llm-bench/map.md`，每次会话解决一张票；前沿依次是「标准答案类评分」与「用真实配置把 v1 的三个 CLI 各无头跑通一次」（HITL，用户亲手执行命令，含三个评委的看图实测）
   继续试用并优化 ad-astra（来自 TODO.md，10-12；ad-astra 最后一次提交在 10-10）

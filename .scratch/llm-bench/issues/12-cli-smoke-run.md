@@ -13,6 +13,7 @@ Map: [地图](../map.md)
 - 每个选手实际用的模型名与档位（Opus、Fable、Sonnet 在 Claude Code 里各是什么档；pi 里 Kimi K3 的模型名是什么、GLM-5.3 与 Kimi 的 thinking 档）；
 - JSONL 输出里实际有哪些用量与花费字段，能否看出离 5 小时窗与周限额还有多远；
 - 显式调用技能的写法是否生效；
-- 跑完后日常状态里多了什么（转录、codex memories、扩展生成的文件，如 pi-lens 的 `.pi-lens-probe-home/`）。
+- 跑完后日常状态里多了什么（转录、codex memories、扩展生成的文件，如 pi-lens 的 `.pi-lens-probe-home/`）；
+- 评委看图：「[产出物类评分](09-grading-artifacts.md)」定下的三个评委（Claude Code + Fable 5.1、Codex + gpt-6-astra、pi + Kimi K3）各读一张截图并说出图里的内容，核实图确实送到了模型。写法按该票 Answer：`claude -p` 让 Read 工具读 PNG、`codex exec -i <file>`、`pi -p @shot.png`；pi 遇到不支持图像的模型会把图换成「image omitted」而不报错，所以要看回答内容，不能只看退出码。
 
 HITL：用户全局规则要求调用 claude / codex 前逐次确认，所以由代理写好逐条命令清单，用户亲手执行或逐条确认后执行。结果写进本票的 Answer。
