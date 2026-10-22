@@ -224,7 +224,8 @@ def chrome_run(chrome, *args):
 
 
 def shots(page, out, index):
-    chrome = runpy.run_path(str(BUILD))["find_chrome"]()
+    build = runpy.run_path(str(BUILD))
+    chrome, proxy = build["find_chrome"](), build["chrome_proxy_args"]()
     if not chrome:
         raise SystemExit("--shots 需要本机 Chrome/Chromium")
     html = page.read_text(encoding="utf-8")
@@ -238,7 +239,7 @@ def shots(page, out, index):
             encoding="utf-8")
     probe = work / "probe.html"
     probe.write_text(html.replace("<head>", "<head>" + ERR_CAPTURE, 1) + PROBE % (json.dumps(SHOT_W), PAD), encoding="utf-8")
-    dom = chrome_run(chrome, "--virtual-time-budget=8000", "--window-size=1000,900", "--dump-dom",
+    dom = chrome_run(chrome, *proxy, "--virtual-time-budget=8000", "--window-size=1000,900", "--dump-dom",
                      probe.as_uri() + "?only=*").stdout
     m = re.search(r'<pre id="__probe">(.*?)</pre>', dom, re.S)
     if not m:
@@ -251,7 +252,7 @@ def shots(page, out, index):
         f = figs[fid]
         png = work / f"{fid}-{theme}.png"
         w = SHOT_W["wide" if f["wide"] else "half"]
-        chrome_run(chrome, "--force-device-scale-factor=2", "--virtual-time-budget=4000",
+        chrome_run(chrome, *proxy, "--force-device-scale-factor=2", "--virtual-time-budget=4000",
                    f"--window-size={w},{f['h'] + 2 * PAD}", f"--screenshot={png}",
                    themed[theme].as_uri() + f"?only={fid}")
         return png if png.exists() else None

@@ -42,11 +42,38 @@ const PAGES = [
 ];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 无头 Chrome 不读 HTTP(S)_PROXY 环境变量：配了代理就显式传，否则每次直连 Google Fonts。规则同 build.py 的 chrome_proxy_args
+const envOf = (...names) =>
+  names.map((n) => (process.env[n] || "").trim()).find(Boolean) || "";
+const proxy = envOf(
+  "HTTPS_PROXY",
+  "https_proxy",
+  "HTTP_PROXY",
+  "http_proxy",
+  "ALL_PROXY",
+  "all_proxy"
+);
+const bypass = envOf("NO_PROXY", "no_proxy")
+  .split(",")
+  .map((h) => h.trim())
+  .filter(Boolean);
+const PROXY_ARGS =
+  proxy && !bypass.includes("*")
+    ? [
+        `--proxy-server=${proxy.replace(/\/$/, "")}`,
+        ...(bypass.length
+          ? [
+              `--proxy-bypass-list=${bypass.map((h) => (h.startsWith(".") ? "*" + h : h)).join(";")}`,
+            ]
+          : []),
+      ]
+    : [];
 const chrome = spawn(CHROME, [
   "--headless=new",
   "--remote-debugging-port=0",
   "--hide-scrollbars",
   `--user-data-dir=${mkdtempSync(join(tmpdir(), "probe-round-"))}`,
+  ...PROXY_ARGS,
   "about:blank",
 ]);
 const wsUrl = await new Promise((ok) => {

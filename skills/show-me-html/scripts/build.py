@@ -939,7 +939,7 @@ def shoot_sheets(page, theme="light", scale=2):
             try:
                 subprocess.run(
                     # --no-sandbox：macOS 与普通用户下不需要，Linux 容器里以 root 跑 Chrome 时不加会直接退出
-                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
+                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", "--hide-scrollbars", *chrome_proxy_args(),
                      f"--force-device-scale-factor={scale}", "--virtual-time-budget=4000",
                      f"--window-size={w},{h}", f"--screenshot={out}", probe.as_uri()],
                     capture_output=True, text=True, timeout=90, check=True)
@@ -972,7 +972,8 @@ def snap_page(page, out_dir, widths=(500, 1280)):
     src = page.read_text(encoding="utf-8")
     out_dir.mkdir(parents=True, exist_ok=True)
     outs, notes = [], []
-    base = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=4000"]
+    base = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=4000",
+            *chrome_proxy_args()]
     with tempfile.TemporaryDirectory() as td:
         for theme in ("light", "dark"):
             themed = src.replace(
@@ -1032,6 +1033,26 @@ def find_chrome():
     return None
 
 
+def chrome_proxy_args(env=None):
+    """无头 Chrome 不读 HTTP(S)_PROXY / ALL_PROXY 环境变量，只认系统代理或 --proxy-server。
+    环境里配了代理就显式传给它，否则每次渲染都直连 Google Fonts，网络不好时一次多等 10～60 秒。
+    NO_PROXY 转成 Chrome 的绕行列表（逗号换分号，.example.com 写成 *.example.com）；NO_PROXY=* 时不走代理。"""
+    import os
+    env = os.environ if env is None else env
+
+    def pick(*names):
+        return next((env[n].strip() for n in names if env.get(n, "").strip()), "")
+
+    proxy = pick("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy")
+    bypass = [h.strip() for h in pick("NO_PROXY", "no_proxy").split(",") if h.strip()]
+    if not proxy or "*" in bypass:
+        return []
+    args = [f"--proxy-server={proxy.rstrip('/')}"]
+    if bypass:
+        args.append("--proxy-bypass-list=" + ";".join("*" + h if h.startswith(".") else h for h in bypass))
+    return args
+
+
 # 无头 Chrome 把窗口宽度钳在 500px，比这更窄的视口测不到 —— 390px 只能人眼验。
 def render_check(page, widths=(500, 1024, 1280)):
     """返回 (issues, measured, ran)。ran=False 表示没有浏览器，这道关没跑。"""
@@ -1049,7 +1070,7 @@ def render_check(page, widths=(500, 1024, 1280)):
             try:
                 out = subprocess.run(
                     # --no-sandbox 见 shoot_sheets 的说明
-                    [chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", *chrome_proxy_args(),
                      "--virtual-time-budget=4000", f"--window-size={w},900",
                      "--dump-dom", probe.as_uri()],
                     capture_output=True, text=True, timeout=90).stdout

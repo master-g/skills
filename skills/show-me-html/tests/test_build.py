@@ -331,6 +331,18 @@ class BuildCliTests(unittest.TestCase):
             check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
             self.assertEqual(check.returncode, 0, check.stderr)
 
+    def test_chrome_proxy_args_follow_proxy_env(self):
+        """Chrome 不读代理环境变量：有代理时传 --proxy-server，HTTPS 优先，NO_PROXY 转绕行列表，NO_PROXY=* 不走代理。"""
+        proxy_args = runpy.run_path(str(BUILD))["chrome_proxy_args"]
+        self.assertEqual(proxy_args({}), [])
+        self.assertEqual(proxy_args({"https_proxy": "http://127.0.0.1:7890/"}),
+                         ["--proxy-server=http://127.0.0.1:7890"])
+        self.assertEqual(proxy_args({"HTTP_PROXY": "http://a.test:1", "HTTPS_PROXY": "http://b.test:2"}),
+                         ["--proxy-server=http://b.test:2"])
+        self.assertEqual(proxy_args({"ALL_PROXY": "socks5://127.0.0.1:7891", "NO_PROXY": "localhost, .corp.test"}),
+                         ["--proxy-server=socks5://127.0.0.1:7891", "--proxy-bypass-list=localhost;*.corp.test"])
+        self.assertEqual(proxy_args({"HTTPS_PROXY": "http://b.test:2", "no_proxy": "*"}), [])
+
     @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
     def test_render_check_flags_chart_text_below_font_floor(self):
         """图内字号下限 9（viewBox 单位）：图滚入视野才画，探针要先强制画出来再量。"""
