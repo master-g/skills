@@ -5,6 +5,11 @@
 > **Drift check (run first)**: `git diff --stat fff32ba..HEAD -- skills/show-me-html/assets/show-me.css skills/show-me-html/assets/charts.js skills/show-me-html/assets/gallery skills/show-me-html/scripts/build.py skills/show-me-html/tests/test_build.py skills/show-me-html/references/visual-system.md skills/show-me-html/references/charts.md skills/show-me-html/references/compose-and-check.md skills/show-me-html/references/anti-patterns.md`
 > 计划 017 先合入时，`charts.js`（`G.type` 一行）、gallery 四页、`build.py`（字号下限几行）、`test_build.py`、`charts.md`、`anti-patterns.md` 会出现在输出里，属于预期，本计划按 017 已合入来写行号。出现 `show-me.css`、`visual-system.md`、`compose-and-check.md` 的改动，或者下面「Current state」的摘录对不上，就是 STOP 条件。
 >
+> **2026-10-22 补充（写计划 020–027 时加）**：以下改动也属于预期，与本计划的锚点不重叠。
+>
+> - `7c94bce` 在 `show-me.css` 主打印块末尾加了 `@page { size: A4 }` 和几条分页规则（之后的行号往后挪约 18 行），并改了 `visual-system.md`「响应式与打印」的打印一行；同日那一行的措辞又收窄过一次。
+> - 计划 020（维护者定在本计划之前执行）改了 `build.py` 里三处 Chrome 启动参数、新增 `chrome_proxy_args()`，`test_build.py` 多一个测试，`components.md`、`layouts.md` 各改一处。020 合入后，本计划里所有 `Ran 48 tests` / `Ran 49 tests` 都按多 1 个计。
+>
 > 本文件里的 js / css / markdown 代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 
 ## Status
@@ -525,6 +530,41 @@ WCAG AA 要求正文 4.5:1，大字（≥ 24px，或 ≥ 18.66px 粗体）3:1。
 
    改完一张图看一眼它的 light 和 dark 截图（`"$G/shots/<编号>-light.png"`、`-dark.png`），确认字仍然分得出主次。
 
+3. **F3「台风 / 闭园」改竖排单列**（2026-10-22 维护者要求并进本计划；来自 017 执行记录的遗留）。`assets/gallery/basics.html` 的 `// ════ F3 · Hairline Area ════` 图块里，闭园空档只有约 18 个单位宽（左右发丝在 x = 150 和 168），两行「台风」「闭园」各 2 个 10 号字、宽 20，两侧各压到发丝约 1 个单位。把这两个 `txt(…)` 调用：
+
+   ```js
+   txt(s, label({ x: gap, y: Y0 - 34, "text-anchor": "middle" }), "台风");
+   txt(
+     s,
+     label({
+       x: gap,
+       y: Y0 - 34 + G.type.label * 1.25,
+       "text-anchor": "middle",
+     }),
+     "闭园"
+   );
+   ```
+
+   换成：
+
+   <!-- prettier-ignore -->
+   ```js
+               // 空档只有约 18 个单位宽，两字一行会压到两侧发丝：竖排单列，末字落在地面线上方 8 个单位
+               [..."台风闭园"].forEach((ch, k) =>
+                 txt(
+                   s,
+                   label({
+                     x: gap,
+                     y: Y0 - 8 - (3 - k) * G.type.label * 1.25,
+                     "text-anchor": "middle",
+                   }),
+                   ch
+                 )
+               );
+   ```
+
+   如果第 2 小步已经改过这两段的 `fill`，把同样的 `fill` 写进新的 `label({…})` 里。advisor 在 scratchpad 里截图确认过：四个字在空档正中，左右都不碰发丝，最上面的「台」在 4 千人那条点线下方。改完看 `"$G/shots/F3-light.png"` 和 `-dark.png`。
+
 **Verify**: 图库完整构建 → 构建输出里没有 `文字对比度不足`；`grep -n 'const MUTED = I45' skills/show-me-html/assets/gallery/*.html` 无输出；单元测试 → `OK`，`Ran 49 tests`。
 
 ### Step 6: 文档
@@ -621,7 +661,8 @@ WCAG AA 要求正文 4.5:1，大字（≥ 24px，或 ≥ 18.66px 粗体）3:1。
 
 ## Done criteria
 
-- [ ] 全量单元测试 → `OK`，`Ran 49 tests`（017 已合入；若 019 也已合入则 50）
+- [ ] 全量单元测试 → `OK`，`Ran 49 tests`（017 已合入；若 019 也已合入则 50；020 已合入再加 1）
+- [ ] `grep -c '"台风闭园"' skills/show-me-html/assets/gallery/basics.html` → `1`（F3 竖排单列）
 - [ ] 语法检查无输出
 - [ ] `grep -c '  color: var(--ink-45);' skills/show-me-html/assets/show-me.css` → `0`
 - [ ] `grep -c '文字对比度不足' skills/show-me-html/scripts/build.py` → `1`

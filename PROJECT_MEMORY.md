@@ -22,7 +22,7 @@
 - [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：仓库历史里从无这套值，10-19 shelf 五页按安装副本重建，后来安装副本也回到旧值（推测是 install 覆盖，未证实）；用户选移植进仓库，值取自 shelf 已提交成品
 - [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
 - [2026-10-21] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core：两技能页面只见 bash/sql/diff/text 和零星 py/ts/rs/go，无 JSX/TSX；它最快（32 KB 1.5 ms，Kirari 4.0、Prism 2.2）。页面常出现 JSX/TSX 或 C#/Kotlin/Swift/Ruby 时换 Kirari（TSX 分词好、接法相同），先等它稳定（10-18 才发布）；Shiki 要构建期 Node 或每页 72 KB+，排除（用户认同）
-- [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；main 上的 bench 提交维持不推送，地图走完再定推送策略（10-21 确认，期间 main 整体推不出去）；推进地图的代理不替用户启动选手运行
+- [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 
 ## 失败尝试
@@ -42,15 +42,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-22] main：show-me-html 去掉 Kami 残留（要 PDF 用浏览器打印成品页，纸面文档不在范围），打印 CSS 加 A4 与标题随下文换页；disco 删「如 kami 的」；017 遗留 worktree 与分支已清理。未推送
-  验证：单测 48 OK（首跑 1 个失败未留输出，两次复跑通过）；make check 通过；轮次 `scenarios/rounds/2026-10-22-6d39fa5-printbreak` 对 -base 探针五页无问题、30/30 截图相同，五场景 PDF 人工看过
+- [2026-10-22] main：把构建耗时调研写成 `plans/020–027`（代理透传、CDP 运行器、gallery 截图与 `--pdf`、越框 WARN、表格标识符样张、交互探针、导出 `<desc>`、打印卡片与看板），018 补 F3 竖排与 drift 注记；visual-system 打印一行收窄措辞，已 rsync 安装副本。未推送
+  验证：make check 通过；各计划关键代码在 scratchpad 副本上预演过，数字与维护者决定见 plans/README「show-me-html 构建耗时」
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-22] 下一个是 `/improve execute 018`（执行者从本地 main 开分支）；对比度检查报 ERROR 还是 WARN 待用户定。bedrock 进房全球基线页已用新版重建（未提交），018 合入后可删页里的「本页覆盖」`<style>` 块。F3「台风/闭园」两侧各压线约 1 单位，修不修由用户定
-  show-me-html 候选（用户要求记下，未定做）：build.py 加 `--pdf`，复用 find_chrome、带 `--no-pdf-header-footer`。打印既有问题未修：approach-compare 三方案卡跨页劈开，triage-board 第三列「观察」右侧被裁
+- [2026-10-22] 下一个是 `/improve execute 020`，再 018 → 019 → 021（用户定的顺序，执行者从本地 main 开分支）；018 报 ERROR，F3 已并进 018 Step 5。待用户定：`--snap` 默认宽度是否去掉 500。024 在 Step 2 出样张后停下等用户选。021 还没做冷读审阅（improve review-plan）
+  bedrock 进房基线页已提交（bedrock e9f6700），018 合入后删页里的「本页覆盖」`<style>` 块
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
   bench 待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments

@@ -5,6 +5,8 @@
 > **Drift check (run first)**: `git diff --stat fff32ba..HEAD -- skills/show-me-html/scripts/build.py skills/show-me-html/tests/test_build.py skills/show-me-html/references/charts.md skills/show-me-html/references/anti-patterns.md`
 > 计划 017、018 先合入时，这四个文件都会出现在输出里，属于预期：017 只改 `PROBE` 里字号下限那一行和测试 `test_render_check_flags_chart_text_below_font_floor`；018 在 `PROBE` 末尾加了一段对比度测量，并在正则里加了一个 `(?P<contrast>…)` 分组。本计划的改动都是「追加在末尾」，与这两份计划不冲突。出现别的改动，或者下面「Current state」里的锚点行找不到，就是 STOP 条件。
 >
+> **2026-10-22 补充**：计划 020（维护者定在 018 之前执行）也会出现在输出里，属于预期：它给 `build.py` 的三处 Chrome 启动参数加了 `*chrome_proxy_args()`、新增这个函数，`test_build.py` 多一个测试，不碰 `PROBE`、正则和 `render_check` 的返回值。020 合入后本计划里的测试数都按多 1 个计。
+>
 > 本文件里的代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 
 ## Status
