@@ -39,6 +39,11 @@
   /* ── 派生层 · 明度阶（墨在纸上的占比） ── */
   --ink-90: color-mix(in oklab, var(--ink) 90%, var(--paper));
   --ink-70: color-mix(in oklab, var(--ink) 70%, var(--paper));
+  --ink-65: color-mix(
+    in oklab,
+    var(--ink) 65%,
+    var(--paper)
+  ); /* 次要文字：卡面上亮 5.2:1、暗 5.9:1 */
   --ink-60: color-mix(in oklab, var(--ink) 60%, var(--paper));
   --ink-45: color-mix(in oklab, var(--ink) 45%, var(--paper));
   --ink-30: color-mix(in oklab, var(--ink) 30%, var(--paper));
@@ -59,15 +64,19 @@
   --secondary: var(--ink-8);
   --secondary-foreground: var(--ink);
   --muted: var(--ink-8);
-  --muted-foreground: var(--ink-60);
+  --muted-foreground: var(--ink-65);
   --accent: var(--ink-14);
   --accent-foreground: var(--ink);
   --destructive: var(--hero);
-  --destructive-foreground: var(--paper);
+  --destructive-foreground: var(
+    --ink-fixed
+  ); /* 纸色字压在主角色上只有 2.9:1；固定深墨两种主题都是 5.2:1 */
   --border: var(--ink-14);
   --input: var(--ink-30);
   --ring: var(--hero);
-  --link-accent: color-mix(in oklab, var(--hero) 70%, var(--ink));
+  /* 主角色写字：纯 --hero 在亮色卡面上只有 2.7:1，掺四成墨后亮 5.3:1、暗 7.5:1；图形仍用 --hero */
+  --hero-text: color-mix(in oklab, var(--hero) 60%, var(--ink));
+  --link-accent: var(--hero-text); /* 原为主角色掺三成墨，卡面上只有 4.4:1 */
   --ink-fixed: #1c1c1a;
 
   --color-background: var(--background);
@@ -98,6 +107,7 @@
   --chart-4: var(--ink-30);
   --chart-5: var(--ink-22);
   --chart-hero: var(--hero);
+  --chart-hero-text: var(--hero-text);
   --syn-comment: var(--ink-45);
   --syn-keyword: var(--ink);
   --syn-string: var(--ink-60);
@@ -435,7 +445,7 @@ textarea:disabled {
     var(--color-destructive) 12%,
     var(--color-card)
   );
-  color: var(--color-destructive);
+  color: var(--hero-text);
 }
 .badge[data-tone] {
   background: var(--tone-surface);
@@ -1463,7 +1473,7 @@ math.tml-display {
   font-size: 0.66rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-45);
+  color: var(--color-muted-foreground);
 }
 .fig-sub,
 .fig-hint {
@@ -1477,7 +1487,7 @@ math.tml-display {
   font-size: 0.64rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-45);
+  color: var(--color-muted-foreground);
   margin-top: 0.75rem;
 }
 /* 来源行里的标识符保持原样：大写变换会把 PlayerConfig 改成另一个名字；
@@ -1512,7 +1522,7 @@ math.tml-display {
 .fig-status [data-pin] {
   font-size: 0.6rem;
   letter-spacing: 0.1em;
-  color: var(--ink-45);
+  color: var(--color-muted-foreground);
 }
 .fig figcaption {
   margin-top: 0.6rem;

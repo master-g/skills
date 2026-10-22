@@ -70,6 +70,7 @@ window.showMeChart = (function () {
      刻度与数值是小号等宽字加字距，类目名用正文字。两条补充：主角系列整体升一档，
      否则发丝下的橙色会发虚；大量叠加的线（丝线、辐条）用 mass 浅墨，否则叠密了自己会变深。
      网格用 ink-30 而非更浅一档：深色主题下 ink-22 的发丝几乎看不见。
+     文字不用 quiet / mass / guide，它们是线和面的墨；次要文字用 note（卡面上 5.2:1）。
      抖动：线宽处处相同，长度、位置、点径、弯度带一点确定性的不齐，配上足够的密度，
      才有半手绘半机器的质感。抖动只加在不编码数据的维度上：档的横向长度可以抖，
      柱高、射线长度、点的个数不能抖。 */
@@ -89,6 +90,7 @@ window.showMeChart = (function () {
       strong: "var(--ink)",
       data: "var(--ink-70)",
       quiet: "var(--ink-45)",
+      note: "var(--color-muted-foreground)",
       mass: "var(--ink-30)",
       guide: "var(--ink-30)",
     },
@@ -109,14 +111,14 @@ window.showMeChart = (function () {
   // 文字属性：txt(s, tick({ x, y }), "2k")。传入的属性覆盖默认值
   const tick = (a) => ({
     "font-size": G.type.tick,
-    fill: G.ink.quiet,
+    fill: G.ink.note,
     "letter-spacing": G.type.track,
     ...a,
   });
   const value = (a, hero) => ({
     "font-size": G.type.value,
     "font-weight": 600,
-    fill: hero ? "var(--chart-hero)" : G.ink.strong,
+    fill: hero ? "var(--chart-hero-text)" : G.ink.strong,
     "letter-spacing": G.type.track * 0.6,
     ...a,
   });
