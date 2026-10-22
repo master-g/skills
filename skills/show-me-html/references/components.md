@@ -206,17 +206,17 @@
 ```html
 <div class="accordion">
   <details>
-    <summary>为什么放弃方案 B<i data-lucide="chevron-down"></i></summary>
+    <summary>为什么放弃方案 B</summary>
     <p>展开后的内容。</p>
   </details>
   <details open>
-    <summary>迁移步骤<i data-lucide="chevron-down"></i></summary>
+    <summary>迁移步骤</summary>
     <p>…</p>
   </details>
 </div>
 ```
 
-`summary` 里的最后一个 `<svg>` 会被自动旋转成展开指示。
+展开指示是骨架画的：标题右侧收起时是 `+`、展开时是 `−`（`summary::after`）。`summary` 里只写文字，不另放 chevron 之类的图标，否则会和加减号同时出现。
 
 ## 标签页（需要 JS）
 
