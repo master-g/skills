@@ -1925,6 +1925,22 @@ body.has-toc:not(.toc-side) .read-progress {
     font-size: 0.75em;
     word-break: break-all;
   }
+  /* 无头 Chrome 不读系统纸张设置，不写尺寸就按 Letter 出 PDF */
+  @page {
+    size: A4;
+  }
+  /* 标题跟着下文换页，不孤零零留在页底；列表行不从中间劈开 */
+  :is(h2, h3, h4) {
+    break-after: avoid;
+  }
+  .item {
+    break-inside: avoid;
+  }
+  /* 条目组有边框，分页会落在边框内首行之前，页底只剩空框和标题；
+     禁止首行前断，断点退回标题之前 */
+  .item-group > :first-child {
+    break-before: avoid;
+  }
 }
 
 /* Recipe geometry. Color is shared; the reader's job changes the page shape. */

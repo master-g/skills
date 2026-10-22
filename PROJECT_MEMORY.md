@@ -42,14 +42,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-22] main：`/improve` 为 show-me-html 写了计划 017（图表字号 9/10/10）、018（文字对比度）、019（图表比例 WARN）；017 经执行者实施、审阅后 cherry-pick 进 main 并推送，已 rsync 到 `~/.agents/skills/show-me-html`。bedrock 进房全球基线页已用新版重建（未提交），018 的对比度先写在页内 `<style>` 覆盖块里
-  验证：合入后 show-me-html 单元测试 OK、make check 通过；bedrock 页 build.py 自检通过，亮暗截图人工看过
+- [2026-10-22] main：show-me-html 去掉 Kami 残留（要 PDF 用浏览器打印成品页，纸面文档不在范围），打印 CSS 加 A4 与标题随下文换页；disco 删「如 kami 的」；017 遗留 worktree 与分支已清理。未推送
+  验证：单测 48 OK（首跑 1 个失败未留输出，两次复跑通过）；make check 通过；轮次 `scenarios/rounds/2026-10-22-6d39fa5-printbreak` 对 -base 探针五页无问题、30/30 截图相同，五场景 PDF 人工看过
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-22] 下一个是 `/improve execute 018`（执行者从本地 main 开分支）；对比度检查报 ERROR 还是 WARN 待用户定。018 合入后可删 bedrock 页里的「本页覆盖」`<style>` 块。F3「台风/闭园」两侧各压线约 1 单位，修不修由用户定
-- [2026-10-21] bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
-  待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
-  待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments
+- [2026-10-22] 下一个是 `/improve execute 018`（执行者从本地 main 开分支）；对比度检查报 ERROR 还是 WARN 待用户定。bedrock 进房全球基线页已用新版重建（未提交），018 合入后可删页里的「本页覆盖」`<style>` 块。F3「台风/闭园」两侧各压线约 1 单位，修不修由用户定
+  show-me-html 候选（用户要求记下，未定做）：build.py 加 `--pdf`，复用 find_chrome、带 `--no-pdf-header-footer`。打印既有问题未修：approach-compare 三方案卡跨页劈开，triage-board 第三列「观察」右侧被裁
+  bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
+  bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
+  bench 待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments
