@@ -382,6 +382,28 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
     @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    def test_render_check_flags_low_contrast_text(self):
+        """来源行与图内刻度字在亮色主题下要 4.5:1；ink-45 只有 2.8–3.1:1（2026-10 实例：进房基线报告的来源行与刻度）。"""
+        markup = """<section><p class="src">来源 · 演示数据</p><figure class="fig" data-chart="F1"><div class="fig-box">
+          <svg id="dim" viewBox="0 0 400 120" role="img" aria-labelledby="dim-t dim-d"><title id="dim-t">t</title>
+          <desc id="dim-d">d</desc></svg></div></figure></section>"""
+        script = """<script>showMeChart.reveal(document.getElementById("dim"), (s) =>
+          showMeChart.txt(s, showMeChart.tick({ x: 20, y: 40EXTRA }), "刻度 10"));</script>"""
+        for style, extra, flagged in (("", "", False),
+                                      (".src { color: var(--ink-45); }", ', fill: "var(--ink-45)"', True)):
+            with self.subTest(flagged=flagged):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8")
+                html = html.replace("</main>", markup + "</main>").replace(
+                    "<!--SHOW-ME:JS-->", "<!--SHOW-ME:JS-->" + script.replace("EXTRA", extra)).replace(
+                    "</head>", f"<style>{style}</style></head>")
+                page.write_text(html, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                for part in ("文字对比度不足", "p.src「来源 · 演示数据」", "F1（#dim）「刻度 10」"):
+                    self.assertEqual(part in result.stdout, flagged, result.stdout)
+                self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
+
+    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
     def test_render_check_measures_only_the_shown_diagram_variant(self):
         """宽窄两版图：500px 只量窄版、1024/1280 只量宽版，被媒体查询隐藏的那版不报。"""
         for label, size, flagged in (("ok", None, ()), ("narrow", '13"', ("500px",)),

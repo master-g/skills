@@ -881,9 +881,75 @@ PROBE = """
           + (s.id ? '#' + s.id : '') + ' 最小 ' + min.toFixed(1) + 'px');
       });
     });
+    // 文字对比度（visual-system.md「对比度」）：render_check 把页面固定在亮色主题下量，亮色是明度阶与主角色最差的一侧。
+    // 颜色先经 canvas 解析成 sRGB（color-mix、oklab 也读得出），再按 WCAG 2.x 算；正文要 4.5:1，24px 以上或 18.66px 以上的粗体要 3:1
+    var cv = document.createElement('canvas'); cv.width = cv.height = 1;
+    var cx = cv.getContext('2d', {willReadFrequently: true});
+    var rgba = function(c){ cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return cx.getImageData(0, 0, 1, 1).data; };
+    var lum = function(a){
+      var f = function(v){ v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      return 0.2126 * f(a[0]) + 0.7152 * f(a[1]) + 0.0722 * f(a[2]);
+    };
+    var ratio = function(a, b){ var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    var need = function(px, weight){ return px >= 24 || (px >= 18.66 && weight >= 700) ? 3 : 4.5; };
+    // 盒子的底色：往上找第一个不透明的背景
+    var boxBg = function(el){
+      for (var p = el; p && p.nodeType === 1; p = p.parentElement) {
+        var v = rgba(getComputedStyle(p).backgroundColor);
+        if (v[3] > 200) return v;
+      }
+      return rgba(getComputedStyle(document.body).backgroundColor);
+    };
+    // SVG 文字的底色：文字中心往下第一个有填充的图形，没有就是图所在的卡面
+    var SHAPE = {rect: 1, circle: 1, ellipse: 1, path: 1, polygon: 1};
+    var svgBg = function(t){
+      var r = t.getBoundingClientRect(), stack = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      for (var i = 0; i < stack.length; i++) {
+        var e = stack[i], tag = e.tagName.toLowerCase();
+        if (e === t || e.closest('text')) continue;
+        if (e.namespaceURI !== 'http://www.w3.org/2000/svg' || tag === 'svg') break;
+        if (!SHAPE[tag]) continue;
+        var cs = getComputedStyle(e), v = rgba(cs.fill);
+        if (cs.fill !== 'none' && v[3] > 128 && parseFloat(cs.fillOpacity) * parseFloat(cs.opacity) > 0.5) return v;
+      }
+      return boxBg(t.closest('svg'));
+    };
+    var dim = [], dimSeen = {};
+    var dimNote = function(where, cr, s){
+      var k = where + cr.toFixed(2);
+      if (dimSeen[k]) { dimSeen[k].n++; return; }
+      dimSeen[k] = {s: where + '「' + s.split('|').join('/').slice(0, 10) + '」' + cr.toFixed(2) + ':1', n: 1};
+      dim.push(dimSeen[k]);
+    };
+    doc.querySelectorAll('*').forEach(function(el){
+      if (el.closest('svg, math, pre, [aria-hidden="true"]') || el.matches(':disabled')) return;
+      var own = false;
+      for (var n = el.firstChild; n; n = n.nextSibling)
+        if (n.nodeType === 3 && n.textContent.trim()) { own = true; break; }
+      if (!own || !shown(el)) return;
+      var cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return;
+      var cr = ratio(rgba(cs.color), boxBg(el));
+      if (cr < need(parseFloat(cs.fontSize), parseInt(cs.fontWeight, 10))) dimNote(name(el), cr, el.textContent.trim());
+    });
+    doc.querySelectorAll('svg').forEach(function(s){
+      var texts = [].filter.call(s.querySelectorAll('text'), function(t){ return t.textContent.trim(); });
+      if (!texts.length || !s.getClientRects().length || s.closest('[aria-hidden="true"]')) return;
+      // 命中测试只认视口里的点，先把图滚进视口；页面有 scroll-behavior: smooth，不写 instant 就不会立刻到位
+      s.scrollIntoView({block: 'center', behavior: 'instant'});
+      var fig = s.closest('figure[data-chart]'), where = (fig ? fig.dataset.chart : 'svg') + (s.id ? '（#' + s.id + '）' : '');
+      texts.forEach(function(t){
+        var cs = getComputedStyle(t), m = t.getScreenCTM(), r = t.getBoundingClientRect();
+        if (!m || r.width < 1 || cs.fill === 'none' || parseFloat(cs.opacity) === 0 || t.closest('[aria-hidden="true"]')) return;
+        var cr = ratio(rgba(cs.fill), svgBg(t));
+        if (cr < need(parseFloat(cs.fontSize) * Math.hypot(m.a, m.b), parseInt(cs.fontWeight, 10))) dimNote(where, cr, t.textContent.trim());
+      });
+    });
     document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；')
       + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '')
-      + '|' + diag.join('；');
+      + '|' + diag.join('；')
+      + '|' + dim.slice(0, 6).map(function(d){ return d.s + (d.n > 1 ? ' ×' + d.n : ''); }).join('；')
+      + (dim.length > 6 ? ' 等 ' + dim.length + ' 组' : '');
   }, 1500);
 });</script>
 """
@@ -1065,7 +1131,11 @@ def render_check(page, widths=(500, 1024, 1280)):
     issues, measured = [], []
     with tempfile.TemporaryDirectory() as td:
         probe = Path(td) / "probe.html"
-        probe.write_text(html + PROBE, encoding="utf-8")
+        # 固定亮色主题：对比度在亮色下最差；其余几何检查与主题无关，固定下来结果也不随本机外观变
+        probe.write_text(html.replace(
+            "<head>", '<head><script>document.documentElement.dataset.theme="light";'
+            'try{localStorage.setItem("show-me-theme","light")}catch(e){}</script>', 1) + PROBE,
+            encoding="utf-8")
         for w in widths:
             try:
                 out = subprocess.run(
@@ -1076,7 +1146,7 @@ def render_check(page, widths=(500, 1024, 1280)):
                     capture_output=True, text=True, timeout=90).stdout
             except Exception as e:
                 return [f"渲染检查跑不起来：{e}"], [], False
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
@@ -1103,6 +1173,10 @@ def render_check(page, widths=(500, 1024, 1280)):
             if diag:
                 issues.append(f"{cw}px 下示意图字号渲染后低于 8px：{diag}。宽版缩得太小就画窄版，"
                               "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）")
+            contrast = htmllib.unescape(m.group("contrast").strip())
+            if contrast and w == max(widths):
+                issues.append(f"文字对比度不足（亮色主题；正文要 4.5:1，大字要 3:1）：{contrast}。次要文字用 --color-muted-foreground，"
+                              "主角色写字用 --chart-hero-text，纯装饰的字加 aria-hidden=\"true\"（visual-system.md「对比度」）")
     return issues, measured, True
 
 
