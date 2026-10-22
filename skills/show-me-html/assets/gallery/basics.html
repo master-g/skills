@@ -884,7 +884,8 @@
         const $ = (id) => document.getElementById(id);
         const INK = "var(--ink)",
           PAPER = "var(--paper)",
-          HERO = "var(--chart-hero)";
+          HERO = "var(--chart-hero)",
+          HERO_TEXT = "var(--chart-hero-text)"; // 主角色写字用它，图形仍用 HERO
         const I90 = "var(--ink-90)",
           I70 = "var(--ink-70)",
           I60 = "var(--ink-60)",
@@ -893,7 +894,7 @@
           I22 = "var(--ink-22)",
           I14 = "var(--ink-14)",
           I8 = "var(--ink-8)";
-        const MUTED = I45,
+        const MUTED = "var(--color-muted-foreground)", // 次要文字；I45 及更浅的阶只给线和面
           GRID = I14,
           FAINT = I22;
         const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
@@ -1306,19 +1307,17 @@
               )
             );
             const gap = (x(SHUT[0]) + x(SHUT[1])) / 2;
-            txt(
-              s,
-              label({ x: gap, y: Y0 - 34, "text-anchor": "middle" }),
-              "台风"
-            );
-            txt(
-              s,
-              label({
-                x: gap,
-                y: Y0 - 34 + G.type.label * 1.25,
-                "text-anchor": "middle",
-              }),
-              "闭园"
+            // 空档只有约 18 个单位宽，两字一行会压到两侧发丝：竖排单列，末字落在地面线上方 8 个单位
+            [..."台风闭园"].forEach((ch, k) =>
+              txt(
+                s,
+                label({
+                  x: gap,
+                  y: Y0 - 8 - (3 - k) * G.type.label * 1.25,
+                  "text-anchor": "middle",
+                }),
+                ch
+              )
             );
             // 闭园前周末均值导轨
             el(s, "line", {
@@ -2500,7 +2499,7 @@
                   y: g.y + GAP / 2 + 12,
                   "font-size": 9,
                   "font-weight": 600,
-                  fill: I60,
+                  fill: MUTED,
                   "letter-spacing": ".1em",
                   class: "fade",
                   style: `animation-delay:${gi * 0.1}s`,

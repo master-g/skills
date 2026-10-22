@@ -930,7 +930,8 @@
         const $ = (id) => document.getElementById(id);
         const INK = "var(--ink)",
           PAPER = "var(--paper)",
-          HERO = "var(--chart-hero)";
+          HERO = "var(--chart-hero)",
+          HERO_TEXT = "var(--chart-hero-text)"; // 主角色写字用它，图形仍用 HERO
         const I90 = "var(--ink-90)",
           I70 = "var(--ink-70)",
           I60 = "var(--ink-60)",
@@ -939,7 +940,7 @@
           I22 = "var(--ink-22)",
           I14 = "var(--ink-14)",
           I8 = "var(--ink-8)";
-        const MUTED = I45,
+        const MUTED = "var(--color-muted-foreground)", // 次要文字；I45 及更浅的阶只给线和面
           GRID = I14,
           FAINT = I22;
         const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
@@ -994,7 +995,7 @@
                   y: base - h - 12,
                   "font-size": 13,
                   "font-weight": 600,
-                  fill: ri === 0 ? HERO : INK,
+                  fill: ri === 0 ? HERO_TEXT : INK,
                   "text-anchor": "middle",
                   class: "fade",
                   style: `animation-delay:${0.4 + i * 0.11}s`,
@@ -1083,7 +1084,7 @@
                   x: LX + 22,
                   y: y - 1,
                   "font-size": 10,
-                  fill: star ? HERO : INK,
+                  fill: star ? HERO_TEXT : INK,
                 }),
                 name
               );
@@ -1094,7 +1095,7 @@
                   y: y + 15,
                   "font-size": 14,
                   "font-weight": 600,
-                  fill: star ? HERO : INK,
+                  fill: star ? HERO_TEXT : INK,
                 },
                 `${p}%`
               );
@@ -1200,7 +1201,7 @@
                   y: y + SH / 2 + 4,
                   "font-size": 12,
                   "font-weight": 600,
-                  fill: i === years.length - 1 ? HERO : INK,
+                  fill: i === years.length - 1 ? HERO_TEXT : INK,
                   class: "fade",
                   style: `animation-delay:${0.5 + i * 0.12}s`,
                 },
@@ -1215,7 +1216,7 @@
                 y: 312,
                 "font-size": 9,
                 "font-weight": 600,
-                fill: I30,
+                fill: MUTED,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
                 class: "fade",
@@ -1306,7 +1307,7 @@
                     3,
                   "font-size": 9,
                   "font-weight": 600,
-                  fill: I60,
+                  fill: MUTED,
                   "text-anchor":
                     Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end",
                   class: "fade",
@@ -1421,7 +1422,7 @@
                   y: by + 3.5,
                   "font-size": 10,
                   "font-weight": 600,
-                  fill: I60,
+                  fill: MUTED,
                   "text-anchor": "end",
                   class: "fade",
                   style: `animation-delay:${0.45 + bi * 0.15}s`,
@@ -1493,7 +1494,7 @@
                   x: X0 - 6,
                   y: y + 3,
                   "font-size": 9,
-                  fill: I30,
+                  fill: MUTED,
                   "text-anchor": "end",
                 },
                 "$" + v + "K"
@@ -1572,7 +1573,7 @@
                 y: fy(flow[peak]) - 10,
                 "font-size": 9.5,
                 "font-weight": 600,
-                fill: HERO,
+                fill: HERO_TEXT,
                 "text-anchor": "middle",
                 class: "fade",
                 style: "animation-delay:1.5s",
@@ -1599,7 +1600,7 @@
                 y: TOP + RH + 14,
                 "font-size": 9,
                 "font-weight": 600,
-                fill: I30,
+                fill: MUTED,
                 "letter-spacing": ".12em",
               },
               "SPEND FALLS FROM THE TOP"
@@ -1611,7 +1612,7 @@
                 y: BOT - FH - 8,
                 "font-size": 9,
                 "font-weight": 600,
-                fill: I30,
+                fill: MUTED,
                 "letter-spacing": ".12em",
               },
               "SIGN-UPS RISE FROM THE FLOOR"
@@ -1695,7 +1696,7 @@
                       x: 360,
                       y: 284,
                       "font-size": 9,
-                      fill: I30,
+                      fill: MUTED,
                       "text-anchor": "end",
                     },
                     "PRICE $ →"
@@ -1706,7 +1707,7 @@
                       x: 34,
                       y: 52,
                       "font-size": 9,
-                      fill: I30,
+                      fill: MUTED,
                       "text-anchor": "end",
                     },
                     "CSAT ↑"
@@ -1783,7 +1784,7 @@
                 y: 306,
                 "font-size": 9,
                 "font-weight": 600,
-                fill: I30,
+                fill: MUTED,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
               },
@@ -1872,7 +1873,7 @@
                   y: y + 3.5,
                   "font-size": 10,
                   "font-weight": 600,
-                  fill: hero ? HERO : pos ? INK : I45,
+                  fill: hero ? HERO_TEXT : pos ? INK : MUTED,
                   "text-anchor": pos ? "start" : "end",
                   class: "fade",
                   style: dl(0.4 + i * 0.1),
@@ -1886,7 +1887,7 @@
                 x: 200,
                 y: 292,
                 "font-size": 9,
-                fill: I45,
+                fill: MUTED,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
                 class: "fade",
@@ -1958,7 +1959,7 @@
                   y: 3.5,
                   "font-size": d.t === 0 ? 10.5 : 9,
                   "font-weight": 600,
-                  fill: d.t === 0 ? INK : I60,
+                  fill: d.t === 0 ? INK : MUTED,
                 },
                 d.n
               );
@@ -2104,7 +2105,7 @@
                   x: X0 - 4,
                   y: y + 3,
                   "font-size": 9,
-                  fill: I45,
+                  fill: MUTED,
                   "text-anchor": "end",
                 },
                 g
@@ -2134,7 +2135,7 @@
                     x: x + bw * 0.35,
                     y: base + 12,
                     "font-size": 9,
-                    fill: I45,
+                    fill: MUTED,
                     "text-anchor": "middle",
                   },
                   i + 1
@@ -2146,7 +2147,7 @@
                 x: 200,
                 y: 250,
                 "font-size": 9,
-                fill: I45,
+                fill: MUTED,
                 "text-anchor": "middle",
                 "letter-spacing": ".12em",
                 class: "fade",
@@ -2190,7 +2191,12 @@
               });
               txt(
                 s,
-                { x: cx + 4, y: cy - rOf(m) - 3, "font-size": 9, fill: I30 },
+                {
+                  x: cx + 4,
+                  y: cy - rOf(m) - 3,
+                  "font-size": 9,
+                  fill: m < minsDesc[0] ? "var(--ink-fixed)" : MUTED,
+                }, // 15m / 30m 环的字落在主角色扇形上，用固定深墨
                 m + "m"
               );
             });
@@ -2373,7 +2379,7 @@
                   y: y0(ci) + 3,
                   "font-size": 9,
                   "font-weight": 600,
-                  fill: I60,
+                  fill: MUTED,
                   "text-anchor": "end",
                   class: "fade",
                 },
@@ -2399,7 +2405,7 @@
                 y: 312,
                 "font-size": 9,
                 "font-weight": 600,
-                fill: I30,
+                fill: MUTED,
                 "text-anchor": "end",
                 "letter-spacing": ".12em",
               },
@@ -2467,8 +2473,9 @@
               const num = txt(
                 grp,
                 {
-                  x: X0 + 6,
+                  x: X0,
                   y: 19,
+                  style: motion ? "transition:transform 950ms linear" : null,
                   "font-size": 10,
                   "font-weight": 600,
                   fill: INK,
@@ -2485,7 +2492,7 @@
                 y: 306,
                 "font-size": 40,
                 "font-weight": 600,
-                fill: I14,
+                fill: I60,
                 "text-anchor": "end",
               },
               ""
@@ -2503,7 +2510,7 @@
                 g[i].grp.style.transform = `translateY(${y0 + pos * rowH}px)`;
                 g[i].bar.style.width = w + "px";
                 if (i !== HERO_I) g[i].bar.style.fill = LAD[Math.min(4, pos)];
-                g[i].num.setAttribute("x", X0 + w + 6);
+                g[i].num.style.transform = `translateX(${w + 6}px)`; // 与条宽同一条线性过渡，数字始终跟在条尖后面，不压在收缩中的条上
                 g[i].num.textContent = "$" + Math.round(row[i]) + "K";
               });
               year.textContent = YEARS[step];
@@ -2550,7 +2557,7 @@
             const dot = el(s, "circle", { r: 4, fill: HERO }),
               lab = txt(
                 s,
-                { "font-size": 14, "font-weight": 600, fill: HERO },
+                { "font-size": 14, "font-weight": 600, fill: HERO_TEXT },
                 ""
               );
             el(s, "circle", {
@@ -2645,7 +2652,7 @@
                   x: X0 + ((i * 30) / (N - 1)) * (X1 - X0),
                   y: 250,
                   "font-size": 9,
-                  fill: I45,
+                  fill: MUTED,
                 },
                 m
               )
@@ -2869,7 +2876,7 @@
                   y: BASE + 18,
                   "font-size": 10,
                   "text-anchor": "middle",
-                  fill: star ? HERO : INK,
+                  fill: star ? HERO_TEXT : INK,
                 }),
                 g.name
               );
@@ -2888,7 +2895,7 @@
                   y: BASE + 45 + k * 13,
                   "font-size": 9.5,
                   "font-weight": 600,
-                  fill: HERO,
+                  fill: HERO_TEXT,
                   "text-anchor": "middle",
                 },
                 t
@@ -3138,7 +3145,7 @@
                     y: cy(r) + 3.5,
                     "font-size": name.length > 3 ? 9 : 9.5,
                     "font-weight": star ? 600 : 400,
-                    fill: star ? "var(--color-card)" : I70,
+                    fill: star ? "var(--ink-fixed)" : I70, // 主角色块上：固定深墨，两种主题都是 5.2:1
                     "text-anchor": "middle",
                     class: "fade",
                     style: dl(0.1 + t * 0.06),
@@ -3156,7 +3163,7 @@
                 y: cy(ORDER[0].length - 1) + CH / 2 + 22,
                 "font-size": 10,
                 "font-weight": 600,
-                fill: HERO,
+                fill: HERO_TEXT,
               },
               `${YEAR[0]} 年第 ${ORDER[0].indexOf(STAR) + 1} → ${YEAR[top]} 年登顶，此后没再掉下来`
             );

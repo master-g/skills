@@ -955,7 +955,8 @@
         const $ = (id) => document.getElementById(id);
         const INK = "var(--ink)",
           PAPER = "var(--paper)",
-          HERO = "var(--chart-hero)";
+          HERO = "var(--chart-hero)",
+          HERO_TEXT = "var(--chart-hero-text)"; // 主角色写字用它，图形仍用 HERO
         const I90 = "var(--ink-90)",
           I70 = "var(--ink-70)",
           I60 = "var(--ink-60)",
@@ -964,7 +965,7 @@
           I22 = "var(--ink-22)",
           I14 = "var(--ink-14)",
           I8 = "var(--ink-8)";
-        const MUTED = I45,
+        const MUTED = "var(--color-muted-foreground)", // 次要文字；I45 及更浅的阶只给线和面
           GRID = I14,
           FAINT = I22;
         const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
@@ -1120,7 +1121,7 @@
                 s,
                 label({
                   ...labelAt(lx, ly, a),
-                  fill: star ? HERO : G.ink.data,
+                  fill: star ? HERO_TEXT : G.ink.data,
                   class: "name fade",
                   style: dl(0.5 + i * 0.03),
                 }),
@@ -1129,7 +1130,7 @@
               el(t, "tspan", {
                 dx: 2.5,
                 "font-size": G.type.tick,
-                fill: star ? HERO : G.ink.quiet,
+                fill: star ? HERO_TEXT : G.ink.note,
                 style: "font-family:var(--font-mono)",
               }).textContent = cups;
             });
@@ -1718,7 +1719,7 @@
                   x: cx,
                   y: Math.min(below, 314),
                   "text-anchor": "middle",
-                  fill: g ? G.ink.quiet : G.ink.strong,
+                  fill: g ? G.ink.note : G.ink.strong,
                   "letter-spacing": G.type.track * 1.5,
                 }),
                 `${name} ${n} 人`
@@ -2331,7 +2332,7 @@
                   x: X0 - 10,
                   y: yy + 2.6,
                   "text-anchor": "end",
-                  fill: alive ? G.ink.strong : G.ink.quiet,
+                  fill: alive ? G.ink.strong : G.ink.note,
                 }),
                 name
               );
@@ -2861,9 +2862,8 @@
           const STEPS = [
             [1, I14, "1–9"],
             [10, I30, "10–19"],
-            [20, I45, "20–39"],
-            [40, I70, "40–69"],
-            [70, G.ink.strong, "70+"],
+            [20, I70, "20–39"], // 压在格内的数字用纸色，I45 的格子上两种主题都不到 4.5:1，所以越过 I45 / I60
+            [40, G.ink.strong, "40+"],
           ];
           const shade = (v) => STEPS.filter(([lo]) => v >= lo).pop()[1];
           const top3 = REF.flat()

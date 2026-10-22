@@ -273,7 +273,8 @@
         const $ = (id) => document.getElementById(id);
         const INK = "var(--ink)",
           PAPER = "var(--paper)",
-          HERO = "var(--chart-hero)";
+          HERO = "var(--chart-hero)",
+          HERO_TEXT = "var(--chart-hero-text)"; // 主角色写字用它，图形仍用 HERO
         const I90 = "var(--ink-90)",
           I70 = "var(--ink-70)",
           I60 = "var(--ink-60)",
@@ -282,7 +283,7 @@
           I22 = "var(--ink-22)",
           I14 = "var(--ink-14)",
           I8 = "var(--ink-8)";
-        const MUTED = I45,
+        const MUTED = "var(--color-muted-foreground)", // 次要文字；I45 及更浅的阶只给线和面
           GRID = I14,
           FAINT = I22;
         const LAD = [INK, I70, I45, I30, I22]; // 5 级：少系列
@@ -385,7 +386,7 @@
                     y: ly,
                     "font-size": 9,
                     "font-weight": 600,
-                    fill: I60,
+                    fill: MUTED,
                     "text-anchor": flip ? "end" : "start",
                     "dominant-baseline": "middle",
                     transform: `rotate(${flip ? a + 180 : a} ${lx} ${ly})`,
@@ -430,7 +431,7 @@
                   y: 27 + oi * 16,
                   "font-size": 9,
                   "font-weight": 600,
-                  fill: I60,
+                  fill: MUTED,
                 },
                 org
               );
@@ -445,9 +446,10 @@
             ["auth", 26, INK],
             ["billing", 24, I90],
             ["content", 28, I70],
-            ["search", 20, I60],
-            ["notify", 22, I45],
-            ["media", 20, I45],
+            // 中心节点的名字写在节点上：墨 / 纸色字只在 I70 以深或 I30 以浅的底上过 4.5:1，所以不用 I60 / I45
+            ["search", 20, I70],
+            ["notify", 22, I70],
+            ["media", 20, I30],
             ["analytics", 18, I30],
             ["edge", 14, I30],
           ];
@@ -556,7 +558,7 @@
                     y: 3.5,
                     "font-size": 9.5,
                     "font-weight": 600,
-                    fill: PAPER,
+                    fill: n.shade === I30 ? INK : PAPER,
                     "text-anchor": "middle",
                   },
                   n.name
@@ -875,14 +877,14 @@
                       ...at,
                       y,
                       "dominant-baseline": "central",
-                      fill: hero ? HERO : G.ink.quiet,
+                      fill: hero ? HERO_TEXT : G.ink.note,
                       style: halo,
                     }),
                     name
                   );
                   el(t, "tspan", {
                     dx: 3,
-                    fill: hero ? HERO : G.ink.mass,
+                    fill: hero ? HERO_TEXT : G.ink.note,
                   }).textContent = n;
                   const b = t.getBBox();
                   bg.setAttribute("x", b.x - 1.5);
