@@ -42,16 +42,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-22] `/improve execute 018`：执行者在 worktree 分支 `advisor/018-show-me-html-text-contrast`（5 个提交，基点 main `15d5ddc`）完成，一轮 REVISE 后 advisor 审阅通过，快进合入 main 并推送，`make install` 已装；bedrock 那页删掉「本页覆盖」块后已用新 build.py 重建（未提交）
-  验证：分支上 50 个测试 OK、gallery 截图 118/118 问题 0 条、五个冻结场景自检通过且 probe.json 不变、make check 通过，详见 plans/README「018 执行记录」
+- [2026-10-22] main：020、018、019 依次经 `/improve execute` 审阅通过，快进合入并推送，`make install SKILL=show-me-html SOURCE=.` 已装；三个执行者 worktree 与 7 个已合入的分支按用户确认删除。018 的回归轮次留在主检出 `scenarios/rounds/2026-10-22-5820240-018`
+  验证：019 合入时 51 个测试 OK、make check 通过、冻结场景截图与 018 轮逐字节相同；各计划的审阅细节见 plans/README「020 / 018 / 019 执行记录」
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-22] 下一个是 `/improve execute 019`，之后 021；执行者从本地 main 开分支。024 在 Step 2 出样张后停下等用户选。021 还没做冷读审阅（improve review-plan）
-  020、018 两个执行者的 worktree 与分支（`.claude/worktrees/agent-*`）待用户说清理再删
-  bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，待用户看过再提交
+- [2026-10-22] 下一个是 `/improve review-plan 021`（用户定：先冷读审阅再派发），收紧后 `/improve execute 021`，再 022 → 023 → 025；024 在 Step 2 出样张后停下等用户选
+  bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替他提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
   bench 待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments

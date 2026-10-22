@@ -7,6 +7,13 @@
 >
 > **2026-10-22 补充**：计划 020（维护者定在 018 之前执行）也会出现在输出里，属于预期：它给 `build.py` 的三处 Chrome 启动参数加了 `*chrome_proxy_args()`、新增这个函数，`test_build.py` 多一个测试，不碰 `PROBE`、正则和 `render_check` 的返回值。020 合入后本计划里的测试数都按多 1 个计。
 >
+> **2026-10-22 派发前复核（advisor，HEAD `c41e44e`，017、018、020 都已合入）**：drift check 只出现这三份计划的提交；「Current state」里 018 已合入时的锚点逐条核对过，都在（`document.title = 'PROBE|'` 只有一处，表达式末行是 `+ (dim.length > 6 ? …);`，正则末尾已有 `(?P<contrast>.*?)`，`render_check` 仍返回 `(issues, measured, ran)`，anti-patterns 表最大编号是 12）。按以下几点执行：
+>
+> - 测试数：Step 2 是 `Ran 50 tests`（与执行前相同），Step 3 起和 Done criteria 是 `Ran 51 tests`。
+> - Step 6 的上一轮改用 `2026-10-22-5820240-018`（018 合入时的回归轮次）。本计划只加 WARN，预期截图与它逐字节相同、`probe.json` 相同。
+> - **2026-10-22 执行中修订**：第一次执行停在 Step 3 的 STOP 条件（`lone` 报 3.10 倍）。原因是夹具没有 `.layout` 版心包裹，计划写错了夹具的版心；Step 3 的测试已改为先套上 `.layout`，预期 2.14 倍，STOP 范围改为 2.0–2.3；反例改为断言输出里没有任何「显示倍率」。
+> - `test_render_check_measures_only_the_shown_diagram_variant` 偶发失败（量到 485px、预期 500px，疑似滚动条占宽），与本计划无关：遇到时整套重跑一次，重跑通过就在汇报里记一笔，不要改这个测试或 `render_check` 的启动参数。
+>
 > 本文件里的代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 
 ## Status
@@ -97,7 +104,7 @@ show-me-html 把素材做成单文件 HTML 页面，数据图是 `<figure class=
           print(f"WARN   {w}")
   ```
 
-- `tests/test_build.py`：渲染类测试都长这样：`@unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")`，`page = self.copy_fixture()`（复制 `tests/fixtures/minimal-shell.html`，它是 `status-report` 配方，60rem 版心），往 `</main>` 前插标记，用 `subprocess.run([sys.executable, str(BUILD), str(page)], …)` 跑**不带** `--no-render` 的构建，断言 stdout 和退出码。结构照抄 `test_render_check_flags_shrunk_stat_num`。新测试插在 `def test_duplicate_svg_ids_fail(self):` 之前。
+- `tests/test_build.py`：渲染类测试都长这样：`@unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")`，`page = self.copy_fixture()`（复制 `tests/fixtures/minimal-shell.html`，它是 `status-report` 配方，但**没有**骨架 `shell.html` 里包在 `<main>` 外面的 `<div class="layout">`；60rem 版心的宽度上限挂在 `.layout` 上，所以夹具的内容在 1280px 视口下铺到约 1240px），往 `</main>` 前插标记，用 `subprocess.run([sys.executable, str(BUILD), str(page)], …)` 跑**不带** `--no-render` 的构建，断言 stdout 和退出码。结构照抄 `test_render_check_flags_shrunk_stat_num`。新测试插在 `def test_duplicate_svg_ids_fail(self):` 之前。
 - `references/charts.md` 第 233 行和第 236 行（「五件套外壳」一节，html 示例后面的要点列表）：
 
   <!-- prettier-ignore -->
@@ -263,14 +270,20 @@ show-me-html 把素材做成单文件 HTML 页面，数据图是 `<figure class=
                 html = page.read_text(encoding="utf-8")
                 body = fig.replace("ID", "solo") if layout == "lone" else (
                     '<div class="charts">' + fig.replace("ID", "left") + fig.replace("ID", "right") + "</div>")
-                page.write_text(html.replace("</main>", f"<section>{body}</section></main>"), encoding="utf-8")
+                # 夹具没有骨架的 .layout 版心包裹，内容会铺满视口；套上它，倍率才与真实页面（60rem 版心）一致
+                html = html.replace('<main id="doc">', '<div class="layout"><main id="doc">').replace(
+                    "</main>", f"<section>{body}</section></main></div>")
+                page.write_text(html, encoding="utf-8")
                 result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
-                self.assertEqual("WARN   1280px 下图的显示倍率超出 0.8–1.5：F5（#solo）" in result.stdout, flagged, result.stdout)
+                # 反例的两张图 id 是 left / right，只查 #solo 会让误报漏过去，所以先查有没有任何倍率 WARN
+                self.assertEqual("显示倍率" in result.stdout, flagged, result.stdout)
+                if flagged:
+                    self.assertIn("WARN   1280px 下图的显示倍率超出 0.8–1.5：F5（#solo）", result.stdout)
                 self.assertEqual(result.returncode, 0, result.stdout)
 
 ```
 
-两个子用例分别证明：单张 400 宽的图在 60rem 版心里被拉满时报 WARN（实测 2.30 倍），两张并排放进 `.charts` 时不报；两种情况构建都通过（WARN 不拦交付）。
+两个子用例分别证明：单张 400 宽的图在 60rem 版心里被拉满时报 WARN（advisor 2026-10-22 实测 856px、2.14 倍），两张并排放进 `.charts` 时不报（0.99 倍）；两种情况构建都通过（WARN 不拦交付）。不套 `.layout` 时单张是 3.10 倍、并排是 1.48 倍，反例离 1.5 的阈值太近，所以测试必须套上。
 
 **Verify**: 单个新测试命令 → `ok`（advisor 在 scratchpad 实测约 18 秒）；全量 → `OK`，测试数比 Step 2 多 1。
 
@@ -334,7 +347,7 @@ G=$(mktemp -d) && python3 skills/show-me-html/scripts/gallery.py --out "$G" 2>&1
 `MAINTENANCE.md`「联动规则」要求改 `build.py` 后跑五个冻结场景。五个场景页都没有数据图，新检查不会命中，这一步确认没有连带改坏别的东西。
 
 ```sh
-PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-16-7454494-base
+PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-22-5820240-018
 NEW=skills/show-me-html/scenarios/rounds/$(date +%F)-$(git rev-parse --short HEAD)-019
 mkdir -p "$NEW"
 for n in status-report approach-compare code-review concept-explainer triage-board; do
@@ -343,7 +356,7 @@ done
 node skills/show-me-html/scripts/probe_round.mjs "$NEW" "$PREV"
 ```
 
-**Verify**: 五次构建都打印 `自检通过。`，不出现「显示倍率」（advisor 在 017 + 018 + 019 叠加的副本里实测如此）；探针五行 `无问题`。`scenarios/rounds/` 在 `.gitignore` 里，轮次目录不进提交。
+**Verify**: 五次构建都打印 `自检通过。`，不出现「显示倍率」（advisor 在 017 + 018 + 019 叠加的副本里实测如此）；探针五行 `无问题`，与上一轮对比 `probe.json 相同`、截图没有差异（有差异就 STOP 并汇报是哪几张）。`scenarios/rounds/` 在 `.gitignore` 里，轮次目录不进提交。
 
 ## Test plan
 
@@ -366,7 +379,7 @@ node skills/show-me-html/scripts/probe_round.mjs "$NEW" "$PREV"
 
 - Drift check 出现 Scope 以外的改动，或 Step 1/2 的锚点行找不到（例如 `document.title = 'PROBE|'` 不止一处，或 `render_check` 已经有了别的返回值）。
 - Step 4 输出不是 `0`：说明 gallery 里有图的倍率超出阈值，汇报是哪张、多少倍，不要调阈值了事。
-- 新测试的 `lone` 子用例没报 WARN，或报出的倍率不在 2.2–2.4 之间：`minimal-shell.html` 的版心可能变了，汇报实际倍率。
+- 新测试的 `lone` 子用例没报 WARN，或报出的倍率不在 2.0–2.3 之间（预期 2.14）：版心或 `.layout` 的几何可能变了，汇报实际倍率。
 - 任何已有测试失败，修一次仍不过。
 
 ## Maintenance notes
