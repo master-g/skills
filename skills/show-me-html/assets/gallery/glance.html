@@ -2189,16 +2189,6 @@
                 "stroke-width": 1,
                 "stroke-dasharray": "3 4",
               });
-              txt(
-                s,
-                {
-                  x: cx + 4,
-                  y: cy - rOf(m) - 3,
-                  "font-size": 9,
-                  fill: m < minsDesc[0] ? "var(--ink-fixed)" : MUTED,
-                }, // 15m / 30m 环的字落在主角色扇形上，用固定深墨
-                m + "m"
-              );
             });
             let acc = 0;
             byShare.forEach(([n, share, mins], i) => {
@@ -2234,6 +2224,20 @@
                 `${n} ${share}% · ${mins}m`
               );
             });
+            // 环的刻度字画在扇形之后，否则会被盖住；12 点钟的扇形是 byShare[0]（主角色），
+            // 环落在它里面（m < 它的分钟数）的字用固定深墨，环在它外面的用次要文字色
+            [15, 30, 45].forEach((m) =>
+              txt(
+                s,
+                {
+                  x: cx + 4,
+                  y: cy - rOf(m) - 3,
+                  "font-size": 9,
+                  fill: m < byShare[0][2] ? "var(--ink-fixed)" : MUTED,
+                },
+                m + "m"
+              )
+            );
           });
         })();
 
@@ -2475,7 +2479,6 @@
                 {
                   x: X0,
                   y: 19,
-                  style: motion ? "transition:transform 950ms linear" : null,
                   "font-size": 10,
                   "font-weight": 600,
                   fill: INK,

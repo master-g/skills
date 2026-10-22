@@ -277,7 +277,7 @@ gallery 全部 59 张都是按图型概念独立编写的 SVG 实现，不含上
 **查一张图的代码**：`charts.md` 定编号 → 打开对应 gallery 文件 → 按 `data-chart="编号"` 找 figure 看外壳 → 在页尾 `<script>` 里搜 `// ════ 编号 ` 拿渲染块。
 **看一张图的效果**：`python3 <skill-path>/scripts/gallery.py --shots` 把全部图型各截 light / dark 两张 PNG，读打印出的 `index.md` 找到编号对应的截图。
 gallery 是多卡合页，交付页只复制需要的 figure 与块；块顶注释写明编码方式与主角规则。
-入场动画类 `pop` / `fade` / `draw` / `rise` / `grow`、聚焦类 `net-link` / `net-node` / `thread` / `nodelab` / `hit`，以及 `race-row` / `race-bar` / `morph-item` 的过渡都在 `show-me.css`。
+入场动画类 `pop` / `fade` / `draw` / `rise` / `grow`、聚焦类 `net-link` / `net-node` / `thread` / `nodelab` / `hit`，以及 `race-row` / `race-bar` / `race-num` / `morph-item` 的过渡都在 `show-me.css`。
 
 ## 库外图型
 
