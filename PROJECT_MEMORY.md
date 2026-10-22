@@ -42,14 +42,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-22] main：把构建耗时调研写成 `plans/020–027`（代理透传、CDP 运行器、gallery 截图与 `--pdf`、越框 WARN、表格标识符样张、交互探针、导出 `<desc>`、打印卡片与看板），018 补 F3 竖排与 drift 注记；visual-system 打印一行收窄措辞，已 rsync 安装副本。未推送
-  验证：make check 通过；各计划关键代码在 scratchpad 副本上预演过，数字与维护者决定见 plans/README「show-me-html 构建耗时」
+- [2026-10-22] `/improve execute 020`：执行者在 worktree 分支 `advisor/020-show-me-html-chrome-proxy` 完成，advisor 审阅通过，快进合入 main 并推送；`make install SKILL=show-me-html SOURCE=.` 已装。plans/README 状态行与「020 执行记录」已更新
+  验证：分支上 49 个测试 OK、make check 通过、五个冻结场景截图逐字节相同；带代理整页构建 30–43 秒对直连 107–119 秒，详见 plans/README「020 执行记录」
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-22] 下一个是 `/improve execute 020`，再 018 → 019 → 021（用户定的顺序，执行者从本地 main 开分支）；018 报 ERROR，F3 已并进 018 Step 5。024 在 Step 2 出样张后停下等用户选。021 还没做冷读审阅（improve review-plan）
+- [2026-10-22] 下一个是 `/improve execute 018`，再 019 → 021；执行者的 worktree `.claude/worktrees/agent-adacb69867cd4b862` 与分支待用户说清理再删
+  这是用户定的顺序，执行者从本地 main 开分支。018 报 ERROR，F3 已并进 018 Step 5。024 在 Step 2 出样张后停下等用户选。021 还没做冷读审阅（improve review-plan）
   bedrock 进房基线页已提交（bedrock e9f6700），018 合入后删页里的「本页覆盖」`<style>` 块
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
