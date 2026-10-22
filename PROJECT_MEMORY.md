@@ -42,14 +42,16 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-21] main：bench 地图（`.scratch/llm-bench/`）又关闭 grilling 票「运行隔离、联网与启动方式」（细节在该票）；此前已关 4 张研究票、5 张 grilling 票与冒烟 task 票。之后盘点一次，用户随即冻结地图，留待后续
-  验证：用户确认后跑 `codex sandbox -P :workspace --log-denials`（不调模型），日常 workspace-write 沙箱里渲染检查失败、网络被拒；pre-commit 的 prettier 与 make check 通过
-  推送：未推送（用户 10-21 定：地图走完再定推送策略）；research 分支只在本地
+- [2026-10-22] main：`/improve` 为 show-me-html 写了计划 017（图表字号 9/10/10）、018（文字对比度）、019（图表比例 WARN）；`/improve execute 017` 审阅通过，代码在分支 `advisor/017-show-me-html-chart-type-scale`（worktree `.claude/worktrees/agent-a3dee552982c06edc`），未合入 main，审阅记录见 `plans/README.md`「017 执行记录」
+  验证：在 017 分支上 48 个单元测试 OK，gallery 带渲染构建「问题 0 条」，make check 通过；计划文件过了 pre-commit
+  推送：用户 10-22 要求推送 main（包含 bench 的 17 个提交）；research 分支仍只在本地
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
+- [2026-10-22] 017 等用户决定是否合入：在 main 上 cherry-pick `1774cd5..advisor/017-show-me-html-chart-type-scale`，不要把 main 改指到该分支；F3「台风/闭园」压到两侧竖线约 1 单位，修不修由用户定；合入后执行 `make install SKILL=show-me-html SOURCE=.`
+  018 必须在 017 进入 main 后再执行，执行者从本地 main 开分支；对比度检查报 ERROR 还是 WARN 待用户定
 - [2026-10-21] bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
   待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments
