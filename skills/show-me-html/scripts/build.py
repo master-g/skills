@@ -945,11 +945,22 @@ PROBE = """
         if (cr < need(parseFloat(cs.fontSize) * Math.hypot(m.a, m.b), parseInt(cs.fontWeight, 10))) dimNote(where, cr, t.textContent.trim());
       });
     });
+    // 图的显示倍率（charts.md「五件套外壳」）：字号下限按 viewBox 单位核对，前提是图大致按 1:1 显示。
+    // 半宽卡的 400 宽 viewBox 单独放进整栏会放大一倍多，刻度和珠子变疏、字比同页别的图大一圈；缩到 0.8 倍以下字就小于下限
+    var scaled = [];
+    document.querySelectorAll('figure[data-chart] svg[viewBox]').forEach(function(s){
+      var vb = s.viewBox.baseVal, w = s.getBoundingClientRect().width;
+      if (!vb || !vb.width || !w) return;
+      var k = w / vb.width;
+      if (k > 1.5 || k < 0.8)
+        scaled.push(s.closest('figure').dataset.chart + (s.id ? '（#' + s.id + '）' : '') + ' viewBox 宽 ' + vb.width + '，显示 ' + Math.round(w) + 'px，' + k.toFixed(2) + ' 倍');
+    });
     document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；')
       + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '')
       + '|' + diag.join('；')
       + '|' + dim.slice(0, 6).map(function(d){ return d.s + (d.n > 1 ? ' ×' + d.n : ''); }).join('；')
-      + (dim.length > 6 ? ' 等 ' + dim.length + ' 组' : '');
+      + (dim.length > 6 ? ' 等 ' + dim.length + ' 组' : '')
+      + '|' + scaled.join('；');
   }, 1500);
 });</script>
 """
@@ -1121,14 +1132,14 @@ def chrome_proxy_args(env=None):
 
 # 无头 Chrome 把窗口宽度钳在 500px，比这更窄的视口测不到 —— 390px 只能人眼验。
 def render_check(page, widths=(500, 1024, 1280)):
-    """返回 (issues, measured, ran)。ran=False 表示没有浏览器，这道关没跑。"""
+    """返回 (issues, notes, measured, ran)。issues 是 ERROR，notes 是 WARN；ran=False 表示没有浏览器，这道关没跑。"""
     import html as htmllib, subprocess, tempfile
     chrome = find_chrome()
     if not chrome:
-        return [], [], False
+        return [], [], [], False
 
     html = page.read_text(encoding="utf-8")
-    issues, measured = [], []
+    issues, notes, measured = [], [], []
     with tempfile.TemporaryDirectory() as td:
         probe = Path(td) / "probe.html"
         # 固定亮色主题：对比度在亮色下最差；其余几何检查与主题无关，固定下来结果也不随本机外观变
@@ -1145,8 +1156,8 @@ def render_check(page, widths=(500, 1024, 1280)):
                      "--dump-dom", probe.as_uri()],
                     capture_output=True, text=True, timeout=90).stdout
             except Exception as e:
-                return [f"渲染检查跑不起来：{e}"], [], False
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)</title>", out, re.S)
+                return [f"渲染检查跑不起来：{e}"], [], [], False
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
                 continue
@@ -1177,7 +1188,11 @@ def render_check(page, widths=(500, 1024, 1280)):
             if contrast and w == max(widths):
                 issues.append(f"文字对比度不足（亮色主题；正文要 4.5:1，大字要 3:1）：{contrast}。次要文字用 --color-muted-foreground，"
                               "主角色写字用 --chart-hero-text，纯装饰的字加 aria-hidden=\"true\"（visual-system.md「对比度」）")
-    return issues, measured, True
+            scaled = htmllib.unescape(m.group("scaled").strip())
+            if scaled and w == max(widths):
+                notes.append(f"{cw}px 下图的显示倍率超出 0.8–1.5：{scaled}。单张图独占整栏时写成 .fig.wide 配 800 宽 viewBox，"
+                             "按单位计数的图（刻度、珠子、点阵）把单位细一档，保持标记间距（charts.md「五件套外壳」）")
+    return issues, notes, measured, True
 
 
 def main():
@@ -1233,8 +1248,9 @@ def main():
 
     rendered, measured = False, []
     if not args.no_render and not errors:
-        render_issues, measured, rendered = render_check(args.page)
+        render_issues, render_notes, measured, rendered = render_check(args.page)
         errors += render_issues
+        warns += render_notes
 
     for w in warns:
         print(f"WARN   {w}")

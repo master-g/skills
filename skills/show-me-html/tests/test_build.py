@@ -419,6 +419,28 @@ class BuildCliTests(unittest.TestCase):
                                      in result.stdout, w in flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
+    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    def test_render_check_warns_when_a_chart_is_scaled_up(self):
+        """半宽卡的 400 宽 viewBox 单独占整栏会放大一倍多（2026-10 实例：F5 刻度行 2.3 倍，刻度间距 12px）。"""
+        fig = """<figure class="fig" data-chart="F5"><div class="fig-box"><svg id="ID" viewBox="0 0 400 200" role="img"
+          aria-labelledby="ID-t"><title id="ID-t">t</title></svg></div></figure>"""
+        for layout, flagged in (("lone", True), ("pair", False)):
+            with self.subTest(layout=layout):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8")
+                body = fig.replace("ID", "solo") if layout == "lone" else (
+                    '<div class="charts">' + fig.replace("ID", "left") + fig.replace("ID", "right") + "</div>")
+                # 夹具没有骨架的 .layout 版心包裹，内容会铺满视口；套上它，倍率才与真实页面（60rem 版心）一致
+                html = html.replace('<main id="doc">', '<div class="layout"><main id="doc">').replace(
+                    "</main>", f"<section>{body}</section></main></div>")
+                page.write_text(html, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                # 反例的两张图 id 是 left / right，只查 #solo 会让误报漏过去，所以先查有没有任何倍率 WARN
+                self.assertEqual("显示倍率" in result.stdout, flagged, result.stdout)
+                if flagged:
+                    self.assertIn("WARN   1280px 下图的显示倍率超出 0.8–1.5：F5（#solo）", result.stdout)
+                self.assertEqual(result.returncode, 0, result.stdout)
+
     def test_duplicate_svg_ids_fail(self):
         """宽窄两版共用 marker id 时，窄版的 url(#…) 会指到隐藏的宽版里。"""
         page = self.copy_fixture("diagram-variants.html")

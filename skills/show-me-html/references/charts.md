@@ -232,10 +232,12 @@ gallery 全部 59 张都是按图型概念独立编写的 SVG 实现，不含上
 
 - `data-chart` 写图型编号；页面有它 `build.py` 才内联运行时。
 - 标题（衬线）写结论；`fig-sub`（等宽）写单位与图例；`fig-src` 写来源；`figcaption` 是一句独立成立的论点，不重复标题。
-- 通栏图加 `class="fig wide"`；多图放进 `<div class="charts">` 栅格。
+- 两张半宽图并排放进 `<div class="charts">` 栅格；通栏图加 `class="fig wide"`。
 - `<title>`/`<desc>` 留在 svg 里，重播时运行时只清图形。
 - 需要状态栏（B3）加 `<div class="fig-status" data-md-skip><span data-text></span><span data-pin></span></div>`，用 DOM 构造内容，不用 `innerHTML`。
 - 半宽卡 viewBox `0 0 400 320`，通栏 `0 0 800 320` 起；宽高比由 viewBox 决定，svg 宽 100%。
+- **单张图会占满整栏**：不在 `.charts` 里，或 `.charts` 里只有它一张，都一样。这时仍用 400 宽的 viewBox，60rem 版心下会放大 2.3 倍，字比同页别的图大一圈，刻度和珠子之间空出大缝。单张图写成通栏：加 `.wide`，viewBox 改成 800 宽，按新宽度重排。构建在 1280px 下量每张图的显示倍率，超出 0.8–1.5 报 WARN。
+- 按单位计数的图（F5 刻度行、F12 串珠、点阵、华夫格）按显示尺寸检查密度：1280px 下相邻标记的间距不超过约 8px（gallery 半宽卡里的 F5 是 8.2px）。改成通栏后行变长，把单位细一档（一根 = 0.1 个百分点改成 0.05 个百分点），根数翻倍，间距回到原来的大小，单位行同步改写。
 
 ## 运行时与查代码
 
