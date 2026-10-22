@@ -10,6 +10,12 @@
 > - `7c94bce` 在 `show-me.css` 主打印块末尾加了 `@page { size: A4 }` 和几条分页规则（之后的行号往后挪约 18 行），并改了 `visual-system.md`「响应式与打印」的打印一行；同日那一行的措辞又收窄过一次。
 > - 计划 020（维护者定在本计划之前执行）改了 `build.py` 里三处 Chrome 启动参数、新增 `chrome_proxy_args()`，`test_build.py` 多一个测试，`components.md`、`layouts.md` 各改一处。020 合入后，本计划里所有 `Ran 48 tests` / `Ran 49 tests` 都按多 1 个计。
 >
+> **2026-10-22 派发前复核（advisor，HEAD `15d5ddc`，017 与 020 都已合入）**：「Current state」的锚点逐条核对过，都还在。三处按此执行：
+>
+> - 测试数：Step 1–3 的 `Ran 48 tests` 实际是 `Ran 49 tests`，Step 4 及以后的 `Ran 49 tests` 实际是 `Ran 50 tests`。
+> - F3 那两个 `txt(…)` 调用在仓库里被 prettier 排成了多行（`txt(` / `s,` / `label({ x: gap, y: Y0 - 34, "text-anchor": "middle" }),` / `"台风"` / `);`，第二个同理），与 Step 5 第 3 小步的引文换行不同；按内容找到这两段整体替换即可，不算对不上。
+> - Step 7 第 2 小步的上一轮改用 `2026-10-22-6d39fa5-printbreak`（最近一轮；020 的回归与它逐字节相同）。原写的 `2026-10-16-7454494-base` 与当前 main 之间本来就有 10 处与本计划无关的 `probe.json` 差异。
+>
 > 本文件里的 js / css / markdown 代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 
 ## Status
@@ -43,7 +49,7 @@ WCAG AA 要求正文 4.5:1，大字（≥ 24px，或 ≥ 18.66px 粗体）3:1。
 - 所有次要文字 ≥ 4.5:1：新增明度阶 `--ink-65`，`--muted-foreground` 从 `--ink-60` 改到 `--ink-65`（卡面上亮 5.16:1、暗 5.86:1），来源行、图型标签、图内刻度都改用它。层级改靠字号与字体区分。
 - 主角色写字加一个专用色 `--hero-text` = 主角色掺四成墨（亮 5.29:1、暗 7.50:1），图里叫 `--chart-hero-text`。图形（柱、点、线）仍用原来的 `--hero`。
 
-上表最后两行是 advisor 复核组件夹具 `tests/fixtures/component-states.html` 时补查出来的：不改的话，新检查会拦下所有用了告急按钮、或在卡片里放了链接样式按钮的页面。改法沿用上面两条决定：告急按钮的字改用固定深墨 `--ink-fixed`（压在主角色上两种主题都是 5.15:1；暗色主题下它本来就是深色字），链接强调色改为 `--hero-text`。
+上表最后两行是 advisor 复核组件夹具 `tests/fixtures/component-states.html` 时补查出来的：不改的话，新检查会拦下所有用了告急按钮、或在卡片里放了链接样式按钮的页面。改法沿用上面两条决定：告急按钮的字改用固定深墨 `--ink-fixed`（压在主角色上两种主题都是 5.15:1；暗色主题下它本来就是深色字），链接强调色改为 `--hero-text`。维护者 2026-10-22 派发时确认了告急按钮的这个改法（橙底深字），没有采用「底色改 `--hero-text`、字仍用纸色」的备选。
 
 本计划还给构建加一道文字对比度检查（ERROR），在亮色主题下量每段 HTML 文字和每个 SVG 文字，免得同样的问题回到页面里。是 ERROR 还是 WARN 由 advisor 定，维护者可改，Step 3 末尾写了 WARN 变体。
 
@@ -626,7 +632,7 @@ WCAG AA 要求正文 4.5:1，大字（≥ 24px，或 ≥ 18.66px 粗体）3:1。
 2. 冻结场景轮次：
 
    ```sh
-   PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-16-7454494-base
+   PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-22-6d39fa5-printbreak
    NEW=skills/show-me-html/scenarios/rounds/$(date +%F)-$(git rev-parse --short HEAD)-018
    mkdir -p "$NEW"
    for n in status-report approach-compare code-review concept-explainer triage-board; do
@@ -635,7 +641,7 @@ WCAG AA 要求正文 4.5:1，大字（≥ 24px，或 ≥ 18.66px 粗体）3:1。
    node skills/show-me-html/scripts/probe_round.mjs "$NEW" "$PREV"
    ```
 
-   **Verify**: 五次构建各打印 `自检通过。`（advisor 实测：没有 Step 1 第 7 小步的徽标修正时，status-report、concept-explainer、triage-board 会因告急徽标 2.40:1 报 ERROR）；探针五行 `无问题`；人眼看 `"$NEW"/_probe/status-report-light-1280.png`，次要文字比改前略深，层级仍然清楚。
+   **Verify**: 五次构建各打印 `自检通过。`（advisor 实测：没有 Step 1 第 7 小步的徽标修正时，status-report、concept-explainer、triage-board 会因告急徽标 2.40:1 报 ERROR）；探针五行 `无问题`；人眼看 `"$NEW"/_probe/status-report-light-1280.png`，次要文字比改前略深，层级仍然清楚。本计划改了颜色，截图与上一轮不同属于预期；探针打印的 `probe.json` 差异逐条写进汇报（预期只有颜色相关的读数变化，页高、Tab 停靠数、溢出、打印页数不该变，变了就在汇报里标出）。
 
 3. 组件夹具：它收齐了按钮、徽标、提示框等组件的各个变体，但现有测试只用 `--no-render` 构建它，渲染检查从没在它上面跑过。
 
