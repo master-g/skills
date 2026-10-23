@@ -163,7 +163,7 @@ show-me-html 页面工具条上的「复制为 Markdown」由骨架脚本 `asset
 
 - JS 语法检查无输出。
 - `npx prettier --check skills/show-me-html/assets/shell.js` → `All matched files use Prettier code style!`（不要跑 `--write`；不通过说明粘贴时改了缩进，对照上面的代码块改回）。
-- `grep -c 'getComputedStyle(n).display' skills/show-me-html/assets/shell.js` → `1`；`grep -c 'getClientRects' skills/show-me-html/assets/shell.js` → `0`。
+- `grep -c 'getComputedStyle(n).display' skills/show-me-html/assets/shell.js` → `1`；`grep -c 'getClientRects' skills/show-me-html/assets/shell.js` → `1`，唯一一处在 Step 1 粘贴的注释里，代码里没有调用（2026-10-23 执行后更正：原写 `0`，是审阅时最后改注释没同步这条计数）。
 
 ### Step 2: 测试
 

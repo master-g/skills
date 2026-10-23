@@ -239,7 +239,7 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 - **冻结场景探针的 PDF 是 Letter**（022 冷读时发现）：`probe_round.mjs` 调 `Page.printToPDF {}` 时没传 `preferCSSPageSize`，`_probe/*.pdf` 都是 612 × 792。所以它报的「打印页数」不是读者实际用 A4 打印时的页数。
 - **最小夹具 `--pdf` 多出一张空白页**（022 冷读时发现）：原因已在 027 冷读时核实为 `body { min-height: 100vh }`，修法写进 027 的 Step 4。
 - **`<div class="progress">` 没有填充色**（027 冷读时发现）：components.md「其余」写了 `<div class="progress"><span style="width:64%"></span></div>`，但 `show-me.css:805–822` 只给 `.progress` 写了底色，里面的 `span` 是行内元素、没有背景，屏幕上也看不到数值。要么补 `.progress > span { display: block; height: 100%; background: var(--color-primary); }`，要么从文档里删掉这种写法。
-- **冻结场景截图首跑常不同**（027 审阅时记作偶发，026 审阅时已到「变常见」的程度）：已写成 028，见「028 规划记录」。
+- **冻结场景截图首跑常不同**（027 审阅时记作偶发，026 审阅时已到「变常见」的程度）：已由 028 修好（2026-10-23 合入），见「028 规划记录」。
 - **`cdp.mjs` 不处理信号**（025 冷读时发现）：直接跑 `probe_round.mjs` 时被 Ctrl-C 之外的信号（例如命令超时的 SIGTERM）打断，Chrome 会成孤儿进程、配置目录留下。`build.py` 调运行器时有进程组兜底；025 的 `probe_page.mjs` 自己接了信号。要统一修，就在 `launch()` 里接 SIGINT / SIGTERM。
 - **卡住的网络请求拖住虚拟时间**（022 复核时遇到一次）：运行器按 `pauseIfNetworkFetchesPending` 等待，某个请求（多半是字体）一直不返回时，虚拟时间预算永远用不完，任务要等 90 秒真实超时后才失败，重跑就好。改前的 `--virtual-time-budget` 也是同样的语义。如果以后变得常见，可以考虑给虚拟时间加一个真实时间上限，到点后改为放行。
 - **gallery 有 10 张图的 `<desc>` 只重复单位行**（026 审阅时发现）：多为英文示例图（如 `Q2 2026 · MRR, $K`、`sign-ups per market · bars cascade in · click to replay`），`<desc>` 没写数据，不符合 026 在 charts.md「五件套外壳」要点里加的那行。026 的导出去重让它们在 Markdown 里不重复出现；要不要改写这些 `<desc>`，另定。
@@ -286,9 +286,9 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | 023  | 构建报出越出 SVG 图框、会被裁掉的文字（WARN）                                                  | P2       | S      | 018、019、021 | DONE（2026-10-23 审阅通过，拣到 main 为 `a99b310`；见「023 执行记录」）              |
 | 024  | 表格里的长标识符不再被压成竖条：表格内 `code` 不在词中断开，文档教作者插 `<wbr>`               | P2       | S      | —             | DONE（2026-10-23 维护者选 d；审阅通过，拣到 main 为 `f580de6`；见「024 执行记录」）  |
 | 025  | 单页交互探针 `probe_page.mjs`                                                                  | P3       | M      | 021           | DONE（2026-10-23 审阅通过，拣到 main 为 `ae5fa79`；见「025 执行记录」）              |
-| 026  | Markdown 导出带上图的 `<desc>`                                                                 | P3       | S      | —             | TODO（2026-10-23 审阅修订，见「026 审阅记录」）                                      |
+| 026  | Markdown 导出带上图的 `<desc>`                                                                 | P3       | S      | —             | DONE（2026-10-23 审阅通过，拣到 main 为 `fb8e2b3`；见「026 执行记录」）              |
 | 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留，短页不多出空白页，代码块自动换行 | P2       | S      | 022           | DONE（2026-10-23 审阅通过，拣到 main 为 `f6bb371`；见「027 执行记录」）              |
-| 028  | 冻结场景探针截图前等网络字体到齐，字体取不到时报出来                                           | P2       | S      | —             | TODO                                                                                 |
+| 028  | 冻结场景探针截图前等网络字体到齐，字体取不到时报出来                                           | P2       | S      | —             | DONE（2026-10-23 审阅通过，拣到 main 为 `8989ae0`；见「028 执行记录」）              |
 
 018、019 的行在上一节。完整顺序：020 → 018 → 019 → 021 → 022 → 024（样张）→ 023 → 025；024 选定后的实现、026 不依赖别的计划，可以穿插在任何位置；027 用 022 的 `--pdf` 验证，022 已合入，也可随时做。028 只改探针、不依赖别的计划，建议排在 026 之前：合入后 026 的冻结场景轮次首跑就不该再有字形差异。
 
@@ -500,6 +500,23 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
   - Step 4：等字体时 30/30、`exit=0`；`FONT_WAIT_MS = 0` 时 0/30、14 处不同、`exit=1`。撤掉临时改动后两条计数都对。
   - Step 5：`字体样式表没有取到`，`exit=1`，136 秒。
 - **没做**：没派冷读子代理，计划原文已在副本上逐步跑通。`render.mjs` 走虚拟时间，没有这个问题，不在范围内。
+
+### 028 执行记录（2026-10-23）
+
+- **执行**：一次完成，没有 STOP，没有 REVISE。执行者在 worktree 里用符号链接接上主检出的 `node_modules`，没跑 `npm install`；Step 4 的临时补丁在提交之后才加，撤掉后 `git status` 干净。
+- **执行者的结果**：Step 3 两轮 30/30、29/30（`concept-explainer-light-390` 差 39 像素，在一块 16×8 的区域里），各 139 秒；Step 4 等字体 30/30、`exit=0`，`FONT_WAIT_MS = 0` 报 `字体 0 秒内没有下完`、14 处不同、0/30、`exit=1`；Step 5 报 `字体样式表没有取到`、0/30、`exit=1`、134 秒。
+- **advisor 复核**：`probe_round.mjs`、`scenarios/README.md` 与计划代码块套在 `eec315f` 上的结果逐字节相同；分支只改这两个文件，提交没有 trailer；`node --check`、prettier、五条计数通过。worktree 里 `make check` 报 53 个文件、主检出报 155 个，差的是主检出里被 gitignore 的轮次目录下的 `_probe/*.md`，导出的分支也是 53 个，不是漏查。advisor 在 worktree 里另跑一轮：正常网络首跑 30/30、`probe.json` 相同、`exit=0`，140 秒；断网 `exit=1`、`字体样式表没有取到`，134 秒。
+
+### 026 执行记录（2026-10-23）
+
+- **执行**：一次完成，没有 STOP，没有 REVISE；028 审阅通过后才派发，两份计划没有同时跑 Chrome。worktree 基于 `eec315f`，不含 028，所以 Step 3 用的是旧探针，首跑就是 30/30，没用上那一次重跑。
+- **偏差（计划的错）**：Step 1 写的 `grep -c 'getClientRects'` → `0` 实际是 `1`，唯一一处在计划自己让粘贴的注释里；审阅时最后改了注释，没同步这条计数。执行者原样保留注释、在 NOTES 写明，判为合理。计划里这条已更正。
+- **执行者的结果**：`Ran 60 tests` OK；反证失败于 `'乙面板的图：七月 88 千人。' not found`；Step 3 五页 `自检通过。`、`无问题`，`probe.json` 相同、30/30，只有 `Markdown 不同：concept-explainer`，diff 正好三行；Step 4 `desc 59 exported 59 adjacent-dups 0`；`make check` 通过。
+- **advisor 复核**：
+  - 代码：`shell.js`、`test_build.py`、`charts.md` 与计划代码块套在 `eec315f` 上的结果逐字节相同；分支只改这三个文件，提交没有 trailer。
+  - 验证：worktree 里 `Ran 60 tests` OK（28 秒），语法、prettier、两条 grep、`make check` 通过；在导出的副本里另做两次反证，换回 `getClientRects()` 失败于隐藏标签页那条，去掉去重失败于 `2 != 1`；Step 4 原文重跑为 `desc 59 exported 59 adjacent-dups 0`。
+  - 联合检查：用 028 分支的新探针测 026 重建的五页（对 027 轮）：首跑 30/30、`probe.json` 相同、`exit=0`，只有 `Markdown 不同：concept-explainer`，diff 与 Step 3 相同。
+- **合入**：维护者 2026-10-23 确认，028 的 `ef109bf`、026 的 `5f19fd2` 依次拣到 main 为 `8989ae0`、`fb8e2b3`；拣入后的 main 上 60 个测试 OK、`make check` 通过，推送并 `make install`。026 执行者建的轮次 `2026-10-23-eec315f-026`（五页已用 026 的骨架重建，截图与 027 轮相同、concept-explainer 的 Markdown 多一行图摘要）已复制到主检出，作为下一轮的对照基线。两个 worktree、执行分支和审阅用的 /tmp 文件都已删除。
 
 ### Findings considered and rejected
 

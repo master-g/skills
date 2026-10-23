@@ -25,6 +25,7 @@
 - [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 - [2026-10-23] Agent 工具 `isolation: worktree` 开出的分支基于 origin/main，不是本地 main：本地有未推送提交时执行者看不到，合入要 cherry-pick（023/024 就是这样）；计划照旧放只读快照到 /tmp 给执行者读
+- [2026-10-23] Agent 工具开的 worktree 里没有 node_modules：在 worktree 根目录 `ln -s /Users/mg/github/skills/node_modules node_modules` 就能跑 prettier 和 pre-commit，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。来源：028、026 执行
 
 ## 失败尝试
 
@@ -43,15 +44,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-23] main：improve review-plan 026（复现隐藏标签页里的图摘要被丢，改为看 svg 自己的 display，并加与上一段相同不重复的去重）；新写 028（probe_round 截图前等网络字体到齐，取不到时报出、退出码 1）；只改 plans/，代码未动
-  验证：都在 eec315f 的 /tmp 副本上按计划原文跑——026 60 个测试 OK、轮次只多 concept-explainer 一行、gallery 59/59/0；028 延迟反证 0/30 对 30/30、三条失败路径、正常网络首跑 30/30；细节见 plans/README「026 审阅记录」「028 规划记录」
+- [2026-10-23] main：improve execute 028、026，两个 sonnet 执行者各一次完成，审阅 APPROVE，拣入 main（`8989ae0`、`fb8e2b3`）并推送，`make install SKILL=show-me-html SOURCE=.` 已装；worktree 与执行分支已删
+  验证：合入后 60 个测试 OK、make check 通过；028 新探针测 026 重建的五页首跑 30/30、probe.json 相同、只多 concept-explainer 一行图摘要；细节见 plans/README「026 执行记录」「028 执行记录」
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-23] 构建耗时这批剩 028、026：先 `execute 028`（合入后冻结场景首跑不该再有字形差异），再 `execute 026`；026 的导出去重是 advisor 定的，维护者可改（plans/README「Decisions recorded」末段）
-  冻结场景对照基线仍是 `2026-10-23-6b6872b-027`（028 只改探针，不产生新基线）；「未规划」里还有 cdp.mjs 信号、`.progress` div 无填充、gallery 10 张 desc 只重复单位行；还没在真实页面上复测构建耗时（交接调研那页），用户没选
+- [2026-10-23] 构建耗时这批（020–028）已全部合入；冻结场景对照基线改用 `2026-10-23-eec315f-026`，首跑就该 30/30，计划里不再写「首跑不同先重跑」；「未规划」里还有 cdp.mjs 信号、`.progress` div 无填充、gallery 10 张 desc 只重复单位行等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
   bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替他提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
