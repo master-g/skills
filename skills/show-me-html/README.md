@@ -34,25 +34,27 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 目录
 
-| 路径                          | 作用                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付                          |
-| `assets/shell.html`           | 页面骨架（工具条、目录容器、防闪烁主题脚本）                             |
-| `assets/shell.js`             | 骨架行为脚本（主题切换、目录、Markdown 导出、代码工具条），构建时注入    |
-| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何、打印样式，以及数据图外壳与入场动画 |
-| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                                       |
-| `references/components.md`    | 稳定组件 markup、设计 token、分类色                                      |
-| `references/layouts.md`       | 21 条版式配方及五项视觉契约                                              |
-| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                                       |
-| `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录                             |
-| `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）                               |
-| `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                                      |
-| `scripts/build.py`            | 内联资产 + 自检                                                          |
-| `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                            |
-| `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                     |
-| `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                             |
-| `scripts/probe_round.mjs`     | 冻结场景轮次探针：主题、动效、三档宽度截图、真实键盘、打印与场景判据     |
-| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                  |
+| 路径                          | 作用                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
+| `SKILL.md`                    | 流水线：意图 → 调度 → 材料 → 合成 → 自检 → 交付                                      |
+| `assets/shell.html`           | 页面骨架（工具条、目录容器、防闪烁主题脚本）                                         |
+| `assets/shell.js`             | 骨架行为脚本（主题切换、目录、Markdown 导出、代码工具条），构建时注入                |
+| `assets/show-me.css`          | 自有 token、主题、组件状态、配方几何、打印样式，以及数据图外壳与入场动画             |
+| `references/visual-system.md` | 视觉所有权、组件状态和配方家族约束                                                   |
+| `references/components.md`    | 稳定组件 markup、设计 token、分类色                                                  |
+| `references/layouts.md`       | 21 条版式配方及五项视觉契约                                                          |
+| `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                                                   |
+| `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录                                         |
+| `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）                                           |
+| `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                                                  |
+| `scripts/build.py`            | 内联资产 + 自检                                                                      |
+| `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                                        |
+| `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                                 |
+| `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                                         |
+| `scripts/probe_round.mjs`     | 冻结场景轮次探针：主题、动效、三档宽度截图、真实键盘、打印与场景判据                 |
+| `scripts/render.mjs`          | `build.py` 的 Chrome 运行器：一个无头实例跑完渲染检查、`--snap` 切片与 `--shot` 截图 |
+| `scripts/cdp.mjs`             | 无头 Chrome 的 CDP 连接（启动、收发、清理），`render.mjs` 与 `probe_round.mjs` 共用  |
+| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                              |
 
 ## 视觉系统
 

@@ -16,6 +16,7 @@ CSS = SKILL / "assets" / "show-me.css"
 
 RECIPES = runpy.run_path(str(BUILD))["RECIPES"]
 FIND_CHROME = runpy.run_path(str(BUILD))["find_chrome"]
+RENDERER = bool(FIND_CHROME() and shutil.which("node"))
 SHELL = SKILL / "assets" / "shell.html"
 
 
@@ -246,7 +247,7 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(run_build(page).returncode, 0)
         self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
 
-    @unittest.skipUnless(FIND_CHROME(), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_snap_renders_both_themes_and_exports_markdown(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -264,11 +265,13 @@ class BuildCliTests(unittest.TestCase):
         result = run_build(page, "--snap", str(out))
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        for name, width in (("light-500", 500), ("dark-500", 500), ("light-1280", 1280), ("dark-1280", 1280)):
-            png = out / f"{name}.png"
+        for name, width in (("light-390", 390), ("dark-390", 390), ("light-500", 500), ("dark-500", 500),
+                         ("light-1280", 1280), ("dark-1280", 1280)):
+            png = out / f"{name}-01.png"
             self.assertTrue(png.exists(), name)
             self.assertEqual(png_size(png)[0], width, name)
-        self.assertNotEqual((out / "light-1280.png").read_bytes(), (out / "dark-1280.png").read_bytes())
+        self.assertNotEqual((out / "light-1280-01.png").read_bytes(), (out / "dark-1280-01.png").read_bytes())
+        self.assertIn("light-1280-01.png  含：第二节", result.stdout)
         md = (out / "export.md").read_text(encoding="utf-8")
         self.assertIn("# 快照测试", md)
         self.assertIn("## 第二节", md)
@@ -277,6 +280,66 @@ class BuildCliTests(unittest.TestCase):
         self.assertIn("\n#### 工单\n", md)
         self.assertIn("\n##### 卡内小节\n", md)
         self.assertNotIn("__snap", md)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_snap_narrows_to_one_theme_and_width(self):
+        page = self.copy_fixture()
+        out = page.parent / "snap"
+        result = run_build(page, "--snap", str(out), "--snap-theme", "dark", "--snap-width", "1280")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(sorted(p.name for p in out.glob("*.png")), ["dark-1280-01.png"])
+        self.assertTrue((out / "export.md").exists())
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_render_check_warns_on_phone_overflow_only(self):
+        """390 按手机模拟：420px 宽的块在 500 及以上放得下，只在 390 溢出，报 WARN 不报 ERROR。"""
+        page = self.copy_fixture()
+        html = page.read_text(encoding="utf-8").replace(
+            "</main>", '<section><div style="width: 420px">定宽的块</div></section></main>')
+        page.write_text(html, encoding="utf-8")
+        result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("WARN   390px（手机）视口横向溢出", result.stdout)
+        self.assertNotIn("ERROR", result.stdout)
+
+    @unittest.skipIf(shutil.which("node", path="/usr/bin:/bin"), "/usr/bin 里有 node，造不出没有 node 的环境")
+    def test_render_check_reports_not_run_without_node(self):
+        page = self.copy_fixture()
+        result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True,
+                                check=False, env={"PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("渲染检查未运行：找不到 Chrome/Chromium 或 node 22+", result.stdout)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_runner_returns_long_output_whole(self):
+        """运行器的结果经管道交回，macOS 上写管道是异步的：超过 64 KB 也要完整。"""
+        run_jobs = runpy.run_path(str(BUILD))["run_jobs"]
+        results, err = run_jobs([{"url": (FIXTURES / "minimal-shell.html").as_uri(), "eval": "'x'.repeat(200000)"}])
+        self.assertIsNone(err)
+        self.assertEqual(len(results[0]["value"]), 200000)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_shot_keeps_card_at_full_size(self):
+        """--shot 按卡的尺寸、两倍像素截图；卡没有被 fit() 缩小（缩小时 build 报「卡片被缩放」）。"""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        page = Path(tmp.name) / "card.html"
+        html = SHELL.read_text(encoding="utf-8").replace("PAGE TITLE", "卡片测试").replace("choose-a-recipe", "share-card")
+        html = re.sub(r'<main id="doc">.*?</main>',
+                      '<main id="doc"><section><div class="sheet-stage"><article class="sheet">'
+                      '<div class="sheet-mast"><strong>周报</strong><span>W35</span></div>'
+                      '<div class="sheet-body"><h1>结论</h1><p>一句话说明。</p></div>'
+                      '<div class="sheet-foot"><span>来源</span><span>2026-09-06</span></div>'
+                      '</article></div></section></main>',
+                      html, count=1, flags=re.S)
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page, "--shot")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("--shot 未完成", result.stdout)
+        self.assertIn("已截图", result.stdout)
+        self.assertEqual(png_size(page.with_name("card.png")), (1200, 2000))
 
     def test_gallery_pages_build_and_scripts_parse(self):
         gallery = SKILL / "assets" / "gallery"
@@ -343,7 +406,7 @@ class BuildCliTests(unittest.TestCase):
                          ["--proxy-server=socks5://127.0.0.1:7891", "--proxy-bypass-list=localhost;*.corp.test"])
         self.assertEqual(proxy_args({"HTTPS_PROXY": "http://b.test:2", "no_proxy": "*"}), [])
 
-    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_chart_text_below_font_floor(self):
         """图内字号下限 9（viewBox 单位）：图滚入视野才画，探针要先强制画出来再量。"""
         # 图放在首屏之外：reveal 不会自己画它
@@ -363,7 +426,7 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual("字号低于下限：F1（#tiny） 最小 8 < 下限 9" in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
-    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_shrunk_stat_num(self):
         """页面 <style> 写 .band p 会连 .stat-num 一起压小（2026-10 实例：12.8px 的大数、6.4px 的单位）。"""
         band = """<section><div class="metric-band"><div><p class="stat-num">720<small>p</small></p>
@@ -381,7 +444,7 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual("正文字号过小：.stat-num「720p」" in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
-    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_low_contrast_text(self):
         """来源行与图内刻度字在亮色主题下要 4.5:1；ink-45 只有 2.8–3.1:1（2026-10 实例：进房基线报告的来源行与刻度）。"""
         markup = """<section><p class="src">来源 · 演示数据</p><figure class="fig" data-chart="F1"><div class="fig-box">
@@ -403,7 +466,7 @@ class BuildCliTests(unittest.TestCase):
                     self.assertEqual(part in result.stdout, flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
-    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_measures_only_the_shown_diagram_variant(self):
         """宽窄两版图：500px 只量窄版、1024/1280 只量宽版，被媒体查询隐藏的那版不报。"""
         for label, size, flagged in (("ok", None, ()), ("narrow", '13"', ("500px",)),
@@ -419,7 +482,7 @@ class BuildCliTests(unittest.TestCase):
                                      in result.stdout, w in flagged, result.stdout)
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
-    @unittest.skipUnless(runpy.run_path(str(BUILD))["find_chrome"](), "需要本机 Chrome/Chromium")
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_warns_when_a_chart_is_scaled_up(self):
         """半宽卡的 400 宽 viewBox 单独占整栏会放大一倍多（2026-10 实例：F5 刻度行 2.3 倍，刻度间距 12px）。"""
         fig = """<figure class="fig" data-chart="F5"><div class="fig-box"><svg id="ID" viewBox="0 0 400 200" role="img"

@@ -987,107 +987,85 @@ def sheet_size(html):
 
 
 def shoot_sheets(page, theme="light", scale=2):
-    """把每张 .sheet 渲染成 PNG：无头 Chrome 按卡的尺寸开窗，隐藏 chrome 与桌面，两倍像素。
+    """把每张 .sheet 渲染成 PNG：按卡的尺寸开视口，隐藏 chrome 与桌面，两倍像素。
     返回 (输出文件列表, 错误信息)。"""
-    import subprocess, tempfile
-    chrome = find_chrome()
-    if not chrome:
-        return [], "找不到 Chrome/Chromium"
+    import tempfile
     html = page.read_text(encoding="utf-8")
     # 只数 class 里独立的 sheet 一词：sheet-stage / sheet-body 不算
     n = len(re.findall(r'class=["\'](?:[^"\']*\s)?sheet(?:\s[^"\']*)?["\']', html))
     if not n:
         return [], "页面里没有 .sheet"
     w, h = sheet_size(html)
-    outs = []
+    # shell.js 的 fit() 视口比卡窄时把卡等比缩小；截图视口就是卡宽，读出缩放说明隐藏 chrome 的样式没在 fit() 之前生效
+    scaled = "[].map.call(document.querySelectorAll('.sheet'), function(s){ return s.style.transform; }).join(' ').trim()"
+    jobs = []
     with tempfile.TemporaryDirectory() as td:
         for i in range(n):
             hide = "".join(
                 f".sheet-stage:nth-of-type({j + 1}){{display:none!important}}" for j in range(n) if j != i
             )
+            # 样式放进 <head>：fit() 在页面脚本执行时就量版心，追加在文末的样式那时还没生效
             themed = html.replace(
                 "<head>",
-                f'<head><script>try{{localStorage.setItem("show-me-theme","{theme}")}}catch(e){{}}</script>', 1,
-            ) + SHOT_CSS + f"<style>{hide}</style>"
+                f'<head><script>try{{localStorage.setItem("show-me-theme","{theme}")}}catch(e){{}}</script>'
+                + SHOT_CSS + f"<style>{hide}</style>", 1,
+            )
             probe = Path(td) / f"shot-{i}.html"
             probe.write_text(themed, encoding="utf-8")
             suffix = f"-{i + 1}" if n > 1 else ""
             out = page.with_name(f"{page.stem}{suffix}{'-dark' if theme == 'dark' else ''}.png")
-            try:
-                subprocess.run(
-                    # --no-sandbox：macOS 与普通用户下不需要，Linux 容器里以 root 跑 Chrome 时不加会直接退出
-                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", "--hide-scrollbars", *chrome_proxy_args(),
-                     f"--force-device-scale-factor={scale}", "--virtual-time-budget=4000",
-                     f"--window-size={w},{h}", f"--screenshot={out}", probe.as_uri()],
-                    capture_output=True, text=True, timeout=90, check=True)
-            except Exception as e:
-                return outs, f"截图失败：{e}"
-            outs.append(out)
+            jobs.append({"url": probe.as_uri(), "width": w, "height": h, "dpr": scale, "mobile": False,
+                         "eval": scaled, "shot": str(out)})
+        results, err = run_jobs(jobs)
+    if results is None:
+        return [], err or "找不到 Chrome/Chromium 或 node 22+"
+    outs = []
+    for job, r in zip(jobs, results):
+        if r.get("error"):
+            return outs, f"截图失败：{r['error']}"
+        if r.get("value"):
+            return outs, f"截图失败：卡片被缩放（{r['value']}），截出来不是原尺寸"
+        outs.append(Path(job["shot"]))
     return outs, None
 
+
 # ── 整页快照（--snap）──────────────────────────────────────────────
-# 眼睛关的替身：agent 没有交互浏览器，但能读图。light/dark × 500/1280 各一张整页 PNG，
-# 外加页面自带导出器的 Markdown。探针只用于量高度和取 Markdown；截图用不带探针的另一份文件，
-# 否则探针插入的节点会出现在图里。
-SNAP_PROBE = """
-<script>addEventListener('load', function(){ setTimeout(function(){
-  var p = document.createElement('pre'); p.id = '__snap';
-  p.textContent = JSON.stringify({h: document.documentElement.scrollHeight,
-    md: window.showMeMarkdown ? window.showMeMarkdown() : null});
-  document.body.appendChild(p);
-}, 0); });</script>
-"""
-SNAP_MAX_H = 16000  # Chrome 截图的高度上限附近；超长页截断并在输出里说明
+# 眼睛关的替身：agent 没有交互浏览器，但能读图。每个主题 × 宽度按视口高度切片截图（长图读进来会被降采样），
+# 每片写明含哪几节，小修后只重读受影响的那几片；外加页面自带导出器的 Markdown。
+SNAP_EVAL = """(function(){
+  var heads = [].map.call(document.querySelectorAll('#doc h2'), function(h){
+    return [Math.round(h.getBoundingClientRect().top + scrollY), h.textContent.replace(/\\s+/g, ' ').trim()];
+  });
+  return {md: window.showMeMarkdown ? window.showMeMarkdown() : null, heads: heads};
+})()"""
+SNAP_SLICE = {390: 1600, 500: 1600}  # 每片高度：读图时不被明显降采样（2026-10 实测 1280×1500、500×1600 读得清）；其余宽度 1500
 
 
-def snap_page(page, out_dir, widths=(500, 1280)):
-    """返回 (输出文件列表, 提示信息列表, 错误信息或 None)。"""
-    import html as htmllib, json, subprocess, tempfile
-    chrome = find_chrome()
-    if not chrome:
-        return [], [], "找不到 Chrome/Chromium"
-    src = page.read_text(encoding="utf-8")
+def snap_page(page, out_dir, widths=(390, 500, 1280), themes=("light", "dark")):
+    """返回 (输出列表 [(路径, 说明)], 提示信息列表, 错误信息或 None)。"""
     out_dir.mkdir(parents=True, exist_ok=True)
+    md_from = ("light" if "light" in themes else themes[0], max(widths))
+    jobs = [{"url": page.resolve().as_uri(), "width": w, "theme": t, "reduced": True, "eval": SNAP_EVAL,
+             "slices": {"prefix": str(out_dir / f"{t}-{w}"), "height": SNAP_SLICE.get(w, 1500)}}
+            for t in themes for w in widths]
+    results, err = run_jobs(jobs)
+    if results is None:
+        return [], [], err or "找不到 Chrome/Chromium 或 node 22+"
     outs, notes = [], []
-    base = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=4000",
-            *chrome_proxy_args()]
-    with tempfile.TemporaryDirectory() as td:
-        for theme in ("light", "dark"):
-            themed = src.replace(
-                "<head>",
-                f'<head><script>try{{localStorage.setItem("show-me-theme","{theme}")}}catch(e){{}}</script>', 1)
-            shot_src = Path(td) / f"{theme}.html"
-            shot_src.write_text(themed, encoding="utf-8")
-            probe = Path(td) / f"{theme}-probe.html"
-            probe.write_text(themed + SNAP_PROBE, encoding="utf-8")
-            for w in widths:
-                try:
-                    dom = subprocess.run(base + [f"--window-size={w},900", "--dump-dom", probe.as_uri()],
-                                         capture_output=True, text=True, timeout=90).stdout
-                except Exception as e:
-                    return outs, notes, f"快照探针失败：{e}"
-                m = re.search(r'<pre id="__snap">(.*?)</pre>', dom, re.S)
-                if not m:
-                    return outs, notes, f"{theme} {w}px：探针没返回结果（页面 JS 可能报错）"
-                data = json.loads(htmllib.unescape(m.group(1)))
-                h = int(data["h"])
-                if h > SNAP_MAX_H:
-                    notes.append(f"{theme}-{w}：页面高 {h}px，截图截断到 {SNAP_MAX_H}px")
-                    h = SNAP_MAX_H
-                out = out_dir / f"{theme}-{w}.png"
-                try:
-                    subprocess.run(base + ["--force-prefers-reduced-motion", f"--window-size={w},{h}",
-                                           f"--screenshot={out}", shot_src.as_uri()],
-                                   capture_output=True, text=True, timeout=90, check=True)
-                except Exception as e:
-                    return outs, notes, f"截图失败：{e}"
-                outs.append(out)
-                if theme == "light" and w == max(widths):
-                    md = out_dir / "export.md"
-                    md.write_text(data["md"] or "", encoding="utf-8")
-                    outs.append(md)
-                    if data["md"] is None:
-                        notes.append("页面没有 window.showMeMarkdown：导出器缺失，export.md 为空")
+    for job, r in zip(jobs, results):
+        if r.get("error"):
+            return outs, notes, f"{job['theme']} {job['width']}px：{r['error']}"
+        heads = r["value"]["heads"]
+        for s in r["slices"]:
+            names = [h for top, h in heads if s["top"] <= top < s["top"] + s["height"]]
+            about = "含：" + "、".join(names) if names else ("（页首）" if s["top"] == 0 else "（接上一片）")
+            outs.append((Path(s["path"]), about))
+        if (job["theme"], job["width"]) == md_from:
+            md = out_dir / "export.md"
+            md.write_text(r["value"]["md"] or "", encoding="utf-8")
+            outs.append((md, ""))
+            if r["value"]["md"] is None:
+                notes.append("页面没有 window.showMeMarkdown：导出器缺失，export.md 为空")
     return outs, notes, None
 
 
@@ -1130,13 +1108,50 @@ def chrome_proxy_args(env=None):
     return args
 
 
-# 无头 Chrome 把窗口宽度钳在 500px，比这更窄的视口测不到 —— 390px 只能人眼验。
+RENDER_SCRIPT = Path(__file__).resolve().parent / "render.mjs"
+
+
+def run_jobs(jobs):
+    """在一个无头 Chrome 实例里依次跑完 jobs（scripts/render.mjs，走 CDP），返回 (结果列表, 错误信息)。
+    任务与结果的字段见 render.mjs 文件头。找不到 Chrome 或 node、或 node 早于 22（没有内置 WebSocket）时
+    返回 (None, None)：调用方按「这道关没跑」处理。"""
+    import contextlib, json, os, shutil, signal, subprocess, tempfile
+    chrome, node = find_chrome(), shutil.which("node")
+    if not chrome or not node:
+        return None, None
+    with tempfile.TemporaryDirectory() as td:
+        spec = Path(td) / "jobs.json"
+        spec.write_text(json.dumps({"chrome": chrome, "jobs": jobs}, ensure_ascii=False), encoding="utf-8")
+        # 运行器单独一个进程组：超时或被中断时连同它启动的 Chrome 一起结束，不留孤儿进程
+        proc = subprocess.Popen([node, str(RENDER_SCRIPT), str(spec)], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, encoding="utf-8", start_new_session=True)
+        try:
+            out, err = proc.communicate(timeout=90 * len(jobs) + 30)
+        except subprocess.TimeoutExpired:
+            with contextlib.suppress(ProcessLookupError):  # 进程组可能恰好已经自己退出
+                os.killpg(proc.pid, signal.SIGKILL)
+            proc.communicate()
+            return None, "Chrome 运行器超时"
+        except BaseException:  # Ctrl-C 等：单独的进程组收不到终端发来的信号，要自己结束它
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(proc.pid, signal.SIGKILL)
+            raise
+    if proc.returncode == 3:
+        return None, None
+    if proc.returncode:
+        return None, (err.strip().splitlines() or [f"运行器退出码 {proc.returncode}"])[-1]
+    try:
+        return json.loads(out), None
+    except ValueError:
+        return None, f"运行器的输出不是完整的 JSON（{len(out)} 字节）"
+
+
+# 390 用 CDP 的手机模拟（--window-size 最窄只到 500px，模拟不受这个限制），只查横向溢出、报 WARN；
+# 字号、对比度、倍率这些检查只在 500 / 1024 / 1280 跑。
 def render_check(page, widths=(500, 1024, 1280)):
-    """返回 (issues, notes, measured, ran)。issues 是 ERROR，notes 是 WARN；ran=False 表示没有浏览器，这道关没跑。"""
-    import html as htmllib, subprocess, tempfile
-    chrome = find_chrome()
-    if not chrome:
-        return [], [], [], False
+    """返回 (issues, notes, measured, ran)。issues 是 ERROR，notes 是 WARN；
+    ran=False 表示没有 Chrome、node 或 node 早于 22，这道关没跑。"""
+    import html as htmllib, tempfile
 
     html = page.read_text(encoding="utf-8")
     issues, notes, measured = [], [], []
@@ -1147,19 +1162,30 @@ def render_check(page, widths=(500, 1024, 1280)):
             "<head>", '<head><script>document.documentElement.dataset.theme="light";'
             'try{localStorage.setItem("show-me-theme","light")}catch(e){}</script>', 1) + PROBE,
             encoding="utf-8")
-        for w in widths:
-            try:
-                out = subprocess.run(
-                    # --no-sandbox 见 shoot_sheets 的说明
-                    [chrome, "--headless", "--disable-gpu", "--no-sandbox", *chrome_proxy_args(),
-                     "--virtual-time-budget=4000", f"--window-size={w},900",
-                     "--dump-dom", probe.as_uri()],
-                    capture_output=True, text=True, timeout=90).stdout
-            except Exception as e:
-                return [f"渲染检查跑不起来：{e}"], [], [], False
+        # 一个 Chrome 依次跑完所有宽度（scripts/render.mjs）。PROBE 把结果写进 <title>；包回 --dump-dom 的样子，
+        # 下面的正则与 unescape 原样沿用。读标题元素的文本而不是 document.title：后者会合并连续空格。
+        # reduced motion 下量末帧，与 gallery.py 的探针、--snap 一致：逐帧布局的图（如 G11 力导向图）
+        # 在无头 Chrome 里不一定跑完，量到的是节点还在原点的中间状态
+        title = "(document.querySelector('head > title') || {}).textContent || ''"
+        results, err = run_jobs([{"url": probe.as_uri(), "width": w, "reduced": True, "eval": title}
+                                 for w in (390, *widths)])
+        if results is None:  # err 为空：没有 Chrome、node 或 node 早于 22，这道关没跑；err 非空：运行器出错，记 ERROR
+            return ([f"渲染检查跑不起来：{err}"] if err else []), [], [], False
+        wrap = lambda r: "<title>" + htmllib.escape(r.get("value") or "", quote=False) + "</title>"
+        why = lambda r: r.get("error") or "；".join(r.get("errors", [])[:2]) or "页面没写回结果"
+        # 390（手机）只看横向溢出，报 WARN：字号类检查在 500px 已经量过窄版
+        phone = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|", wrap(results[0]), re.S)
+        if not phone:
+            notes.append(f"390px（手机）：探针没返回结果（{why(results[0])}），这一档没查")
+        elif int(phone.group(1)) > int(phone.group(2)) + 1:
+            who = htmllib.unescape(phone.group(3).strip())
+            notes.append(f"390px（手机）视口横向溢出：文档宽 {phone.group(1)}px" + (f"；越界元素：{who}" if who else "")
+                         + "。手机上要横向拖动整页，把越界元素收窄或放进局部滚动容器（visual-system.md「响应式与打印」）")
+        for w, r in zip(widths, results[1:]):
+            out = wrap(r)
             m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)</title>", out, re.S)
             if not m:
-                issues.append(f"{w}px：探针没返回结果（页面 JS 可能报错，去控制台看）")
+                issues.append(f"{w}px：探针没返回结果（{why(r)}）")
                 continue
             try:
                 sw, cw = (int(value) for value in m.group(1, 2))
@@ -1221,10 +1247,19 @@ def main():
         nargs="?",
         const="",
         metavar="DIR",
-        help="自检通过后在 light/dark × 500/1280px 下各截一张整页 PNG，并导出 Markdown 到 export.md；"
-             "不给 DIR 时写到新建的临时目录。供眼睛关读图用",
+        help="自检通过后按 light/dark × 390/500/1280px 切片截图（每片约一屏多高，输出时写明每片含哪几节），并导出 Markdown 到 export.md；不给 DIR 时写到新建的临时目录。供眼睛关读图用",
     )
+    ap.add_argument("--snap-theme", choices=("light", "dark", "both"), default="both",
+                    help="--snap 拍哪个主题，默认 both；小修只拍受影响的主题")
+    ap.add_argument("--snap-width", default="390,500,1280", metavar="W[,W…]",
+                    help="--snap 拍哪些视口宽度（px），逗号分隔，默认 390,500,1280；小于 500 按手机模拟")
     args = ap.parse_args()
+    try:
+        snap_widths = tuple(int(x) for x in args.snap_width.split(",") if x.strip())
+    except ValueError:
+        snap_widths = ()
+    if not snap_widths or any(not 320 <= w <= 2560 for w in snap_widths):
+        ap.error("--snap-width 要写 320–2560 之间的整数，逗号分隔，例如 390,1280")
 
     if not args.page.exists():
         sys.exit(f"ERROR  找不到文件：{args.page}")
@@ -1263,18 +1298,18 @@ def main():
 
     print(f"自检通过{f'（{len(warns)} 个警告需逐条判断）' if warns else ''}。")
     if rendered:
-        print(f"渲染检查：{' / '.join(f'{w}px' for w in measured)} 无横向溢出。"
-              "（无头 Chrome 最窄只到 500px，更窄的屏幕仍需人眼过一遍。）")
+        print(f"渲染检查：{' / '.join(f'{w}px' for w in measured)} 无横向溢出；390px 手机视口另查，溢出只报 WARN。")
     elif not args.no_render:
-        print("渲染检查未运行：找不到 Chrome/Chromium。横向溢出没有被验证过，"
+        print("渲染检查未运行：找不到 Chrome/Chromium 或 node 22+。横向溢出没有被验证过，"
               "自己在浏览器里拉一遍窄屏，不要报「已验证」。")
 
     if args.snap is not None:
         import tempfile
         out_dir = Path(args.snap) if args.snap else Path(tempfile.mkdtemp(prefix=f"show-me-snap-{args.page.stem}-"))
-        outs, notes, err = snap_page(args.page, out_dir)
-        for o in outs:
-            print(f"已快照  {o}")
+        themes = ("light", "dark") if args.snap_theme == "both" else (args.snap_theme,)
+        outs, notes, err = snap_page(args.page, out_dir, snap_widths, themes)
+        for path, about in outs:
+            print(f"已快照  {path}" + (f"  {about}" if about else ""))
         for n in notes:
             print(f"注意    {n}")
         if err:
