@@ -240,7 +240,7 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 - **最小夹具 `--pdf` 多出一张空白页**（022 冷读时发现）：原因已在 027 冷读时核实为 `body { min-height: 100vh }`，修法写进 027 的 Step 4。
 - **`<div class="progress">` 没有填充色**（027 冷读时发现）：components.md「其余」写了 `<div class="progress"><span style="width:64%"></span></div>`，但 `show-me.css:805–822` 只给 `.progress` 写了底色，里面的 `span` 是行内元素、没有背景，屏幕上也看不到数值。要么补 `.progress > span { display: block; height: 100%; background: var(--color-primary); }`，要么从文档里删掉这种写法。
 - **冻结场景截图首跑常不同**（027 审阅时记作偶发，026 审阅时已到「变常见」的程度）：已由 028 修好（2026-10-23 合入），见「028 规划记录」。
-- **`cdp.mjs` 不处理信号**（025 冷读时发现）：直接跑 `probe_round.mjs` 时被 Ctrl-C 之外的信号（例如命令超时的 SIGTERM）打断，Chrome 会成孤儿进程、配置目录留下。`build.py` 调运行器时有进程组兜底；025 的 `probe_page.mjs` 自己接了信号。要统一修，就在 `launch()` 里接 SIGINT / SIGTERM。
+- **`cdp.mjs` 不处理信号**（025 冷读时发现）：已由 029 修复并合入，见「029 规划记录」。
 - **卡住的网络请求拖住虚拟时间**（022 复核时遇到一次）：运行器按 `pauseIfNetworkFetchesPending` 等待，某个请求（多半是字体）一直不返回时，虚拟时间预算永远用不完，任务要等 90 秒真实超时后才失败，重跑就好。改前的 `--virtual-time-budget` 也是同样的语义。如果以后变得常见，可以考虑给虚拟时间加一个真实时间上限，到点后改为放行。
 - **gallery 有 10 张图的 `<desc>` 只重复单位行**（026 审阅时发现）：多为英文示例图（如 `Q2 2026 · MRR, $K`、`sign-ups per market · bars cascade in · click to replay`），`<desc>` 没写数据，不符合 026 在 charts.md「五件套外壳」要点里加的那行。026 的导出去重让它们在 Markdown 里不重复出现；要不要改写这些 `<desc>`，另定。
 - **未查明的观察**：advisor 在没有防闪烁脚本的测试夹具上强制暗色时，数据图有一次没有画出来；`recipe-matrix.html` 夹具在本机暗色外观下 `contenteditable` 的字与底色几乎相同（1.10:1）。两者都只出现在缺 `<head>` 主题脚本的夹具上，真实页面没有复现；018 把渲染检查固定在亮色，不受影响。
@@ -272,7 +272,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 
 2026-10-23 维护者决定：024 提到 023 前面，先由 advisor 在临时目录做 024 的 Step 1–2 样张交维护者选；维护者看样张期间做 023 的冷读审阅。依据：交接调研里 7 轮返工有 4 轮出在被压成竖条的长标识符，024 是剩余计划里对应返工最多的一项，且它的必停点要等维护者。同日维护者看过样张选 d：表格内 `code` 改成 `overflow-wrap: break-word`，components.md 教作者在标识符的 `_`、`/` 后插 `<wbr>`；没插时整表横向滚动。
 
-以下由 advisor 定，维护者可改：渲染检查在 reduced motion 下量、运行器总是模拟 `prefers-color-scheme`（021，理由见其 Maintenance notes）；越框文字报 WARN（023）；看板打印固定两列、`.card` 在打印时一律整块换页（027）；快照切片高度 1500 / 1600px（021）；021 审阅后补定：Node 早于 22 与没有 node 同样报「未运行」，`cdp.mjs` 保留 `--no-sandbox`，`--shot` 读到卡片被缩放就报错、不交出缩小的图；026 审阅时补定：Markdown 导出的 `<desc>` 与上一段相同时不再重复（依据：gallery 59 张数据图里 10 张的 `<desc>` 等于单位行，agent 照抄 gallery 会带进用户页面；不接受就删 026 Step 1 的 `!out.endsWith(…)` 一行和测试最后一条断言，改为另行改写这 10 张的 `<desc>`）。
+以下由 advisor 定，维护者可改：渲染检查在 reduced motion 下量、运行器总是模拟 `prefers-color-scheme`（021，理由见其 Maintenance notes）；越框文字报 WARN（023）；看板打印固定两列、`.card` 在打印时一律整块换页（027）；快照切片高度 1500 / 1600px（021）；021 审阅后补定：Node 早于 22 与没有 node 同样报「未运行」，`cdp.mjs` 保留 `--no-sandbox`，`--shot` 读到卡片被缩放就报错、不交出缩小的图；026 审阅时补定：Markdown 导出的 `<desc>` 与上一段相同时不再重复（依据：gallery 59 张数据图里 10 张的 `<desc>` 等于单位行，agent 照抄 gallery 会带进用户页面；不接受就删 026 Step 1 的 `!out.endsWith(…)` 一行和测试最后一条断言，改为另行改写这 10 张的 `<desc>`）。029 规划时补定：`build.py` 停运行器改为先对整组发 SIGTERM、最多等 5 秒再 SIGKILL（依据：只改 `cdp.mjs` 时，`build.py` 被打断仍留配置目录，因为原来发的是 SIGKILL；不接受就删 029 的 Step 2 和 `test_interrupted_build_leaves_no_chrome_profile`）。
 
 **已确认（2026-10-22，维护者）**：`--snap` 默认宽度保留 500，按 390、500、1280 三种拍。500 是 500–900px 中等宽度（例如看板变成两列的样子）唯一的默认截图。
 
@@ -289,6 +289,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | 026  | Markdown 导出带上图的 `<desc>`                                                                 | P3       | S      | —             | DONE（2026-10-23 审阅通过，拣到 main 为 `fb8e2b3`；见「026 执行记录」）              |
 | 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留，短页不多出空白页，代码块自动换行 | P2       | S      | 022           | DONE（2026-10-23 审阅通过，拣到 main 为 `f6bb371`；见「027 执行记录」）              |
 | 028  | 冻结场景探针截图前等网络字体到齐，字体取不到时报出来                                           | P2       | S      | —             | DONE（2026-10-23 审阅通过，拣到 main 为 `8989ae0`；见「028 执行记录」）              |
+| 029  | 无头 Chrome 运行器被 SIGINT / SIGTERM 打断时结束 Chrome、删掉配置目录                          | P3       | S      | —             | DONE（2026-10-23 审阅通过，快进合入 main `0d701fd`；见「029 执行记录」）             |
 
 018、019 的行在上一节。完整顺序：020 → 018 → 019 → 021 → 022 → 024（样张）→ 023 → 025；024 选定后的实现、026 不依赖别的计划，可以穿插在任何位置；027 用 022 的 `--pdf` 验证，022 已合入，也可随时做。028 只改探针、不依赖别的计划，建议排在 026 之前：合入后 026 的冻结场景轮次首跑就不该再有字形差异。
 
@@ -517,6 +518,33 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
   - 验证：worktree 里 `Ran 60 tests` OK（28 秒），语法、prettier、两条 grep、`make check` 通过；在导出的副本里另做两次反证，换回 `getClientRects()` 失败于隐藏标签页那条，去掉去重失败于 `2 != 1`；Step 4 原文重跑为 `desc 59 exported 59 adjacent-dups 0`。
   - 联合检查：用 028 分支的新探针测 026 重建的五页（对 027 轮）：首跑 30/30、`probe.json` 相同、`exit=0`，只有 `Markdown 不同：concept-explainer`，diff 与 Step 3 相同。
 - **合入**：维护者 2026-10-23 确认，028 的 `ef109bf`、026 的 `5f19fd2` 依次拣到 main 为 `8989ae0`、`fb8e2b3`；拣入后的 main 上 60 个测试 OK、`make check` 通过，推送并 `make install`。026 执行者建的轮次 `2026-10-23-eec315f-026`（五页已用 026 的骨架重建，截图与 027 轮相同、concept-explainer 的 Markdown 多一行图摘要）已复制到主检出，作为下一轮的对照基线。两个 worktree、执行分支和审阅用的 /tmp 文件都已删除。
+
+### 029 规划记录（2026-10-23）
+
+由 improve 技能的 `plan` 变体应维护者请求生成，起因是「未规划」里那条「`cdp.mjs` 不处理信号」。advisor 在 `dff9227` 的副本上实测，用新建的空 `TMPDIR` 数残留：
+
+- **现状**：只给 node 发 SIGTERM / SIGINT 时，Chrome 的 9 个进程全部成了孤儿，配置目录留下 1 个，退出码是 -15 / -2。`build.py --snap` 跑到一半被 SIGINT 时，Chrome 随进程组被 SIGKILL 一起结束（0 个进程），但配置目录留下 1 个。
+- **只改 `cdp.mjs` 不够**：只给 node 发信号时，退出码变成 143 / 130、零残留；但 `build.py` 被打断后仍留 1 个目录，因为它发的是 SIGKILL。所以 `build.py` 也改成先发 SIGTERM，见「Decisions recorded」末段。
+- **两处计划外的发现**：
+  - `close()` 删目录有竞态。Chrome 主进程退出后，网络服务还会往 `Default/` 里写 `.com.google.Chrome.Network Persistent State.XXXXXX`，`rmSync` 报 `ENOTEMPTY`，被 `catch {}` 吞掉。冷启动（空闲 120 秒后启动、一连上就打断）4 次里出现 2 次，热状态下连续 25 次一次也没有；加上 `maxRetries: 5, retryDelay: 100` 后，冷启动 4 次都是零残留。正常结束走的是同一个 `close()`，所以正常路径也受益。新测试最早偶发的失败就是它。
+  - macOS 上组长被回收后再 `killpg` 会报 `PermissionError`，而不是 `ProcessLookupError`。`stop()` 在 SIGTERM 之后还补发一次 SIGKILL，不忽略这个异常的话，它会盖掉 `KeyboardInterrupt`，或让超时路径崩掉。把第一次临时改成 SIGKILL 做反证时撞到过，`build.py` 以 1 退出。
+- **超时路径**：把超时临时改成 0.3 秒，新代码 3 次都返回 `(None, 'Chrome 运行器超时')`、零残留；旧代码留 1 个目录。
+- **计划原文复跑**：
+  - 代码：四个文件按原文套到 `dff9227` 上，与原型逐字节相同；两次语法检查、prettier 和全部计数通过。
+  - 测试：`Ran 62 tests` OK。两个新测试成对连跑 30 次，0 次失败。
+  - 反证：`build.py` 退回 SIGKILL 时失败于 `Lists differ: ['show-me-cdp-…'] != []`；去掉 `cdp.mjs` 的处理器时，三处失败（`-2 != 130`、`-15 != 143`、`Lists differ`）。测试的清理改用 `pkill` 和 `ignore_cleanup_errors` 之前，这个反证偶尔会多出一个与断言无关的 ERROR。
+  - Step 4：`probe_page.mjs` 被 SIGTERM 后输出 `alive True exit 143 profiles 0 chrome 0`，改前改后相同。
+  - Step 5：五页重建后与 `2026-10-23-eec315f-026` 轮逐字节相同，探针五页 `无问题`，`probe.json` 相同，30/30，151 秒。
+- **没做**：没派冷读子代理，计划原文已在副本上逐步跑通。SIGHUP 不在范围内。
+
+### 029 执行记录（2026-10-23）
+
+- **执行**：REVISE 一轮。首次提交 `6ab0c4e` 与计划原文无偏差；审阅时发现新测试 `test_cdp_signal_closes_chrome_and_removes_profile` 每个子测试报一条 `ResourceWarning: unclosed file`（只用 `readline()` 读了 stdout，没关管道），改前全量测试一条也没有，是计划的疏漏。让执行者在它的 `finally` 里补 `proc.stdout.close()` 并 amend 为 `0d701fd`；计划 Step 3c 已同步这一行。
+- **执行者的结果**：Step 1、Step 2 的计数全对；`Ran 62 tests` OK；反证 1 失败于 `Lists differ: ['show-me-cdp-RlXzYG'] != []`，反证 2 三处失败（`-2 != 130`、`-15 != 143`、`Lists differ`）；超时路径 `(None, 'Chrome 运行器超时')`、`profiles 0 chrome 0`；Step 4 `alive True exit 143 profiles 0 chrome 0`；Step 5 轮次 `2026-10-23-dff9227-029` 五页 `自检通过。` 且与上一轮相同，五页 `无问题`，`probe.json` 相同，30/30，`exit=0`。
+- **advisor 复核**：
+  - 代码：diff 逐段对照 Step 1a–1d、2、3a–3c，与计划代码块一致；分支只改 Scope 里的四个文件，一个提交，没有 trailer。
+  - 验证：worktree 里重跑语法、prettier、八条计数、`make check`（58 个文件）；amend 后全量 `Ran 62 tests` OK、`ResourceWarning` 0 条；Step 4 原文重跑为 `alive True exit 143 profiles 0 chrome 0`；对执行者的轮次逐个 `cmp`：五页、`probe.json`、30 张截图、五份 Markdown 都与 `2026-10-23-eec315f-026` 相同；反证 2 自己重做一次，三处失败与执行者一致，还原后计数回到 1；跑完 `pgrep` 无残留。
+- **合入**：维护者 2026-10-23 确认，main 从 `dff9227` 快进到 `0d701fd`；合入后的 main 上 62 个测试 OK、`ResourceWarning` 0 条、`make check` 通过，推送并 `make install`。执行者的轮次 `2026-10-23-dff9227-029` 与 026 轮逐字节相同，随 worktree 一起删了，对照基线仍是 `2026-10-23-eec315f-026`。worktree、执行分支和 worktree 自带的分支都已删除。
 
 ### Findings considered and rejected
 

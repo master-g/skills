@@ -44,15 +44,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-23] main：improve execute 028、026，两个 sonnet 执行者各一次完成，审阅 APPROVE，拣入 main（`8989ae0`、`fb8e2b3`）并推送，`make install SKILL=show-me-html SOURCE=.` 已装；worktree 与执行分支已删
-  验证：合入后 60 个测试 OK、make check 通过；028 新探针测 026 重建的五页首跑 30/30、probe.json 相同、只多 concept-explainer 一行图摘要；细节见 plans/README「026 执行记录」「028 执行记录」
+- [2026-10-23] main：improve plan + execute 029（cdp.mjs 接 SIGINT/SIGTERM，build.py 停运行器先 SIGTERM 再 SIGKILL，close() 删目录加重试），sonnet 执行者 REVISE 一轮（新测试补关 stdout 管道），快进合入 main 并推送，`make install SKILL=show-me-html SOURCE=.` 已装；worktree 与执行分支已删
+  验证：合入后 62 个测试 OK、ResourceWarning 0、make check 通过；冻结场景轮次与 026 轮逐字节相同（30/30、probe.json 相同）；细节见 plans/README「029 规划记录」「029 执行记录」
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-23] 构建耗时这批（020–028）已全部合入；冻结场景对照基线改用 `2026-10-23-eec315f-026`，首跑就该 30/30，计划里不再写「首跑不同先重跑」；「未规划」里还有 cdp.mjs 信号、`.progress` div 无填充、gallery 10 张 desc 只重复单位行等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
-  bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替他提交或还原
+- [2026-10-23] 构建耗时这批（020–029）已全部合入；冻结场景对照基线仍是 `2026-10-23-eec315f-026`（029 只改中断收尾，页面不变，没换），首跑就该 30/30；「未规划」里还有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
+  bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
   bench 待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments
