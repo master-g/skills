@@ -237,7 +237,9 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 - **维护者那页本身**（不在本仓库）：三份计划合入后重建，F12 与来源行会自动变好；还要手改三处：页面脚本常量 `MUTED = I45` 改为 `"var(--color-muted-foreground)"`；G4 图例和 G10 主角数值的文字 `fill` 从 `HERO` 改为 `"var(--chart-hero-text)"`；F5 加 `.wide`、viewBox 改为 `0 0 800 …`、一根刻度改为 0.05 个百分点（也门 96 根）并按新宽度重算 `GAP`，单位行同步改写。
 - **多卡 `--shot` 从第 2 张起截出来是空白**（021 冷读时发现，改前改后都一样）：`shoot_sheets` 用 `.sheet-stage:nth-of-type(k)` 隐藏其他卡，而 `nth-of-type` 按各自所在的 section 计数；按 layouts.md 的写法每张卡各占一个 section，于是除第 1 张以外的截图里，所有卡都被隐藏。
 - **冻结场景探针的 PDF 是 Letter**（022 冷读时发现）：`probe_round.mjs` 调 `Page.printToPDF {}` 时没传 `preferCSSPageSize`，`_probe/*.pdf` 都是 612 × 792。所以它报的「打印页数」不是读者实际用 A4 打印时的页数。
-- **最小夹具 `--pdf` 多出一张空白页**（022 冷读时发现）：`minimal-shell.html` 打出 2 页，第 2 页空白，可能与 `body { min-height: 100vh }` 有关，没有核实。这属于打印样式，027 动手前先看一眼。
+- **最小夹具 `--pdf` 多出一张空白页**（022 冷读时发现）：原因已在 027 冷读时核实为 `body { min-height: 100vh }`，修法写进 027 的 Step 4。
+- **`<div class="progress">` 没有填充色**（027 冷读时发现）：components.md「其余」写了 `<div class="progress"><span style="width:64%"></span></div>`，但 `show-me.css:805–822` 只给 `.progress` 写了底色，里面的 `span` 是行内元素、没有背景，屏幕上也看不到数值。要么补 `.progress > span { display: block; height: 100%; background: var(--color-primary); }`，要么从文档里删掉这种写法。
+- **打印时代码块不换行，长行被裁**（027 复核时看到，改前就有）：approach-compare 的方案卡里 `SELECT … FOR UPDATE SKIP LOCKED` 在 PDF 里只剩 `SELECT … FOR UPDATE S`。屏幕上 `pre` 可以横向滚动，纸上不能；打印样式里可以给 `pre` 加 `white-space: pre-wrap`。
 - **`cdp.mjs` 不处理信号**（025 冷读时发现）：直接跑 `probe_round.mjs` 时被 Ctrl-C 之外的信号（例如命令超时的 SIGTERM）打断，Chrome 会成孤儿进程、配置目录留下。`build.py` 调运行器时有进程组兜底；025 的 `probe_page.mjs` 自己接了信号。要统一修，就在 `launch()` 里接 SIGINT / SIGTERM。
 - **卡住的网络请求拖住虚拟时间**（022 复核时遇到一次）：运行器按 `pauseIfNetworkFetchesPending` 等待，某个请求（多半是字体）一直不返回时，虚拟时间预算永远用不完，任务要等 90 秒真实超时后才失败，重跑就好。改前的 `--virtual-time-budget` 也是同样的语义。如果以后变得常见，可以考虑给虚拟时间加一个真实时间上限，到点后改为放行。
 - **未查明的观察**：advisor 在没有防闪烁脚本的测试夹具上强制暗色时，数据图有一次没有画出来；`recipe-matrix.html` 夹具在本机暗色外观下 `contenteditable` 的字与底色几乎相同（1.10:1）。两者都只出现在缺 `<head>` 主题脚本的夹具上，真实页面没有复现；018 把渲染检查固定在亮色，不受影响。
@@ -284,7 +286,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | 024  | 表格里的长标识符不再被压成竖条：表格内 `code` 不在词中断开，文档教作者插 `<wbr>` | P2       | S      | —             | DONE（2026-10-23 维护者选 d；审阅通过，拣到 main 为 `f580de6`；见「024 执行记录」）  |
 | 025  | 单页交互探针 `probe_page.mjs`                                                    | P3       | M      | 021           | DONE（2026-10-23 审阅通过，拣到 main 为 `ae5fa79`；见「025 执行记录」）              |
 | 026  | Markdown 导出带上图的 `<desc>`                                                   | P3       | S      | —             | TODO                                                                                 |
-| 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留                     | P2       | S      | 022           | TODO（2026-10-23 维护者决定并入「保留有含义的底色」，派发前先冷读审阅）              |
+| 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留，短页不多出空白页   | P2       | S      | 022           | TODO（2026-10-23 冷读审阅后改写，维护者确认保留 Step 4，已派发；见「027 审阅记录」） |
 
 018、019 的行在上一节。完整顺序：020 → 018 → 019 → 021 → 022 → 024（样张）→ 023 → 025；024 选定后的实现、026 不依赖别的计划，可以穿插在任何位置；027 用 022 的 `--pdf` 验证，022 已合入，也可随时做。
 
@@ -441,6 +443,13 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
 - **执行**：一次完成，没有 STOP，没有 REVISE。只改了 `probe_page.mjs`（新建）和 `compose-and-check.md`；脚本与计划代码块逐字节相同，prettier 没有改动。
 - **advisor 复核**：在 worktree 里重跑：三种错误用法都退出 2；四次实跑与计划 Verify 一致（triage-board 19 个控件、code-review 2 个折叠加 3 个复选框、concept-explainer 390px 2 个滑块、坏按钮页 `exit=1`）；运行前后和 SIGTERM（退出 143）之后，配置目录和 Chrome 进程都是 0；59 个测试 OK，文档门禁通过。只加了脚本，没碰 `show-me.css`、骨架和 `build.py`，按 MAINTENANCE.md 不跑冻结场景轮次。
 - **合入**：维护者 2026-10-23 确认，`e781794` 拣到 main 为 `ae5fa79`，去掉了执行者加的 `Co-Authored-By` 行（仓库其他提交都没有）；推送并 `make install`。worktree、分支和审阅用的 /tmp 文件都已删除。
+
+### 027 审阅记录（2026-10-23）
+
+- **冷读**：子代理把计划原样套到 `ab64edc` 的副本上照做，没有 BLOCKER。改前三个问题都存在、改后都消失（看过改前改后的 PDF 图）；五页 A4 页数改前改后相同（2、2、2、2、4）；冻结场景轮次对 022 轮、024 轮各跑一次，`probe.json` 相同、30/30 截图相同。MAJOR 2 条，advisor 核实后采纳：Step 3 的 `grep -c 'print-color-adjust: exact'` 会同时命中 `-webkit-` 那行，实际是 2；对照轮次改用 024 轮。
+- **新增 Step 4（维护者 2026-10-23 确认保留）**：「未规划」里那条「最小夹具 `--pdf` 多出空白第 2 页」冷读时查到原因：骨架 `body { min-height: 100vh }`，打印时 100vh 加上页边距比一页多一点。advisor 复核：在打印副本里加 `body { min-height: 0 }` 后夹具从 2 页变 1 页，五个场景页页数不变。它属于打印样式，改在同一个主打印块里，所以写进 027。
+- **其他改动**：行号刷新到 `ab64edc`，写明 `show-me.css` 四个 `@media print` 块各是什么；`Current state` 补 `body` 最小高度、diff 行在 `pre > code` 里；Step 5 加六份 PDF 的页数预期；Step 6 说明字体加载造成的偶发截图差异先重跑；索引由审阅者维护；Maintenance notes 补泳道外框跨页、`body` 规则不影响 slide-deck。
+- **advisor 复跑**：改后的计划原文套到 `ab64edc` 的新副本：prettier 无改动，四条 grep 为 2 / 1 / 1 / 1；六份 PDF 页数 2、2、2、2、4、1；看图：approach-compare 三张方案卡整块在第 2 页，triage-board 两列、「观察」在下一行、没有被裁，code-review diff 增删行浅红 / 浅蓝底、代码块灰底、徽章无底色；59 个测试 OK，文档门禁通过；冻结场景轮次对 024 轮第一次 28/30（status-report 390、500 两张只在标题中文衬线字形上不同），重跑 30/30，`probe.json` 相同。
 
 ### Findings considered and rejected
 

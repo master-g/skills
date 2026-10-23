@@ -1,9 +1,8 @@
 # Plan 027: show-me-html 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留
 
-> **Executor instructions**: 按步骤执行，每一步跑完验证命令并确认预期结果后再进下一步。遇到「STOP conditions」里的任何情况就停下汇报，不要自行发挥。完成后更新 `plans/README.md` 里本计划的状态行（除非派发你的审阅者说明由他维护索引）。
+> **Executor instructions**: 按步骤执行，每一步跑完验证命令并确认预期结果后再进下一步。遇到「STOP conditions」里的任何情况就停下汇报，不要自行发挥。索引 `plans/README.md` 由审阅者维护，你不要改它。
 >
-> **Drift check (run first)**: `git diff --stat 2f0e439..HEAD -- skills/show-me-html/assets/show-me.css skills/show-me-html/references/visual-system.md`
-> 计划 018 先合入时，这两个文件都会出现在输出里（018 改了 token、骨架颜色，以及 visual-system 的「Token 分层」「对比度」），属于预期。只要下面「Current state」里引用的打印样式和 visual-system 那一行原样还在，就继续；对不上就 STOP。另外确认计划 022 已合入：`grep -c 'def print_pdf' skills/show-me-html/scripts/build.py` → `1`，不满足也 STOP。
+> **Drift check (run first)**: `git diff --stat ab64edc..HEAD -- skills/show-me-html/assets/show-me.css skills/show-me-html/references/visual-system.md` 应无输出。有输出就对照下面「Current state」里的引文：引用的打印样式和 visual-system 那一行原样还在就继续，对不上就 STOP。另外确认计划 022 已合入：`grep -c 'def print_pdf' skills/show-me-html/scripts/build.py` → `1`，不满足也 STOP。
 >
 > 本文件里的 css / markdown 代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 >
@@ -11,16 +10,16 @@
 >
 > - 维护者决定把「打印时保留有含义的底色」并入本计划，即 Step 3。
 > - 原来打 PDF 的步骤用 Chrome 命令行，现在改用 022 新增的 `build.py --pdf`。
-> - 本计划派发前还要做一次冷读审阅，届时按当时的 HEAD 刷新行号和 drift check。
+> - 冷读审阅（在 `ab64edc` 的副本上照做全部步骤）之后：行号刷新到 `ab64edc`；Step 3 的计数改为 2；冻结场景对照改用 024 轮；新增 Step 4，修短页打印多出的空白页。
 
 ## Status
 
 - **Priority**: P2
-- **Effort**: S（三处 CSS、一行文档）
+- **Effort**: S（四处 CSS、一行文档）
 - **Risk**: LOW（只影响 `@media print`）
 - **Depends on**: `plans/022-show-me-html-gallery-shots-and-pdf.md`（已合入；验证用它的 `--pdf`）
 - **Category**: bug
-- **Planned at**: commit `2f0e439`, 2026-10-22；2026-10-23 在 `bdc10b6` 补充 Step 3
+- **Planned at**: commit `2f0e439`, 2026-10-22；2026-10-23 在 `bdc10b6` 补充 Step 3，冷读审阅后在 `ab64edc` 上改写
 
 ## Why this matters
 
@@ -50,15 +49,23 @@ advisor 用 code-review 冻结场景页对照过：
 
 维护者选了这个做法，而没有选「`--pdf` 打开全部背景」，因为这样浏览器打印和 `--pdf` 的结果一致。
 
+第四个问题是冷读审阅时核实的：**不到一页的短页，打印会多出一张空白页**。测试夹具 `tests/fixtures/minimal-shell.html` 用 `--pdf` 打出 2 页，第 2 页空白。原因是骨架给 `body` 写了 `min-height: 100vh`（让屏幕上的页面至少一屏高），打印时 100vh 加上页边距比一页多一点。在打印副本里加 `body { min-height: 0 }` 后是 1 页。五个冻结场景页都比一页高，不受影响。
+
 ## Current state
 
-技能目录是 `skills/show-me-html/`，下文路径都相对这个目录。行号按 `2f0e439`，对不上时以引文为准；派发前的冷读审阅会刷新行号。
+技能目录是 `skills/show-me-html/`，下文路径都相对这个目录。行号按 `ab64edc`，对不上时以引文为准。
 
-### `assets/show-me.css` 主打印块的末尾
+`show-me.css` 里有四个 `@media print` 块：`:1361` 只管代码块工具条，`:1700` 是另一处局部规则，`:1899–1962` 是**主打印块**（浅纸色 token、`@page`、分页规则都在这里），`:2601` 起是**文件最后一个 `@media print` 块**（配方的打印规则）。本计划只改主打印块和最后一个块。
 
-这一段是 `7c94bce` 加的：
+### `assets/show-me.css` 主打印块的末尾（`:1944–1962`）
+
+前面是 `@page { size: A4; }`，后面这一段是 `7c94bce` 加的：
 
 ```css
+  /* 无头 Chrome 不读系统纸张设置，不写尺寸就按 Letter 出 PDF */
+  @page {
+    size: A4;
+  }
   /* 标题跟着下文换页，不孤零零留在页底；列表行不从中间劈开 */
   :is(h2, h3, h4) {
     break-after: avoid;
@@ -74,7 +81,7 @@ advisor 用 code-review 冻结场景页对照过：
 }
 ```
 
-### `assets/show-me.css` 文件最后一个 `@media print` 块
+### `assets/show-me.css` 文件最后一个 `@media print` 块（`:2601` 起）
 
 这是配方的打印规则，开头是：
 
@@ -88,7 +95,7 @@ advisor 用 code-review 冻结场景页对照过：
 
 同一块里已有「带边框的配方舞台整块换页」的 `break-inside: avoid` 规则，写法可参照。
 
-### 看板的屏幕样式
+### 看板的屏幕样式（`:2510` 起）
 
 ```css
 [data-recipe="triage-board"] .board,
@@ -106,7 +113,7 @@ advisor 用 code-review 冻结场景页对照过：
 }
 ```
 
-冻结场景页 triage-board 在自己的 `<style>` 里写了 `[data-recipe="triage-board"] .board { grid-template-columns: repeat(3, minmax(16rem, 1fr)); }`。页面样式排在骨架之后、选择器相同，所以骨架的打印规则要用 `!important` 才压得过页面写死的列宽。`show-me.css` 里已有用 `!important` 压过页面写法的先例：`:1532` 附近的注释「!important 用来压过 .fig svg 的 display:block 和页面自己的 display 写法」。
+冻结场景页 triage-board 在自己的 `<style>` 里写了 `[data-recipe="triage-board"] .board { grid-template-columns: repeat(3, minmax(16rem, 1fr)); }`。页面样式排在骨架之后、选择器相同，所以骨架的打印规则要用 `!important` 才压得过页面写死的列宽。`show-me.css` 里已有用 `!important` 压过页面写法的先例：`:1538` 的注释「!important 用来压过 .fig svg 的 display:block 和页面自己的 display 写法」。
 
 ### 有含义的底色在哪里定义
 
@@ -123,11 +130,26 @@ advisor 用 code-review 冻结场景页对照过：
 
   `print-color-adjust` 作用在元素上，与底色写在哪里无关，所以骨架打印样式里的一条规则就能管到页面里的这两个类。
 
-- `pre { … background: var(--color-muted); }` 在 `show-me.css` 的代码块段。
-- `progress` 的底和数值都用 `background`，在 `show-me.css` 的表单段（`progress::-webkit-progress-value { background: var(--color-primary); }`）。
-- `print-color-adjust` 是继承属性：写在 `pre`、`progress` 上，`pre` 里的 `.d-add` 和 `progress` 的伪元素都会继承。
+- `pre { … background: var(--color-muted); }` 在 `show-me.css` 的代码块段（`:1306`）。
+- `progress` 的底和数值都用 `background`，在 `show-me.css` 的表单段（`:805–822`，`progress::-webkit-progress-value { background: var(--color-primary); }`）。components.md 还写了一种 `<div class="progress"><span style="width:64%"></span></div>` 的写法，但骨架没有给里面的 `span` 写填充色，屏幕上也看不到数值，所以本计划只管 `progress` 元素。
+- `print-color-adjust` 是继承属性：写在 `pre`、`progress` 上，`pre` 里的 `.d-add` 和 `progress` 的伪元素都会继承。code-review 场景页的 diff 行就是 `pre > code` 里的 `span.d-add` / `span.d-del`。
 
-### `references/visual-system.md`「响应式与打印」的打印一行
+### `body` 的最小高度
+
+`show-me.css:198–202`（主打印块之前，主打印块里同样的选择器会压过它）：
+
+```css
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  …
+}
+```
+
+`:1004` 还有一条 `body { min-height: 100vh; … }`，也在主打印块之前。
+
+### `references/visual-system.md`「响应式与打印」的打印一行（`:120`）
 
 ```markdown
 - 打印强制浅纸深字和 A4 纸，隐藏 chrome 和 TOC，展开静态阅读顺序；h2–h4 尽量与下文同页（`break-after: avoid`，下文比一页还高时照常断开），条目（`.item`）不从中间劈开。
@@ -135,7 +157,7 @@ advisor 用 code-review 冻结场景页对照过：
 
 ### 冻结场景
 
-主检出目录 `/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-b52953a-022/` 是最近一轮：五页 HTML，加上 `_probe/` 下的截图和 PDF。注意 `_probe/*.pdf` 是 Letter 纸，探针没传 `preferCSSPageSize`，所以只能看分页和版面，页数不能和 A4 比。
+主检出目录 `/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-bdc10b6-024/` 是最近一轮：五页 HTML，加上 `_probe/` 下的截图和 PDF。`rounds/` 被 gitignore，只在主检出里有，下面的命令用绝对路径读它，不往里写。注意 `_probe/*.pdf` 是 Letter 纸，探针没传 `preferCSSPageSize`，所以只能看分页和版面，页数不能和 A4 比。
 
 ## Commands you will need
 
@@ -150,9 +172,8 @@ advisor 用 code-review 冻结场景页对照过：
 
 **In scope**：
 
-- `skills/show-me-html/assets/show-me.css`（两处 `@media print`）
+- `skills/show-me-html/assets/show-me.css`（主打印块和最后一个 `@media print` 块）
 - `references/visual-system.md`（一行）
-- `plans/README.md`（状态行）
 
 **Out of scope**：
 
@@ -161,6 +182,8 @@ advisor 用 code-review 冻结场景页对照过：
 - 比一页还高的卡片：浏览器会照常分页，`break-inside: avoid` 不保证。
 - `--pdf` 打开全部背景（`printBackground`）：维护者没选这个做法。
 - 徽章、提示框、卡片等装饰性底色：打印时照常省掉。
+- `<div class="progress">` 写法没有填充色的问题：屏幕上也一样，另记。
+- `plans/README.md`：审阅者维护。
 
 ## Git workflow
 
@@ -228,26 +251,45 @@ advisor 用 code-review 冻结场景页对照过：
 
 **Verify**:
 
-- `grep -c 'print-color-adjust: exact' skills/show-me-html/assets/show-me.css` → `1`。
+- `grep -c 'print-color-adjust: exact' skills/show-me-html/assets/show-me.css` → `2`（标准写法和 `-webkit-` 前缀各一行）。
 - `npx prettier --check skills/show-me-html/assets/show-me.css` 通过。
 - 全量单元测试 → `OK`，测试数不变。
 
-### Step 4: 打出 PDF 看
+### Step 4: 短页不多出空白页
+
+在主打印块里、`@page { size: A4; }` 之后，`/* 标题跟着下文换页…` 那条注释之前，加：
+
+<!-- prettier-ignore -->
+```css
+  /* 屏幕上 body 至少一屏高；打印时 100vh 加上页边距比一页多一点，不到一页的短页会多出一张空白页 */
+  body {
+    min-height: 0;
+  }
+```
+
+**Verify**:
+
+- `grep -c '不到一页的短页会多出一张空白页' skills/show-me-html/assets/show-me.css` → `1`。
+- `npx prettier --check skills/show-me-html/assets/show-me.css` 通过。
+
+### Step 5: 打出 PDF 看
 
 以下命令在 worktree 根目录、同一个 shell 里运行：
 
 ```sh
-R=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-b52953a-022
+R=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-bdc10b6-024
 T=$(mktemp -d); echo "T=$T"
-for n in approach-compare triage-board code-review; do
-  cp "$R/$n.html" "$T/"
+cp skills/show-me-html/tests/fixtures/minimal-shell.html "$T/"
+for n in approach-compare triage-board code-review status-report concept-explainer; do cp "$R/$n.html" "$T/"; done
+for n in approach-compare triage-board code-review status-report concept-explainer minimal-shell; do
   python3 skills/show-me-html/scripts/build.py "$T/$n.html" --no-render --pdf | grep -E '已导出|未完成'
-  pdftoppm -r 50 -png "$T/$n.pdf" "$T/$n"
+  printf '%s ' "$n"; pdfinfo "$T/$n.pdf" | grep Pages
 done
+for n in approach-compare triage-board code-review; do pdftoppm -r 50 -png "$T/$n.pdf" "$T/$n"; done
 ls "$T"/*.png
 ```
 
-**Verify**：三行 `已导出`；然后逐张打开 PNG：
+**Verify**：六行 `已导出`；页数依次是 approach-compare 2、triage-board 2、code-review 2、status-report 2、concept-explainer 4、minimal-shell **1**（改前是 2，第 2 页空白）。然后逐张打开 PNG：
 
 - **approach-compare**：「三个方案的真实代价」的三张卡没有被分页切开，卡头、代码块、优缺点在同一页。
 - **triage-board**：「现在修」「本周修」并排两列，「观察」在下面一行。三列的右边框和计数徽标都完整可见，没有被裁。
@@ -256,12 +298,12 @@ ls "$T"/*.png
   - 代码块有浅灰底；
   - 文件名旁的 `+28 −9` 徽章没有底色，只有边框，这是预期。
 
-### Step 5: 冻结场景轮次
+### Step 6: 冻结场景轮次
 
 按 `skills/show-me-html/scenarios/README.md` 的流程新建一轮，目录后缀 `-027`。五页复制上一轮的 HTML，用新的 `show-me.css` 重建，再跑探针：
 
 ```sh
-PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-b52953a-022
+PREV=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-bdc10b6-024
 RND=skills/show-me-html/scenarios/rounds/$(date +%F)-$(git rev-parse --short HEAD)-027
 mkdir -p "$RND"
 for n in status-report approach-compare code-review concept-explainer triage-board; do
@@ -274,11 +316,11 @@ node skills/show-me-html/scripts/probe_round.mjs "$RND" "$PREV" | grep -E '^[a-z
 
 - 五页 `自检通过`。
 - 探针五行 `无问题`。
-- 屏幕截图与上一轮逐字节相同，因为本计划只改打印样式；只是抗锯齿噪声的个别字节差异，列出文件名即可。
-- `probe.json` 只有打印页数可能变化。把每页的打印页数写进汇报（advisor 实测 approach-compare、triage-board 改后仍是 2 页）。
+- 屏幕截图与上一轮逐字节相同，因为本计划只改打印样式。有不同就用 `magick compare -metric AE 旧图 新图 null:` 看差多少像素，再把两张图并排看：只是抗锯齿噪声的，列出文件名即可。advisor 复跑时遇到过一次 status-report 的 390、500 两张差几千像素，差异全在标题的中文衬线字形上（字体加载时机），重跑一次 `probe_round.mjs` 就 30/30 相同；遇到这种情况先重跑一次，重跑后还不同再按 STOP 处理。
+- `与上一轮对比：probe.json 相同`。探针打的是 Letter 纸，五页的打印页数（2、2、2、2、4）在冷读审阅时改前改后都没变；有变化就把每页的页数写进汇报。
 - 另外三页的 PDF 也打开看一眼：有 `.card` 的地方，除了整块卡片挪页后留下的大片空白之外，不应有别的问题。出现了就在汇报里说明是哪页哪张卡。
 
-### Step 6: 文档
+### Step 7: 文档
 
 `references/visual-system.md`「响应式与打印」的打印一行改为：
 
@@ -296,25 +338,26 @@ node skills/show-me-html/scripts/probe_round.mjs "$RND" "$PREV" | grep -E '^[a-z
 
 ## Test plan
 
-不加单元测试：分页和打印底色只能靠 PDF 看。Step 4 覆盖三个已知问题，Step 5 用冻结场景兜底，确认屏幕样式不变、其他页面打印不出新问题。
+不加单元测试：分页和打印底色只能靠 PDF 看。Step 5 覆盖四个已知问题（页数加看图），Step 6 用冻结场景兜底，确认屏幕样式不变、其他页面打印不出新问题。
 
 ## Done criteria
 
-- [ ] Step 4 三份 PDF 看过，三个问题都不再出现
-- [ ] Step 5 五页 `自检通过`、探针 `无问题`、屏幕截图与上一轮相同；打印页数写进汇报
+- [ ] Step 5 六份 PDF 的页数与预期相同，三份 PNG 看过，四个问题都不再出现
+- [ ] Step 6 五页 `自检通过`、探针 `无问题`、`probe.json` 相同、屏幕截图与上一轮相同
 - [ ] 全量单元测试 `OK`；`make check` exit 0
-- [ ] `git status` 只显示 Scope 里的文件
-- [ ] `plans/README.md` 本计划的状态行已更新
+- [ ] 分支上一个提交，只有 Scope 里的两个文件
 
 ## STOP conditions
 
 - 屏幕截图与上一轮出现非抗锯齿的差异：说明规则漏出了 `@media print`。
 - 某页因为 `.card` 整块换页，页数比上一轮多出两页以上：汇报页数和是哪张卡，不要自行改成只对某个配方生效。
 - triage-board 的 PDF 里仍有列被裁。
+- minimal-shell 的 PDF 仍是 2 页，或五个场景页里有哪页的页数变了。
 - code-review 的 PDF 里 diff 增删行没有底色：说明 `print-color-adjust` 没生效，汇报 Chrome 版本，不要改成给 `--pdf` 打开全部背景。
 
 ## Maintenance notes
 
-- 看板打印固定两列。以后有四列以上、每列很窄也放得下的看板，可以再按列数分档；现在的冻结场景只有三列一种。
+- 看板打印固定两列。以后有四列以上、每列很窄也放得下的看板，可以再按列数分档；现在的冻结场景只有三列一种。两列时第一行的两条泳道比一页还高，泳道的虚线外框会跨页（卡片本身不劈开），这是预期。
 - `.card` 整块换页对很高的卡无效，浏览器会照常分页，也会在页底留下空白。若有页面因此多出很多空白页，再考虑只对配方里的卡片网格（如 `.comparison-grid > .card`）生效。
+- `body { min-height: 0 }` 只在打印时生效。slide-deck 的每页高度由 `.slide` 自己的 `min-height` 决定，不受影响。
 - 新增「颜色本身就是信息」的底色时，比如热力格、色块图例、高亮 `mark`，要把选择器加进 Step 3 那条 `print-color-adjust: exact` 规则，否则打印时会丢掉。装饰性底色不要加，打印照常省墨。
