@@ -1946,17 +1946,37 @@ body.has-toc:not(.toc-side) .read-progress {
   @page {
     size: A4;
   }
-  /* 标题跟着下文换页，不孤零零留在页底；列表行不从中间劈开 */
+  /* 纸上不能横向滚动：代码块打印时自动换行，长行不被裁掉（同屏幕上的「换行」按钮） */
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* 屏幕上 body 至少一屏高；打印时 100vh 加上页边距比一页多一点，不到一页的短页会多出一张空白页 */
+  body {
+    min-height: 0;
+  }
+  /* 标题跟着下文换页，不孤零零留在页底；列表行和卡片不从中间劈开（比一页还高的卡浏览器照常分页） */
   :is(h2, h3, h4) {
     break-after: avoid;
   }
-  .item {
+  .item,
+  .card {
     break-inside: avoid;
   }
   /* 条目组有边框，分页会落在边框内首行之前，页底只剩空框和标题；
      禁止首行前断，断点退回标题之前 */
   .item-group > :first-child {
     break-before: avoid;
+  }
+  /* 打印默认不印背景色（浏览器对话框默认不勾「背景图形」，build.py --pdf 也不打）。
+     这三类底色承载含义，强制保留：diff 增删行（页面自己写的 .d-add / .d-del）、代码块的边界、进度条的数值。
+     其余底色（徽章、提示框、卡片）是装饰，照常省掉 */
+  .d-add,
+  .d-del,
+  pre,
+  progress {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 
@@ -2602,6 +2622,15 @@ body[data-recipe="share-card"] {
   [data-recipe="share-card"] .sheet {
     box-shadow: none;
     break-inside: avoid;
+  }
+  /* 看板在纸上不能横向滚动：A4 可打印宽约 718px，页面常把列宽写死（三列 16rem 就是 792px），超出的列被裁掉。
+     打印时一律两列均分、换行排，压过页面自己的列宽；卡片整块换页由主打印块的 .card 规则负责 */
+  [data-recipe="triage-board"] .board {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: visible;
+  }
+  [data-recipe="triage-board"] .lane {
+    min-width: 0;
   }
   /* 带边框的配方舞台整块换页：里面的 .fig-box 不可拆，舞台一旦跨页，
      图整块挪到下一页，上一页只剩一个空边框。舞台比一页还高时浏览器照常分页。 */
