@@ -235,6 +235,7 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 - **语法高亮**：`--syn-comment`（`--ink-45`）与 `--syn-string`（`--ink-60`）在代码块底色 `--ink-8` 上只有 2.6–4.1:1，`.shj-syn-err` 用的主角色也不够。018 的检查跳过 `pre`，代码块观感留给维护者决定。
 - **来源行里裸写的标识符被大写**：010 只给 `.src` 里的 `<code>` 免了大写，裸写的 `dt=20261020` 仍显示为 `DT=20261020`。
 - **维护者那页本身**（不在本仓库）：三份计划合入后重建，F12 与来源行会自动变好；还要手改三处：页面脚本常量 `MUTED = I45` 改为 `"var(--color-muted-foreground)"`；G4 图例和 G10 主角数值的文字 `fill` 从 `HERO` 改为 `"var(--chart-hero-text)"`；F5 加 `.wide`、viewBox 改为 `0 0 800 …`、一根刻度改为 0.05 个百分点（也门 96 根）并按新宽度重算 `GAP`，单位行同步改写。
+- **多卡 `--shot` 从第 2 张起截出来是空白**（021 冷读时发现，改前改后都一样）：`shoot_sheets` 用 `.sheet-stage:nth-of-type(k)` 隐藏其他卡，而 `nth-of-type` 按各自所在的 section 计数；按 layouts.md 的写法每张卡各占一个 section，于是除第 1 张以外的截图里，所有卡都被隐藏。
 - **未查明的观察**：advisor 在没有防闪烁脚本的测试夹具上强制暗色时，数据图有一次没有画出来；`recipe-matrix.html` 夹具在本机暗色外观下 `contenteditable` 的字与底色几乎相同（1.10:1）。两者都只出现在缺 `<head>` 主题脚本的夹具上，真实页面没有复现；018 把渲染检查固定在亮色，不受影响。
 
 ### Findings considered and rejected
@@ -260,7 +261,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 - 表格长标识符先出样张，维护者看过再定（024 在 Step 2 停下）。
 - 候选项全部纳入：打印的两个旧问题写成 027；`--pdf` 并进 022；`visual-system.md` 打印一行的措辞当天直接收窄（没有单独的计划）。
 
-以下由 advisor 定，维护者可改：渲染检查在 reduced motion 下量、运行器总是模拟 `prefers-color-scheme`（021，理由见其 Maintenance notes）；越框文字报 WARN（023）；看板打印固定两列、`.card` 在打印时一律整块换页（027）；快照切片高度 1500 / 1600px（021）。
+以下由 advisor 定，维护者可改：渲染检查在 reduced motion 下量、运行器总是模拟 `prefers-color-scheme`（021，理由见其 Maintenance notes）；越框文字报 WARN（023）；看板打印固定两列、`.card` 在打印时一律整块换页（027）；快照切片高度 1500 / 1600px（021）；021 审阅后补定：Node 早于 22 与没有 node 同样报「未运行」，`cdp.mjs` 保留 `--no-sandbox`，`--shot` 读到卡片被缩放就报错、不交出缩小的图。
 
 **已确认（2026-10-22，维护者）**：`--snap` 默认宽度保留 500，按 390、500、1280 三种拍。500 是 500–900px 中等宽度（例如看板变成两列的样子）唯一的默认截图。
 
@@ -269,7 +270,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | Plan | Title                                                                    | Priority | Effort | Depends on    | Status                                                                               |
 | ---- | ------------------------------------------------------------------------ | -------- | ------ | ------------- | ------------------------------------------------------------------------------------ |
 | 020  | 无头 Chrome 走环境变量里的代理，修正折叠与侧栏两处文档                   | P1       | S      | —             | DONE（2026-10-22 审阅通过，快进合入 main `cbfff66` + `21aaae9`；见「020 执行记录」） |
-| 021  | 一次构建只启动一个 Chrome：渲染检查、快照切片与定尺卡截图改走 CDP 运行器 | P1       | L      | 020、018、019 | TODO                                                                                 |
+| 021  | 一次构建只启动一个 Chrome：渲染检查、快照切片与定尺卡截图改走 CDP 运行器 | P1       | L      | 020、018、019 | DONE（2026-10-23 审阅通过，快进合入 main `d134ce1` + `47a158d`；见「021 执行记录」） |
 | 022  | gallery 截图改走运行器，`build.py` 加 `--pdf`                            | P2       | S      | 021           | TODO                                                                                 |
 | 023  | 构建报出越出 SVG 图框、会被裁掉的文字（WARN）                            | P2       | S      | 018、019、021 | TODO                                                                                 |
 | 024  | 表格里的长标识符不再被压成竖条（先出样张，维护者选定后实现）             | P2       | S      | —             | TODO                                                                                 |
@@ -292,6 +293,55 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 - **审阅**：一次通过，无 REVISE。advisor 在分支上独立复跑：49 个测试 OK（比 main 多 1）；计划的 grep / `py_compile` / `node --check` 全部命中预期；`make check` 通过；diff 和提交说明里没有真实代理地址。冻结场景轮次 `2026-10-22-21aaae9-020`（建在执行者 worktree 里，清理后不留存）对 `2026-10-22-6d39fa5-printbreak`：30 张截图逐字节相同，`probe.json` 相同。`probe_round.mjs` 里的 `PROXY_ARGS` 被 pre-commit 的 prettier 拆成多行，逻辑与计划一致。
 - **提速**：执行者 Step 4 量到带代理 41.99 秒、不带 41.81 秒，没测出差别。advisor 按顺序交替复测 status-report 的完整构建：带代理 43.3 / 30.3 秒，不带 119.3 / 106.9 秒；单次 `--dump-dom` 渲染 9～10 秒对 13 秒。直连的耗时随网络起伏很大，执行者那次的差别没有复现。
 - **基线失败**：执行者在改动前的 main 上跑全量测试，`test_snap_renders_both_themes_and_exports_markdown` 两次失败于 `dark-500`（48 个里 1 个失败），改动后通过。很可能是直连时字体请求拖到截图超时，没有单独核实。018、019 的执行者若在没配代理的环境里跑，可能遇到同样的失败。
+
+### 021 审阅记录（2026-10-23）
+
+- **冷读**：一个没有本会话上下文的子代理把初版计划原样套到 `a2c1798` 的副本上跑了一遍。初版计划自带的验证全部能过，交付物却有两处错误，都已复现：
+  - `render.mjs` 写完 stdout 立刻 `process.exit`。macOS 上写管道是异步的，超过 64 KB 的部分丢失，gallery 总览页的默认 `--snap` 因此 `JSONDecodeError`。初版只用五个场景页验证，它们的 export.md 只有 1–2 KB，测不出来。
+  - `--shot` 的卡被 `shell.js` 的 `fit()` 缩到 0.947 倍，右侧和底部露白。`SHOT_CSS` 追加在文件末尾，`fit()` 执行时还没生效；改前靠 `--window-size` 之后的一次 `resize` 掩盖了，CDP 不会触发这次 resize。
+- **其余问题**：
+  - Node 早于 22 时构建失败，还留下孤儿 Chrome。
+  - Chrome 配置目录从不删除。`probe_round.mjs` 在 HEAD 上就有同样的泄漏：本机 `$TMPDIR` 已有 22 个 `probe-round-*`，共 1.8 GB。
+  - 漏了 `--no-sandbox`。
+  - Step 4 的 subprocess 计数写错。
+  - gallery 对照的第 1 行含路径。
+  - Step 9 的「数据图已画出」在五个场景页上无从检查，因为它们一张数据图都没有。
+  - 轮次目录没指定，跨代码块用了变量，Git 工作流与新旧对照互相矛盾。
+- **修订**：
+  - 运行器等 stdout 写完再退出；`close()` 等 Chrome 退出后删配置目录；`launch()` 先查 `WebSocket`，失败时先收拾再抛错。
+  - `run_jobs` 让运行器单独成一个进程组，超时或 Ctrl-C 时连同 Chrome 一起结束；进程组恰好已经退出时忽略 `ProcessLookupError`，否则它会盖掉原来的 `KeyboardInterrupt`（复跑时撞到过）；用 UTF-8 解码；输出不是 JSON 时报错，不再崩溃。
+  - 390 那一档没返回结果时报 WARN。
+  - `SHOT_CSS` 移进 `<head>`，每个截图任务读出卡片的 `transform`，有缩放就报错。
+  - 新增两个测试：64 KB 以上的输出、`--shot` 不缩放。计划要求对后者做一次反证。
+  - Step 9 改用 gallery 总览页检查首屏外的数据图，新增新旧 `--shot` 对照，轮次固定对 `2026-10-22-5820240-018`。
+  - Scope 加技能 `README.md` 目录表的两行。
+- **advisor 把修订版代码块原样套到 HEAD 副本上复跑**：
+  - 静态检查：`py_compile` 和三个 `node --check` 通过，计划里的 grep 计数全部命中。
+  - 测试：`Ran 56 tests`、OK，用时 26 秒；`--shot` 测试在样式改回文末时失败（`scale(0.946667)`），改回后通过。
+  - Step 2：`--no-experimental-websocket` 下退出码 3；运行前后 `show-me-cdp-*` 目录数不变。
+  - gallery 总览页默认 `--snap` 出 111 个文件，含渲染检查共 44.7 秒，首屏外切片里的数据图已画出。
+  - Step 1：新旧 `probe_round` 对 018 轮，五页 `无问题`，`probe.json` 相同，30/30 张截图逐字节相同（`--no-sandbox` 不影响截图），新版不再留下 `probe-round-*` 目录。
+  - 中断：任务进行中模拟 Ctrl-C，抛出 `KeyboardInterrupt`，之后没有残留的 Chrome 或 node。
+
+### 021 执行记录（2026-10-23）
+
+- **执行**：一次完成，没有 STOP，没有 REVISE。执行者为装 git 钩子在 worktree 里跑了 `npm install`，它改动的 `package-lock.json` 已还原，没进提交。
+- **advisor 复核，代码**：把计划代码块原样套到 `main` 的副本上，与分支逐字比对。
+  - `test_build.py` 相同。
+  - 三个 `.mjs` 按仓库 prettier 配置格式化后相同。
+  - `build.py` 只在「整页快照」一节前多一个空行。
+  - 文档改动与计划一致。
+- **advisor 复核，验证**：
+  - `Ran 56 tests` OK，34.7 秒。执行者在改前的 `main` 上跑同一套 51 个测试用了 238 秒。
+  - 计划里的 grep 全部命中，三个 `node --check` 通过，`make check` 通过。
+  - Step 9.1 七页加 gallery 都「相同」，没有新的 390 WARN，也没有滚动条宽度造成的差异。
+  - 运行后没有 `show-me-cdp-*` 残留；新增的 4 个 `probe-round-*` 是改前版本在对照时留下的。
+- **截图字节差异**：
+  - 执行者 Step 1 第一次对照是 29/30（`code-review-light-1280`），重跑两次都是 30/30。
+  - 轮次 `2026-10-23-47a158d-021` 对 018 轮也是 29/30（`concept-explainer-light-500`）。advisor 用 ImageMagick 逐像素比对，只差 1 个像素（AE=1），属于抗锯齿噪声。
+- **耗时**：status-report 的 `--snap`（390/500/1280 × 两个主题）用 10.99 秒。
+- **没改**：`visual-system.md:130` 的「390px 人工截图」说的是冻结场景流程，计划没要求改。
+- **合入**：维护者 2026-10-23 确认，快进合入、推送并 `make install`。轮次 `2026-10-23-47a158d-021` 已复制到主检出，作为下一轮的对照基线。执行者的 worktree、分支，以及对照时留下的 4 个 `probe-round-*` 都已删除。
 
 ### Findings considered and rejected
 
