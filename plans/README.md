@@ -282,7 +282,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | 022  | gallery 截图改走运行器，`build.py` 加 `--pdf`                                    | P2       | S      | 021           | DONE（2026-10-23 审阅通过，快进合入 main `45326da` + `b52953a`；见「022 执行记录」） |
 | 023  | 构建报出越出 SVG 图框、会被裁掉的文字（WARN）                                    | P2       | S      | 018、019、021 | DONE（2026-10-23 审阅通过，拣到 main 为 `a99b310`；见「023 执行记录」）              |
 | 024  | 表格里的长标识符不再被压成竖条：表格内 `code` 不在词中断开，文档教作者插 `<wbr>` | P2       | S      | —             | DONE（2026-10-23 维护者选 d；审阅通过，拣到 main 为 `f580de6`；见「024 执行记录」）  |
-| 025  | 单页交互探针 `probe_page.mjs`                                                    | P3       | M      | 021           | TODO（2026-10-23 冷读审阅后改写，可派发；见「025 审阅记录」）                        |
+| 025  | 单页交互探针 `probe_page.mjs`                                                    | P3       | M      | 021           | DONE（2026-10-23 审阅通过，拣到 main 为 `ae5fa79`；见「025 执行记录」）              |
 | 026  | Markdown 导出带上图的 `<desc>`                                                   | P3       | S      | —             | TODO                                                                                 |
 | 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留                     | P2       | S      | 022           | TODO（2026-10-23 维护者决定并入「保留有含义的底色」，派发前先冷读审阅）              |
 
@@ -435,6 +435,12 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
 - **改了什么**：`existsSync` 前置检查，页面不存在退出 2；Chrome 起不来也退出 2 并给出原因；接 SIGINT / SIGTERM 去 `close()`，退出码 130 / 143；主体包进 try / finally，`await close()` 后再退出；配置目录前缀改为 `probe-page-cdp-`，输出目录改为 `probe-page-out-`，数残留时不混；js 代码块换成 prettier 格式，Step 1 后跑一次 prettier；Step 1 加三种错误用法的 Verify，Step 2 加残留计数和 SIGTERM 检查；轮次目录写死 `2026-10-23-bdc10b6-024`；`Current state` 写明 `close()` 是 Promise、`cdp.mjs` 不处理信号；索引由审阅者维护。
 - **advisor 复跑**：改后的计划原文套到 `3cf064c` 的新副本上：三种错误用法都退出 2；四次实跑结果与上面相同，`exit=0 / 1` 符合预期；运行前后和 SIGTERM（退出 143）之后，`probe-page-cdp-*` 目录和 Chrome 进程都是 0；文档两处改完后 prettier 无改动，`grep -c 'probe_page.mjs'` 为 1，文档门禁通过。
 - **没采纳**：冷读建议把「交互先跑 probe_page.mjs」移出「没有交互浏览器时」那一段。探针和 `--snap` 一样用无头 Chrome，正是给没有交互浏览器的 agent 用的，放在这段里没有问题。给 `cdp.mjs` 统一加信号处理（`probe_round.mjs` 也没有）另记，不在本计划里做。
+
+### 025 执行记录（2026-10-23）
+
+- **执行**：一次完成，没有 STOP，没有 REVISE。只改了 `probe_page.mjs`（新建）和 `compose-and-check.md`；脚本与计划代码块逐字节相同，prettier 没有改动。
+- **advisor 复核**：在 worktree 里重跑：三种错误用法都退出 2；四次实跑与计划 Verify 一致（triage-board 19 个控件、code-review 2 个折叠加 3 个复选框、concept-explainer 390px 2 个滑块、坏按钮页 `exit=1`）；运行前后和 SIGTERM（退出 143）之后，配置目录和 Chrome 进程都是 0；59 个测试 OK，文档门禁通过。只加了脚本，没碰 `show-me.css`、骨架和 `build.py`，按 MAINTENANCE.md 不跑冻结场景轮次。
+- **合入**：维护者 2026-10-23 确认，`e781794` 拣到 main 为 `ae5fa79`，去掉了执行者加的 `Co-Authored-By` 行（仓库其他提交都没有）；推送并 `make install`。worktree、分支和审阅用的 /tmp 文件都已删除。
 
 ### Findings considered and rejected
 
