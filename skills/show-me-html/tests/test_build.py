@@ -1,8 +1,10 @@
 import hashlib
 import json
+import os
 import re
 import runpy
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -19,6 +21,11 @@ RECIPES = runpy.run_path(str(BUILD))["RECIPES"]
 FIND_CHROME = runpy.run_path(str(BUILD))["find_chrome"]
 RENDERER = bool(FIND_CHROME() and shutil.which("node"))
 SHELL = SKILL / "assets" / "shell.html"
+
+
+def chrome_pids(tmpdir):
+    """命令行里带着 tmpdir 的进程：Chrome 的 --user-data-dir 在 TMPDIR 下。"""
+    return subprocess.run(["pgrep", "-f", str(tmpdir)], capture_output=True, text=True).stdout.split()
 
 
 def png_size(path):
@@ -483,6 +490,52 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(json.loads(out), [
             [], ["--proxy-server=http://127.0.0.1:7890"], ["--proxy-server=http://b.test:2"],
             ["--proxy-server=socks5://127.0.0.1:7891", "--proxy-bypass-list=localhost;*.corp.test"], []])
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_cdp_signal_closes_chrome_and_removes_profile(self):
+        """launch() 接 SIGINT / SIGTERM：结束 Chrome、删掉配置目录，再按 130 / 143 退出。"""
+        script = ("import(process.argv[1]).then(async (m) => { await m.launch(process.argv[2], 'sigtest-');"
+                  " console.log('ready'); setInterval(() => {}, 1000); })")
+        for sig, code in ((signal.SIGINT, 130), (signal.SIGTERM, 143)):
+            with self.subTest(sig=sig.name), tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+                proc = subprocess.Popen(["node", "-e", script, (SKILL / "scripts" / "cdp.mjs").as_uri(), FIND_CHROME()],
+                                        stdout=subprocess.PIPE, text=True, env={**os.environ, "TMPDIR": td})
+                try:
+                    self.assertEqual(proc.stdout.readline().strip(), "ready")
+                    proc.send_signal(sig)
+                    self.assertEqual(proc.wait(timeout=30), code)
+                    self.assertEqual([p.name for p in Path(td).iterdir() if p.name.startswith("sigtest-")], [])
+                    self.assertEqual(chrome_pids(td), [], "Chrome 进程还在")
+                finally:
+                    proc.kill()
+                    proc.stdout.close()
+                    subprocess.run(["pkill", "-KILL", "-f", td])
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_interrupted_build_leaves_no_chrome_profile(self):
+        """构建中途被 Ctrl-C：build.py 先对运行器发 SIGTERM，运行器结束 Chrome、删掉配置目录后才退出。"""
+        page = self.copy_fixture()
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            def profiles():
+                return [p.name for p in Path(td).iterdir() if p.name.startswith("show-me-cdp-")]
+            proc = subprocess.Popen([sys.executable, str(BUILD), str(page), "--no-render", "--snap", str(page.parent / "snap")],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                    env={**os.environ, "TMPDIR": td})
+            try:
+                for _ in range(200):  # 等运行器建好配置目录，说明 Chrome 已经起来
+                    if profiles():
+                        break
+                    time.sleep(0.05)
+                time.sleep(0.5)
+                self.assertIsNone(proc.poll(), "构建在打断之前就结束了")
+                proc.send_signal(signal.SIGINT)
+                proc.communicate(timeout=30)
+                self.assertEqual(proc.returncode, -signal.SIGINT)
+                self.assertEqual(profiles(), [])
+                self.assertEqual(chrome_pids(td), [], "Chrome 进程还在")
+            finally:
+                proc.kill()
+                subprocess.run(["pkill", "-KILL", "-f", td])
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_chart_text_below_font_floor(self):

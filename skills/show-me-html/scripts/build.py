@@ -1134,16 +1134,26 @@ def run_jobs(jobs):
         # 运行器单独一个进程组：超时或被中断时连同它启动的 Chrome 一起结束，不留孤儿进程
         proc = subprocess.Popen([node, str(RENDER_SCRIPT), str(spec)], stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, encoding="utf-8", start_new_session=True)
+
+        def stop():
+            # 先对整组发 SIGTERM：运行器（cdp.mjs）收到后结束 Chrome、删掉配置目录再退出；最多等 5 秒，再 SIGKILL 剩下的。
+            # 进程组可能已经全部退出（ProcessLookupError）；macOS 上组长被回收后再 killpg 还可能报 PermissionError。
+            # 两种都忽略，否则会盖掉原来的 KeyboardInterrupt，或让超时路径崩掉
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(proc.pid, signal.SIGTERM)
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                proc.wait(timeout=5)
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(proc.pid, signal.SIGKILL)
+
         try:
             out, err = proc.communicate(timeout=90 * len(jobs) + 30)
         except subprocess.TimeoutExpired:
-            with contextlib.suppress(ProcessLookupError):  # 进程组可能恰好已经自己退出
-                os.killpg(proc.pid, signal.SIGKILL)
+            stop()
             proc.communicate()
             return None, "Chrome 运行器超时"
         except BaseException:  # Ctrl-C 等：单独的进程组收不到终端发来的信号，要自己结束它
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(proc.pid, signal.SIGKILL)
+            stop()
             raise
     if proc.returncode == 3:
         return None, None

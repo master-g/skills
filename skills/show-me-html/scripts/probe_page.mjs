@@ -50,11 +50,6 @@ try {
   process.exit(2);
 }
 const { send, until, on, close } = cdp;
-// 被 Ctrl-C 或命令超时的 SIGTERM 打断时也结束 Chrome、删掉配置目录（SIGKILL 拦不住）
-for (const sig of ["SIGINT", "SIGTERM"])
-  process.once(sig, () =>
-    close().finally(() => process.exit(sig === "SIGINT" ? 130 : 143))
-  );
 let code = 2;
 try {
   const { targetId } = await send("Target.createTarget", {

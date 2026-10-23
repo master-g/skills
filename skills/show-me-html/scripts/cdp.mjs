@@ -32,6 +32,7 @@ export function proxyArgs(env = process.env) {
 // 启动一个无头 Chrome 并连上。返回 send(方法, 参数, sessionId)、until(事件名, {sessionId, timeout})、on(监听)、close()。
 // close() 返回 Promise：结束 Chrome，等它退出后删掉这次的配置目录（每次几 MB 到几十 MB）。
 // 启动失败时先收拾干净再抛错，不留 Chrome 进程和目录。
+// 进程收到 SIGINT / SIGTERM 时也先 close() 再退出（退出码 130 / 143），调用方不用自己接信号。
 export async function launch(chromePath, prefix = "show-me-cdp-") {
   if (typeof WebSocket === "undefined")
     throw new Error("这个 node 没有内置 WebSocket，需要 Node 22 或更新版本");
@@ -54,9 +55,22 @@ export async function launch(chromePath, prefix = "show-me-cdp-") {
     chrome.kill();
     await exited;
     try {
-      rmSync(dir, { recursive: true, force: true });
+      // Chrome 的网络服务退出时还会往 Default/ 里写临时文件，删目录可能撞上 ENOTEMPTY：让 rmSync 重试几次
+      rmSync(dir, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 100,
+      });
     } catch {}
   };
+  // 被 Ctrl-C、命令超时的 SIGTERM 或 build.py 打断时，也结束 Chrome、删掉配置目录（SIGKILL 拦不住）。
+  // 接了信号 node 就不会自己退出，收拾完按惯例用 128 + 信号值退出：SIGINT 130，SIGTERM 143。
+  for (const [sig, code] of [
+    ["SIGINT", 130],
+    ["SIGTERM", 143],
+  ])
+    process.once(sig, () => close().finally(() => process.exit(code)));
   let ws;
   try {
     const wsUrl = await new Promise((ok, no) => {
