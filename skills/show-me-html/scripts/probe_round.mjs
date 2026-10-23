@@ -13,15 +13,8 @@
 // 场景判据里的选择器对应当前基线页面的写法，SCENARIO.md 只冻结行为、不冻结 DOM。
 // 重新生成页面后选择器可能不再命中：摘要会报「未命中」，按 SCENARIO.md 把选择器改到新页面上。
 // Chrome 路径默认 macOS，其他系统用环境变量 CHROME 指定。
-import { spawn } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { launch } from "./cdp.mjs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -42,72 +35,7 @@ const PAGES = [
 ];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// 无头 Chrome 不读 HTTP(S)_PROXY 环境变量：配了代理就显式传，否则每次直连 Google Fonts。规则同 build.py 的 chrome_proxy_args
-const envOf = (...names) =>
-  names.map((n) => (process.env[n] || "").trim()).find(Boolean) || "";
-const proxy = envOf(
-  "HTTPS_PROXY",
-  "https_proxy",
-  "HTTP_PROXY",
-  "http_proxy",
-  "ALL_PROXY",
-  "all_proxy"
-);
-const bypass = envOf("NO_PROXY", "no_proxy")
-  .split(",")
-  .map((h) => h.trim())
-  .filter(Boolean);
-const PROXY_ARGS =
-  proxy && !bypass.includes("*")
-    ? [
-        `--proxy-server=${proxy.replace(/\/$/, "")}`,
-        ...(bypass.length
-          ? [
-              `--proxy-bypass-list=${bypass.map((h) => (h.startsWith(".") ? "*" + h : h)).join(";")}`,
-            ]
-          : []),
-      ]
-    : [];
-const chrome = spawn(CHROME, [
-  "--headless=new",
-  "--remote-debugging-port=0",
-  "--hide-scrollbars",
-  `--user-data-dir=${mkdtempSync(join(tmpdir(), "probe-round-"))}`,
-  ...PROXY_ARGS,
-  "about:blank",
-]);
-const wsUrl = await new Promise((ok) => {
-  let buf = "";
-  chrome.stderr.on("data", (d) => {
-    buf += d;
-    const m = buf.match(/ws:\/\/\S+/);
-    if (m) ok(m[0]);
-  });
-});
-const ws = new WebSocket(wsUrl);
-await new Promise((r) => ws.addEventListener("open", r));
-let seq = 0;
-const pending = new Map();
-const waiters = [];
-ws.addEventListener("message", (e) => {
-  const m = JSON.parse(e.data);
-  if (m.id && pending.has(m.id)) {
-    const p = pending.get(m.id);
-    pending.delete(m.id);
-    m.error ? p.no(new Error(JSON.stringify(m.error))) : p.ok(m.result);
-  } else if (m.method) for (const w of waiters.splice(0)) w(m);
-});
-const send = (method, params = {}, sessionId) =>
-  new Promise((ok, no) => {
-    const id = ++seq;
-    pending.set(id, { ok, no });
-    ws.send(JSON.stringify({ id, method, params, sessionId }));
-  });
-const until = (method) =>
-  new Promise((ok) => {
-    const f = (m) => (m.method === method ? ok(m) : waiters.push(f));
-    waiters.push(f);
-  });
+const { send, until, close } = await launch(CHROME, "probe-round-");
 
 async function open(
   file,
@@ -480,7 +408,7 @@ writeFileSync(
   join(OUT, "probe.json"),
   JSON.stringify({ schema: SCHEMA, pages: report }, null, 1)
 );
-chrome.kill();
+await close();
 
 let failed = false;
 for (const [name, v] of Object.entries(report)) {
