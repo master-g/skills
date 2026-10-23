@@ -5,6 +5,8 @@
 > **Drift check (run first)**: 本计划要求计划 018、019、021 已合入（它在 018、019 之后往 `PROBE` 末尾再追加一段；021 让渲染检查在 reduced motion 下量末帧，没有它逐帧布局的图会被误报）。先确认：`grep -c '(?P<contrast>' skills/show-me-html/scripts/build.py` → `1`，`grep -c '(?P<scaled>' skills/show-me-html/scripts/build.py` → `1`，`grep -c '"reduced": True, "eval": title' skills/show-me-html/scripts/build.py` → `1`。不满足就 STOP。
 > 再跑 `git diff --stat 2f0e439..HEAD -- skills/show-me-html/references/charts.md skills/show-me-html/references/anti-patterns.md`，对照下面「Current state」里的引文。
 >
+> 2026-10-23 advisor 在 `90fb8af` 上做过冷读审阅：子代理把本计划原样套到副本上跑通，全部 Verify 满足；只按审阅结果改了 Step 4 的轮次目录和两处文档行号。
+>
 > 本文件里的 js / markdown 代码块前都有 `<!-- prettier-ignore -->`，内容就是要粘贴的原样，不要按 prettier 的风格改写。
 
 ## Status
@@ -74,7 +76,7 @@ show-me-html 页面里的图是内联 SVG。SVG 的内容超出它的 viewBox �
 
 - 021 之后，`render_check()` 用 `run_jobs()` 在一个 Chrome 里跑各宽度，任务带 `"reduced": True`：数据图画的是末帧。advisor 在 scratchpad 里试过不带它：gallery 总览页的 G11 力导向图在节点布局完成前被量到，20 个节点标签全被报成越框。
 
-- `references/charts.md`「文字」小节（`:148`）：`… \`scripts/gallery.py --shots\` 的探针会报出图库里互相重叠或越出图框的文字。` 「交付前自检」第 3 条（`:292`）：`3. 标签会不会重叠？邻近峰值只标一个？`
+- `references/charts.md`「文字」小节（`90fb8af` 的 `:149`）：`… \`scripts/gallery.py --shots\` 的探针会报出图库里互相重叠或越出图框的文字。` 「交付前自检」第 3 条（`:293`）：`3. 标签会不会重叠？邻近峰值只标一个？`
 
 - `references/anti-patterns.md` 是「反模式名册」：表格列为 `# | 名字 | 状态 | 识别特征 | 当页修法`，表后有「状态推进记录：」列表。018、019 各加了一行，编号接表里最大的编号。
 
@@ -196,16 +198,18 @@ show-me-html 页面里的图是内联 SVG。SVG 的内容超出它的 viewBox �
 
 ### Step 4: 现有页面不误报
 
+冻结场景轮次 `rounds/` 被 gitignore，只在主检出里有，所以下面用主检出的绝对路径，并写死基线轮次的目录名（`rounds/` 下还有别的轮次，不要用 `ls | tail -1` 去挑）。页面先复制到临时目录再构建，主检出里的文件不动。用 bash 跑（zsh 下目录不存在时 glob 会直接报错）：
+
 ```sh
-R=$(ls -d /Users/mg/github/skills/skills/show-me-html/scenarios/rounds/*/ | tail -1)
+R=/Users/mg/github/skills/skills/show-me-html/scenarios/rounds/2026-10-23-b52953a-022/
 T=$(mktemp -d)
 for f in "$R"*.html skills/show-me-html/tests/fixtures/component-states.html skills/show-me-html/tests/fixtures/diagram-variants.html; do
-  cp "$f" "$T/"; python3 skills/show-me-html/scripts/build.py "$T/$(basename "$f")" | grep -c '文字越出图框'
+  cp "$f" "$T/"; printf '%s ' "$(basename "$f")"; python3 skills/show-me-html/scripts/build.py "$T/$(basename "$f")" | grep -c '文字越出图框'
 done
-python3 skills/show-me-html/scripts/gallery.py --out "$T/g" | head -3
+python3 skills/show-me-html/scripts/gallery.py --out "$T/g" | grep -c '文字越出图框'
 ```
 
-**Verify**: 每页一行 `0`；gallery 总览页前三行里没有 `文字越出图框`（图库探针此前是 `问题 0 条`，两边判据相同；advisor 在 scratchpad 里按本计划的代码跑过，五个场景页、两个夹具、gallery 都是 0）。有页面报出时，打开它看那段字是不是真的被裁：是真的，就在汇报里列出（不修页面）；不是真的（误报），STOP。
+**Verify**: 七个页面各一行，都是 `0`；最后 gallery 那一行也是 `0`（`gallery.py --out` 合成总览页后会跑一遍 `build.py`，59 张数据图都在这页上，是误报的主要检验；五个场景页里的 SVG 多是图标和图示。图库探针此前是 `问题 0 条`，两边判据相同；advisor 冷读审阅时在 `90fb8af` 上按本计划的代码跑过，七个页面和 gallery 都是 0）。有页面报出时，打开它看那段字是不是真的被裁：是真的，就在汇报里列出（不修页面）；不是真的（误报），STOP。
 
 ### Step 5: 文档
 
@@ -234,7 +238,7 @@ python3 skills/show-me-html/scripts/gallery.py --out "$T/g" | head -3
 
 - [ ] 全量单元测试 `OK`，测试数比执行前多 1
 - [ ] `grep -c '(?P<clipped>' skills/show-me-html/scripts/build.py` → `1`
-- [ ] Step 4 每页 `0`，gallery 前三行无 `文字越出图框`
+- [ ] Step 4 七个页面和 gallery 都是 `0`
 - [ ] `make check` exit 0；`git status` 只显示 Scope 里的文件
 - [ ] `plans/README.md` 本计划的状态行已更新
 
