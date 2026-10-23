@@ -7,6 +7,7 @@
 //   - 键盘：1280 与 390 下发真实 Tab 键遍历焦点，核对可达、焦点环、遮挡、出视口、正 tabindex、DOM 回跳
 //   - 导出与打印：页面自己的 Markdown 导出、打印 PDF 页数
 //   - 场景判据：按 SCENARIO.md 的通过标准读数，再用真实按键操作各场景的交互
+//   - 字体：每次打开页面先等网络字体到齐（至多 30 秒）再读数、截图；取不到时摘要报「字体未就绪」，退出码 1
 // 结果写 <本轮>/_probe/（截图、<场景>.md、<场景>.pdf、probe.json），每页一行摘要打到 stdout；
 // 给了上一轮就对比 probe.json 与同名截图。有问题时退出码 1。截图仍要人眼逐张看。
 //
@@ -15,7 +16,7 @@
 // Chrome 路径默认 macOS，其他系统用环境变量 CHROME 指定。
 import { launch } from "./cdp.mjs";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const CHROME =
@@ -34,6 +35,31 @@ const PAGES = [
   "triage-board",
 ];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 截图前等网络字体就位。骨架的字体样式表异步加载（shell.html：media="print"，onload 换回 all），
+// load 事件时样式表已经取回，但 woff2 分片要排版后才开始下载；只等固定的 1.5 秒时，慢的分片会让截图
+// 落在兜底字体上，与上一轮逐字节对比时整页字形都不同。就位返回 null，否则返回原因。
+// show-me.css 用 local() 声明的兜底字体（Han Serif Balanced）本机没装时状态是 error，它不在样式表的字族里，不算。
+const FONT_WAIT_MS = 30000;
+const FONTS_READY = `(async () => {
+  const link = document.querySelector('link[rel="stylesheet"][href*="fonts.googleapis.com"]');
+  if (!link) return null;
+  if (link.media !== "all" || !link.sheet) return "字体样式表没有取到";
+  const families = [...link.href.matchAll(/family=([^:&]+)/g)].map((m) => decodeURIComponent(m[1].replace(/\\+/g, " ")));
+  const end = Date.now() + ${FONT_WAIT_MS};
+  for (;;) {
+    document.body.getBoundingClientRect();
+    await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, Math.max(0, end - Date.now())))]);
+    const faces = [...document.fonts].filter((f) => families.includes(f.family.replace(/"/g, "")));
+    const bad = faces.filter((f) => f.status === "error").map((f) => f.family);
+    if (bad.length) return "字体分片下载失败：" + [...new Set(bad)].join("、");
+    if (!faces.some((f) => f.status === "loading")) return null;
+    if (Date.now() >= end) return "字体 ${FONT_WAIT_MS / 1000} 秒内没有下完";
+    await new Promise((r) => setTimeout(r, 50));
+  }
+})()`;
+// 第一次没等到字体就记下原因，之后的页面不再等（免得每次打开都等满 30 秒），摘要里报出
+let fontTrouble = null;
 
 const { send, until, close } = await launch(CHROME, "probe-round-");
 
@@ -56,6 +82,14 @@ async function open(
     flatten: true,
   });
   const S = (m, p) => send(m, p, s);
+  const ev = async (expr) =>
+    (
+      await S("Runtime.evaluate", {
+        expression: expr,
+        returnByValue: true,
+        awaitPromise: true,
+      })
+    ).result.value;
   await S("Page.enable");
   await S("Emulation.setDeviceMetricsOverride", {
     width,
@@ -78,15 +112,11 @@ async function open(
   const loaded = until("Page.loadEventFired");
   await S("Page.navigate", { url: pathToFileURL(file).href });
   await loaded;
+  if (!fontTrouble) {
+    const why = await ev(FONTS_READY);
+    if (why) fontTrouble = `${basename(file, ".html")}：${why}`;
+  }
   await sleep(1500);
-  const ev = async (expr) =>
-    (
-      await S("Runtime.evaluate", {
-        expression: expr,
-        returnByValue: true,
-        awaitPromise: true,
-      })
-    ).result.value;
   const key = async (k, code, vk, mods = 0) => {
     for (const type of ["rawKeyDown", "keyUp"])
       await S("Input.dispatchKeyEvent", {
@@ -453,6 +483,13 @@ for (const [name, v] of Object.entries(report)) {
   console.log(`${name}: ${issues.length ? issues.join(" | ") : "无问题"}`);
   console.log(
     `  打印 ${v.pdfPages} 页 · 判据 ${JSON.stringify(values)}${v.keys ? " · 按键 " + JSON.stringify(v.keys) : ""}`
+  );
+}
+
+if (fontTrouble) {
+  failed = true;
+  console.log(
+    `字体未就绪（${fontTrouble}），之后的页面不再等字体：截图落在兜底字体上，与上一轮的对比不可信，网络恢复后重跑`
   );
 }
 
