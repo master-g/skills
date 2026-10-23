@@ -238,6 +238,7 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 - **多卡 `--shot` 从第 2 张起截出来是空白**（021 冷读时发现，改前改后都一样）：`shoot_sheets` 用 `.sheet-stage:nth-of-type(k)` 隐藏其他卡，而 `nth-of-type` 按各自所在的 section 计数；按 layouts.md 的写法每张卡各占一个 section，于是除第 1 张以外的截图里，所有卡都被隐藏。
 - **冻结场景探针的 PDF 是 Letter**（022 冷读时发现）：`probe_round.mjs` 调 `Page.printToPDF {}` 时没传 `preferCSSPageSize`，`_probe/*.pdf` 都是 612 × 792。所以它报的「打印页数」不是读者实际用 A4 打印时的页数。
 - **最小夹具 `--pdf` 多出一张空白页**（022 冷读时发现）：`minimal-shell.html` 打出 2 页，第 2 页空白，可能与 `body { min-height: 100vh }` 有关，没有核实。这属于打印样式，027 动手前先看一眼。
+- **`cdp.mjs` 不处理信号**（025 冷读时发现）：直接跑 `probe_round.mjs` 时被 Ctrl-C 之外的信号（例如命令超时的 SIGTERM）打断，Chrome 会成孤儿进程、配置目录留下。`build.py` 调运行器时有进程组兜底；025 的 `probe_page.mjs` 自己接了信号。要统一修，就在 `launch()` 里接 SIGINT / SIGTERM。
 - **卡住的网络请求拖住虚拟时间**（022 复核时遇到一次）：运行器按 `pauseIfNetworkFetchesPending` 等待，某个请求（多半是字体）一直不返回时，虚拟时间预算永远用不完，任务要等 90 秒真实超时后才失败，重跑就好。改前的 `--virtual-time-budget` 也是同样的语义。如果以后变得常见，可以考虑给虚拟时间加一个真实时间上限，到点后改为放行。
 - **未查明的观察**：advisor 在没有防闪烁脚本的测试夹具上强制暗色时，数据图有一次没有画出来；`recipe-matrix.html` 夹具在本机暗色外观下 `contenteditable` 的字与底色几乎相同（1.10:1）。两者都只出现在缺 `<head>` 主题脚本的夹具上，真实页面没有复现；018 把渲染检查固定在亮色，不受影响。
 
@@ -281,7 +282,7 @@ advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次
 | 022  | gallery 截图改走运行器，`build.py` 加 `--pdf`                                    | P2       | S      | 021           | DONE（2026-10-23 审阅通过，快进合入 main `45326da` + `b52953a`；见「022 执行记录」） |
 | 023  | 构建报出越出 SVG 图框、会被裁掉的文字（WARN）                                    | P2       | S      | 018、019、021 | DONE（2026-10-23 审阅通过，拣到 main 为 `a99b310`；见「023 执行记录」）              |
 | 024  | 表格里的长标识符不再被压成竖条：表格内 `code` 不在词中断开，文档教作者插 `<wbr>` | P2       | S      | —             | DONE（2026-10-23 维护者选 d；审阅通过，拣到 main 为 `f580de6`；见「024 执行记录」）  |
-| 025  | 单页交互探针 `probe_page.mjs`                                                    | P3       | M      | 021           | TODO                                                                                 |
+| 025  | 单页交互探针 `probe_page.mjs`                                                    | P3       | M      | 021           | TODO（2026-10-23 冷读审阅后改写，可派发；见「025 审阅记录」）                        |
 | 026  | Markdown 导出带上图的 `<desc>`                                                   | P3       | S      | —             | TODO                                                                                 |
 | 027  | 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留                     | P2       | S      | 022           | TODO（2026-10-23 维护者决定并入「保留有含义的底色」，派发前先冷读审阅）              |
 
@@ -423,6 +424,17 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
 - **执行**：一次完成，没有 STOP，没有 REVISE。只改 `show-me.css`（+7）和 `components.md`（+2），与计划代码块逐行相同。
 - **advisor 复核**：在 worktree 里按 Step 1 的脚本重新生成样张并量：不插 `<wbr>` 的一页 994 / 361，插了的一页 444 / 98 / 120，与计划预期相同；390 截图里键名在 `_` 后断、路径在 `/` 后断，没有词中断开。58 个测试 OK，`make check` 通过。冻结场景轮次 `2026-10-23-bdc10b6-024` 对 022 轮，执行者和 advisor 各跑一次探针：五页 `无问题`，`probe.json` 相同，30/30 张截图逐字节相同。
 - **合入**：维护者 2026-10-23 确认，`2a86696` 拣到 main 为 `f580de6`；拣入后的 main 上 59 个测试 OK，推送并 `make install`。轮次 `2026-10-23-bdc10b6-024` 已复制到主检出，作为下一轮的对照基线；两个执行者的 worktree、分支和审阅用的 /tmp 副本都已删除。
+
+### 025 审阅记录（2026-10-23）
+
+- **冷读**：子代理把原计划套到 `3cf064c` 的副本上，Step 1–3 的 Verify 全部满足（triage-board 19 个控件 29.5 秒、code-review 2 个折叠加 3 个复选框、concept-explainer 390px 2 个滑块、坏按钮页退出码 1；筛选前后截图确有差别），没有 BLOCKER。MAJOR 4 条，advisor 逐条核实：
+  - 脚本末尾 `close(); process.exit(...)` 没等 `close()`，每次运行留下一个 15–24 MB 的 Chrome 配置目录（021 之后 `close()` 是 Promise，原计划写于 021 之前）。
+  - 页面路径不存在时 Chrome 打开错误页，探针报 `0 个控件`、退出码 0。
+  - 运行中被 SIGTERM / SIGKILL 杀掉时 Chrome 成了孤儿进程，配置目录也留下。
+  - 粘贴的 `.mjs` 不是 prettier 格式，提交钩子会整段改写，与「原样粘贴」冲突。
+- **改了什么**：`existsSync` 前置检查，页面不存在退出 2；Chrome 起不来也退出 2 并给出原因；接 SIGINT / SIGTERM 去 `close()`，退出码 130 / 143；主体包进 try / finally，`await close()` 后再退出；配置目录前缀改为 `probe-page-cdp-`，输出目录改为 `probe-page-out-`，数残留时不混；js 代码块换成 prettier 格式，Step 1 后跑一次 prettier；Step 1 加三种错误用法的 Verify，Step 2 加残留计数和 SIGTERM 检查；轮次目录写死 `2026-10-23-bdc10b6-024`；`Current state` 写明 `close()` 是 Promise、`cdp.mjs` 不处理信号；索引由审阅者维护。
+- **advisor 复跑**：改后的计划原文套到 `3cf064c` 的新副本上：三种错误用法都退出 2；四次实跑结果与上面相同，`exit=0 / 1` 符合预期；运行前后和 SIGTERM（退出 143）之后，`probe-page-cdp-*` 目录和 Chrome 进程都是 0；文档两处改完后 prettier 无改动，`grep -c 'probe_page.mjs'` 为 1，文档门禁通过。
+- **没采纳**：冷读建议把「交互先跑 probe_page.mjs」移出「没有交互浏览器时」那一段。探针和 `--snap` 一样用无头 Chrome，正是给没有交互浏览器的 agent 用的，放在这段里没有问题。给 `cdp.mjs` 统一加信号处理（`probe_round.mjs` 也没有）另记，不在本计划里做。
 
 ### Findings considered and rejected
 
