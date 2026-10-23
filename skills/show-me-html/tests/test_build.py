@@ -465,6 +465,26 @@ class BuildCliTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 1 if flagged else 0, result.stdout)
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_render_check_warns_on_text_outside_the_frame(self):
+        """SVG 外的部分会被裁掉：文字越出图框报 WARN，构建不失败。"""
+        chart = """<section><figure class="fig" data-chart="F1"><div class="fig-box">
+          <svg id="edge" viewBox="0 0 400 120" role="img" aria-labelledby="edge-t edge-d"><title id="edge-t">t</title>
+          <desc id="edge-d">d</desc></svg></div></figure></section>"""
+        script = """<script>showMeChart.reveal(document.getElementById("edge"), (s) =>
+          showMeChart.txt(s, { x: X, y: 60, "font-size": 10 }, "越出图框的长标签"));</script>"""
+        for x, flagged in (("360", True), ("20", False)):
+            with self.subTest(x=x):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8")
+                html = html.replace("</main>", chart + "</main>").replace(
+                    "<!--SHOW-ME:JS-->", "<!--SHOW-ME:JS-->" + script.replace("X", x))
+                page.write_text(html, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                self.assertEqual("文字越出图框，SVG 外的部分会被裁掉：F1（#edge）「越出图框的长标签」" in result.stdout,
+                                 flagged, result.stdout)
+                self.assertEqual(result.returncode, 0, result.stdout)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_shrunk_stat_num(self):
         """页面 <style> 写 .band p 会连 .stat-num 一起压小（2026-10 实例：12.8px 的大数、6.4px 的单位）。"""
         band = """<section><div class="metric-band"><div><p class="stat-num">720<small>p</small></p>

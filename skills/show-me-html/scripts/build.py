@@ -956,12 +956,28 @@ PROBE = """
       if (k > 1.5 || k < 0.8)
         scaled.push(s.closest('figure').dataset.chart + (s.id ? '（#' + s.id + '）' : '') + ' viewBox 宽 ' + vb.width + '，显示 ' + Math.round(w) + 'px，' + k.toFixed(2) + ' 倍');
     });
+    // 文字越出图框（charts.md「交付前自检」第 3 条）：SVG 外面的部分被裁掉，读者看到半截字。
+    // 判据同 gallery.py 的探针：只比水平文字，外接框超出 SVG 的盒子 1px 以上就算
+    var clipped = [];
+    doc.querySelectorAll('svg').forEach(function(s){
+      if (!s.getClientRects().length || !shown(s) || getComputedStyle(s).overflow === 'visible') return;
+      var sr = s.getBoundingClientRect(), fig = s.closest('figure[data-chart]');
+      var where = (fig ? fig.dataset.chart : 'svg') + (s.id ? '（#' + s.id + '）' : '');
+      s.querySelectorAll('text').forEach(function(t){
+        var cs = getComputedStyle(t), m = t.getScreenCTM(), r = t.getBoundingClientRect();
+        if (!t.textContent.trim() || !m || Math.abs(m.b) > 1e-3 || Math.abs(m.c) > 1e-3 || r.width < 1
+            || cs.display === 'none' || parseFloat(cs.opacity) === 0) return;
+        if (r.left < sr.left - 1 || r.right > sr.right + 1 || r.top < sr.top - 1 || r.bottom > sr.bottom + 1)
+          clipped.push(where + '「' + t.textContent.trim().split('|').join('/').split('；').join(';').slice(0, 12) + '」');
+      });
+    });
     document.title = 'PROBE|' + sw + '|' + cw + '|' + over.slice(0, 4).join('  ') + '|' + small.join('；')
       + '|' + text.slice(0, 4).join('；') + (text.length > 4 ? ' 等 ' + text.length + ' 处' : '')
       + '|' + diag.join('；')
       + '|' + dim.slice(0, 6).map(function(d){ return d.s + (d.n > 1 ? ' ×' + d.n : ''); }).join('；')
       + (dim.length > 6 ? ' 等 ' + dim.length + ' 组' : '')
-      + '|' + scaled.join('；');
+      + '|' + scaled.join('；')
+      + '|' + clipped.slice(0, 20).join('；');
   }, 1500);
 });</script>
 """
@@ -1148,6 +1164,7 @@ def render_check(page, widths=(500, 1024, 1280)):
 
     html = page.read_text(encoding="utf-8")
     issues, notes, measured = [], [], []
+    clipped = []  # 越框文字跨宽度去重：数据图的 viewBox 不随视口变，同一处在每个宽度都会报
     with tempfile.TemporaryDirectory() as td:
         probe = Path(td) / "probe.html"
         # 固定亮色主题：对比度在亮色下最差；其余几何检查与主题无关，固定下来结果也不随本机外观变
@@ -1176,7 +1193,7 @@ def render_check(page, widths=(500, 1024, 1280)):
                          + "。手机上要横向拖动整页，把越界元素收窄或放进局部滚动容器（visual-system.md「响应式与打印」）")
         for w, r in zip(widths, results[1:]):
             out = wrap(r)
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)\|(?P<clipped>.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（{why(r)}）")
                 continue
@@ -1211,6 +1228,13 @@ def render_check(page, widths=(500, 1024, 1280)):
             if scaled and w == max(widths):
                 notes.append(f"{cw}px 下图的显示倍率超出 0.8–1.5：{scaled}。单张图独占整栏时写成 .fig.wide 配 800 宽 viewBox，"
                              "按单位计数的图（刻度、珠子、点阵）把单位细一档，保持标记间距（charts.md「五件套外壳」）")
+            for c in htmllib.unescape(m.group("clipped").strip()).split("；"):
+                if c and c not in clipped:
+                    clipped.append(c)
+    if clipped:
+        notes.append(f"文字越出图框，SVG 外的部分会被裁掉：{'；'.join(clipped[:6])}"
+                     + (f" 等 {len(clipped)} 处" if len(clipped) > 6 else "")
+                     + "。把字挪进 viewBox 或缩短；确实放不下再加宽 viewBox，不缩字号（charts.md「交付前自检」第 3 条）")
     return issues, notes, measured, True
 
 
