@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// 无头 Chrome 不读 HTTP(S)_PROXY 环境变量：配了代理就显式传，否则每次直连 Google Fonts。规则同 build.py 的 chrome_proxy_args
+// 无头 Chrome 不读 HTTP(S)_PROXY 环境变量：配了代理就显式传，否则每次直连 Google Fonts。测试见 tests/test_build.py 的 test_cdp_proxy_args_follow_proxy_env
 export function proxyArgs(env = process.env) {
   const pick = (...names) =>
     names.map((n) => (env[n] || "").trim()).find(Boolean) || "";

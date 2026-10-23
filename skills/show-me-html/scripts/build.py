@@ -5,6 +5,7 @@
     python3 build.py page.html                # 内联资产 + 自检
     python3 build.py page.html --check-only   # 只跑自检，不改文件
     python3 build.py page.html --open         # 自检通过后用系统默认浏览器打开
+    python3 build.py page.html --pdf          # 自检通过后出一份 A4 PDF
 
 做四件事，然后自检：
   1. 把 show-me-html 自有 CSS 内联到 <!--SHOW-ME:CSS--> 处。
@@ -986,6 +987,18 @@ def sheet_size(html):
     return pick("--sheet-w", 600), pick("--sheet-h", 1000)
 
 
+def print_pdf(page):
+    """按页面的打印样式出 PDF（show-me.css 定为 A4），放在页面旁边、同名 .pdf。返回 (路径, 错误信息)。
+    数据图先全部画出、reduced motion 下画末帧，再打印（render.mjs 的 pdf 任务）。"""
+    out = page.with_suffix(".pdf")
+    results, err = run_jobs([{"url": page.resolve().as_uri(), "reduced": True, "pdf": str(out)}])
+    if results is None:
+        return None, err or "找不到 Chrome/Chromium 或 Node 22+"
+    if results[0].get("error"):
+        return None, results[0]["error"]
+    return out, None
+
+
 def shoot_sheets(page, theme="light", scale=2):
     """把每张 .sheet 渲染成 PNG：按卡的尺寸开视口，隐藏 chrome 与桌面，两倍像素。
     返回 (输出文件列表, 错误信息)。"""
@@ -1086,26 +1099,6 @@ def find_chrome():
         if p:
             return p
     return None
-
-
-def chrome_proxy_args(env=None):
-    """无头 Chrome 不读 HTTP(S)_PROXY / ALL_PROXY 环境变量，只认系统代理或 --proxy-server。
-    环境里配了代理就显式传给它，否则每次渲染都直连 Google Fonts，网络不好时一次多等 10～60 秒。
-    NO_PROXY 转成 Chrome 的绕行列表（逗号换分号，.example.com 写成 *.example.com）；NO_PROXY=* 时不走代理。"""
-    import os
-    env = os.environ if env is None else env
-
-    def pick(*names):
-        return next((env[n].strip() for n in names if env.get(n, "").strip()), "")
-
-    proxy = pick("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy")
-    bypass = [h.strip() for h in pick("NO_PROXY", "no_proxy").split(",") if h.strip()]
-    if not proxy or "*" in bypass:
-        return []
-    args = [f"--proxy-server={proxy.rstrip('/')}"]
-    if bypass:
-        args.append("--proxy-bypass-list=" + ";".join("*" + h if h.startswith(".") else h for h in bypass))
-    return args
 
 
 RENDER_SCRIPT = Path(__file__).resolve().parent / "render.mjs"
@@ -1242,6 +1235,8 @@ def main():
         choices=("light", "dark", "both"),
         help="share-card 配方：自检通过后把每张 .sheet 截成 PNG（两倍像素，放在页面旁边）。默认浅色，可选 dark / both",
     )
+    ap.add_argument("--pdf", action="store_true",
+                    help="自检通过后按打印样式出一份 A4 PDF，放在页面旁边（同名 .pdf）")
     ap.add_argument(
         "--snap",
         nargs="?",
@@ -1322,6 +1317,10 @@ def main():
                 print(f"已截图  {o}")
             if err:
                 print(f"--shot 未完成：{err}")
+
+    if args.pdf:
+        out, err = print_pdf(args.page)
+        print(f"已导出  {out}" if out else f"--pdf 未完成：{err}")
 
     if args.open:  # 走到这里自检已通过：有 ERROR 时上面已经 return 1
         if not open_page(args.page.resolve()):

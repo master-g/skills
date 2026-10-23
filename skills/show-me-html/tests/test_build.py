@@ -1,4 +1,5 @@
 import hashlib
+import json
 import re
 import runpy
 import shutil
@@ -291,6 +292,40 @@ class BuildCliTests(unittest.TestCase):
         self.assertTrue((out / "export.md").exists())
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_pdf_prints_a4_beside_the_page(self):
+        page = self.copy_fixture()
+        result = run_build(page, "--pdf")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("已导出", result.stdout)
+        pdf = page.with_suffix(".pdf").read_bytes()
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        box = re.search(rb"/MediaBox \[([^\]]*)\]", pdf)
+        self.assertIsNotNone(box)
+        self.assertRegex(box.group(1).decode(), r"^0 0 59[45]\.\d+ 84[12]\.\d+$")  # A4，不是 Letter 的 612 x 792
+
+    @unittest.skipUnless(RENDERER and shutil.which("pdftotext"), "需要本机 Chrome/Chromium、node 和 pdftotext")
+    def test_pdf_draws_charts_below_the_fold(self):
+        """数据图滚入视口才画：--pdf 打印前要把首屏以外的图也画出来，不然 PDF 里是空框。"""
+        def chart(cid, below):
+            return ('<section>' + ('<div style="height: 3000px"></div>' if below else '')
+                    + '<figure class="fig" data-chart="F1"><div class="fig-box">'
+                    f'<svg id="{cid}" viewBox="0 0 400 320" role="img" aria-labelledby="{cid}-t {cid}-d">'
+                    f'<title id="{cid}-t">t</title><desc id="{cid}-d">d</desc></svg></div></figure></section>')
+        script = ('<script>["top", "fold"].forEach(function (id) { showMeChart.reveal(document.getElementById(id), (s) =>'
+                  ' showMeChart.txt(s, { x: 20, y: 40, "font-size": 14 }, id === "top" ? "TOPLABEL" : "FOLDLABEL")); });</script>')
+        page = self.copy_fixture()
+        html = page.read_text(encoding="utf-8")
+        html = html.replace("</main>", chart("top", False) + chart("fold", True) + "</main>").replace(
+            "<!--SHOW-ME:JS-->", "<!--SHOW-ME:JS-->" + script)
+        page.write_text(html, encoding="utf-8")
+        result = run_build(page, "--pdf")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        text = subprocess.run(["pdftotext", str(page.with_suffix(".pdf")), "-"],
+                              capture_output=True, text=True, check=True).stdout
+        self.assertIn("TOPLABEL", text)
+        self.assertIn("FOLDLABEL", text)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_warns_on_phone_overflow_only(self):
         """390 按手机模拟：420px 宽的块在 500 及以上放得下，只在 390 溢出，报 WARN 不报 ERROR。"""
         page = self.copy_fixture()
@@ -394,17 +429,20 @@ class BuildCliTests(unittest.TestCase):
             check = subprocess.run([node, "--check", str(js)], text=True, capture_output=True, check=False)
             self.assertEqual(check.returncode, 0, check.stderr)
 
-    def test_chrome_proxy_args_follow_proxy_env(self):
+    @unittest.skipUnless(shutil.which("node"), "需要 node")
+    def test_cdp_proxy_args_follow_proxy_env(self):
         """Chrome 不读代理环境变量：有代理时传 --proxy-server，HTTPS 优先，NO_PROXY 转绕行列表，NO_PROXY=* 不走代理。"""
-        proxy_args = runpy.run_path(str(BUILD))["chrome_proxy_args"]
-        self.assertEqual(proxy_args({}), [])
-        self.assertEqual(proxy_args({"https_proxy": "http://127.0.0.1:7890/"}),
-                         ["--proxy-server=http://127.0.0.1:7890"])
-        self.assertEqual(proxy_args({"HTTP_PROXY": "http://a.test:1", "HTTPS_PROXY": "http://b.test:2"}),
-                         ["--proxy-server=http://b.test:2"])
-        self.assertEqual(proxy_args({"ALL_PROXY": "socks5://127.0.0.1:7891", "NO_PROXY": "localhost, .corp.test"}),
-                         ["--proxy-server=socks5://127.0.0.1:7891", "--proxy-bypass-list=localhost;*.corp.test"])
-        self.assertEqual(proxy_args({"HTTPS_PROXY": "http://b.test:2", "no_proxy": "*"}), [])
+        cases = [{}, {"https_proxy": "http://127.0.0.1:7890/"},
+                 {"HTTP_PROXY": "http://a.test:1", "HTTPS_PROXY": "http://b.test:2"},
+                 {"ALL_PROXY": "socks5://127.0.0.1:7891", "NO_PROXY": "localhost, .corp.test"},
+                 {"HTTPS_PROXY": "http://b.test:2", "no_proxy": "*"}]
+        script = ("import(process.argv[1]).then(m => console.log(JSON.stringify("
+                  "JSON.parse(process.argv[2]).map(e => m.proxyArgs(e)))))")
+        out = subprocess.run(["node", "-e", script, (SKILL / "scripts" / "cdp.mjs").as_uri(), json.dumps(cases)],
+                             capture_output=True, text=True, check=True).stdout
+        self.assertEqual(json.loads(out), [
+            [], ["--proxy-server=http://127.0.0.1:7890"], ["--proxy-server=http://b.test:2"],
+            ["--proxy-server=socks5://127.0.0.1:7891", "--proxy-bypass-list=localhost;*.corp.test"], []])
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_render_check_flags_chart_text_below_font_floor(self):
