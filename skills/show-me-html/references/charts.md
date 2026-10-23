@@ -234,6 +234,7 @@ gallery 全部 59 张都是按图型概念独立编写的 SVG 实现，不含上
 - 标题（衬线）写结论；`fig-sub`（等宽）写单位与图例；`fig-src` 写来源；`figcaption` 是一句独立成立的论点，不重复标题。
 - 两张半宽图并排放进 `<div class="charts">` 栅格；通栏图加 `class="fig wide"`。
 - `<title>`/`<desc>` 留在 svg 里，重播时运行时只清图形。
+- 「复制为 Markdown」会把 `<desc>` 在图的位置导出成一段（单位行之后、来源行之前），所以把读者需要的数字写在 `<desc>` 里，不只写「一张柱状图」。
 - 需要状态栏（B3）加 `<div class="fig-status" data-md-skip><span data-text></span><span data-pin></span></div>`，用 DOM 构造内容，不用 `innerHTML`。
 - 半宽卡 viewBox `0 0 400 320`，通栏 `0 0 800 320` 起；宽高比由 viewBox 决定，svg 宽 100%。
 - **单张图会占满整栏**：不在 `.charts` 里，或 `.charts` 里只有它一张，都一样。这时仍用 400 宽的 viewBox，60rem 版心下会放大 2.3 倍，字比同页别的图大一圈，刻度和珠子之间空出大缝。单张图写成通栏：加 `.wide`，viewBox 改成 800 宽，按新宽度重排。构建在 1280px 下量每张图的显示倍率，超出 0.8–1.5 报 WARN。

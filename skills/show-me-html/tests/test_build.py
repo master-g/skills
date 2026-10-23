@@ -283,6 +283,46 @@ class BuildCliTests(unittest.TestCase):
         self.assertNotIn("__snap", md)
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_markdown_export_keeps_figure_desc(self):
+        """图的 <desc> 是数据摘要：在图的位置导出成一段（单位行之后、来源行之前）。宽窄两版只出正在显示的那版，隐藏标签页里的图照样出，和上一段相同的不重复出。"""
+        page = self.copy_fixture()
+        figs = """<section><figure class="fig" data-chart="F1"><div class="fig-box">
+          <div class="fig-head"><span class="fig-title">五月客流最高</span></div>
+          <p class="fig-sub">单位：千人 · 2026 Q2</p>
+          <svg id="d1" viewBox="0 0 400 120" role="img" aria-labelledby="d1-t d1-d"><title id="d1-t">月度客流</title>
+          <desc id="d1-d">四月 120 千人，五月 135 千人，六月 98 千人。</desc></svg>
+          <p class="fig-src">票务系统 · 2026 Q2</p></div>
+          <figcaption>五月是全年峰值。</figcaption></figure>
+          <figure class="fig"><div class="fig-box">
+          <svg class="diagram-wide" viewBox="0 0 400 120" role="img"><title>流程</title><desc>宽版：甲到乙到丙。</desc></svg>
+          <svg class="diagram-narrow" viewBox="0 0 200 300" role="img"><title>流程</title><desc>窄版：甲到乙到丙。</desc></svg>
+          </div></figure>
+          <figure class="fig"><div class="fig-box"><p class="fig-sub">单位：次 · 9 月</p>
+          <svg viewBox="0 0 400 120" role="img"><title>重复</title><desc>单位：次 · 9 月</desc></svg></div></figure>
+          <div class="tabs" id="tb"><nav role="tablist">
+          <button type="button" role="tab" id="t1" aria-controls="p1" aria-selected="true" tabindex="0">甲</button>
+          <button type="button" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1">乙</button></nav>
+          <div role="tabpanel" id="p1" aria-labelledby="t1" tabindex="-1"><p>甲面板。</p></div>
+          <div role="tabpanel" id="p2" aria-labelledby="t2" tabindex="-1" hidden><figure class="fig"><div class="fig-box">
+          <svg viewBox="0 0 400 120" role="img"><title>乙</title><desc>乙面板的图：七月 88 千人。</desc></svg></div></figure></div>
+          </div></section>"""
+        page.write_text(page.read_text(encoding="utf-8").replace("</main>", figs + "</main>"), encoding="utf-8")
+        md = {}
+        for width in ("1280", "390"):
+            out = page.parent / f"snap-{width}"
+            result = run_build(page, "--snap", str(out), "--snap-theme", "light", "--snap-width", width)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            md[width] = (out / "export.md").read_text(encoding="utf-8")
+        self.assertIn("单位：千人 · 2026 Q2\n\n四月 120 千人，五月 135 千人，六月 98 千人。\n\n票务系统 · 2026 Q2", md["1280"])
+        self.assertNotIn("月度客流", md["1280"])
+        self.assertIn("宽版：甲到乙到丙。", md["1280"])
+        self.assertNotIn("窄版", md["1280"])
+        self.assertIn("窄版：甲到乙到丙。", md["390"])
+        self.assertNotIn("宽版", md["390"])
+        self.assertIn("乙面板的图：七月 88 千人。", md["1280"])
+        self.assertEqual(md["1280"].count("单位：次 · 9 月"), 1)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_snap_narrows_to_one_theme_and_width(self):
         page = self.copy_fixture()
         out = page.parent / "snap"

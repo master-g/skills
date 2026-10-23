@@ -288,8 +288,24 @@
   function block(el, depth) {
     var out = "";
     Array.from(el.children).forEach(function (n) {
-      if (skipped(n)) return;
       var t = n.tagName.toUpperCase();
+      if (t === "SVG") {
+        /* 图本身不导出；图里的 <desc> 是写给读屏器的数据摘要，导出成一段文字，复制出去数据不丢。
+           看 svg 自己的 display：宽窄两版图只出正在显示的那版，隐藏标签页里的图照样出
+           （getClientRects 会把后者也丢掉）。和上一段（多半是单位行）相同就不再重复。 */
+        var desc = n.closest("figure") && n.querySelector(":scope > desc");
+        var d = desc ? txt(desc.textContent).trim() : "";
+        if (
+          d &&
+          !out.endsWith(d + "\n\n") &&
+          getComputedStyle(n).display !== "none" &&
+          n.getAttribute("aria-hidden") !== "true" &&
+          !n.hasAttribute("data-md-skip")
+        )
+          out += d + "\n\n";
+        return;
+      }
+      if (skipped(n)) return;
       if (t === "SUMMARY")
         return; /* DETAILS 分支已单独输出，这里再走一遍会裸文本重复 */
       if (/^H[1-6]$/.test(t)) {
