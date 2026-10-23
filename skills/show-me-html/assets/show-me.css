@@ -1731,6 +1731,13 @@ code,
   overflow-wrap: anywhere;
 }
 
+/* 表格里的标识符不在词中断开：anywhere 让 code 的最小宽度只剩一个字符，多列表格里 snake_case 键名和路径会被压成竖条。
+   break-word 不降低最小宽度，列宽由 <wbr> 之间最长的一段决定（作者在 _ 和 / 后插 <wbr>，见 components.md「表格」）；
+   没插 <wbr> 时整个标识符不拆开，放不下由 .table-container 横向滚动 */
+.table code {
+  overflow-wrap: break-word;
+}
+
 /* ── 页眉工具条：背景和 hairline 全宽，内容靠 .chrome-inner 与版心对齐 ── */
 .page-chrome {
   position: sticky;
