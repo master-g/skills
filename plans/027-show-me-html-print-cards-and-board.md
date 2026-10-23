@@ -1,4 +1,4 @@
-# Plan 027: show-me-html 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留
+# Plan 027: show-me-html 打印时卡片不从中间劈开，看板的列按纸宽排下，有含义的底色保留，代码块自动换行
 
 > **Executor instructions**: 按步骤执行，每一步跑完验证命令并确认预期结果后再进下一步。遇到「STOP conditions」里的任何情况就停下汇报，不要自行发挥。索引 `plans/README.md` 由审阅者维护，你不要改它。
 >
@@ -11,11 +11,12 @@
 > - 维护者决定把「打印时保留有含义的底色」并入本计划，即 Step 3。
 > - 原来打 PDF 的步骤用 Chrome 命令行，现在改用 022 新增的 `build.py --pdf`。
 > - 冷读审阅（在 `ab64edc` 的副本上照做全部步骤）之后：行号刷新到 `ab64edc`；Step 3 的计数改为 2；冻结场景对照改用 024 轮；新增 Step 4，修短页打印多出的空白页。
+> - 审阅执行结果时，维护者决定再并入「代码块打印时自动换行」，即 Step 5；原 Step 5–7 顺延为 Step 6–8。
 
 ## Status
 
 - **Priority**: P2
-- **Effort**: S（四处 CSS、一行文档）
+- **Effort**: S（五处 CSS、一行文档）
 - **Risk**: LOW（只影响 `@media print`）
 - **Depends on**: `plans/022-show-me-html-gallery-shots-and-pdf.md`（已合入；验证用它的 `--pdf`）
 - **Category**: bug
@@ -50,6 +51,8 @@ advisor 用 code-review 冻结场景页对照过：
 维护者选了这个做法，而没有选「`--pdf` 打开全部背景」，因为这样浏览器打印和 `--pdf` 的结果一致。
 
 第四个问题是冷读审阅时核实的：**不到一页的短页，打印会多出一张空白页**。测试夹具 `tests/fixtures/minimal-shell.html` 用 `--pdf` 打出 2 页，第 2 页空白。原因是骨架给 `body` 写了 `min-height: 100vh`（让屏幕上的页面至少一屏高），打印时 100vh 加上页边距比一页多一点。在打印副本里加 `body { min-height: 0 }` 后是 1 页。五个冻结场景页都比一页高，不受影响。
+
+第五个问题也是审阅时看到的，改前就有：**打印时代码块里的长行被裁掉**。屏幕上 `pre > code` 可以横向滚动，纸上不能，超出的部分直接看不见。approach-compare 的 Postgres 方案卡里，`SELECT … FOR UPDATE SKIP LOCKED` 在 PDF 里只印出 `SELECT … FOR UPDATE S`。屏幕上的「换行」按钮（`pre[data-wrap="on"]`，`:1324`）用的是 `white-space: pre-wrap; overflow-wrap: anywhere`，打印时对所有 `pre` 用同样的规则即可。advisor 在副本上试过：这一行完整印成两行，五个场景页页数不变。
 
 ## Current state
 
@@ -272,7 +275,25 @@ body {
 - `grep -c '不到一页的短页会多出一张空白页' skills/show-me-html/assets/show-me.css` → `1`。
 - `npx prettier --check skills/show-me-html/assets/show-me.css` 通过。
 
-### Step 5: 打出 PDF 看
+### Step 5: 代码块打印时自动换行
+
+在主打印块里、Step 4 加的 `body { min-height: 0; }` 之前，加：
+
+<!-- prettier-ignore -->
+```css
+  /* 纸上不能横向滚动：代码块打印时自动换行，长行不被裁掉（同屏幕上的「换行」按钮） */
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+```
+
+**Verify**:
+
+- `grep -c '代码块打印时自动换行' skills/show-me-html/assets/show-me.css` → `1`。
+- `npx prettier --check skills/show-me-html/assets/show-me.css` 通过。
+
+### Step 6: 打出 PDF 看
 
 以下命令在 worktree 根目录、同一个 shell 里运行：
 
@@ -293,12 +314,13 @@ ls "$T"/*.png
 
 - **approach-compare**：「三个方案的真实代价」的三张卡没有被分页切开，卡头、代码块、优缺点在同一页。
 - **triage-board**：「现在修」「本周修」并排两列，「观察」在下面一行。三列的右边框和计数徽标都完整可见，没有被裁。
+- **approach-compare 第 2 页**：Postgres 方案卡的代码块印出完整的 `SELECT … FOR UPDATE` / `SKIP LOCKED` 两行，没有在 `S` 处被裁。
 - **code-review**：
   - 「先看结构变化」里，删除行（`-└── events.ts`）是浅红底，新增行（`+└── events/`、`+    └── emitter.ts`）是浅蓝底；
   - 代码块有浅灰底；
   - 文件名旁的 `+28 −9` 徽章没有底色，只有边框，这是预期。
 
-### Step 6: 冻结场景轮次
+### Step 7: 冻结场景轮次
 
 按 `skills/show-me-html/scenarios/README.md` 的流程新建一轮，目录后缀 `-027`。五页复制上一轮的 HTML，用新的 `show-me.css` 重建，再跑探针：
 
@@ -320,13 +342,13 @@ node skills/show-me-html/scripts/probe_round.mjs "$RND" "$PREV" | grep -E '^[a-z
 - `与上一轮对比：probe.json 相同`。探针打的是 Letter 纸，五页的打印页数（2、2、2、2、4）在冷读审阅时改前改后都没变；有变化就把每页的页数写进汇报。
 - 另外三页的 PDF 也打开看一眼：有 `.card` 的地方，除了整块卡片挪页后留下的大片空白之外，不应有别的问题。出现了就在汇报里说明是哪页哪张卡。
 
-### Step 7: 文档
+### Step 8: 文档
 
 `references/visual-system.md`「响应式与打印」的打印一行改为：
 
 <!-- prettier-ignore -->
 ```markdown
-- 打印强制浅纸深字和 A4 纸，隐藏 chrome 和 TOC，展开静态阅读顺序；h2–h4 尽量与下文同页（`break-after: avoid`，下文比一页还高时照常断开），条目（`.item`）和卡片（`.card`）不从中间劈开，看板按纸宽改为两列；背景色默认不印，diff 增删行、代码块和进度条的底色强制保留（`print-color-adjust: exact`）。
+- 打印强制浅纸深字和 A4 纸，隐藏 chrome 和 TOC，展开静态阅读顺序；h2–h4 尽量与下文同页（`break-after: avoid`，下文比一页还高时照常断开），条目（`.item`）和卡片（`.card`）不从中间劈开，看板按纸宽改为两列，代码块自动换行；背景色默认不印，diff 增删行、代码块和进度条的底色强制保留（`print-color-adjust: exact`）。
 ```
 
 然后 `npx prettier --write skills/show-me-html/references/visual-system.md`。
@@ -338,12 +360,12 @@ node skills/show-me-html/scripts/probe_round.mjs "$RND" "$PREV" | grep -E '^[a-z
 
 ## Test plan
 
-不加单元测试：分页和打印底色只能靠 PDF 看。Step 5 覆盖四个已知问题（页数加看图），Step 6 用冻结场景兜底，确认屏幕样式不变、其他页面打印不出新问题。
+不加单元测试：分页和打印底色只能靠 PDF 看。Step 6 覆盖五个已知问题（页数加看图），Step 7 用冻结场景兜底，确认屏幕样式不变、其他页面打印不出新问题。
 
 ## Done criteria
 
-- [ ] Step 5 六份 PDF 的页数与预期相同，三份 PNG 看过，四个问题都不再出现
-- [ ] Step 6 五页 `自检通过`、探针 `无问题`、`probe.json` 相同、屏幕截图与上一轮相同
+- [ ] Step 6 六份 PDF 的页数与预期相同，三份 PNG 看过，五个问题都不再出现
+- [ ] Step 7 五页 `自检通过`、探针 `无问题`、`probe.json` 相同、屏幕截图与上一轮相同
 - [ ] 全量单元测试 `OK`；`make check` exit 0
 - [ ] 分支上一个提交，只有 Scope 里的两个文件
 
