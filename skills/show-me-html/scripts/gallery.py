@@ -11,14 +11,12 @@ agent 没有交互浏览器，读 index.md 与 PNG 完成眼检；hover / 钉住
 """
 import argparse
 import datetime
-import html as htmllib
 import json
 import re
 import runpy
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1]
@@ -210,24 +208,8 @@ PROBE = """
 """
 
 
-def chrome_run(chrome, *args):
-    """偶发卡住（多半在等字体请求）就重试一次。别加 --user-data-dir：新配置没有字体缓存，virtual time 会一直等网络。"""
-    for _ in range(2):
-        try:
-            return subprocess.run(
-                [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--force-prefers-reduced-motion", *args],
-                capture_output=True, text=True, timeout=45,
-            )
-        except subprocess.TimeoutExpired:
-            pass
-    return subprocess.CompletedProcess(args, 1, "", "超时")
-
-
 def shots(page, out, index):
-    build = runpy.run_path(str(BUILD))
-    chrome, proxy = build["find_chrome"](), build["chrome_proxy_args"]()
-    if not chrome:
-        raise SystemExit("--shots 需要本机 Chrome/Chromium")
+    run_jobs = runpy.run_path(str(BUILD))["run_jobs"]
     html = page.read_text(encoding="utf-8")
     work = out / "shots"
     work.mkdir(exist_ok=True)
@@ -239,27 +221,25 @@ def shots(page, out, index):
             encoding="utf-8")
     probe = work / "probe.html"
     probe.write_text(html.replace("<head>", "<head>" + ERR_CAPTURE, 1) + PROBE % (json.dumps(SHOT_W), PAD), encoding="utf-8")
-    dom = chrome_run(chrome, *proxy, "--virtual-time-budget=8000", "--window-size=1000,900", "--dump-dom",
-                     probe.as_uri() + "?only=*").stdout
-    m = re.search(r'<pre id="__probe">(.*?)</pre>', dom, re.S)
-    if not m:
-        raise SystemExit("探针没返回结果（页面 JS 可能报错）：用浏览器打开 all-charts.html 看控制台")
-    data = json.loads(htmllib.unescape(m.group(1)))
+    # 一个 Chrome 实例先跑探针、再依次截全部图（build.py 的 run_jobs → scripts/render.mjs）
+    res, err = run_jobs([{"url": probe.as_uri() + "?only=*", "width": 1000, "reduced": True, "budget": 8000,
+                          "eval": "(document.getElementById('__probe') || {}).textContent || ''"}])
+    if res is None:
+        raise SystemExit(f"--shots 跑不起来：{err}" if err else "--shots 需要本机 Chrome/Chromium 和 Node 22+")
+    if not res[0].get("value"):
+        why = res[0].get("error") or "；".join(res[0]["errors"][:2]) or "页面没写回结果"
+        raise SystemExit(f"探针没返回结果（{why}）：用浏览器打开 all-charts.html 看控制台")
+    data = json.loads(res[0]["value"])
     figs = {f["id"]: f for f in data["figs"]}
 
-    def shoot(job):
-        fid, theme = job
-        f = figs[fid]
-        png = work / f"{fid}-{theme}.png"
-        w = SHOT_W["wide" if f["wide"] else "half"]
-        chrome_run(chrome, *proxy, "--force-device-scale-factor=2", "--virtual-time-budget=4000",
-                   f"--window-size={w},{f['h'] + 2 * PAD}", f"--screenshot={png}",
-                   themed[theme].as_uri() + f"?only={fid}")
-        return png if png.exists() else None
-
     jobs = [(fid, t) for fid in figs for t in ("light", "dark")]
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        made = dict(zip(jobs, pool.map(shoot, jobs)))
+    specs = [{"url": themed[t].as_uri() + f"?only={fid}", "width": SHOT_W["wide" if figs[fid]["wide"] else "half"],
+              "height": figs[fid]["h"] + 2 * PAD, "dpr": 2, "mobile": False, "reduced": True,
+              "shot": str(work / f"{fid}-{t}.png")} for fid, t in jobs]
+    res, err = run_jobs(specs)
+    if res is None:
+        raise SystemExit(f"--shots 截图跑不起来：{err}" if err else "--shots 需要本机 Chrome/Chromium 和 Node 22+")
+    made = {job: (Path(s["shot"]) if not r.get("error") else None) for job, s, r in zip(jobs, specs, res)}
 
     problems = [f"控制台报错：{e}" for e in data["errs"]]
     lines = []

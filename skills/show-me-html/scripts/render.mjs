@@ -12,8 +12,9 @@
 //   eval     预算用完后求值的 JS 表达式，结果放进 value
 //   slices   {"prefix": 路径前缀, "height": 每片高}：先把数据图全部画出来，再按整页高度切片截图，存为 前缀-01.png …
 //   shot     路径：截当前视口
+//   pdf      路径：先把数据图全部画出来，再按页面的 @page 尺寸打印成 PDF（show-me.css 定为 A4），无页眉页脚、不打背景
 //   timeout  每个任务的真实时间上限（毫秒），默认 90000
-// stdout：与任务一一对应的 JSON 数组，每项 {value, slices: [{path, top, height}], shot, errors: [页面 JS 异常], error: "哪一步失败"}，
+// stdout：与任务一一对应的 JSON 数组，每项 {value, slices: [{path, top, height}], shot, pdf, errors: [页面 JS 异常], error: "哪一步失败"}，
 // 没用到的字段不出现。退出码：0 正常；2 Chrome 起不来或运行器自身出错，原因写在 stderr 最后一行；
 // 3 这个 node 没有内置 WebSocket（早于 22），build.py 按「没有 node」处理。
 import { readFileSync, writeFileSync } from "node:fs";
@@ -75,6 +76,13 @@ async function run(job) {
       );
     return r.result.value;
   };
+  // 数据图滚入视口才画（charts.js 的 reveal）：截切片、打印前先把首屏以外的图也画出来
+  const drawAll = async () => {
+    await ev(
+      "document.querySelectorAll('figure[data-chart] svg').forEach(function(s){ if (s._replay) s._replay(); }), 1"
+    );
+    await new Promise((r) => setTimeout(r, 300));
+  };
   let step = "打开页面";
   try {
     await S("Page.enable");
@@ -124,11 +132,7 @@ async function run(job) {
     }
     if (job.slices) {
       step = "切片截图";
-      // 数据图滚入视口才画（charts.js 的 reveal），视口固定 900px 时首屏以外的图还没画
-      await ev(
-        "document.querySelectorAll('figure[data-chart] svg').forEach(function(s){ if (s._replay) s._replay(); }), 1"
-      );
-      await new Promise((r) => setTimeout(r, 300));
+      await drawAll();
       const total = await ev("document.documentElement.scrollHeight");
       out.slices = [];
       for (let top = 0, k = 1; top < total; top += job.slices.height, k++) {
@@ -148,6 +152,14 @@ async function run(job) {
       const shot = await S("Page.captureScreenshot", { format: "png" });
       writeFileSync(job.shot, Buffer.from(shot.data, "base64"));
       out.shot = job.shot;
+    }
+    if (job.pdf) {
+      step = "打印 PDF";
+      await drawAll();
+      // 不传 preferCSSPageSize 时 Chrome 按 Letter 出，show-me.css 的 @page { size: A4 } 不生效
+      const { data } = await S("Page.printToPDF", { preferCSSPageSize: true });
+      writeFileSync(job.pdf, Buffer.from(data, "base64"));
+      out.pdf = job.pdf;
     }
   } catch (e) {
     out.error = `${step}：${e.message || e}`;
