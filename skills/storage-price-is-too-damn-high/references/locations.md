@@ -83,6 +83,7 @@
 ## 常用 app
 
 - 浏览器缓存（Chrome、Safari、Edge、Firefox）：可再生。mole 长尾已覆盖；没装 mole 时在浏览器设置里清。浏览器的 `Application Support` 目录是配置文件（书签、密码、扩展），属于用户数据。
+- 无头 Chrome 的临时 profile `~/Library/Application Support/Google/Chrome-headless/scoped_dir*`：待定。无头 Chrome 每次启动建一个，进程被强杀时留下，本机实测 153 个、2.1 GB。`pgrep -f -- --headless` 没输出时再 `trash`。同名的 `~/Library/Caches/Google/Chrome-headless` 是缓存，mole 长尾已覆盖。
 - 微信、QQ、企业微信、飞书 / Lark、钉钉、WPS、Telegram、Slack、Discord、网易云音乐：用户数据。数据多在 `~/Library/Containers/<bundle id>` 或 `~/Library/Application Support/<app>`，用 app 内的存储空间管理或清除缓存。
 - Steam `~/Library/Application Support/Steam/steamapps`：待定。在 Steam 里卸载游戏。
 - `/Applications` 和 `~/Applications` 里的大 app：待定。`mdls -name kMDItemLastUsedDate <app 路径>` 看最近使用时间；卸载由用户在 Finder 或 `mo uninstall` 里做，本技能只列出。
@@ -96,3 +97,6 @@
 - iPhone / iPad 备份 `~/Library/Application Support/MobileSync/Backup`：用户数据。在 Finder 的设备页「管理备份」里删。
 - 信息附件 `~/Library/Messages/Attachments`、照片图库、`~/Library/Mail`：用户数据。用系统设置的「储存空间」或对应 app 管理。
 - `~/Library/Developer/CoreDevice`：跳过，里面的 `DeviceFS` 是挂载点。
+- 用户临时目录 `$TMPDIR`（`/var/folders/` 下的 `T`）：不在家目录里，布局的 du 测不到，单独 `du -skx "$TMPDIR"` 记总量。条目常有几万个，`"$TMPDIR"/*` 会超出参数长度；`du -d 1` 只列子目录，顶层的大文件用 `find "$TMPDIR" -maxdepth 1 -type f -size +100M` 找。
+  - Instruments 录制残留 `instruments*.ktrace`：待定。录制时写的原始 trace，本机实测 3 天积累了 25 个、36.5 GB，mole 不清。已另存的 `.trace` 文档不受影响，没另存的录制删掉就没了。`pgrep -x Instruments` 和 `pgrep -f xctrace` 都没输出时再 `trash`。
+  - 其余条目多是运行中程序的临时文件，按文件名前缀找所属程序，查不到的记为「未归类」。

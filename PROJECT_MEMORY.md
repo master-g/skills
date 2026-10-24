@@ -24,8 +24,10 @@
 - [2026-10-21] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core：两技能页面只见 bash/sql/diff/text 和零星 py/ts/rs/go，无 JSX/TSX；它最快（32 KB 1.5 ms，Kirari 4.0、Prism 2.2）。页面常出现 JSX/TSX 或 C#/Kotlin/Swift/Ruby 时换 Kirari（TSX 分词好、接法相同），先等它稳定（10-18 才发布）；Shiki 要构建期 Node 或每页 72 KB+，排除（用户认同）
 - [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
+- [2026-10-22] 本机无头 Chrome 不读 HTTP(S)_PROXY 环境变量，系统代理关着，show-me-html 每次渲染直连 Google Fonts，单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md
 - [2026-10-23] Agent 工具 `isolation: worktree` 开出的分支基于 origin/main，不是本地 main：本地有未推送提交时执行者看不到，合入要 cherry-pick（023/024 就是这样）；计划照旧放只读快照到 /tmp 给执行者读
 - [2026-10-23] Agent 工具开的 worktree 里没有 node_modules：在 worktree 根目录 `ln -s /Users/mg/github/skills/node_modules node_modules` 就能跑 prettier 和 pre-commit，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。来源：028、026 执行
+- [2026-10-24] `xcrun simctl runtime delete` 返回后镜像空间在后台回收：紧接着的 df 只多 0.5 GiB，约 7 GiB 落进下一项的差值；storage 技能逐项记释放量时把这种差额记回 runtime 那一项。来源：storage 技能首跑
 
 ## 失败尝试
 
@@ -44,14 +46,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-24] main：新建用户触发技能 storage-price-is-too-damn-high（SKILL.md + references/locations.md、mole.md），README 加一行，`make install SKILL=storage-price-is-too-damn-high SOURCE=.` 已装；未推送
-  验证：make check 通过；文档里的命令在本机逐条跑过（du 布局约 110 s、`mo clean --dry-run` 约 80 s、`simctl runtime delete --dry-run` 等），没有删任何东西；本机留有两个卡在 CoreDevice DeviceFS 的 du / analyze-go 进程，kill -9 无效，重启后消失
+- [2026-10-24] main：storage-price-is-too-damn-high 首次真实跑完（盘点 → 计划 → 用户点选 → 执行），本机可用空间 3.87 → 124.68 GiB；之后把 `$TMPDIR`（Instruments ktrace 残留 36.5 GB）和无头 Chrome `scoped_dir*` 补进 references/locations.md，未提交、未 make install
+  验证：make check 通过，prettier --check 通过；新写进文档的 pgrep、find 命令在本机跑过
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-24] storage-price-is-too-damn-high 还没在真实会话里完整跑过；用户触发一次后看分档和计划表是否合用，再调
+- [2026-10-24] storage-price-is-too-damn-high：locations.md 的补充等用户决定提交和 make install；首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html（10-23 记）：构建耗时这批（020–029）已全部合入；冻结场景对照基线仍是 `2026-10-23-eec315f-026`（029 只改中断收尾，页面不变，没换），首跑就该 30/30；「未规划」里还有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
   bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
