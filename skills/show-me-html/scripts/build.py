@@ -825,6 +825,23 @@ PROBE = """
       }
     });
   }
+  // 盒子都没越界、越界的是盒子装不下的内容（长路径、长标识符等不断行的长串）时，上一段找不到元素：
+  // 顺着 overflow 为 visible 且内容比盒子宽的子元素往下走，报最深的那一个
+  if (de.scrollWidth > de.clientWidth + 1 && !over.length) {
+    var deepest = function(el){
+      for (var i = 0; i < el.children.length; i++) {
+        var c = el.children[i];
+        if (getComputedStyle(c).overflowX === 'visible' && c.scrollWidth > c.clientWidth + 1) return deepest(c);
+      }
+      return el;
+    };
+    var culprit = deepest(document.body);
+    if (culprit !== document.body)
+      over.push(culprit.tagName.toLowerCase() + (culprit.id ? '#' + culprit.id : '') +
+        (typeof culprit.className === 'string' && culprit.className.trim()
+          ? '.' + culprit.className.trim().split(/\\s+/).slice(0,2).join('.') : '') +
+        '(内容比盒子宽 ' + (culprit.scrollWidth - culprit.clientWidth) + 'px)');
+  }
   document.querySelectorAll('.sheet').forEach(function(s){
     if (s.scrollHeight > s.clientHeight + 1 || s.scrollWidth > s.clientWidth + 1)
       over.push('定尺卡溢出：内容 ' + s.scrollHeight + 'px > 卡高 ' + s.clientHeight + 'px，换更少的内容或另一张卡，不缩字号');

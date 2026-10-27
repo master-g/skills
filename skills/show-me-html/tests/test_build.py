@@ -668,6 +668,18 @@ class BuildCliTests(unittest.TestCase):
                     self.assertIn("WARN   1280px 下图的显示倍率超出 0.8–1.5：F5（#solo）", result.stdout)
                 self.assertEqual(result.returncode, 0, result.stdout)
 
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_render_check_names_content_wider_than_its_box(self):
+        """盒子没越界、盒子里不断行的长串越界时，也要点名元素（2026-10 实例：.src 里的长源码路径，报错时只有文档宽度）。"""
+        long_path = "/".join(["sdk/src/google/java/libx/android/billing/google"] * 4) + "/GPBillingWrapper.kt"
+        page = self.copy_fixture()
+        self.insert(page, f'<section><p class="src">{long_path}</p></section>')
+
+        result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertRegex(result.stdout, r"500px 视口横向溢出：文档宽 \d+px；越界元素：p\.src\(内容比盒子宽 \d+px\)")
+
     def test_duplicate_svg_ids_fail(self):
         """宽窄两版共用 marker id 时，窄版的 url(#…) 会指到隐藏的宽版里。"""
         page = self.copy_fixture("diagram-variants.html")
