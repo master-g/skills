@@ -62,7 +62,7 @@ npx skills add master-g/skills --skill show-me-html -g
 
 ## 与 effective-html 的关系
 
-effective-html 已弃用并由本 skill 取代，历史内容存于仓库的 `skills/deprecated/effective-html/ARCHIVE.md`。
+effective-html 已由本 skill 取代并从仓库删除，历史内容见 Git 历史（删除前最后一版在 `skills/deprecated/effective-html/`）。
 
 ## 第三方组件
 

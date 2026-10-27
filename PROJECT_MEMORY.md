@@ -46,14 +46,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-27] main：工作区里 show-me-html 的三项改动与构建耗时调研拆成 4 个提交（Kotlin 高亮、溢出点名最深元素、通栏数据图无窄版报 WARN、调研文档），调研里的本机项目路径和会话 ID 脱敏为 `<project>/<session>`；提交后推送 origin 并 make install
-  验证：test_build 65 个 OK（提交 1、2 的中间状态在临时 worktree 里 63、64 个 OK）；make check 通过；gallery.py 只有「超过 400 KB」与「500px 下数据图字号」两条 WARN；冻结场景轮次 `2026-10-27-e0d1995-split` 五页无问题，30/30 截图与 026 相同
+- [2026-10-27] main：用户确认弃用技能已不再调用，删除 `skills/deprecated/`（effective-html、url-to-kami、wtf、x-to-markdown）与 README 里四行 DEPRECATED；show-me-html README 改指 Git 历史；`make deprecate` 流程保留给以后用
+  验证：make check 通过（168 个文件）
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-27] storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
+- [2026-10-27] 仓库外残留待用户确认后再删：`~/.jcode/skills/` 下 effective-html、url-to-kami、x-to-markdown 三份独立副本（含可发现的 SKILL.md），`~/.claude/skills/effective-html-workspace`（6 月的 eval 工作区）
+  storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
   bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」

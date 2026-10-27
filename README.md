@@ -33,7 +33,6 @@ npx skills add master-g/skills --skill '*' -g
 - `codebase-to-book`: turn a codebase into a bilingual technical book.
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
-- `effective-html`: **DEPRECATED** — superseded by `show-me-html`; kept as `skills/deprecated/effective-html/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker (host-native subagent or CLI), with acceptance gates.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `mdxcn-term`: draw mdxcn-style framed ASCII figures in the terminal, aligned for CJK labels (derived from MIT-licensed [mdxcn](https://github.com/keshav-exe/mdxcn)).
@@ -43,9 +42,6 @@ npx skills add master-g/skills --skill '*' -g
 - `storage-price-is-too-damn-high`: survey user-level macOS disk usage and draft a risk-tiered cleanup plan for caches, build artifacts, and large files, using `mole` previews when installed.
 - `storm`: research and write citation-grounded articles using the STORM method.
 - `tufte-reader`: translate or organize papers and technical docs, or write an original primer from sources, as a Tufte-style single-file Chinese reading edition with sidenotes, MathML formulas, and a light/dark toggle.
-- `url-to-kami`: **DEPRECATED** — superseded by `show-me-html`; kept as `skills/deprecated/url-to-kami/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
-- `wtf`: **DEPRECATED** — rarely needed now that model prose is clearer by default; kept as `skills/deprecated/wtf/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
-- `x-to-markdown`: **DEPRECATED** — rarely used on its own anymore; kept as `skills/deprecated/x-to-markdown/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 
 ## License
 
