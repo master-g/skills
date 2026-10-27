@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ts-cold-start
+expected_outcome: |
+  产出一份自足的任务 prompt：先测量再优化，目标指向 pi-wingman 里真实的入口文件，验收带耗时阈值与测量命令。

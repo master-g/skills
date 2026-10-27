@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c99-fuzzing
+expected_outcome: |
+  产出一份自足的任务 prompt：目标指向 tobi 仓库里真实的解析或输入处理函数，解法点名具体的 fuzzer，验收含构建与运行命令。
