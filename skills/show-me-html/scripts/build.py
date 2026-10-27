@@ -900,6 +900,20 @@ PROBE = """
           + (s.id ? '#' + s.id : '') + ' 最小 ' + min.toFixed(1) + 'px');
       });
     });
+    // 没画窄版的数据图（charts.md「五件套外壳」）：通栏 800 宽的图在 500px 下约缩到 0.6 倍，9 号字只剩 5px 多。
+    // 判据同上（渲染后 < 8px），但只报 WARN：存量页面的通栏图普遍如此，由作者决定是否补窄版
+    var chartsmall = [];
+    document.querySelectorAll('figure[data-chart] svg').forEach(function(s){
+      if (s.closest('.diagram-wide, .diagram-narrow') || !s.getClientRects().length || !shown(s)) return;
+      var min = Infinity;
+      s.querySelectorAll('text, tspan').forEach(function(t){
+        var m = t.getScreenCTM();
+        if (!m || !t.textContent.trim()) return;
+        min = Math.min(min, parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b));
+      });
+      if (min < 8) chartsmall.push(s.closest('figure').dataset.chart + (s.id ? '（#' + s.id + '）' : '')
+        + ' 最小 ' + min.toFixed(1) + 'px');
+    });
     // 文字对比度（visual-system.md「对比度」）：render_check 把页面固定在亮色主题下量，亮色是明度阶与主角色最差的一侧。
     // 颜色先经 canvas 解析成 sRGB（color-mix、oklab 也读得出），再按 WCAG 2.x 算；正文要 4.5:1，24px 以上或 18.66px 以上的粗体要 3:1
     var cv = document.createElement('canvas'); cv.width = cv.height = 1;
@@ -995,7 +1009,8 @@ PROBE = """
       + '|' + dim.slice(0, 6).map(function(d){ return d.s + (d.n > 1 ? ' ×' + d.n : ''); }).join('；')
       + (dim.length > 6 ? ' 等 ' + dim.length + ' 组' : '')
       + '|' + scaled.join('；')
-      + '|' + clipped.slice(0, 20).join('；');
+      + '|' + clipped.slice(0, 20).join('；')
+      + '|' + chartsmall.join('；');
   }, 1500);
 });</script>
 """
@@ -1221,7 +1236,7 @@ def render_check(page, widths=(500, 1024, 1280)):
                          + "。手机上要横向拖动整页，把越界元素收窄或放进局部滚动容器（visual-system.md「响应式与打印」）")
         for w, r in zip(widths, results[1:]):
             out = wrap(r)
-            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)\|(?P<clipped>.*?)</title>", out, re.S)
+            m = re.search(r"<title>PROBE\|(\d+)\|(\d+)\|(.*?)\|(.*?)\|(.*?)\|(.*?)\|(?P<contrast>.*?)\|(?P<scaled>.*?)\|(?P<clipped>.*?)\|(?P<chartsmall>.*?)</title>", out, re.S)
             if not m:
                 issues.append(f"{w}px：探针没返回结果（{why(r)}）")
                 continue
@@ -1256,6 +1271,10 @@ def render_check(page, widths=(500, 1024, 1280)):
             if scaled and w == max(widths):
                 notes.append(f"{cw}px 下图的显示倍率超出 0.8–1.5：{scaled}。单张图独占整栏时写成 .fig.wide 配 800 宽 viewBox，"
                              "按单位计数的图（刻度、珠子、点阵）把单位细一档，保持标记间距（charts.md「五件套外壳」）")
+            chartsmall = htmllib.unescape(m.group("chartsmall").strip())
+            if chartsmall:
+                notes.append(f"{cw}px 下数据图字号渲染后低于 8px：{chartsmall}。手机上读不清：按 diagrams.md「窄屏另画一版」"
+                             "补一版窄图（.diagram-narrow，viewBox 宽 320–360），宽窄两版各自 reveal（charts.md「五件套外壳」）")
             for c in htmllib.unescape(m.group("clipped").strip()).split("；"):
                 if c and c not in clipped:
                     clipped.append(c)

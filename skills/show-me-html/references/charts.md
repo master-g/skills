@@ -238,6 +238,7 @@ gallery 全部 59 张都是按图型概念独立编写的 SVG 实现，不含上
 - 需要状态栏（B3）加 `<div class="fig-status" data-md-skip><span data-text></span><span data-pin></span></div>`，用 DOM 构造内容，不用 `innerHTML`。
 - 半宽卡 viewBox `0 0 400 320`，通栏 `0 0 800 320` 起；宽高比由 viewBox 决定，svg 宽 100%。
 - **单张图会占满整栏**：不在 `.charts` 里，或 `.charts` 里只有它一张，都一样。这时仍用 400 宽的 viewBox，60rem 版心下会放大 2.3 倍，字比同页别的图大一圈，刻度和珠子之间空出大缝。单张图写成通栏：加 `.wide`，viewBox 改成 800 宽，按新宽度重排。构建在 1280px 下量每张图的显示倍率，超出 0.8–1.5 报 WARN。
+- **通栏图在手机上要另画窄版**：800 宽的 viewBox 在 500px 下约缩到 0.6 倍，9 号字只剩 5px 多。读者会用手机看的页面，按 diagrams.md「窄屏另画一版」补一版：宽版 svg 加 `class="diagram-wide"`，窄版加 `class="diagram-narrow"`、viewBox 宽 320–360，两张 svg 放在同一个 `.fig-box` 里；渲染函数按几何参数化，对两版各调一次 `reveal`。没画窄版的数据图在 500px 下渲染后低于 8px 时，构建报 WARN。
 - 按单位计数的图（F5 刻度行、F12 串珠、点阵、华夫格）按显示尺寸检查密度：1280px 下相邻标记的间距不超过约 8px（gallery 半宽卡里的 F5 是 8.2px）。改成通栏后行变长，把单位细一档（一根 = 0.1 个百分点改成 0.05 个百分点），根数翻倍，间距回到原来的大小，单位行同步改写。
 
 ## 运行时与查代码

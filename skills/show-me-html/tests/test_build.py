@@ -680,6 +680,31 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertRegex(result.stdout, r"500px 视口横向溢出：文档宽 \d+px；越界元素：p\.src\(内容比盒子宽 \d+px\)")
 
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_render_check_warns_on_wide_chart_without_narrow_variant(self):
+        """通栏 800 宽的数据图在 500px 下 9 号字只剩约 5px：没画窄版报 WARN，画了窄版不报。"""
+        wide = """<svg id="ID" CLS viewBox="0 0 800 200" role="img" aria-labelledby="ID-t"><title id="ID-t">t</title></svg>"""
+        script = """<script>["IDS"].forEach((id) => showMeChart.reveal(document.getElementById(id), (s) =>
+          showMeChart.txt(s, showMeChart.tick({ x: 20, y: 40 }), "label")));</script>"""
+        variants = {
+            "wide-only": (wide.replace("ID", "solo").replace("CLS", ""), '"solo"'),
+            "with-narrow": (wide.replace("ID", "w").replace("CLS", 'class="diagram-wide"')
+                            + wide.replace("ID", "n").replace("CLS", 'class="diagram-narrow"').replace("0 0 800 200", "0 0 340 200"),
+                            '"w", "n"'),
+        }
+        for label, (svgs, ids) in variants.items():
+            with self.subTest(variant=label):
+                page = self.copy_fixture()
+                html = page.read_text(encoding="utf-8").replace(
+                    "</main>", f'<section><figure class="fig wide" data-chart="L11"><div class="fig-box">{svgs}</div></figure></section></main>'
+                ).replace("<!--SHOW-ME:JS-->", "<!--SHOW-ME:JS-->" + script.replace('"IDS"', ids))
+                page.write_text(html, encoding="utf-8")
+                result = subprocess.run([sys.executable, str(BUILD), str(page)], text=True, capture_output=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertEqual("500px 下数据图字号渲染后低于 8px：L11（#solo）" in result.stdout,
+                                 label == "wide-only", result.stdout)
+                self.assertNotIn("数据图字号渲染后低于 8px：L11（#n）", result.stdout)
+
     def test_duplicate_svg_ids_fail(self):
         """宽窄两版共用 marker id 时，窄版的 url(#…) 会指到隐藏的宽版里。"""
         page = self.copy_fixture("diagram-variants.html")
