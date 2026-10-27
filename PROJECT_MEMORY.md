@@ -27,6 +27,7 @@
 - [2026-10-22] 本机无头 Chrome 不读 HTTP(S)_PROXY 环境变量，系统代理关着，show-me-html 每次渲染直连 Google Fonts，单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md
 - [2026-10-23] Agent 工具 `isolation: worktree` 开出的分支基于 origin/main，不是本地 main：本地有未推送提交时执行者看不到，合入要 cherry-pick（023/024 就是这样）；计划照旧放只读快照到 /tmp 给执行者读
 - [2026-10-23] Agent 工具开的 worktree 里没有 node_modules：在 worktree 根目录 `ln -s /Users/mg/github/skills/node_modules node_modules` 就能跑 prettier 和 pre-commit，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。来源：028、026 执行
+- [2026-10-27] sharpen 的成稿模板是从 Anthropic「Prompting Claude Opus 5.5」里提炼的可迁移原则（点名具体行为与模式、动手前先探索、验收与停下时机写明、贴入材料用 pasted_content 标签），不链接该文档：它主要讲 harness 层（effort、thinking 显示、无人值守循环），且本地副本在未跟踪的 tmp/
 - [2026-10-24] `xcrun simctl runtime delete` 返回后镜像空间在后台回收：紧接着的 df 只多 0.5 GiB，约 7 GiB 落进下一项的差值；storage 技能逐项记释放量时把这种差额记回 runtime 那一项。来源：storage 技能首跑
 
 ## 失败尝试
@@ -46,8 +47,8 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-27] main：用户确认弃用技能已不再调用，删除 `skills/deprecated/`（effective-html、url-to-kami、wtf、x-to-markdown）与 README 里四行 DEPRECATED；show-me-html README 改指 Git 历史；`make deprecate` 流程保留给以后用；经用户确认另删了 `~/.jcode/skills/` 下三份副本和 `~/.claude/skills/effective-html-workspace`
-  验证：make check 通过（168 个文件）
+- [2026-10-27] main：新建用户触发技能 `sharpen`（一句话意图 → 定位项目 → 搜惯用解法 → 一轮 AskUserQuestion ≤3 题 → 七槽位 prompt 成稿后停下），README 加行，已 `make install SKILL=sharpen SOURCE=.`
+  验证：make check 通过（169 个文件）；技能本身还没在真实项目上跑过一次
 
 ## 下次运行
 

@@ -38,6 +38,7 @@ npx skills add master-g/skills --skill '*' -g
 - `mdxcn-term`: draw mdxcn-style framed ASCII figures in the terminal, aligned for CJK labels (derived from MIT-licensed [mdxcn](https://github.com/keshav-exe/mdxcn)).
 - `office-hours`: explain one concept in a single session, calibrating to the user's level first when it is hard.
 - `send-to-obsidian`: capture and summarize material into an Obsidian inbox.
+- `sharpen`: turn a one-line intent into an expert task prompt: read the repo, research the idiomatic approach, confirm the key trade-offs in one round of questions, then output the prompt.
 - `show-me-html`: create offline-readable HTML explanations using an owned editorial visual system.
 - `storage-price-is-too-damn-high`: survey user-level macOS disk usage and draft a risk-tiered cleanup plan for caches, build artifacts, and large files, using `mole` previews when installed.
 - `storm`: research and write citation-grounded articles using the STORM method.
