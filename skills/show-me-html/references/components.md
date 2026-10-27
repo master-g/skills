@@ -379,7 +379,7 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 只把用到的那几种语言的规则内联进去（分词器 1.7 KB + 每种语言 0.2–3 KB）。
 着色在首绘前同步完成，不会闪一下再变色。
 
-- 语言名写 `language-<名字>`，常用的都支持：`go` `rust` `ts` `js` `py` `bash` `json` `yaml`
+- 语言名写 `language-<名字>`，常用的都支持：`go` `rust` `ts` `js` `py` `bash` `json` `yaml` `kotlin`
   `toml` `sql` `html` `css` `xml` `md` `java` `c` `lua` `docker` `http` `ini` `make` `git`。
   别名会自动归一（`rust`→rs、`python`→py、`shell`/`sh`→bash、`tsx`→ts）。
   没有对应规则时 `build.py` 会 WARN 并让该块保持纯文本 —— 不要为此改语言名去凑。

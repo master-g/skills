@@ -83,6 +83,7 @@ HL_ALIASES = {
     "rust": "rs", "golang": "go", "python": "py", "javascript": "js", "typescript": "ts",
     "jsx": "js", "tsx": "ts", "shell": "bash", "sh": "bash", "zsh": "bash", "console": "bash",
     "yml": "yaml", "markdown": "md", "dockerfile": "docker", "htm": "html", "jsonc": "json",
+    "kotlin": "kt", "kts": "kt",
 }
 # diff 由页面自己的 .d-add / .d-del 着色，text/plain 是结构视图（调用树、文件树）—— 都不碰
 HL_SKIP = {"diff", "text", "plain", "plaintext", "txt"}

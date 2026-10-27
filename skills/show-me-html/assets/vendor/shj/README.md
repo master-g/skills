@@ -9,7 +9,7 @@
 
 ## 目录里是什么
 
-- `languages/*.js` — 34 份语言规则，**上游原样**，未改动。每份是
+- `languages/*.js` — 34 份语言规则，**上游原样**，未改动；另有 `kt.js`（Kotlin）是本 skill 按 `java.js` 结构自写的，上游没有 Kotlin。每份是
   `var X = [...]; export {X as default};`，`build.py` 用正则把它转成
   `window.__SHJ_LANGS["名字"] = (function(){ ... })();` 拼进页面。
   语言之间会互相引用（`sub:"todo"`），`build.py` 跟着 `sub` 递归带上依赖。
@@ -20,7 +20,7 @@
 ## 怎么升级
 
 `languages/*.js` 直接从上游 `dist/languages/` 覆盖即可（删掉 `index.js`，它是唯一带
-import 的文件，用不上）。`core.js` 需要重新打包：
+import 的文件，用不上）。覆盖时保留自写的 `kt.js`。`core.js` 需要重新打包：
 
 ```sh
 npm i @speed-highlight/core esbuild

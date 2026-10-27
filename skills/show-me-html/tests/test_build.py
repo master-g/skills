@@ -163,6 +163,19 @@ class BuildCliTests(unittest.TestCase):
         self.assertIn('__SHJ_LANGS["py"]', built)
         self.assertEqual(built.count('data-show-me="hl"'), 1)
 
+    def test_kotlin_code_is_highlighted(self):
+        """kotlin / kts 归一到自写的 kt.js（上游没有 Kotlin），不再报「没有对应的语法规则」。"""
+        page = self.copy_fixture()
+        self.insert(page, '<section><pre><code class="language-kotlin">val x = listOf(1)</code></pre></section>')
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("language-kotlin 没有对应的语法规则", result.stdout)
+        built = page.read_text(encoding="utf-8")
+        self.assertIn('__SHJ_LANGS["kt"]', built)
+        self.assertIn('__SHJ_LANGS["kotlin"]=window.__SHJ_LANGS["kt"]', built)
+
     def test_rebuild_drops_runtime_no_longer_needed(self):
         page = self.copy_fixture()
         self.insert(page, self.FIGURE)

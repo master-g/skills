@@ -21,7 +21,7 @@
 - [2026-10-20] 用户清空了「下次运行」积压：guide-me 验收、tufte-reader 冷启动验收与 plates.md 审阅、日期前缀文件名冒烟、reelshort 页重建、show-me-html 单图导出 PNG 与导读元信息行、codebase-to-book 改用 ondine、真实 /farm 与 send-to-obsidian X 链接实测，都不再跟进，用户再提才做
 - [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：仓库历史里从无这套值，10-19 shelf 五页按安装副本重建，后来安装副本也回到旧值（推测是 install 覆盖，未证实）；用户选移植进仓库，值取自 shelf 已提交成品
 - [2026-10-19] shelf 的 financial-math 已改成曲线图风格；how-llms-work 的 figs.py 自带旧图元、不引用 figlib，改风格要先迁移
-- [2026-10-21] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core：两技能页面只见 bash/sql/diff/text 和零星 py/ts/rs/go，无 JSX/TSX；它最快（32 KB 1.5 ms，Kirari 4.0、Prism 2.2）。页面常出现 JSX/TSX 或 C#/Kotlin/Swift/Ruby 时换 Kirari（TSX 分词好、接法相同），先等它稳定（10-18 才发布）；Shiki 要构建期 Node 或每页 72 KB+，排除（用户认同）
+- [2026-10-27] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core（最快：32 KB 1.5 ms，Kirari 4.0、Prism 2.2）；上游没有的 Kotlin 由 show-me-html 自写 `kt.js` 补，放在 vendor/shj/languages、升级覆盖时保留（用户 10-27 选不挪出 vendor）。页面常出现 JSX/TSX 或 C#/Swift/Ruby 时再换 Kirari；Shiki 要构建期 Node 或每页 72 KB+，排除
 - [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 - [2026-10-22] 本机无头 Chrome 不读 HTTP(S)_PROXY 环境变量，系统代理关着，show-me-html 每次渲染直连 Google Fonts，单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md
