@@ -254,7 +254,7 @@ advisor 在 scratchpad 里导出 `fff32ba` 的副本，按 017 → 018 → 019 �
 
 ## show-me-html 构建耗时（2026-10-22，基线 `2f0e439`）
 
-由 improve 技能的 `plan` 变体应维护者请求生成。起因是维护者本机的一份调研（`docs/research/2026-10-22-show-me-html-build-time-handoff.md`，写作时未入库）：一页 status-report 报告做了 32 分钟，其中 20.5 分钟在等 `build.py` 的无头 Chrome。原因有两层：一次 `--snap` 冷启动 Chrome 11 次；Chrome 不读代理环境变量，每次直连 Google Fonts，单次 12～69 秒。另一半时间花在 7 轮返工上，4 轮出在表格里被压成竖条的长标识符；还有一处图内文字越出图框，构建和眼检都漏了。
+由 improve 技能的 `plan` 变体应维护者请求生成。起因是维护者本机的一份调研（`docs/research/2026-10-22-show-me-html-build-time-handoff.md`）：一页 status-report 报告做了 32 分钟，其中 20.5 分钟在等 `build.py` 的无头 Chrome。原因有两层：一次 `--snap` 冷启动 Chrome 11 次；Chrome 不读代理环境变量，每次直连 Google Fonts，单次 12～69 秒。另一半时间花在 7 轮返工上，4 轮出在表格里被压成竖条的长标识符；还有一处图内文字越出图框，构建和眼检都漏了。
 
 advisor 在 scratchpad 里预演过各计划的关键代码：带代理的单次渲染 45.8 秒 → 8.3 秒（020）；021 的运行器与 `build.py` 改动套在 `2f0e439` 的副本上，全量单元测试 51 个 OK，status-report 的 `--snap` 266.8 秒 → 13.8 秒，五个冻结场景和两个夹具的 ERROR / WARN 与改前相同；022 的 gallery 截图 118/118 张、53 秒，`--pdf` 出 A4；023 在五个场景页、两个夹具和 gallery 上零误报；024 的样张复现了竖条；025 的探针在三个场景页和一个故意写坏的页面上跑通；026 只给 concept-explainer 的导出多出一行图摘要；027 在打印模拟下量过看板列宽，PDF 看过。
 

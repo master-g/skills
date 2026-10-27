@@ -46,15 +46,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-24] main：storage-price-is-too-damn-high 首次真实跑完（盘点 → 计划 → 用户点选 → 执行），本机可用空间 3.87 → 124.68 GiB；之后把 `$TMPDIR`（Instruments ktrace 残留 36.5 GB）和无头 Chrome `scoped_dir*` 补进 references/locations.md，未提交、未 make install
-  验证：make check 通过，prettier --check 通过；新写进文档的 pgrep、find 命令在本机跑过
+- [2026-10-27] main：工作区里 show-me-html 的三项改动与构建耗时调研拆成 4 个提交（Kotlin 高亮、溢出点名最深元素、通栏数据图无窄版报 WARN、调研文档），调研里的本机项目路径和会话 ID 脱敏为 `<project>/<session>`；提交后推送 origin 并 make install
+  验证：test_build 65 个 OK（提交 1、2 的中间状态在临时 worktree 里 63、64 个 OK）；make check 通过；gallery.py 只有「超过 400 KB」与「500px 下数据图字号」两条 WARN；冻结场景轮次 `2026-10-27-e0d1995-split` 五页无问题，30/30 截图与 026 相同
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-24] storage-price-is-too-damn-high：locations.md 的补充等用户决定提交和 make install；首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
-  show-me-html（10-23 记）：构建耗时这批（020–029）已全部合入；冻结场景对照基线仍是 `2026-10-23-eec315f-026`（029 只改中断收尾，页面不变，没换），首跑就该 30/30；「未规划」里还有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
+- [2026-10-27] storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
+  show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
   bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
   bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
