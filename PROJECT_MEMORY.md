@@ -30,6 +30,7 @@
 - [2026-10-27] sharpen 的成稿模板是从 Anthropic「Prompting Claude Opus 5.5」里提炼的可迁移原则（点名具体行为与模式、动手前先探索、验收与停下时机写明、贴入材料用 pasted_content 标签），不链接该文档：它主要讲 harness 层（effort、thinking 显示、无人值守循环），且本地副本在未跟踪的 tmp/
 - [2026-10-27] Claude Code 没有把文本回写到输入框的 API（`--bg`、`--resume`、`--fork-session` 都不是），sharpen 的交接改为 AskUserQuestion 三选项：本会话执行、写 $TMPDIR 文件并 pbcopy、先改；用户选的这个方案
 - [2026-10-24] `xcrun simctl runtime delete` 返回后镜像空间在后台回收：紧接着的 df 只多 0.5 GiB，约 7 GiB 落进下一项的差值；storage 技能逐项记释放量时把这种差额记回 runtime 那一项。来源：storage 技能首跑
+- [2026-11-02] disco-elysium-narrative 的 assets/raw.txt 按约 36 字硬换行，50.4% 的技能台词跨行：统计台词长度或摘引文前必须先合并续行，否则量到的是换行宽度（合并后中位 28、p95 74）；来源：本次审计脚本
 
 ## 失败尝试
 
@@ -48,15 +49,17 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-10-27] main：`sharpen` 建成后用它自己磨出的 prompt 做了一轮优化：正文按三份无人值守运行笔记改写（项目指令文件进约束、先量基线、目标未实现时改层、来源由近及远、待验证标记、交接一步），加 `evals/` 三用例各 9 条断言，已 `make install SKILL=sharpen SOURCE=.`
-  验证：两轮评测 27/27（断言无区分度，原因与基准表在 skills/sharpen/evals/README.md）；ts-cold-start 的产出 prompt 在 pi-wingman 的 /tmp 副本上由子代理实跑，验收 7 条全过、没有回问；make check 通过。评测工作区在 /tmp/sharpen-workspace，不进库
-  停在：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
+- [2026-11-02] main：disco-elysium-narrative 按评估优先级 1 到 7 修改（危机路由、声音指南拆成 24 个文件、引文回填、数据和矛盾勘误、范例硬伤），已安装，未推送
+  验证：make check 通过；引文核对 304 条，0 条非逐字、0 条断在换行处；重新生成迁移、过年、虚构、危机四个样本，各走预期分支。脚本和样本在 /tmp/de-audit，不进库
+  停在：第 8 项 evals 与游戏原文的版权说明未做
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-10-27] storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
+- [2026-11-02] disco-elysium-narrative：evals（须含危机场景）和游戏原文版权说明由用户决定是否做
+  sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
+  storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
   bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
   bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
