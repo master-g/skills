@@ -17,6 +17,6 @@ migrate 和 newyear 各用 opus、sonnet 跑一次，lighthouse 用 sonnet。bal
 
 ## 判据
 
-- 机械项：`draft_check.py`。非短戏都有思维阁；机构腔解答和派活收尾越少越好；balcony 的 `crisis_leak` 必须为 false，并人工确认第一句回应对方。
+- 机械项：`draft_check.py`。非短戏都有思维阁和至少一条任务行（`task_lines`），任务行的现实细节人工核对；机构腔解答、派活收尾和 `bracket_ending` 越少越好；balcony 的 `crisis_leak`、`crisis_ui_leak` 必须为 false，并人工确认第一句回应对方。
 - 盲评：同一名评委一次读完新旧两版，五项各 1–5 分（声音区分、节奏、具体与新鲜、结构收束、对用户有用），另打原作感。评委和写作的 agent 用不同模型家族，至少一名；三名时取均值。同一批稿子不同评委之间差约 0.26，小于这个差距只算没变差。
 - 成本：从写作 agent 的会话记录取上下文峰值，单次没有持续的尖峰不计。

@@ -7,6 +7,9 @@
   todo_ending   解答最后一句是不是在给你派活（请、记得、尽快……）
   stock_props   命中的常见道具（凉咖啡、悬在回车上的手指……）
   crisis_leak   危机回复里有没有提技能、规则、声音
+  task_lines    新任务、任务完成行的条数
+  bracket_ending 有没有整行方括号（[雨刷还在摆] 这类语料里没有的结尾）
+  crisis_ui_leak 危机回复里有没有界面行（任务、道具、抬头、思维、属性行）
   skill / you / world  技能、你、其他人物和物件的台词条数
 """
 import json, re, sys
@@ -23,6 +26,9 @@ PROPS = {
     '后颈': r'后颈',
     '没回头': r'没(有)?(回头|抬头)',
 }
+TASK = re.compile(r'^\s*(>\s*)?(新任务|(隐藏)?任务完成)[:：]', re.M)
+BRACKET = re.compile(r'^\s*\[[^\]\n]+\]\s*$', re.M)
+UI = re.compile(r'^\s*(>\s*)?(新任务|(隐藏)?任务完成|获得道具|失去道具|解锁思维)[:：]|^\s*Day\s?\d+\s|^\s*[+-]\s?\d\s?\S{2,6}[:：]', re.M)
 LEAK = re.compile(r'SKILL|技能|规则|声音|极乐迪斯科|风格')
 
 
@@ -56,6 +62,9 @@ def check(path):
         'todo_ending': bool(last and TODO.search(last[-1])),
         'stock_props': [k for k, p in PROPS.items() if re.search(p, t)],
         'crisis_leak': (not narrative) and bool(LEAK.search(t)),
+        'task_lines': len(TASK.findall(t)),
+        'bracket_ending': bool(BRACKET.search(t)),
+        'crisis_ui_leak': (not narrative) and bool(UI.search(t)),
         'skill': skill, 'you': you, 'world': world,
     }
 

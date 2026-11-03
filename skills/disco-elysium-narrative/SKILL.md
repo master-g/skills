@@ -29,8 +29,8 @@ You are not answering questions. You are staging a scene, and the war inside the
 1. **选 4-6 个技能**：按下表的主题挑，至少含一对冲突技能。
 2. **只读选中技能的声音文件**：其余文件不读。完成标准是每个要说话的技能都读过自己的文件，重点是「话语动作」「何时沉默」「与混淆声部的差别」。
 3. **读 [声音与检定格式](references/format.md) 和 [风格总论](references/style.md)**：总论写叙述旁白、NPC 形态、幽默机制和常见跑偏。
-4. **读 [思维阁](references/thought-cabinet.md)**：非短戏都要读。写爬虫脑、边缘系统、金式搭档，或让某个物件长期回嘴时，再读 [特殊声音](references/special-voices.md)。
-5. **读 [示范场景](assets/examples/scene.md)**：只看节拍怎么走，题材和句子都别沿用。
+4. **读 [思维阁](references/thought-cabinet.md) 和 [界面行](references/game-ui.md)**：非短戏都要读，短戏要写道具卡或场景抬头时读后者。写爬虫脑、边缘系统、金式搭档，或让某个物件长期回嘴时，再读 [特殊声音](references/special-voices.md)。
+5. **读 [示范场景](assets/examples/scene.md)**：看节拍怎么走。
 
 | Topic                 | Primary Skills                                             | Conflict Pair                                |
 | --------------------- | ---------------------------------------------------------- | -------------------------------------------- |
@@ -52,11 +52,9 @@ You are not answering questions. You are staging a scene, and the war inside the
 | 体格 | 钢筋铁骨 `endurance.md`，坚忍不拔 `pain-threshold.md`，强身健体 `physical-instrument.md`，食髓知味 `electrochemistry.md`，天人感应 `shivers.md`，疑神疑鬼 `half-light.md`   |
 | 身手 | 眼明手巧 `hand-eye-coordination.md`，五感发达 `perception.md`，反应速度 `reaction-speed.md`，鬼祟玲珑 `savoir-faire.md`，能工巧匠 `interfacing.md`，从容自若 `composure.md` |
 
-**声音文件的用法**：每个文件写定位、量表、话语动作（含触发）、何时沉默、失败形态、与混淆声部的差别、跑偏写法和母本短引。声部身份主要靠它相对场景做的动作来区分，用词是次要的。「母本短引」只作校准，不复用其中的句子和意象；标了「(改编)」的是仿写，不当原文引用。
+**声音文件的用法**：每个文件写定位、量表、话语动作（含触发）、何时沉默、失败形态、与混淆声部的差别、跑偏写法和母本短引。声部身份主要靠它相对场景做的动作来区分，用词是次要的。标了「(改编)」的是仿写，不当原文引用。
 
 **签名标记按频率用**：文件里标了各标记的占比和“稀有，别常用”。稀有标记只用在它出现的那种场合。
-
-**样本用来校音**：本文件、范例和声音文件里的句子（包括母本台词）只示范节奏与形态，成稿的每句台词都用本篇的物件和句式写。
 
 ---
 
@@ -66,7 +64,7 @@ You are not answering questions. You are staging a scene, and the war inside the
 
 ## Narrative Structure
 
-Choose the parts that serve this narrative. 短戏指用户明确要短戏、片段，或题目只够一拍；其余都算非短戏。信息表和结尾按需写，思维阁在非短戏里默认写一条。
+Choose the parts that serve this narrative. 短戏指用户明确要短戏、片段，或题目只够一拍；其余都算非短戏。信息表和道具卡按需写；非短戏默认写一条思维阁和一条新任务。
 
 ### Part 1: Scene Setting (场景设定)
 
@@ -114,17 +112,21 @@ Organize key findings using tables, lists, or structured formats — but filtere
 > **解答**: [这个念头最后的去向]
 ```
 
-语料的解答后没有效果行。想要游戏感时可以加一两行（属性变化、解锁思想），只在它和本篇剧情有关时写。
+解答后不写效果行：语料的属性行只挂在衣物卡上。具体的下一步交给新任务行（见「界面行与收尾」），解答停在念头的去向上。
 
-### Part 5: Game-Style Ending (游戏式结尾)
+### Part 5: Interface Lines & Ending (界面行与收尾)
 
-Square brackets. Short lines. Rhythmic. 可选。停在本篇一个物件的状态上，不总结，也不发问。UI 提示（如存档点）偶尔用。
+游戏感来自语料自己的界面行：任务日志、道具卡、场景抬头，各自单独成行，行首是类型名。非短戏默认写一条新任务，写这个人现实里真正的下一步：放在场景中段你拿定主意的那一拍：先让「你」说出打算，任务行把它改写成动词加对象的干句，之后世界照常再走几拍，任务行不作结尾。母本（行 409–411）：
 
 ```
-[雨刷还在摆]
-[收据被你折成了四方块]
-[你没有下车]
+> **你** — 我应该去把鞋拿回来。
+
+新任务:找到另一只鞋
+
+*破窗户* — 一阵冷风涌了进来。你的脚趾因为寒冷而蜷缩起来。
 ```
+
+场景停在下一个动作或世界的最后一句话上，不总结，也不发问；本篇解决了的事可以用同名的「任务完成」收住。句型、位置、道具卡和抬头的写法见 [界面行](references/game-ui.md)。
 
 ---
 
