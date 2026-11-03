@@ -31,6 +31,7 @@
 - [2026-10-27] Claude Code 没有把文本回写到输入框的 API（`--bg`、`--resume`、`--fork-session` 都不是），sharpen 的交接改为 AskUserQuestion 三选项：本会话执行、写 $TMPDIR 文件并 pbcopy、先改；用户选的这个方案
 - [2026-10-24] `xcrun simctl runtime delete` 返回后镜像空间在后台回收：紧接着的 df 只多 0.5 GiB，约 7 GiB 落进下一项的差值；storage 技能逐项记释放量时把这种差额记回 runtime 那一项。来源：storage 技能首跑
 - [2026-11-02] disco-elysium-narrative 的 assets/raw.txt 按约 36 字硬换行，50.4% 的技能台词跨行：统计台词长度或摘引文前必须先合并续行，否则量到的是换行宽度（合并后中位 28、p95 74）；来源：本次审计脚本
+- [2026-11-03] disco-elysium-narrative 语料解析：破折号前有空格才直接算发言，没空格须是已知说话人；不分情况会造出假说话人，一律要求空格又会丢掉真发言（失败数从 234 掉到 224）；来源：evals/corpus_stats.py 复算
 - [2026-11-02] disco-elysium-narrative 里的原句样本会被模型照搬：把一句样本换成五种开口后，B 版解答 5 篇全部对应其一，只是从抄一句变成五选一；要教走法和文体，不给句子。来源：本次盲测
 
 ## 失败尝试
@@ -50,15 +51,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-02] main：disco-elysium-narrative 按盲测结论改了思维阁、跨篇模板和危机回复，已提交并安装，未推送
-  验证：盲评均分 4.02 升到 4.46（每条件 1 到 2 个样本，一名评委）；模板句式全部减少；危机回复复测 2 次干净；make check 与引文核对通过。脚本和样本在 /tmp/de-audit、/tmp/story-bench，不进库
-  停在：表格措辞的最后一处改动未重跑叙事；evals 和原文版权说明未做
+- [2026-11-03] main：disco-elysium-narrative 外部改动修完、思维阁改为非短戏默认一条，按用户定的持续峰值口径提交并安装，未推送
+  验证：三评委均分 4.37（同批上一版 4.11），迁移和过年 4/4 有思维阁，危机对话复测干净，上下文持续峰值均值 74982（原始 91604，一次未持续尖峰），make check 通过。样本在 /tmp/story-desk-f、/tmp/de-fix
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-02] disco-elysium-narrative：evals（须含危机场景）和游戏原文版权说明由用户决定是否做；残留重复见 /tmp/story-bench/review-scores.md（后颈、外来者不抬头、公文体解答）
+- [2026-11-03] disco-elysium-narrative：残留思维阁公文体、解答收束成待办、跨篇物件重复；opus 未见收益；evals 还没有成稿和危机用例；原文版权说明由用户决定
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
