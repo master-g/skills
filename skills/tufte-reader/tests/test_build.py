@@ -227,7 +227,7 @@ class BuildTest(unittest.TestCase):
         self.assertIn("边注 2  旁注 9  脚注 2  块级公式 3  行内公式 86  图内公式 6  分步图 1  帧 3", out)
         self.assertEqual(html.count('<input type="checkbox"'), 12)
         self.assertIn("Mermaid 编译 1 幅", out)
-        self.assertIn('class="ondine ondine-flowchart"', html)
+        self.assertIn('class="pele pele-flowchart"', html)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):
@@ -321,7 +321,7 @@ class BuildTest(unittest.TestCase):
         self.assertIn("代码块 0", out)  # 留在页面里的源码不算代码块
         self.assertIn('<div class="mermaid-figure"><input type="checkbox" id="mmd-1" class="mermaid-toggle" aria-label="显示 Mermaid 源码" />'
                       '<label for="mmd-1" class="mermaid-switch"', html)
-        svg = html.split('<svg aria-label="图 1 每轮把 dx 缩小。" xmlns="http://www.w3.org/2000/svg" class="ondine ondine-flowchart"', 1)[1]
+        svg = html.split('<svg aria-label="图 1 每轮把 dx 缩小。" xmlns="http://www.w3.org/2000/svg" class="pele pele-flowchart"', 1)[1]
         self.assertEqual(svg.split("</svg>", 1)[0].count("<tspan"), 2)  # &lt;br&gt; 还原成换行
         self.assertNotIn("max-width:100%", svg.split(">", 1)[0])  # 尺寸交给 tufte.css，.scroll-x 才管得住
         # 源码原样留在图后面
@@ -338,7 +338,7 @@ class BuildTest(unittest.TestCase):
         rc, second, out = run(first.replace("A[旧标签]", "A[新标签]", 1))  # 只改第一幅的源码
         self.assertEqual(rc, 0, out)
         self.assertEqual(second.count('<div class="mermaid-figure">'), 2)
-        self.assertEqual(second.count('<text class="ondine-label" x="0" y="5.6" text-anchor="middle">新标签</text>'), 1)
+        self.assertEqual(second.count('<text class="pele-label" x="0" y="5.6" text-anchor="middle">新标签</text>'), 1)
         self.assertEqual(second.count("旧标签"), 2)  # 第二幅的图与源码
         # 改坏已编译的图：旧图拆掉，源码留下，报错
         rc, third, out = run(second.replace("新标签]", "新标签", 1))
@@ -352,7 +352,7 @@ class BuildTest(unittest.TestCase):
         rc, html, out = run(PAGE.replace("BODY", f'<figure><pre class="mermaid">{chain}</pre></figure>'
                                                  f'<figure class="fullwidth"><pre class="mermaid">{chain}</pre></figure>'))
         self.assertEqual(rc, 0, out)
-        widths = [float(w) for w in build.re.findall(r'class="ondine ondine-flowchart" viewBox="0 0 [\d.]+ [\d.]+" width="([\d.]+)"', html)]
+        widths = [float(w) for w in build.re.findall(r'class="pele pele-flowchart" viewBox="0 0 [\d.]+ [\d.]+" width="([\d.]+)"', html)]
         self.assertLessEqual(widths[0], 600)  # 正文栏放不下，改成纵向
         self.assertGreater(widths[1], 600)  # 通栏放得下，仍是横向
 
@@ -361,7 +361,7 @@ class BuildTest(unittest.TestCase):
         bad = '<figure><span class="marginnote">图 2　坏图。</span><pre class="mermaid">flowchart LR\n  A[甲] --></pre></figure>'
         rc, html, out = run(PAGE.replace("BODY", bad))
         self.assertEqual(rc, 1, out)
-        self.assertIn("Mermaid 图「图 2 坏图。」编译失败，源码第 3 行", out)
+        self.assertIn("Mermaid 图「图 2 坏图。」编译失败，源码第 2 行第 11 列（A[甲] -->）", out)
         self.assertIn('<pre class="mermaid">', html)  # 编译失败的留着源码
         rc, _, out = run(PAGE.replace("BODY", '<figure><pre class="mermaid wide">flowchart LR\n  A --> B</pre></figure>'))
         self.assertEqual(rc, 1, out)

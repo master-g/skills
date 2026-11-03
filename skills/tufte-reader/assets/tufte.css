@@ -444,23 +444,30 @@ figure svg {
   max-width: 100%;
   height: auto;
 }
-/* Mermaid 图（构建时由 ondine 编译成 SVG）：颜色、字体、线宽读 --ondine-* 变量，这里接到页面的 token 上，
-   明暗主题跟着切换。与图元库的示意图一样用无衬线字和分类色 */
-.ondine {
-  --ondine-bg: var(--bg);
-  --ondine-fg: var(--fg);
-  --ondine-muted: var(--muted);
-  --ondine-accent: var(--mark);
-  --ondine-critical: var(--mark);
-  --ondine-series-1: var(--fig-1);
-  --ondine-series-2: var(--fig-2);
-  --ondine-series-3: var(--fig-3);
-  --ondine-series-4: var(--fig-4);
-  --ondine-font: var(--font-figure);
-  --ondine-stroke: var(--mermaid-stroke);
-  --ondine-title-weight: var(--weight-bold);
-  --ondine-heading-weight: var(--weight-bold);
-  --ondine-bold-weight: var(--weight-bold);
+/* Mermaid 图（构建时由 pele 编译成 SVG）：颜色、字体读 --pele-* 变量，这里接到页面的 token 上，
+   明暗主题跟着切换。与图元库的示意图一样用无衬线字和分类色：方角、节点不填底色、线条和边框用正文色。
+   pele 的 SVG 不写线宽属性，线宽从根元素继承 */
+.pele {
+  --pele-bg: var(--bg);
+  --pele-fg: var(--fg);
+  --pele-muted: var(--muted);
+  --pele-line: var(--fg);
+  --pele-surface: var(--bg);
+  --pele-surface-alt: color-mix(in srgb, var(--fg) 20%, var(--bg));
+  --pele-border: var(--fg);
+  --pele-accent: var(--mark);
+  --pele-critical: var(--mark);
+  --pele-radius: 0;
+  --pele-series-1: var(--fig-1);
+  --pele-series-2: var(--fig-2);
+  --pele-series-3: var(--fig-3);
+  --pele-series-4: var(--fig-4);
+  --pele-font: var(--font-figure);
+  --pele-font-mono: var(--font-mono);
+  --pele-title-weight: var(--weight-bold);
+  --pele-heading-weight: var(--weight-bold);
+  --pele-bold-weight: var(--weight-bold);
+  stroke-width: var(--mermaid-stroke);
 }
 /* Mermaid 图的源码开关（构建生成，不用脚本）：勾上 checkbox 时源码代替图显示。开关在图的右下方，
    平时隐藏；鼠标悬停、键盘聚焦或正显示源码时出现，没有悬停的触屏设备上淡淡地一直显示 */

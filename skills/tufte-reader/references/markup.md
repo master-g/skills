@@ -198,13 +198,13 @@ flowchart TD
 </figure>
 ```
 
-- **编译**：构建用 vendor 的 ondine 把源码编译成 `<svg class="ondine">`，和源码一起包进 `div.mermaid-figure`，把图题的文字写进 `aria-label`，给图内的 `id` 加前缀，这些作者都不用管。开标签只写 `<pre class="mermaid">` 这一种形式，加别的属性或 class 构建认不出，报 ERROR。
+- **编译**：构建用 vendor 的 pele 把源码编译成 `<svg class="pele">`，和源码一起包进 `div.mermaid-figure`，把图题的文字写进 `aria-label`，给图内的 `id` 加前缀，这些作者都不用管。开标签只写 `<pre class="mermaid">` 这一种形式，加别的属性或 class 构建认不出，报 ERROR。
 - **源码留在页面里**：`<pre class="mermaid">` 编译后原样保留，是这幅图唯一的来源，每次构建都拆掉上一次的图、从它重新编译。要改图，就改已构建页面里这段源码再构建，不动 SVG：对 SVG 的手改下次构建就没了。
 - **源码开关**：读者把鼠标移到图上，图的右下方出现一个 `</>` 图标，点一下换成源码，图标变成流程图，再点换回来；键盘聚焦时也会出现，触屏上一直淡淡地显示。图标与明暗切换按钮同一种画法。打印只出图。开关是 checkbox 加 CSS，与边注的 ⊕ 一样不用脚本。
 - **转义**：源码按 HTML 写，`<` 写成 `&lt;`，`&` 写成 `&amp;`，箭头 `-->` 里的 `>` 照写。节点标签里换行写 `&lt;br&gt;`。
-- **中文标签**：ondine 只在空格处折行，中文标签不会自动断开，一长串会把方框撑得很宽。一个节点写十个字以内，长的用 `&lt;br&gt;` 断成两行。
+- **中文标签**：pele 会把过长的标签自动折成几行，折在哪里由它定。一个节点仍以十个字以内为好；想控制断在哪里，用 `&lt;br&gt;` 自己断。
 - **宽度**：普通插图按正文栏宽（600px）排，横向（`LR`）的流程图放不下时自动改成纵向；要保持横排就放进 `figure.fullwidth`，按通栏宽（980px）排。排出来仍然超宽的发 WARN，图会等比缩小。宽图在手机上字太小时把 `<pre class="mermaid">` 包进 `<div class="scroll-x">`，同普通插图。
-- **外观**：ondine 不是 Mermaid 本身，语法照 Mermaid，布局和画法是它自己的：方角的框、圆角的正交连线。字体、线宽、颜色由 tufte.css 接到页面上，与图元库的示意图同一种无衬线字；`%%{init}%%` 和 Mermaid 的主题变量不起作用。`classDef`、`style` 里写的颜色不跟随主题，构建发 WARN；要区分几类节点，用 `subgraph` 分组，或在标签里写明。
+- **外观**：pele 不是 Mermaid 本身，语法照 Mermaid，布局和画法是它自己的；tufte.css 把它设成方角的框、不填底色。字体、线宽、颜色由 tufte.css 接到页面上，与图元库的示意图同一种无衬线字；`%%{init}%%` 和 Mermaid 的主题变量不起作用。`classDef`、`style` 里写的颜色不跟随主题，构建发 WARN；要区分几类节点，用 `subgraph` 分组，或在标签里写明。
 - **语法错误**：构建报 ERROR，指明是哪幅图（取图题的开头）、源码第几行第几列和那一行，这幅图留着源码不编译。
 - **范围**：结构图用 Mermaid。带坐标轴、要读数值的图（折线、散点、柱状）照上面的「曲线图」用图元库画，不用 Mermaid 的 `xychart`、`pie`；标签里有公式的图也用图元库，Mermaid 的标签里写 `$…$` 构建报 ERROR。实测能编译的图型：`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`classDiagram`、`erDiagram`、`timeline`、`mindmap`、`gantt`、`block`、`architecture-beta`、`gitGraph`。
 - 统计里 Mermaid 图计入「图」；构建另打一行「Mermaid 编译 N 幅」。

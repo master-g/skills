@@ -6,7 +6,7 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
 
 合成：
   1. LaTeX → MathML（node + vendor 的 Temml）；公式与紧邻的全角标点之间禁止断行
-  2. Mermaid 源码（<pre class="mermaid">）→ 内联 SVG（node + vendor 的 ondine）；源码留在页面里，
+  2. Mermaid 源码（<pre class="mermaid">）→ 内联 SVG（node + vendor 的 pele）；源码留在页面里，
      每次构建从它重新编译，阅读时可切换查看
   3. <span class="sidenote|marginnote"> 补全 label + checkbox
   4. 每章的 <span class="footnote"> 挪到章末 section.footnotes，原位留编号

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /* mermaid.mjs 页面.html —— 把页面里的 <pre class="mermaid"> 编译成内联 SVG，就地改写。由 build.py 调用。
 
-   编译器是 vendor 的 ondine（Rust 写的 Mermaid 编译器，wasm）：语法按 Mermaid，布局与外观是 ondine 自己的。
-   SVG 的颜色、字体、线宽读 --ondine-* 变量，tufte.css 把它们接到页面的 token 上，切换明暗主题不用重新编译。
+   编译器是 vendor 的 pele（JS 写的 Mermaid 渲染器）：语法按 Mermaid，布局与外观是 pele 自己的。
+   SVG 的颜色、字体读 --pele-* 变量，tufte.css 把它们接到页面的 token 上，切换明暗主题不用重新编译。
    源码留在页面里，是图的唯一来源：每次构建先拆掉上一次的产物，再从源码重新编译，改图只改源码。
    产物是 div.mermaid-figure：checkbox 和它的 label（源码开关，tufte.css 让它平时隐藏、悬停时出现）、SVG、
    原样的 <pre class="mermaid">（平时隐藏，勾选后代替 SVG 显示）。不用脚本，与边注的 ⊕ 同一种做法。
    开关是纯图标，画法与明暗切换按钮相同：Lucide（ISC，许可见 vendor/LICENSE-lucide.txt）的 code 与 workflow，
    显示「点了会切到的」那一态。
    源码按 HTML 写：< 和 & 写成 &lt; &amp;（标签里换行写 &lt;br&gt;），编译前还原。
-   排版宽度：普通插图按正文栏，横向的流程图放不下时 ondine 自动改成纵向；figure.fullwidth 里的按通栏。
-   图题（figure 里的 marginnote 或 figcaption）写进 aria-label；源码写了 accTitle 的，ondine 自己给 <title>。
+   排版宽度：普通插图按正文栏，横向的流程图放不下时 pele 自动改成纵向；figure.fullwidth 里的按通栏。
+   图题（figure 里的 marginnote 或 figcaption）写进 aria-label；源码写了 accTitle 的，pele 自己给 <title>。
    图内 id 与开关的 id 按图在页面里的次序编号：每次全部重新编译，次序不变，重复构建的结果也不变。 */
 import { readFileSync, writeFileSync } from "node:fs";
-import { create, RenderError } from "../assets/vendor/ondine/Render.js";
+import { PeleError, render } from "../assets/vendor/pele/pele.mjs";
 
 /* 1280 宽的窗口里正文栏 616px，通栏（正文栏 + 间隔 + 页边注）约 985px，各留一点余量 */
 const COL_PX = 600;
@@ -24,13 +24,30 @@ if (!file) {
   console.error("用法：mermaid.mjs 页面.html");
   process.exit(2);
 }
-const wasm = readFileSync(
-  new URL(
-    "../assets/vendor/ondine/internal/all.generated.wasm",
-    import.meta.url
-  )
-);
-const ondine = create({ modules: { all: new WebAssembly.Module(wasm) } });
+/* 构建时没有浏览器，pele 自带的字宽表按窄一些的西文字体估，-apple-system 下 i、t、r 这类字母会顶出框。
+   这里按页面字体（--font-figure）里最宽的 -apple-system 在 Chrome 实测的字宽分档估算，单位 em，宁宽勿窄 */
+const CJK =
+  /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\ufe30-\ufe4f\uff00-\uffef]/u;
+const EM = [
+  [/[ijl.,:;'|I]/, 0.3],
+  [/[ !]/, 0.35],
+  [/[frt()[\]{}"`]/, 0.45],
+  [/[mwMW@%]/, 0.97],
+  [/[A-Z&]/, 0.75],
+];
+const BOLD = 1; // pele 的 style 位
+const MONO = 4;
+function em(c, style) {
+  if (CJK.test(c)) return 1;
+  if (style & MONO) return 0.6;
+  return EM.find(([re]) => re.test(c))?.[1] ?? 0.62;
+}
+const measurer = {
+  width: (text, size, style) =>
+    [...text].reduce((w, c) => w + em(c, style), 0) *
+    size *
+    (style & BOLD ? 1.06 : 1),
+};
 
 const icon = (cls, body) =>
   `<svg class="${cls}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ` +
@@ -88,14 +105,18 @@ const out = bare.replace(
       .replace(/^\s*\n/, "")
       .trimEnd();
     try {
-      const r = ondine.render(src, { idPrefix: `mmd${seq}-`, maxWidth: max });
+      const r = render(src, {
+        idPrefix: `mmd${seq}-`,
+        maxWidth: max,
+        measurer,
+      });
       ok++;
       if (r.width > max)
         warns.push(
           `Mermaid 图${where}排出来宽 ${Math.round(r.width)}px，超过${wide ? "通栏" : "正文栏"}的 ${max}px，会缩小显示：` +
             "缩短标签或用 &lt;br&gt; 断行、改成纵向（TD），或放进 figure.fullwidth"
         );
-      // ondine 把 max-width:100% 写在 SVG 的内联样式里，会压过 tufte.css 里 .scroll-x 的 max-width:none；
+      // pele 把 max-width:100% 写在 SVG 的内联样式里，会压过 tufte.css 里 .scroll-x 的 max-width:none；
       // 去掉它，尺寸交给 tufte.css 的 figure svg（同样是 max-width:100%、height:auto）
       let svg = r.svg.replace('style="max-width:100%;height:auto;', 'style="');
       if (cap && !svg.includes("aria-labelledby="))
@@ -106,7 +127,7 @@ const out = bare.replace(
         `<label for="${id}" class="mermaid-switch" title="在图与 Mermaid 源码之间切换">${SWITCH_ICONS}</label>${svg}${whole}</div>`
       );
     } catch (e) {
-      if (!(e instanceof RenderError)) throw e;
+      if (!(e instanceof PeleError)) throw e;
       // 消息形如「Parse error on line 4: / 源码 / ^ / Expecting …」，最后一行是要点
       const reason = e.message
         .split("\n")
