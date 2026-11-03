@@ -223,11 +223,12 @@ class BuildTest(unittest.TestCase):
         self.assertIn('<span class="math-display">', html)
         self.assertNotIn("$$", html.split("<body", 1)[1].split("<script", 1)[0])
         self.assertEqual(build.leftover_dollars(html), [])
-        self.assertIn("图 5  页边图 0  题图 1", out)
-        self.assertIn("边注 2  旁注 9  脚注 2  块级公式 3  行内公式 86  图内公式 6  分步图 1  帧 3", out)
-        self.assertEqual(html.count('<input type="checkbox"'), 12)
-        self.assertIn("Mermaid 编译 1 幅", out)
-        self.assertIn('class="pele pele-flowchart"', html)
+        self.assertIn("图 9  页边图 0  题图 1", out)
+        self.assertIn("边注 2  旁注 12  脚注 2  块级公式 3  行内公式 86  图内公式 6  分步图 1  帧 3", out)
+        self.assertEqual(html.count('<input type="checkbox"'), 19)
+        self.assertIn("Mermaid 编译 5 幅", out)
+        for kind in ("flowchart", "sequence", "class", "state"):
+            self.assertIn(f'class="pele pele-{kind}"', html)
         self.assertNotIn('data-step="', html)
 
     def test_steps_expand_to_small_multiples(self):

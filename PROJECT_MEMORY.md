@@ -16,7 +16,7 @@
 - [2026-10-16] show-me-html 目录只在「版心+目录+留白」放得下时出现，72rem 页面在 1280 下隐藏目录、显示进度线，不挤正文也不加第三档（用户确认）；窄档 9rem+1.5rem 为 Windows 滚动条下 48rem@1024 留余量
 - [2026-10-16] show-me-html 目录指示条逐帧对准要在页面之后注册的 ResizeObserver 里量；rAF 里读会早于页面的贴回一帧，收起动画中看似偏 50px；场景探针的页高差 ~30px 多为 Google Fonts 加载时机，先同页多次加载确认
 - [2026-10-19] tufte-reader 曲线图定为「A 书页」：页面衬线字、墨线、离开原点的坐标轴、至多一处朱砂（--mark）强调；用户在 A / B 铜版 / C 几何三份样张中选 A；示意图仍用无衬线和分类色，未扩及（markup.md「曲线图」）
-- [2026-10-20] tufte-reader 的 Mermaid 图由 vendor 的 ondine 0.0.1（wevm，Rust→wasm，MIT）编译成 SVG；用户选 vendor 而非按需 npm 安装；源码留在页面里、每次构建重编，悬停出现纯 CSS 的源码开关（Lucide code/workflow 图标，画法同明暗切换按钮，用户看图确认）、打印只出图；只用于结构图，数据图仍走 figlib 曲线图
+- [2026-11-03] tufte-reader 的 Mermaid 图由 vendor 的 pele 1.13.0（obsidianmd，单文件 JS，MIT）编译成 SVG，替换了 10-20 引入的 ondine 0.0.1（用户 11-03 要求迁移）；源码留在页面里、每次构建重编，悬停出现纯 CSS 的源码开关、打印只出图；只用于结构图，数据图仍走 figlib 曲线图
 - [2026-10-20] flopwire（代理间消息与转录检索）不接入 farm：子代理里的 hook 不投递、pi 不在支持列表、herdr pane 已能 agent prompt；借三点写成 plans/015（进程组收尾）、016（转录核对写入与用量，只做 Claude Code 后端）
 - [2026-10-20] 用户清空了「下次运行」积压：guide-me 验收、tufte-reader 冷启动验收与 plates.md 审阅、日期前缀文件名冒烟、reelshort 页重建、show-me-html 单图导出 PNG 与导读元信息行、codebase-to-book 改用 ondine、真实 /farm 与 send-to-obsidian X 链接实测，都不再跟进，用户再提才做
 - [2026-10-20] tufte-reader 配色定为暖底（亮 #fbf8f1、暗 #1c1b19）加 `--strong` 粗体色（暗色琥珀）：仓库历史里从无这套值，10-19 shelf 五页按安装副本重建，后来安装副本也回到旧值（推测是 install 覆盖，未证实）；用户选移植进仓库，值取自 shelf 已提交成品
@@ -24,7 +24,7 @@
 - [2026-10-27] show-me-html / tufte-reader 语法高亮维持 vendor 的 @speed-highlight/core（最快：32 KB 1.5 ms，Kirari 4.0、Prism 2.2）；上游没有的 Kotlin 由 show-me-html 自写 `kt.js` 补，放在 vendor/shj/languages、升级覆盖时保留（用户 10-27 选不挪出 vendor）。页面常出现 JSX/TSX 或 C#/Swift/Ruby 时再换 Kirari；Shiki 要构建期 Node 或每页 72 KB+，排除
 - [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
-- [2026-10-22] 本机无头 Chrome 不读 HTTP(S)_PROXY 环境变量，系统代理关着，show-me-html 每次渲染直连 Google Fonts，单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md
+- [2026-11-03] 本机无头 Chrome 不读 HTTP(S)_PROXY，系统代理关着，页面直连 Google Fonts/jsDelivr 单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s；另外不给 `--user-data-dir` 每次启动多约 4s，给空 profile 后 figprobe 整次 2.6s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md、figprobe 实测
 - [2026-10-23] Agent 工具 `isolation: worktree` 开出的分支基于 origin/main，不是本地 main：本地有未推送提交时执行者看不到，合入要 cherry-pick（023/024 就是这样）；计划照旧放只读快照到 /tmp 给执行者读
 - [2026-10-23] Agent 工具开的 worktree 里没有 node_modules：在 worktree 根目录 `ln -s /Users/mg/github/skills/node_modules node_modules` 就能跑 prettier 和 pre-commit，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。来源：028、026 执行
 - [2026-10-27] sharpen 的成稿模板是从 Anthropic「Prompting Claude Opus 5.5」里提炼的可迁移原则（点名具体行为与模式、动手前先探索、验收与停下时机写明、贴入材料用 pasted_content 标签），不链接该文档：它主要讲 harness 层（effort、thinking 显示、无人值守循环），且本地副本在未跟踪的 tmp/
@@ -33,6 +33,7 @@
 - [2026-11-02] disco-elysium-narrative 的 assets/raw.txt 按约 36 字硬换行，50.4% 的技能台词跨行：统计台词长度或摘引文前必须先合并续行，否则量到的是换行宽度（合并后中位 28、p95 74）；来源：本次审计脚本
 - [2026-11-03] disco-elysium-narrative 语料解析：破折号前有空格才直接算发言，没空格须是已知说话人；不分情况会造出假说话人，一律要求空格又会丢掉真发言（失败数从 234 掉到 224）；来源：evals/corpus_stats.py 复算
 - [2026-11-02] disco-elysium-narrative 里的原句样本会被模型照搬：把一句样本换成五种开口后，B 版解答 5 篇全部对应其一，只是从抄一句变成五选一；要教走法和文体，不给句子。来源：本次盲测
+- [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
 
 ## 失败尝试
 
@@ -51,14 +52,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-03] main：disco-elysium-narrative 修了思维阁机构腔、派活收尾和常见道具，加了 evals/draft_check.py、evals/cases.md 和 NOTICE.md，已提交并安装，未推送
-  验证：4 篇非短戏复测，机构腔 2/4→0/4、派活收尾 2/4→0/4、道具命中 3→1、思维阁 4/4；fable 盲评 4.13→4.00，在 0.26 噪声线内；make check 通过。样本在 /tmp/story-desk-g、/tmp/de-fix
+- [2026-11-03] main：tufte-reader 的 Mermaid 从 ondine 迁到 pele；specimen 附录补了时序、类、状态、通栏流程 4 幅 Mermaid 图；新增 scripts/figprobe.py（明暗整页截图 + 标签越框检查）及其测试。全部未提交、未安装
+  验证：tufte-reader 5 个测试文件全过（test_figprobe 5 项，含真构建 specimen）；make check 通过；去掉自定义 measurer 后 figprobe 在 specimen 图 7 报越界 -2.9px、退出 1，恢复后 6.6px 通过。截图在 /tmp/spec-run/out
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-03] disco-elysium-narrative：评委偏爱带待办和公文腔的解答，与语料走法相反，取舍未定；纯画面解答会被判为没回应问题；opus 仍无收益；权威声部偶尔背书技术错误
+- [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
+  disco-elysium-narrative：评委偏爱带待办和公文腔的解答，与语料走法相反，取舍未定；纯画面解答会被判为没回应问题；opus 仍无收益；权威声部偶尔背书技术错误
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选

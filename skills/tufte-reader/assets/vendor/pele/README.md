@@ -8,4 +8,4 @@ JS 写的 Mermaid 渲染器，没有依赖。`scripts/mermaid.mjs` 在构建时�
 - `pele.mjs` — 上游 `dist/pele.js` 原样，单文件、没有 import，含全部图型。改成 `.mjs` 后缀，node 直接按 ES 模块加载，
   不会向上找到仓库根的 `package.json` 并打印模块类型警告。
 
-升级：用上游 `dist/pele.js` 覆盖 `pele.mjs`，跑 `tests/` 里的单元测试，再构建一次 `assets/specimen.html` 看 Mermaid 图。
+升级：用上游 `dist/pele.js` 覆盖 `pele.mjs`，跑 `tests/` 里的单元测试，再构建一次 `assets/specimen.html`，对它跑 `scripts/figprobe.py`，看截图里的 Mermaid 图。

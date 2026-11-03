@@ -606,6 +606,72 @@ flowchart TD
   D -- 是 --> F[第二阶&lt;br&gt;可以略去]
 </pre>
         </figure>
+        <p>同一段程序还能从别的角度画。脚本每算一轮，都要和解释器来回一次：</p>
+        <figure>
+          <span class="marginnote">图 6　验证脚本与解释器之间的一轮往来。</span>
+          <pre class="mermaid">
+sequenceDiagram
+  participant S as 验证脚本
+  participant P as Python 解释器
+  S->>P: 传入 x 与 dx
+  P-->>S: 返回 (x+dx)² − x²
+  S->>P: 减去 2x dx
+  P-->>S: 余下 (dx)²
+</pre>
+        </figure>
+        <p>
+          程序本身由两个类组成。类图的成员名几乎全是西文，方框宽度由构建按字宽估出来，估窄了字就会顶出框：
+        </p>
+        <figure>
+          <span class="marginnote"
+            >图 7　每个 <code>Increment</code> 算一轮，<code>Report</code>
+            收集各轮的误差。</span
+          >
+          <pre class="mermaid">
+classDiagram
+  class Increment {
+    +float x
+    +float dx
+    +exact() float
+    +first_order() float
+    +residual() float
+  }
+  class Report {
+    +list errors
+    +ratio(int i) float
+    +print_table() None
+  }
+  Report "1" --> "*" Increment : 收集
+</pre>
+        </figure>
+        <p>验证过程中的每一步，也可以看成在几个状态之间转移：</p>
+        <figure>
+          <span class="marginnote"
+            >图 8　误差够小之前，程序在试算、比较、缩小之间循环。</span
+          >
+          <pre class="mermaid">
+stateDiagram-v2
+  [*] --> 试算
+  试算 --> 比较 : 算出增量
+  比较 --> 缩小 : 误差还大
+  缩小 --> 试算 : dx 除以 10
+  比较 --> 略去 : 误差够小
+  略去 --> [*]
+</pre>
+        </figure>
+        <p>
+          步骤多、要横着读的流程图放进通栏。节点标签太长时会自动折成几行，不必手动断开：
+        </p>
+        <figure class="fullwidth">
+          <pre class="mermaid">
+flowchart LR
+  B[给定 x 和 dx] --> C["算出 (x+dx)² − x²"]
+  C --> D[减去第一阶 2x dx]
+  D --> E[剩下的是第二阶微小量，dx 越小它缩得越快]
+  E --> F[略去]
+</pre>
+          <figcaption>图 9　从取值到略去的全过程，横排在通栏里。</figcaption>
+        </figure>
       </section>
     </article>
 
