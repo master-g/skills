@@ -34,6 +34,7 @@
 - [2026-11-03] disco-elysium-narrative 语料解析：破折号前有空格才直接算发言，没空格须是已知说话人；不分情况会造出假说话人，一律要求空格又会丢掉真发言（失败数从 234 掉到 224）；来源：evals/corpus_stats.py 复算
 - [2026-11-02] disco-elysium-narrative 里的原句样本会被模型照搬：把一句样本换成五种开口后，B 版解答 5 篇全部对应其一，只是从抄一句变成五选一；要教走法和文体，不给句子。来源：本次盲测
 - [2026-11-03] disco-elysium-narrative 界面层（evals/ui_stats.py）：属性行 102/102 挂在衣物卡上，思维没有效果行；任务行是语料唯一派活处，其后 66% 接 NPC 或金，所以新任务放场景中段、不作结尾（放结尾时评委判多次收尾）；style_eval.parse() 会把界面行并进上一条发言
+- [2026-11-03] disco-elysium-narrative 三版盲评（codex+fable，各 15 篇）：界面层改动、删「不复用」提示两项均分差都 ≤0.12，测不出；上一轮原作感 −0.4 未复现，属稿件随机差异；三版正文 12 字照抄都是 0，提示不影响照抄率。稿件在 /tmp/writing-desk
 - [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
 
 ## 失败尝试
@@ -53,15 +54,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-03] main：disco-elysium-narrative 提炼 raw.txt 的界面层，新增 references/game-ui.md、evals/ui_stats.py、test_draft_check.py，替掉无据的方括号结尾；与用户删「不复用」提示的 WIP 一并提交，已 make install
-  验证：check_quotes 21 条 0 问题；test_draft_check ok；make check 通过；cases.md 盲评（codex 一名，评的是改「任务行不作结尾」之前的版本）新 3.84 / 旧 4.04，useful 4.1/3.8，原作感 3.8/4.2，声音 3.7/4.2；新版非短戏 4/4 有任务行、方括号 0/5（旧 5/5）。稿件在 /tmp/den-eval
+- [2026-11-03] main：disco-elysium-narrative 补完上轮遗留：三版拆开盲评（结论见「已验证的事实」）；HTML 模板删思维阁效果框和方括号结尾，加界面行与道具卡样式，修 `<ol>` 嵌在 `<p>` 里导致 prettier 解析失败；cases.md 记下每格一篇的分辨力
+  验证：make check 通过；无头 Chrome 截图（--force-prefers-reduced-motion）确认新任务行和道具卡渲染正常；codex 与 fable 逐篇相关 0.8
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
-  disco-elysium-narrative：「任务行不作结尾」的改动还没盲评；新版原作感和声音区分比旧版低 0.4–0.5（单评委，且混有用户删「不复用」提示的 WIP，未拆开归因），下一轮先拆开两者再测；assets/templates/narrative.html 仍写「游戏式结尾」，HTML 输出没跟着改；权威声部偶尔背书技术错误
+  disco-elysium-narrative：模板里 `<hr class="beat">` 显示成白框（旧版就有）；权威声部偶尔背书技术错误；要再测更小的改动时每格多写几篇
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
