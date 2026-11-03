@@ -51,14 +51,14 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-03] main：disco-elysium-narrative 外部改动修完、思维阁改为非短戏默认一条，按用户定的持续峰值口径提交并安装，未推送
-  验证：三评委均分 4.37（同批上一版 4.11），迁移和过年 4/4 有思维阁，危机对话复测干净，上下文持续峰值均值 74982（原始 91604，一次未持续尖峰），make check 通过。样本在 /tmp/story-desk-f、/tmp/de-fix
+- [2026-11-03] main：disco-elysium-narrative 修了思维阁机构腔、派活收尾和常见道具，加了 evals/draft_check.py、evals/cases.md 和 NOTICE.md，已提交并安装，未推送
+  验证：4 篇非短戏复测，机构腔 2/4→0/4、派活收尾 2/4→0/4、道具命中 3→1、思维阁 4/4；fable 盲评 4.13→4.00，在 0.26 噪声线内；make check 通过。样本在 /tmp/story-desk-g、/tmp/de-fix
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-03] disco-elysium-narrative：残留思维阁公文体、解答收束成待办、跨篇物件重复；opus 未见收益；evals 还没有成稿和危机用例；原文版权说明由用户决定
+- [2026-11-03] disco-elysium-narrative：评委偏爱带待办和公文腔的解答，与语料走法相反，取舍未定；纯画面解答会被判为没回应问题；opus 仍无收益；权威声部偶尔背书技术错误
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选

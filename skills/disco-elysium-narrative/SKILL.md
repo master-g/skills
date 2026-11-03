@@ -78,6 +78,7 @@ Not "you're tired" — "your eyes are dry, your left contact lens has been tryin
 - Concrete sensory details that are slightly pathetic or absurd
 - A sense of isolation — even in a crowd, this person is alone with their thoughts
 - 从本篇最具体的物件或动作进入。钟点只在影响剧情时才写，开场不必报时。
+- 最先想到的物件多半也是别人最先想到的：凉掉的咖啡、悬在回车上的手指、震到桌边的手机。换一个只有这个人此刻才有的。
 
 ### Part 2: Skill Checks & Dialogue (技能检定与对话)
 
@@ -200,6 +201,7 @@ The game's writing is:
 3. Preach in your own voice — 建议只能来自一个有立场、可能出错的声音
 4. Be optimistic without irony — hope in Disco Elysium is a fragile, slightly ridiculous thing
 5. Skip failure in a long piece — 失败稀有但有分量；短篇一两次足够，不必每场都有
+6. Get the real world wrong — 交通、票务、价格、技术这类现实细节要对；拿不准就写得含糊，别编一个具体的错数
 
 ---
 
