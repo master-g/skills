@@ -54,7 +54,7 @@ You are not answering questions. You are staging a scene, and the war inside the
 
 **声音文件的用法**：每个文件写定位、量表、话语动作（含触发）、何时沉默、失败形态、与混淆声部的差别、跑偏写法和母本短引。声部身份主要靠它相对场景做的动作来区分，用词是次要的。标了「(改编)」的是仿写，不当原文引用。
 
-**签名标记按频率用**：文件里标了各标记的占比和“稀有，别常用”。稀有标记只用在它出现的那种场合。
+**签名标记按频率用**：文件里标了各标记的占比和“稀有，别常用”。稀有标记只用在它出现的那种场合。「骨架」列的是一条台词可用的部件，多数台词只取其中一段。
 
 ---
 
@@ -70,7 +70,7 @@ Choose the parts that serve this narrative. 短戏指用户明确要短戏、片
 
 Second-person "你". Establish the physical reality with ruthless specificity.
 
-Not "you're tired" — "your eyes are dry, your left contact lens has been trying to escape for the last twenty minutes, and there's a coffee ring on your desk that has become a calendar marking the passage of days you'd rather not count."
+Not "you're tired" — "your eyes are dry, your left contact lens has been trying to escape for the last twenty minutes, and the sticky note on your monitor has curled so far that it now reads only 'call b—'."
 
 - Short sentences. Short paragraphs. Whitespace between them.
 - Concrete sensory details that are slightly pathetic or absurd
@@ -88,7 +88,9 @@ This is the heart of it. Someone in the world talks, you answer, and a skill cut
 - **节拍以对话为主，脑内是注释。** 母本里技能只占发言 22%，连发 1 条占 75%，之后 57% 接「你」：你问，对方答，一个技能插一句，你据此再问。技能之间真正争吵是高光。题目里没有别人时，先找一个会回应你的人或物件（同事、客服、一封邮件）；确实是纯内心戏才加密技能，每条都要给一件新东西，只评论气氛的删掉。
 - **失败稀有而有分量。** 带标记的台词里失败占 3.4%，典型位置是你刚选了一个动作。三种主形态：坏主意或抢话（29%）、身体事故（27%）、落空（24%）。失败通常比成功长（中位 38 字对 26 字），写完过程；精神类失败也不一律安静，有的是更响的蠢招。形态各写在每个声音文件的「失败形态」里。
 - **失败戏有它的演员表**：能工巧匠（12%）、眼明手巧（11%）、强身健体（8%）、循循善诱（8%）、见微知著（8%）、从容自若（6%）最常失败，同舟共济、疑神疑鬼、食髓知味几乎不失败。
-- **别写成标准样本。** 多数台词一两句就停，约三分之一是单句，语料里有平淡的接话、说不准的缓冲和半截的话。详见 [风格总论](references/style.md)「质地校准」。
+- **台词常常只做半个动作。** 约三分之一是单句：一个判断、一个反应、半截话；也有平淡的接话和说不准的缓冲。详见 [风格总论](references/style.md)「质地校准」。
+- **每个声部换着用招。** 同一声部出场两次以上时，每次从它文件的「话语动作」里取不同的一招；拍板的声音也会被你无视，下一拍你照样闯祸。
+- **非短戏至少一处荒唐的过量。** 原作的笑来自过量：几个声音和物件轮流背书一个坏主意、主角在严肃问题旁说一句身份宣言、物件不管你说什么都回同一句。从 [风格总论](references/style.md)「幽默机制」挑一种，让世界平淡地接住它。
 - **The player talks back.** Weave in `> **你** —` lines between skill checks. The protagonist questions, doubts, deflects, and occasionally makes terrible jokes.
 - **Skills can be brief.** Not every check needs a paragraph. Sometimes the most powerful moment is one word (母本真实短句,行36589):
 
@@ -127,6 +129,17 @@ Organize key findings using tables, lists, or structured formats — but filtere
 ```
 
 场景停在下一个动作或世界的最后一句话上，不总结，也不发问；本篇解决了的事可以用同名的「任务完成」收住。句型、位置、道具卡和抬头的写法见 [界面行](references/game-ui.md)。
+
+### 写完：数一遍技能台词
+
+交付前把全篇技能台词逐条数一遍，有一项不达标就改到达标：
+
+- 技能台词不到全部发言的三分之一（母本 22%），其余是你和世界。
+- 三到五成是单句（句号、问号、叹号、省略号只断一次），母本 36%。不够时截短已有的台词，或删掉只评论气氛的那条。
+- 以祈使开头（别、告诉、先、去、把）的不超过一成；指令多半交给一个想坑你的声音。
+- 至少五分之一用了普通连词（因为、不过、所以、如果）或语气词（吧、呢、啊）。
+- 出场两次以上的声部，每个至少用了两种话语动作。
+- 非短戏有一处荒唐的过量，见「技能检定与对话」。
 
 ---
 
@@ -188,7 +201,7 @@ The game's writing is:
 ### Rules
 
 1. **Second-person "你" always.** The user is the protagonist.
-2. **Rotate speakers.** 多数技能台词中位 22–33 字，各声音量表写在文件里；天人感应（52）、博学多闻（44）明显更长。超过该声音 p95 时，先问是不是该拆给别的声音。别堆碎句，母本一条中位 2 句。
+2. **Rotate speakers.** 多数技能台词中位 22–33 字，各声音量表写在文件里；天人感应（52）、博学多闻（44）明显更长。超过该声音 p95 时，先问是不是该拆给别的声音。单句和两三句的台词交替出现，连着三个 6 字内短句只占 1.8%。
 3. **Specific sensory details.** Not "you're stressed" but "你的左眼在跳，已经跳了十分钟了，这是不祥之兆还是缺乏维生素B12，你不知道。"
 4. **Stay concrete.** 抽象词极少：真理 0.02%，命运 0.07%，人生 0.10%。存在主义的味道从物件和后果里出来，不说出来。
 5. **Voices claim and get it wrong.** 也许类 5.8%，一定类 2.4%：技能常下断言，也常断错，别写成一律含糊。
