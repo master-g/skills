@@ -1,0 +1,6 @@
+# Drop AI co-author trailers; attribution is disabled for this repo.
+msg="$1"
+if grep -qi '^Co-Authored-By: Claude' "$msg"; then
+  sed '/^[Cc]o-[Aa]uthored-[Bb]y: Claude/d' "$msg" | git stripspace > "$msg.tmp" && mv "$msg.tmp" "$msg"
+  echo "commit-msg: removed Claude Co-Authored-By trailer" >&2
+fi
