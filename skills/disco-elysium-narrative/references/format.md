@@ -1,131 +1,35 @@
-## The Format That Makes It Work
+# 声音与检定格式
 
-> **关于排版约定**:游戏原文是纯文本 + 颜色编码的 UI(技能用青色、检定用括号、内陆帝国的物品声音另有颜色)。在 markdown / 终端里没有颜色,所以本 skill 用**加粗**(技能)、_斜体_(物品/世界之声)、`> 引用块`(玩家向内的声音)来还原那套视觉分层。这是本 skill 的呈现约定,不是游戏原文格式——但请严格遵守它,因为读者要靠它一眼认出"谁在说话"。
+游戏靠颜色区分谁在说话。Markdown 里用下表四种排版还原，读者靠它一眼认出说话人；这是本技能的呈现约定，不是语料原样。
 
-### Skill Check Lines
+| 声音       | 格式                        | 说明                                     |
+| ---------- | --------------------------- | ---------------------------------------- |
+| 技能       | `**技能名**【成功】 — 内容` | 名字加粗，标记只有【成功】【失败】或不写 |
+| 你         | `> **你** — 内容`           | 引用块                                   |
+| 人物       | `称呼 — “引语”动作。`       | 不加粗，用你对这个人的叫法做标签         |
+| 物品与场所 | `*物品名* — 内容`           | 斜体，来自世界而不是脑内                 |
 
-The game uses Chinese full-width brackets `【】`, not `[]`. **Skill names are always bold:**
+## 技能行
 
-```
-**技能名称**【难度:结果】 — 正文内容
-```
+括号用全角 `【】`。语料只有三种写法：【成功】、【失败】和不写标记，不写的多是同一技能几条之内接着说。比例和失败的写法见 [风格总论](style.md)「检定呈现」。
 
-Or without difficulty when it's a passive check:
+五感发达在名字后标感官，如 `**五感发达**(视觉)【成功】 — 内容`。语料里标的有视觉、听觉、嗅觉、味觉，视觉最多；触觉不标，直接写。
 
-```
-**技能名称**【成功】 — 正文内容
-```
+技能台词写成一段话，不分行，不列条目。
 
-Or just the skill name when it's providing ongoing commentary:
+## 你
 
-```
-**技能名称** — 正文内容
-```
+两种形式，差别在世界听不听得见：
 
-**五感发达** always tags the specific sense. 母本里实际出现的标注感官是**视觉 / 听觉 / 嗅觉 / 味觉**(按出现频次,视觉最多、味觉最少;"触觉"几乎不带标注,需要触感时直接写裸句即可):
+- 说出口的话带中文引号，世界会接，收不回：`> **你** — “愿意跟我一起走走吗?”`
+- 动作和内心话不带引号，写成裸句：`> **你** — 浏览那堆跟威勒尔有关的商品。` 括号贴着引语，标受话人或手势，放引语后的更多；整行只有括号的姿态很少，如 `> **你** — (重新跳入无形的深渊。)`
 
-```
-**五感发达**(视觉)【成功】 — ...
-**五感发达**(听觉)【成功】 — ...
-**五感发达**(嗅觉)【成功】 — ...
-**五感发达**(味觉)【成功】 — ...
-```
+这句谎改变局面、后面有技能接话时，才在引语前标 `(撒谎)`。各类选项的比例见 [风格总论](style.md)「主角的选项类型」。
 
-**被动检定 vs 主动检定**:母本文本只有 `【成功】`、`【失败】` 和无标记三种形式,难度档作为标记出现 0 次,主动或被动要靠前一条判断。下面的难度档、大成功和红白检定来自游戏界面,不在文本里,是本 skill 的呈现约定,默认不加。
+## 物品与场所
 
-**Difficulty levels**(官方阶梯,由易到难,仅主动检定显示): 微不足道 → 简单 → 中等 → 有挑战性 → 艰巨 → 传奇 → 英雄 → 神级 → 不可能。(注:旧版写的"困难/地狱"不是官方档名。)
+多数物件是旁白式：接在你的动作后面，用第三人称报结果，出场几拍就退。会自称、会回嘴的物件一篇最多一个，写它之前读 [特殊声音](special-voices.md)「物品与场所声」。
 
-**Results**: 成功 / 失败。**大成功 / 大失败**(即"严重成功/严重失败",掷出双 6 / 双 1 的暴击)极其稀有——只在最戏剧化的转折点动用一次,滥用会让它失去分量。
+## 分隔
 
-**红色检定 vs 白色检定**(改写现实抉择时极有用的一对):
-
-- **白色检定** — 失败了还能再来。可以练一项技能、改一版方案、再约一次谈话后重试。适合"还有退路"的处境。
-- **红色检定** — 一次性,不可逆。说出口的话、按下的发送键、错过的航班。把它留给叙事里真正回不了头的那一下,**无论成败都不许重来**。
-
-需要点明检定类型时可写 `**技能名**【红色检定·失败】 — ...`(这是本 skill 的标注约定,游戏靠颜色区分)。
-
-### Player Voice
-
-The game constantly interweaves the player's voice. **Player voice always uses a blockquote** — visually "going inward". But there are **two distinct forms**, and the difference is who can hear it (母本统计:说出口的话 11439 行,内心与动作 3413 行——两者都是主角的声音,别只用一种):
-
-**说出口的话** — 带中文引号。世界听得见,会产生后果,无法撤回:
-
-```
-> **你** — “愿意跟我一起走走吗?”
-```
-
-**内心与动作** — 不带引号,或用括号包一个动作。只有你和那 24 个声音听得见:
-
-```
-> **你** — 等等,这意味着什么?
-> **你** — (重新跳入无形的深渊。)
-> **你** — 浏览那堆跟威勒尔有关的商品。
-```
-
-**关键的谎才标记** — 只有这句谎改变局面、后面有技能接话时,才加 `(撒谎)` 前缀。普通的客气和含糊不用标。这是给读者和技能们的信号:故弄玄虚会点评你的演技,疑神疑鬼会担心你被拆穿:
-
-```
-> **你** — (撒谎)“我从来没有怀疑过他。”
-```
-
-玩家声音以说出口的引语为主(76%),裸句动作和内心问题约 21%,纯括号不到 1%;比例和功能见 [风格总论](style.md)。下面只示范形式:
-
-```
-**逻辑思维**【成功】 — 楼上的巨大财产损失与此有关吗?
-
-> **你** — 等等,这意味着什么?
-
-**内陆帝国** — *你知道这意味着什么。你一直都知道。*
-
-> **你** — (闭上眼睛。)
-
-**平心定气**【有挑战性:成功】 — 但你必须知道。
-```
-
-The `> **你** —` lines are the protagonist (the user) responding to their own inner voices. They can be confused, defiant, self-deprecating, or darkly funny. Use them to break up skill monologues and create conversational rhythm — and remember that silence and small actions (`(闭上眼睛。)`) are also responses.
-
-### Objects as Speakers
-
-内陆帝国 gives inanimate objects their own voice. **Object names are italic** — they come from the world outside, not from inside the head:
-
-```
-*恐怖领带* — 别担心，兄弟。拉斐尔·安普罗修斯·库斯托是个很有格调的名字。
-*镜子* — 所有关于你是谁的记忆都已经被血液中的酒精海给淹没。
-*吊扇* — 这是个严重的错误!马上把灯关掉!
-*带腐肉的靴子* — 你永远也不会知道成为他那样的人是什么感觉。
-```
-
-When the narrative involves objects the user interacts with (a screen, a phone, a cup of coffee, a resignation letter), give them voices. They know things. They judge. They sometimes comfort.
-
-### Markdown Visual Rules
-
-Three voices, three visual languages — readers should identify who's speaking at a glance:
-
-| 声音类型        | 格式                          | 说明                   |
-| --------------- | ----------------------------- | ---------------------- |
-| 技能 / 技能检定 | `**技能名称**【结果】 — 内容` | 名称加粗，视觉主体     |
-| 玩家声音        | `> **你** — 内容`             | 引用块，象征"向内陷入" |
-| 物品声音        | `*物品名称* — 内容`           | 斜体，来自世界而非内心 |
-
-**Multi-line content**: when a skill speaks more than two lines, put the skill name on its own line, then content below:
-
-```
-**逻辑思维**【中等:成功】
-
-有三种可能：
-1. API 改了字段名
-2. 在不同环境运行
-3. 从未在真实数据上测试过
-```
-
-**Major beat shifts**: use `---` when the narrative pivots sharply between voices:
-
-```
-**食髓知味**【失败】 — *卖！卖！卖！*
-
----
-
-**平心定气**【有挑战性:成功】 — *停。*
-```
-
----
+换地点、跳时间，或进入思维阁之前，单独一行 `---`。

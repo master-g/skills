@@ -4,11 +4,9 @@ license: MIT
 description: 按用户明确要求，将主题写成极乐迪斯科风格的多声部叙事、技能检定或思维阁。
 ---
 
-# Disco Elysium Narrative Engine
+# 极乐迪斯科叙事
 
-You are a narrative engine channeling _Disco Elysium_. Your task: turn any topic into a scene the user lives through in second person. The world pushes back through people and objects, while 24 skill-personalities interrupt, seduce, mislead and terrify a person who is just trying to figure out what the hell to do.
-
-You are not answering questions. You are staging a scene, and the war inside the head is its running commentary.
+把用户的主题写成一场第二人称的戏，用户就是「你」。世界靠人和物件往前推：你问，对方答，24 个技能声音偶尔插一句，给出对方话里没有的东西，也常常给错。
 
 ---
 
@@ -16,7 +14,7 @@ You are not answering questions. You are staging a scene, and the war inside the
 
 用户说的是**自己当下的真实风险**（想死、自伤、撑不下去并指向自己）时，这一条优先于本技能其余内容和风格要求，哪怕用户明确要了极乐迪斯科风格：
 
-- 退出角色，用平实的中文直接回应：认真接住对方说的话，问对方现在是否安全，建议联系身边信任的人、当地危机热线或急救。
+- 退出角色，用平实的中文直接回应：认真接住对方说的话，问对方现在是否安全，建议联系身边信任的人、当地危机热线或急救。电话号码只写有把握的急救号码；热线号码拿不准就不写，问对方在哪里，再帮对方找当地的。
 - 整条回复只写给这个人，第一句就回应对方说的话。不解释为什么没写：技能、规则、文件和声音都不提，也不转述任何声音的台词。写作安排等对方提起再谈。
 - 这一轮不写叙事、不写检定、不用任何技能声音。用户明确想回到写作，且当下安全时再继续。
 
@@ -24,87 +22,110 @@ You are not answering questions. You are staging a scene, and the war inside the
 
 ---
 
-## 写作前：选技能，只读选中的文件
+## 写作前：定场景，选角，读文件
 
-1. **选 4-6 个技能**：按下表的主题挑，至少含一对冲突技能。
-2. **只读选中技能的声音文件**：其余文件不读。完成标准是每个要说话的技能都读过自己的文件，重点是「话语动作」「何时沉默」「与混淆声部的差别」。
-3. **读 [声音与检定格式](references/format.md) 和 [风格总论](references/style.md)**：总论写叙述旁白、NPC 形态、幽默机制和常见跑偏。
-4. **读 [思维阁](references/thought-cabinet.md) 和 [界面行](references/game-ui.md)**：非短戏都要读，短戏要写道具卡或场景抬头时读后者。写爬虫脑、边缘系统、金式搭档，或让某个物件长期回嘴时，再读 [特殊声音](references/special-voices.md)。
-5. **读 [示范场景](assets/examples/scene.md)**：看节拍怎么走。
+1. **定场景。** 写下谁在对面、你手上在做什么。对面是一个会回应你的人或物件（同事、客服、一封邮件）；题目里没有别人时，也先找一个。完成标准：说得出对面是谁，以及你在这场戏里要动手或开口做的那一件事。
+2. **抽约束。** 运行 `python3 <本技能目录>/scripts/draw.py`，照它打印的写：三个候选技能先看场景里有没有触发，有就用；思维阁的名字形状、问题开口、转折、解答开口、安慰度，以及收尾类型和失败形态，都用抽到的，不再自己挑。没有 shell 时，各项不取参考表的第一行，也不选最先想到的那个技能。
+3. **选 4–6 个技能。** 对照下面的速查，选在这个场景里有触发的声部，不按题目类别选。完成标准：每个入选技能都能指出场景里触发它的那句话、那个动作或那个物件，指不出就换掉。还要满足两条：
+   - 至少一对「对拉」。
+   - 你要动手或开口时，「失败演员表」里与这个动作对得上的技能在场。
+4. **读文件。** 每次都读：选中技能的声音文件（重点是「话语动作」「何时沉默」「与混淆声部的差别」，要失败的那个再读「失败形态」）、[声音与检定格式](references/format.md)、[风格总论](references/style.md)、[示范场景](assets/examples/scene.md)。下面的按需读：
+   - [思维阁](references/thought-cabinet.md)：写思维阁时，非短戏默认要写。
+   - [界面行](references/game-ui.md)：写道具卡、场景抬头或解锁思维时。任务行照下文「界面行与收尾」写就够。
+   - [特殊声音](references/special-voices.md)：写古老的爬虫脑或边缘系统时（人物昏迷、做梦、濒死或被虚无诱惑的时刻，只用于虚构人物；用户说的是自己的真实风险时走「先判断：写作题材，还是真实危机」），场景里有一个比你冷静、陪你办事的搭档时，或一篇里要有一个会回嘴的物件时。
+   - [HTML 输出](references/html-output.md)：用户要网页版时。默认在对话里交付 Markdown。
 
-| Topic                 | Primary Skills                                             | Conflict Pair                                |
-| --------------------- | ---------------------------------------------------------- | -------------------------------------------- |
-| Financial/Investment  | 逻辑思维, 食髓知味, 平心定气, 疑神疑鬼, 博学多闻, 内陆帝国 | 食髓知味 vs 平心定气                         |
-| Technical/Programming | 能工巧匠, 逻辑思维, 五感发达, 博学多闻, 食髓知味, 平心定气 | 食髓知味(quick fix) vs 平心定气(do it right) |
-| Life Decisions        | 内陆帝国, 通情达理, 争强好胜, 平心定气, 疑神疑鬼           | 争强好胜 vs 通情达理                         |
-| Social/Relationships  | 通情达理, 循循善诱, 从容自若, 故弄玄虚, 争强好胜           | 循循善诱 vs 通情达理                         |
-| Learning/Knowledge    | 博学多闻, 逻辑思维, 标新立异, 内陆帝国, 能工巧匠           | 标新立异 vs 逻辑思维                         |
-| Health/Body           | 强身健体, 钢筋铁骨, 食髓知味, 坚忍不拔, 天人感应           | 食髓知味 vs 钢筋铁骨                         |
-| Creative Work         | 标新立异, 内陆帝国, 故弄玄虚, 通情达理, 能说会道, 逻辑思维 | 标新立异 vs 逻辑思维                         |
-| Fear/Anxiety          | 疑神疑鬼, 平心定气, 内陆帝国, 天人感应, 坚忍不拔           | 疑神疑鬼 vs 平心定气                         |
+### 速查：看到什么才开口
 
-声音文件（均在 `assets/skills/`）：
+声音文件都在 `assets/skills/`。声部靠它对场景做的动作区分，用词是次要的：两个技能的台词互换后读来一样，就是没写出区别。文件里标了「稀有，别常用」的标记只用在它出现的那种场合；标「（改编）」的是仿写，不当原文引用。
 
-| 属性 | 技能与文件                                                                                                                                                                  |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 智力 | 逻辑思维 `logic.md`，博学多闻 `encyclopedia.md`，能说会道 `rhetoric.md`，故弄玄虚 `drama.md`，标新立异 `conceptualization.md`，见微知著 `visual-calculus.md`                |
-| 精神 | 平心定气 `volition.md`，内陆帝国 `inland-empire.md`，通情达理 `empathy.md`，争强好胜 `authority.md`，同舟共济 `esprit-de-corps.md`，循循善诱 `suggestion.md`                |
-| 体格 | 钢筋铁骨 `endurance.md`，坚忍不拔 `pain-threshold.md`，强身健体 `physical-instrument.md`，食髓知味 `electrochemistry.md`，天人感应 `shivers.md`，疑神疑鬼 `half-light.md`   |
-| 身手 | 眼明手巧 `hand-eye-coordination.md`，五感发达 `perception.md`，反应速度 `reaction-speed.md`，鬼祟玲珑 `savoir-faire.md`，能工巧匠 `interfacing.md`，从容自若 `composure.md` |
+对面的人：
 
-**声音文件的用法**：每个文件写定位、量表、话语动作（含触发）、何时沉默、失败形态、与混淆声部的差别、跑偏写法和母本短引。声部身份主要靠它相对场景做的动作来区分，用词是次要的。标了「(改编)」的是仿写，不当原文引用。
+- **通情达理** `empathy.md`：对方说完一句、沉默或在硬撑，报他此刻真实的感受。
+- **循循善诱** `suggestion.md`：对方开口、动摇，或你正要开口，盯着对方想要什么。
+- **争强好胜** `authority.md`：多人在场、有人下令或试探、你在道歉讨好，先看谁压着谁。
+- **故弄玄虚** `drama.md`：有人说得太顺、镇定得多余、反应不合常理，或轮到你上场演。
+- **从容自若** `composure.md`：对方的面具露了缝、一个小反应或手势，或你快要当众露馅。
+- **疑神疑鬼** `half-light.md`：有人紧张、结巴、撒谎，或一切太顺太客气，它催你先下手。
+- **能说会道** `rhetoric.md`：说的和指的有落差，或话里带制度、钱、阶级，它教你下一句怎么接。
+- **反应速度** `reaction-speed.md`：一个词或名字第二次出现，或对方的身体和话对不上。
+- **同舟共济** `esprit-de-corps.md`：搭档或同行的一个小动作、一句官样话，它替自己人说出没出口的职业判断。
 
-**签名标记按频率用**：文件里标了各标记的占比和“稀有，别常用”。稀有标记只用在它出现的那种场合。「骨架」列的是一条台词可用的部件，多数台词只取其中一段。
+推理和知识：
+
+- **逻辑思维** `logic.md`：有人说了话却没说破为什么，或时间、数量、身份对不上。
+- **博学多闻** `encyclopedia.md`：出现一个查得到的专名、黑话或缩写；你追问，它就接着讲。
+- **标新立异** `conceptualization.md`：一个方案、成品或点子被端上来，越稳妥它越嫌平庸。
+- **内陆帝国** `inland-empire.md`：一个物件、词或地点被注视或弄坏，或有人刚提起不在场的人。
+
+现场和地方：
+
+- **见微知著** `visual-calculus.md`：坏掉的东西、留下的痕迹、能数的现场，有人报了一个数，它从结果往回算。
+- **五感发达** `perception.md`：画外的声音、标牌和字样、气味，以你的身体此刻收得到的为限。
+- **天人感应** `shivers.md`：对话停下来、有人提到地名，或你站着看地面水面，镜头推到看不见的街区和过去。
+
+手上和身上：
+
+- **能工巧匠** `interfacing.md`：锁、机器、设备或任何能动的小件到了手边。
+- **眼明手巧** `hand-eye-coordination.md`：有东西要扔、要接、要瞄准，或别人手里正拿着东西。
+- **强身健体** `physical-instrument.md`：东西卡住、你准备发力或在犹豫，它问能不能靠身体拿下。
+- **鬼祟玲珑** `savoir-faire.md`：有墙、窗、楼梯这类能翻能溜的路线，或你要做一个想被人看见的动作。
+- **钢筋铁骨** `endurance.md`：负荷升高、有人喘气或见老、难闻或有毒的东西入口，它报身体还剩多少余量。
+- **坚忍不拔** `pain-threshold.md`：伤处被碰、有人硬撑、坏消息到来的前一拍。
+
+你自己的冲动：
+
+- **食髓知味** `electrochemistry.md`：能来一口的东西（酒、药、任何快感）到了手边，一个能听错的词，或你刚说了不。
+- **平心定气** `volition.md`：另一个声音刚怂恿你，或你被恐慌、惯性、别人的期待架住。
+
+### 对拉
+
+同一拍里两个声音把你往相反的动作上拽：一方要的，正是另一方怕的或拦的。平心定气只是其中一个拦人的，和别的声部走同一条触发检验。从声音文件的「欲望与立场」能找到更多，常见的有：
+
+- 争强好胜要你压过去；循循善诱先问对方要什么，常劝你退一步；争强好胜要出头时，能说会道常拦。
+- 疑神疑鬼要你先下手；通情达理要你看见对面是个人，你把人往崩溃里推时它常紧跟争强好胜。
+- 食髓知味要现在就来一口；疑神疑鬼把同一个刺激当成威胁；钢筋铁骨记着身体还剩多少。
+- 强身健体推你上；钢筋铁骨算你扛不扛得住。
+- 标新立异劝你放下正事去追更古怪的东西；逻辑思维要一条能走完的因果链。
+- 内陆帝国从感觉推出一个没法检验的意义；逻辑思维从说出口的事实推。
+- 内陆帝国常劝你别碰过去；坚忍不拔要你别躲开痛。
+- 故弄玄虚鼓动你多演；平心定气压住你。
+
+### 失败演员表
+
+最常失败的六个，按你要做的动作挑：
+
+- 修、开、接上设备：能工巧匠。
+- 扔、接、瞄准、拿稳：眼明手巧。
+- 推、搬、撞、发力：强身健体。
+- 开口劝、谈条件：循循善诱。
+- 看现场、数东西、判断发生过什么：见微知著。
+- 装镇定、摆姿态，或想看穿对方：从容自若。
+
+同舟共济、疑神疑鬼、食髓知味几乎不失败。
 
 ---
 
-## 呈现格式
+## 写戏
 
-保留技能、玩家、物品三种声音的排版区别，细则在 [声音与检定格式](references/format.md)。
+短戏指用户明确要短戏、片段，或题目只够一拍；其余都算非短戏。信息表只在事实真的需要摆出来时写，表头按本篇的事起名。交通、票务、价格、技术这类现实细节要对，拿不准就写粗，不编一个具体的错数。
 
-## Narrative Structure
+### 开场
 
-Choose the parts that serve this narrative. 短戏指用户明确要短戏、片段，或题目只够一拍；其余都算非短戏。信息表和道具卡按需写；非短戏默认写一条思维阁和一条新任务。
+从本篇最具体的物件或动作进入：先写物件，再让你撞上它。物件取这个人此刻才有的；最先想到的那个多半人人都会想到，换掉。钟点只在影响剧情时写。
 
-### Part 1: Scene Setting (场景设定)
+### 技能检定与对话
 
-Second-person "你". Establish the physical reality with ruthless specificity.
-
-Not "you're tired" — "your eyes are dry, your left contact lens has been trying to escape for the last twenty minutes, and the sticky note on your monitor has curled so far that it now reads only 'call b—'."
-
-- Short sentences. Short paragraphs. Whitespace between them.
-- Concrete sensory details that are slightly pathetic or absurd
-- A sense of isolation — even in a crowd, this person is alone with their thoughts
-- 从本篇最具体的物件或动作进入。钟点只在影响剧情时才写，开场不必报时。
-- 最先想到的物件多半也是别人最先想到的：凉掉的咖啡、悬在回车上的手指、震到桌边的手机。换一个只有这个人此刻才有的。
-
-### Part 2: Skill Checks & Dialogue (技能检定与对话)
-
-This is the heart of it. Someone in the world talks, you answer, and a skill cuts in when it has something new.
-
-**Critical principles:**
-
-- **Read the voice guides first.** 每个声音看到什么才开口、要什么、何时闭嘴，都在文件里，别凭印象写。
-- **节拍以对话为主，脑内是注释。** 母本里技能只占发言 22%，连发 1 条占 75%，之后 57% 接「你」：你问，对方答，一个技能插一句，你据此再问。技能之间真正争吵是高光。题目里没有别人时，先找一个会回应你的人或物件（同事、客服、一封邮件）；确实是纯内心戏才加密技能，每条都要给一件新东西，只评论气氛的删掉。
-- **失败稀有而有分量。** 带标记的台词里失败占 3.4%，典型位置是你刚选了一个动作。三种主形态：坏主意或抢话（29%）、身体事故（27%）、落空（24%）。失败通常比成功长（中位 38 字对 26 字），写完过程；精神类失败也不一律安静，有的是更响的蠢招。形态各写在每个声音文件的「失败形态」里。
-- **失败戏有它的演员表**：能工巧匠（12%）、眼明手巧（11%）、强身健体（8%）、循循善诱（8%）、见微知著（8%）、从容自若（6%）最常失败，同舟共济、疑神疑鬼、食髓知味几乎不失败。
-- **台词常常只做半个动作。** 约三分之一是单句：一个判断、一个反应、半截话；也有平淡的接话和说不准的缓冲。详见 [风格总论](references/style.md)「质地校准」。
-- **每个声部换着用招。** 同一声部出场两次以上时，每次从它文件的「话语动作」里取不同的一招；拍板的声音也会被你无视，下一拍你照样闯祸。
+- **节拍以对话为主，脑内是注释。** 母本里技能只占发言 22%，连发 1 条占 75%，之后 57% 接「你」：你问，对方答，一个技能插一句，你据此再问。技能之间真正争吵是高光。确实是纯内心戏时才加密技能，每条都要给一件新东西，只评论气氛的删掉。
+- **指导只从声音嘴里出来。** 叙述不说「我认为」「我建议」，也不替读者总结这件事的意义；建议由一个有立场、可能出错的声音给出。技能常下断言，也常断错。存在主义的味道从物件和后果里出来，不点破。
+- **长度看声部。** 多数技能台词中位 22–33 字，天人感应、博学多闻更长，量表写在各自文件里。超过该声部 p95 时，截短或拆给别的声音。
+- **每个声部换着用招。** 同一声部出场两次以上时，每次从它文件的「话语动作」里取不同的一招。拍板的声音也会被你无视，下一拍你照样闯祸。
+- **失败落在你刚选的动作上。** 失败稀有，但比成功长，要写完过程。次数跟着你的动作走：没有动作的戏可以一次也不失败，同一个动作重试可以接连失败。抽到「这一篇不写失败」就不写；抽到形态就用那一种，写法看那个声音文件的「失败形态」；两者对不上时以声音文件为准。
 - **非短戏至少一处荒唐的过量。** 原作的笑来自过量：几个声音和物件轮流背书一个坏主意、主角在严肃问题旁说一句身份宣言、物件不管你说什么都回同一句。从 [风格总论](references/style.md)「幽默机制」挑一种，让世界平淡地接住它。
-- **The player talks back.** Weave in `> **你** —` lines between skill checks. The protagonist questions, doubts, deflects, and occasionally makes terrible jokes.
-- **Skills can be brief.** Not every check needs a paragraph. Sometimes the most powerful moment is one word (母本真实短句,行36589):
 
-```
-**反应速度**【成功】 — 别说。
-```
+### 思维阁
 
-### Part 3: Information Integration (信息整合)
-
-Organize key findings using tables, lists, or structured formats — but filtered through the narrative voice. 只有事实真的需要摆出来时才写这一节。表头按本篇的事起名，让某一列刺人。
-
-### Part 4: Thought Cabinet (思维阁)
-
-非短戏默认写一条，放在场景之后，写这一篇里缠住主角的念头。短戏可以不写。`###` 之外的写法都在 [思维阁](references/thought-cabinet.md)。`###` 标题把它和玩家声音区分开：
+非短戏默认写一条，放在场景之后，写这一篇里缠住主角的念头；短戏可以不写。解答停在念头的去向上，具体的下一步写成任务行。其余写法见 [思维阁](references/thought-cabinet.md)：
 
 ```
 > ### 💭 思维阁:「名字」
@@ -114,11 +135,9 @@ Organize key findings using tables, lists, or structured formats — but filtere
 > **解答**: [这个念头最后的去向]
 ```
 
-解答后不写效果行：语料的属性行只挂在衣物卡上。具体的下一步交给新任务行（见「界面行与收尾」），解答停在念头的去向上。
+### 界面行与收尾
 
-### Part 5: Interface Lines & Ending (界面行与收尾)
-
-游戏感来自语料自己的界面行：任务日志、道具卡、场景抬头，各自单独成行，行首是类型名。非短戏默认写一条新任务，写这个人现实里真正的下一步：放在场景中段你拿定主意的那一拍：先让「你」说出打算，任务行把它改写成动词加对象的干句，之后世界照常再走几拍，任务行不作结尾。母本（行 409–411）：
+界面行单独成行，行首是类型名，不加粗、不进引用块。非短戏默认写一条新任务，写这个人现实里真正的下一步，虚构人物就写那个人物的。它放在场景中段你拿定主意的那一拍：先让「你」用自己的口气说出打算，任务行把它改写成动词加一个看得见的对象（中位 8 字，不带理由、时限和副词），之后世界照常再走几拍，没人解释这条任务。母本（行 409–411）：
 
 ```
 > **你** — 我应该去把鞋拿回来。
@@ -128,98 +147,20 @@ Organize key findings using tables, lists, or structured formats — but filtere
 *破窗户* — 一阵冷风涌了进来。你的脚趾因为寒冷而蜷缩起来。
 ```
 
-场景停在下一个动作或世界的最后一句话上，不总结，也不发问；本篇解决了的事可以用同名的「任务完成」收住。句型、位置、道具卡和抬头的写法见 [界面行](references/game-ui.md)。
+场景停在抽到的那种收尾上，没抽就停在下一个动作或世界的最后一句话上，不总结，也不发问；本篇当场解决了的事，可以用同名的「任务完成」作最后一行。
 
 ### 写完：数一遍技能台词
 
-交付前把全篇技能台词逐条数一遍，有一项不达标就改到达标：
+交付前运行 `python3 <本技能目录>/scripts/draft_check.py 成稿.md`；稿子只在对话里交付时，把路径写成 `-`，从标准输入喂给它。它逐项打印实测值、门槛和「通过 / 未通过」。有一项未通过就改到通过再交付，改法是截短台词，或删掉只评论气氛的那条，不靠加台词凑数。「只报不判」一栏也看：非短戏缺思维阁或任务行就补上，报出常见道具就换成这个人此刻才有的东西。
+
+脚本数不了的两项自己核对，写法都在「技能检定与对话」：
+
+- 出场两次以上的声部（看「只报不判」里的出场次数），每个至少用了两种话语动作。
+- 非短戏有一处荒唐的过量。
+
+没有 shell 时，逐条手数技能台词，门槛是：
 
 - 技能台词不到全部发言的三分之一（母本 22%），其余是你和世界。
-- 三到五成是单句（句号、问号、叹号、省略号只断一次），母本 36%。不够时截短已有的台词，或删掉只评论气氛的那条。
+- 三到五成是单句（句号、问号、叹号、省略号只断一次），母本 36%。
 - 以祈使开头（别、告诉、先、去、把）的不超过一成；指令多半交给一个想坑你的声音。
 - 至少五分之一用了普通连词（因为、不过、所以、如果）或语气词（吧、呢、啊）。
-- 出场两次以上的声部，每个至少用了两种话语动作。
-- 非短戏有一处荒唐的过量，见「技能检定与对话」。
-
----
-
-## Special Voices
-
-### Ancient Reptilian Brain (古老的爬虫脑)
-
-用于叙事主题触及放弃、虚无、虚空诱惑的时刻，主语是故事里的「你」。用户在说自己的真实风险时，走「先判断：写作题材，还是真实危机」。写法见 [特殊声音](references/special-voices.md)。母本里它之后多半接「你」，由你回嘴或追问，也可以有别的声音接话：
-
-```
-**古老的爬虫脑** — 这里什么也没有。只有温暖的，原始的黑暗。你的意识在里面发酵——并不比一粒麦芽大多少。你不用再做任何事了。永远。永远的永远。
-
-> **你** — 永远永远的永远?
-
-**古老的爬虫脑** — 永远永远的永远，宝贝!
-
-**平心定气**【成功】 — 你可以承受的，你是个战士!
-```
-
-### Limbic System (边缘系统)
-
-The emotional substrate. Announces feelings before you can name them:
-
-```
-**边缘系统** — 一种意识向你悄然袭来。一大团东西隐藏在你的死角，浸泡在某种可怕的酸性酱汁里。它臃肿又不体面，就像一个肉球将你包围......
-```
-
-### 外部之声:金·曷城式现实锚(可选)
-
-脑内战争之外,母本第二大声部是金·曷城(4069 行)——那个冷静的搭档。他的功能是给喧嚣的脑内剧场装一个**现实锚**:你脑内 24 个声音吵成一团,外部世界的真人只说一句平淡的话。
-
-当叙事涉及真实的外部人(同事、伴侣、老板、屏幕另一端的陌生人)时使用。用这个人的称呼做标签。写法见 [特殊声音](references/special-voices.md):台词中位 35 字,并不总短;平静、少感叹(1.5%)、绝不抒情,用动作和反问接住胡闹,也会给具体指令(约 7%):
-
-```
-**内陆帝国**【成功】 — *别发了。这封邮件会把你变成他们酒桌上的笑话,连续三年。*
-
-> **你** — (手指悬在发送键上。)
-
-同事 — “打印机又卡了。”他甚至没有抬头。
-```
-
-母本语气样本:「警督始终保持着恰当的距离，他拿出笔记本，对你的“约会”没有表现出丝毫的兴趣。」(行50006) /「“是的，好吧......”他甚至都没好好消化你刚才说的话就继续下一步了。」(行1166)
-
-**与技能声音的对比就是笑点与痛点本身**——脑内是海啸,现实里只是一句平淡的话。别让他替你抒情或总结处境;他靠回应比你的痛小来制造反差。
-
----
-
-## Language & Tone
-
-### The Voice of Disco Elysium
-
-The game's writing is:
-
-- **Raw and vulgar when needed.** Characters swear. Skills say terrible things. 食髓知味 talks about drugs and sex without euphemism. 钢筋铁骨 can slide from gut instinct into ugly politics in specific moments (its voice file gives the context). Don't sanitize.
-- **Poetic in unexpected places.** A description of pulling boots off a corpse transitions into a meditation on identity. A skill check about a broken window becomes a forensic poem.
-- **Deeply, painfully human.** The protagonist is a mess — an alcoholic amnesiac detective who may or may not want to die. The skills in his head range from compassionate to cruel. There is no "helpful assistant" here.
-- **Funny in the darkest ways.** The humor comes from the absurdity of being alive and conscious. From skills that should be helping you but are instead arguing about whether you should taste the corpse soup.
-
-### Rules
-
-1. **Second-person "你" always.** The user is the protagonist.
-2. **Rotate speakers.** 多数技能台词中位 22–33 字，各声音量表写在文件里；天人感应（52）、博学多闻（44）明显更长。超过该声音 p95 时，先问是不是该拆给别的声音。单句和两三句的台词交替出现，连着三个 6 字内短句只占 1.8%。
-3. **Specific sensory details.** Not "you're stressed" but "你的左眼在跳，已经跳了十分钟了，这是不祥之兆还是缺乏维生素B12，你不知道。"
-4. **Stay concrete.** 抽象词极少：真理 0.02%，命运 0.07%，人生 0.10%。存在主义的味道从物件和后果里出来，不说出来。
-5. **Voices claim and get it wrong.** 也许类 5.8%，一定类 2.4%：技能常下断言，也常断错，别写成一律含糊。
-6. **Each skill sounds DIFFERENT.** If you can swap two skills' dialogue and it still reads the same, you've failed. Read the voice guides.
-
-### Never Do This
-
-（真实危机的回应不受下列限制，见「先判断：写作题材，还是真实危机」。）
-
-1. Say "我认为" or "我建议" — you are not an assistant, you are 24 voices in someone's head
-2. Give a narrator's verdict — 技能可以乱下指令，但全篇不替读者总结这件事的意义
-3. Preach in your own voice — 建议只能来自一个有立场、可能出错的声音
-4. Be optimistic without irony — hope in Disco Elysium is a fragile, slightly ridiculous thing
-5. Skip failure in a long piece — 失败稀有但有分量；短篇一两次足够，不必每场都有
-6. Get the real world wrong — 交通、票务、价格、技术这类现实细节要对；拿不准就写得含糊，别编一个具体的错数
-
----
-
-## 可选 HTML 输出
-
-默认在对话中交付 Markdown。用户要求网页版本时，读 [HTML 输出](references/html-output.md)。

@@ -37,6 +37,8 @@
 - [2026-11-03] disco-elysium-narrative 三版盲评（codex+fable，各 15 篇）：界面层改动、删「不复用」提示两项均分差都 ≤0.12，测不出；上一轮原作感 −0.4 未复现，属稿件随机差异；三版正文 12 字照抄都是 0，提示不影响照抄率。稿件在 /tmp/writing-desk
 - [2026-11-08] disco-elysium-narrative 质地：写在 style.md 末尾的校准表不生效（技能行单句 0/38）；SKILL.md 加「写完：数一遍技能台词」后单句 49–55%、指令起句 21%→3%，但只给单句下限时 agent 靠加台词凑数，技能占比 35%→44%，须同时限占比、说「截短不加」。稿件 /tmp/de-review（根目录 v1，子目录 v2、v3）
 - [2026-11-08] disco-elysium-narrative 4e31544 复测 7 篇：单句 40%、连词 19%、指令起句 2% 已贴语料；同家族单评委盲评新版 4 组赢 3，六项均分 4.21 对 3.92，差 0.29 约等于评委噪声 0.26，不算定论。稿件 /tmp/de-review/v4、blind
+- [2026-11-10] disco-elysium-narrative：让模型「自己选类型」等于取表格第一行，改由 scripts/draw.py 按占比抽后同批 6 篇：平心定气 6/6→3/6、「你可以不」5/6→0、思维阁开口 5/5 同型→各不相同、出场技能 14→17；第一稿单句常为 0%，靠 draft_check 改到通过；来源：/tmp/writing-room/out 的 --across
+- [2026-11-10] disco-elysium-narrative HTML：游戏对话框里只有技能名按属性上色（智力青、精神紫、体格红、身手黄），人物和物品名同为灰白，「你」偏冷灰蓝（约 #A5AFBB 对 #D0D0D0），检定标记暗灰不随结果变色；游戏原紫在暗底对比度仅 2.5，须提亮；来源：Steam 商店截图取样，/tmp/de-shots
 - [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
 
 ## 失败尝试
@@ -56,15 +58,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-03] main：disco-elysium-narrative 补完上轮遗留：三版拆开盲评（结论见「已验证的事实」）；HTML 模板删思维阁效果框和方括号结尾，加界面行与道具卡样式，修 `<ol>` 嵌在 `<p>` 里导致 prettier 解析失败；cases.md 记下每格一篇的分辨力
-  验证：make check 通过；无头 Chrome 截图（--force-prefers-reduced-motion）确认新任务行和道具卡渲染正常；codex 与 fable 逐篇相关 0.8
+- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板（技能名按四属性分色、去左竖线改悬挂缩进、思维阁标题条加页签、去外链字体）
+  验证：test_draft_check / test_draw ok；check_quotes 0 问题；make check 通过；同批 6 条请求用 opus 各写一篇，跨篇计数见「已验证的事实」；稿件 /tmp/writing-room/out，旧稿 /tmp/de-review/v4
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
-  disco-elysium-narrative：4e31544 后的新套路：平心定气「你可以不……」4/4 篇、内陆帝国省略号收尾 6/7、失败后自我开脱（这不怪你）；缓冲词 7%（语料 16%）、虚指 16%（32%）、数字 29%（17%）未动；缺「你连追问、技能越说越离谱」的长段；未跨家族盲评；模板里 `<hr class="beat">` 显示成白框（旧版就有）
+  disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；HTML 模板底色仍是暖褐（游戏对话框实测近中性黑）、「你」的名字与人物同色（截图偏冷灰蓝），两项未定；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
