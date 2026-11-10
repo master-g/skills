@@ -58,7 +58,7 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板（技能名按四属性分色、去左竖线改悬挂缩进、思维阁标题条加页签、去外链字体）
+- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板（技能名按四属性分色、去左竖线改悬挂缩进、思维阁标题条加页签、去外链字体，底色改中性近黑、「你」改冷灰蓝）
   验证：test_draft_check / test_draw ok；check_quotes 0 问题；make check 通过；同批 6 条请求用 opus 各写一篇，跨篇计数见「已验证的事实」；稿件 /tmp/writing-room/out，旧稿 /tmp/de-review/v4
 
 ## 下次运行
@@ -66,7 +66,7 @@
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
-  disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；HTML 模板底色仍是暖褐（游戏对话框实测近中性黑）、「你」的名字与人物同色（截图偏冷灰蓝），两项未定；缓冲词、虚指、数字三项偏差未动
+  disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
   show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选

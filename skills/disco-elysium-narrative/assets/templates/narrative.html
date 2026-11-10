@@ -15,22 +15,23 @@
 -->
     <style>
       :root {
-        --bg-top: #1a150f;
-        --bg-edge: #0a0806;
-        --ink: #b6aa93;
-        --ink-bright: #cfc2a8;
-        --ink-dim: #8f8773;
-        --name: #dedad2;
-        --ck: #8a867c;
+        --bg-top: #161616;
+        --bg-edge: #080808;
+        --ink: #b3b4aa;
+        --ink-bright: #d0d1c6;
+        --ink-dim: #8a8b84;
+        --name: #dcdcd8;
+        --you: #a9b4c0;
+        --ck: #86867f;
         --int: #5dbfcd;
         --psy: #9a86e0;
         --fys: #db5f84;
         --mot: #d9b84a;
         --reptile: #c2705a;
         --gold: #b08d4f;
-        --rule: rgba(184, 168, 140, 0.15);
-        --bar: #e4e1da;
-        --bar-ink: #141210;
+        --rule: rgba(176, 176, 168, 0.16);
+        --bar: #e4e4de;
+        --bar-ink: #121212;
         --serif:
           "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong",
           Georgia, serif;
@@ -50,7 +51,7 @@
         background: radial-gradient(
             120% 90% at 50% 0%,
             var(--bg-top) 0%,
-            #110d09 45%,
+            #0f0f0f 45%,
             var(--bg-edge) 100%
           )
           fixed;
@@ -104,7 +105,7 @@
         line-height: 1.12;
         margin: 0 0 18px;
         font-weight: 700;
-        color: #e7dcc4;
+        color: #e8e9dd;
         letter-spacing: 0.02em;
       }
       .dek {
@@ -148,7 +149,7 @@
       }
       .scene.lead {
         font-size: 19px;
-        color: #d6c9ae;
+        color: #d6d7cc;
       }
       /* ---------- voices：名字 — 正文，悬挂缩进 ---------- */
       .s,
@@ -169,6 +170,9 @@
       .who,
       .on {
         color: var(--name);
+      }
+      .you .who {
+        color: var(--you);
       }
       .on {
         font-style: italic;
@@ -194,7 +198,7 @@
       }
       em {
         font-style: italic;
-        color: #d6c8a8;
+        color: #d6d7cc;
       }
       /* 官方 / 物证引文 */
       .doc-quote {
