@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""把一篇 Markdown 成稿渲染成终端彩色输出（只用标准库）。用法：render_tui.py <成稿.md|-> [--width N] [--no-color]
+"""把一篇 Markdown 成稿渲染成终端彩色输出（只用标准库）。用法：render_tui.py <成稿.md|-> [--width N] [--light] [--no-color]
 
 技能名按属性上色，检定标记暗灰，续行悬挂缩进，思维阁是反白标题条加页签。
-正文用终端默认色，所以深浅主题都能读；设了 NO_COLOR 或加 --no-color 时只排版不上色。
+正文用终端默认色。颜色按深色终端调；浅色终端加 --light 换一套压暗的同色相颜色。设了 NO_COLOR 或加 --no-color 时只排版不上色。
 """
 import argparse, os, re, sys, unicodedata
 from pathlib import Path
@@ -20,13 +20,18 @@ HEX = {
     'int': '5dbfcd', 'psy': '9a86e0', 'fys': 'db5f84', 'mot': 'd9b84a', 'reptile': 'c2705a',
     'you': 'a9b4c0', 'ck': '86867f', 'gold': 'b08d4f', 'bar': 'e4e4de', 'bar-ink': '121212',
 }
+# 浅色终端用：同色相压暗到在米白底 #f5f5f0 上对比度不低于 4.5，标题条改成深底浅字。
+LIGHT = {
+    'int': '297984', 'psy': '7559d5', 'fys': 'cc2e5d', 'mot': '836b1b', 'reptile': 'aa563f',
+    'you': '5f7082', 'ck': '6f6f69', 'gold': '846a3b', 'bar': '1c1c1c', 'bar-ink': 'f0f0ea',
+}
 LEGEND = (('int', '智力'), ('psy', '精神'), ('fys', '体格'), ('mot', '身手'))
 HANG = 3
 NO_LINE_START = set('，。！？；：、）】》」』”’…—·,.!?;:)')
 
 
-def rgb(key):
-    return ';'.join(str(int(HEX[key][i:i + 2], 16)) for i in (0, 2, 4))
+def rgb(key, table=HEX):
+    return ';'.join(str(int(table[key][i:i + 2], 16)) for i in (0, 2, 4))
 
 
 def fg(key):
@@ -135,8 +140,8 @@ def blocks(md, cols):
             yield speech(m[1] + (m[2] or ''), ';'.join(x for x in (BOLD, color) if x), m[3], m[4], cols)
         elif m := re.match(r'^>\s*\*\*你\*\*\s*—\s*(.+)', ln):
             yield speech('你', f'{BOLD};{fg("you")}', None, m[1], cols)
-        elif m := re.match(r'^\*([^*]+)\*\s*—\s*(.+)', ln):
-            yield speech(m[1], f'{BOLD};{ITALIC}', None, m[2], cols)
+        elif m := re.match(r'^([*_])([^*_]+)\1\s*—\s*(.+)', ln):
+            yield speech(m[2], f'{BOLD};{ITALIC}', None, m[3], cols)
         elif m := re.match(r'^([^\s—*>|#]{1,12})\s+—\s*(.+)', ln):
             yield speech(m[1], BOLD, None, m[2], cols)
         else:
@@ -147,22 +152,27 @@ def paint(line, color):
     return ''.join(f'\x1b[{style}m{text}\x1b[0m' if color and style else text for text, style in line).rstrip()
 
 
-def render(md, cols=72, color=True):
+def render(md, cols=72, color=True, light=False):
     out = []
     for block in blocks(md, cols):
         out += [paint(line, color) for line in block] + ['']
     legend = [('技能名按属性着色  ', DIM)] + [(label + '  ', f'{BOLD};{fg(a)}') for a, label in LEGEND]
-    return '\n'.join(out + [paint([('─' * cols, DIM)], color), paint(legend, color)])
+    text = '\n'.join(out + [paint([('─' * cols, DIM)], color), paint(legend, color)])
+    if light:
+        swap = {rgb(k): rgb(k, LIGHT) for k in HEX}
+        text = re.sub(r'(?<=[34]8;2;)\d+;\d+;\d+', lambda m: swap[m[0]], text)
+    return text
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='把 Markdown 成稿渲染成终端彩色输出')
     ap.add_argument('draft', help='成稿路径；写 - 从标准输入读')
     ap.add_argument('--width', type=int, default=72, help='正文宽度，按终端格数算，默认 72')
+    ap.add_argument('--light', action='store_true', help='浅色终端用的颜色')
     ap.add_argument('--no-color', action='store_true', help='只排版，不输出颜色')
     a = ap.parse_args(argv)
     md = sys.stdin.read() if a.draft == '-' else Path(a.draft).read_text()
-    print(render(md, a.width, not (a.no_color or os.environ.get('NO_COLOR'))))
+    print(render(md, a.width, not (a.no_color or os.environ.get('NO_COLOR')), a.light))
 
 
 if __name__ == '__main__':

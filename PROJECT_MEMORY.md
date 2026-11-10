@@ -38,6 +38,7 @@
 - [2026-11-08] disco-elysium-narrative 质地：写在 style.md 末尾的校准表不生效（技能行单句 0/38）；SKILL.md 加「写完：数一遍技能台词」后单句 49–55%、指令起句 21%→3%，但只给单句下限时 agent 靠加台词凑数，技能占比 35%→44%，须同时限占比、说「截短不加」。稿件 /tmp/de-review（根目录 v1，子目录 v2、v3）
 - [2026-11-08] disco-elysium-narrative 4e31544 复测 7 篇：单句 40%、连词 19%、指令起句 2% 已贴语料；同家族单评委盲评新版 4 组赢 3，六项均分 4.21 对 3.92，差 0.29 约等于评委噪声 0.26，不算定论。稿件 /tmp/de-review/v4、blind
 - [2026-11-10] disco-elysium-narrative：让模型「自己选类型」等于取表格第一行，改由 scripts/draw.py 按占比抽后同批 6 篇：平心定气 6/6→3/6、「你可以不」5/6→0、思维阁开口 5/5 同型→各不相同、出场技能 14→17；第一稿单句常为 0%，靠 draft_check 改到通过；来源：/tmp/writing-room/out 的 --across
+- [2026-11-10] disco-elysium-narrative：Markdown 人物名不加粗、HTML 和终端加粗，思维阁标题条不带「」和 💭，是用户确认保留的介质差异，不要对齐；终端色板在白底对比度 1.9–3.7（实算），所以有 `--light`，环境变量里没有可判断主题的线索
 - [2026-11-10] disco-elysium-narrative HTML：游戏对话框里只有技能名按属性上色（智力青、精神紫、体格红、身手黄），人物和物品名同为灰白，「你」偏冷灰蓝（约 #A5AFBB 对 #D0D0D0），检定标记暗灰不随结果变色；游戏原紫在暗底对比度仅 2.5，须提亮；来源：Steam 商店截图取样，/tmp/de-shots
 - [2026-11-10] Claude Code 界面：回复正文只有粗体、斜体、行内代码淡紫和代码块高亮色，凑不出四种属性色；Bash 工具输出保留 ANSI 真彩色、粗体、斜体且整段显示，所以终端彩色版走 scripts/render_tui.py；来源：herdr 读相邻窗格的 ANSI 输出
 - [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
@@ -59,8 +60,8 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板（技能名按四属性分色、去左竖线改悬挂缩进、思维阁标题条加页签、去外链字体，底色改中性近黑、「你」改冷灰蓝）；加 scripts/render_tui.py 和 SKILL.md「终端彩色版」
-  验证：test_draft_check / test_draw ok；check_quotes 0 问题；make check 通过；同批 6 条请求用 opus 各写一篇，跨篇计数见「已验证的事实」；稿件 /tmp/writing-room/out，旧稿 /tmp/de-review/v4
+- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板；加 scripts/render_tui.py 和 SKILL.md「终端彩色版」，后改为 Claude Code 里默认出、子 agent 只交回路径由主会话渲染，加 `--light`；这几处文档改动未提交
+  验证：test_draft_check / test_draw ok；test_render_tui ok；check_quotes 0 问题；make check 通过；同批 6 条请求用 opus 各写一篇，跨篇计数见「已验证的事实」；稿件 /tmp/writing-room/out，旧稿 /tmp/de-review/v4
 
 ## 下次运行
 
