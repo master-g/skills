@@ -29,7 +29,7 @@ worker 只做一件事：按 brief 实施并写报告。
 按第一条成立的选定后端，读对应文件，后续每一步的动作都用它给出的工具和命令：
 
 1. 用户明确要求在 pane 里看 worker 实时运行、随时插手 → [CLI 后端](references/cli-worker.md)。
-2. 会话有原生子代理工具 → 原生后端。Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
+2. 会话有原生子代理工具 → 原生后端。OpenCode（`subagent` 工具）读 [OpenCode 原生 worker 用例](references/opencode-worker.md)；Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
 3. 没有原生子代理工具 → [CLI 后端](references/cli-worker.md)。
 
 完成标准：环境、后端、四个动作各用什么工具或命令都已确定。「启动」或「完成信号」找不到就报告缺什么（工具 / CLI / 配置），停止。「修正」找不到时，返工改为把修正内容追加进 brief、重新启动一个 worker。
