@@ -1,0 +1,184 @@
+diff --git a/skills/show-me-html/assets/show-me.css b/skills/show-me-html/assets/show-me.css
+index fb88bd5..37adea8 100644
+--- a/skills/show-me-html/assets/show-me.css
++++ b/skills/show-me-html/assets/show-me.css
+@@ -1624,6 +1624,18 @@ math.tml-display {
+   stroke: color-mix(in srgb, var(--color-foreground) 15%, transparent);
+   stroke-width: 0.8px;
+ }
++/* 可点的节点：页面脚本给节点加 role="button"（interactions.md「可点击的 Mermaid 节点」），选中态用 aria-pressed */
++.pele .pele-node[role="button"] {
++  cursor: pointer;
++  outline: none;
++}
++.pele .pele-node[role="button"]:is(:hover, :focus-visible) > :first-child {
++  stroke: var(--color-ring);
++}
++.pele .pele-node[aria-pressed="true"] > :first-child {
++  stroke: var(--color-ring);
++  stroke-width: 2.5px;
++}
+ .fig-replay {
+   opacity: 0;
+   transition: opacity 140ms var(--ease-expo);
+diff --git a/skills/show-me-html/references/interactions.md b/skills/show-me-html/references/interactions.md
+index 264177c..264a1b6 100644
+--- a/skills/show-me-html/references/interactions.md
++++ b/skills/show-me-html/references/interactions.md
+@@ -817,8 +817,12 @@ JS 数字动效使用上面 odometer 代码里的 `EASE`，它与 `--ease-expo`
+ 
+ ## 可点击的 SVG 节点
+ 
++手写 SVG 的图按这一节写；Mermaid 源码编译出来的图见下一节「可点击的 Mermaid 节点」。
++
+ ```html
+-<svg viewBox="0 0 720 220" role="img" aria-label="请求处理流程">
++<svg viewBox="0 0 720 220" role="img" aria-labelledby="flow-title flow-desc">
++  <title id="flow-title">请求处理流程</title>
++  <desc id="flow-desc">请求先到 ingress，再转给后端服务。</desc>
+   <g
+     class="node"
+     tabindex="0"
+@@ -885,6 +889,74 @@ document.querySelectorAll("svg .node").forEach((g) => {
+ });
+ ```
+ 
++## 可点击的 Mermaid 节点
++
++Mermaid 图（`diagrams.md`「Mermaid 图」）的 SVG 每次构建都重新生成，按钮属性写不进源码，由页面脚本在加载时补上。
++编译出的每个节点是 `g.pele-node`，`data-id` 就是源码里的节点 id（`A[提交 PR]` 的 `A`）。详情表用节点 id 作键：
++
++```html
++<div class="diagram-layout">
++  <div class="diagram-canvas">
++    <pre class="mermaid">
++flowchart LR
++  accTitle: 请求处理流程
++  accDescr: 请求先到 ingress，再转给后端服务。
++  ingress[ingress] --> svc[后端服务]
++</pre>
++  </div>
++  <aside
++    class="node-detail"
++    id="node-detail"
++    aria-live="polite"
++    data-md-skip
++  ></aside>
++</div>
++```
++
++`.diagram-layout`、`.diagram-canvas`、`.node-detail` 是 `flowchart` 配方的版式类（图在左、详情栏在右并随滚动停靠，窄屏时详情栏排到图后）；
++别的配方里把图放进普通的 `figure.fig > .fig-box`，详情栏跟在 figure 后面，脚本不变。
++
++```js
++const DETAIL = {
++  ingress: { title: "ingress", body: "TLS 终止与路由。" },
++  // …键是 Mermaid 源码里的节点 id；没有详情的节点不写，保持不可点
++};
++const nodes = document.querySelectorAll(".pele-node[data-id]");
++const pick = (id) => {
++  nodes.forEach(
++    (n) =>
++      n.hasAttribute("role") &&
++      n.setAttribute("aria-pressed", String(n.dataset.id === id))
++  );
++  const title = document.createElement("h3");
++  const body = document.createElement("p");
++  title.textContent = DETAIL[id].title;
++  body.textContent = DETAIL[id].body;
++  document.getElementById("node-detail").replaceChildren(title, body);
++};
++nodes.forEach((g) => {
++  const value = DETAIL[g.dataset.id];
++  if (!value) return;
++  g.closest("svg").setAttribute("role", "group");
++  g.setAttribute("role", "button");
++  g.setAttribute("tabindex", "0");
++  g.setAttribute("aria-label", value.title);
++  g.setAttribute("aria-pressed", "false");
++  g.addEventListener("click", () => pick(g.dataset.id));
++  g.addEventListener("keydown", (e) => {
++    if (e.key === "Enter" || e.key === " ") {
++      e.preventDefault();
++      pick(g.dataset.id);
++    }
++  });
++});
++```
++
++- 悬停、聚焦和选中的样式 `show-me.css` 已经给了（认 `role="button"` 和 `aria-pressed`），页面不用再写。
++- 横向图有宽窄两版，同一个节点在两版里各有一个 `g`。上面的写法按 id 选中，两版一起标记，切换视口后选中态还在。
++- 含按钮的图把 `<svg>` 的 `role` 从 `img` 改成 `group`：`img` 的子元素对读屏器不可见，按钮会读不到。
++- 一页有多幅 Mermaid 图、节点 id 又重名时，把选择器收窄到那一幅图的容器（给 `figure` 一个 id）。
++
+ ## 筛选 / 搜索
+ 
+ ```js
+diff --git a/skills/show-me-html/tests/test_build.py b/skills/show-me-html/tests/test_build.py
+index 02fae1b..c6cd252 100644
+--- a/skills/show-me-html/tests/test_build.py
++++ b/skills/show-me-html/tests/test_build.py
+@@ -962,6 +962,63 @@ class BuildCliTests(unittest.TestCase):
+         self.assertEqual(md.count("任何一步不过都回到修复。"), 2, md)  # 一次是 desc 导出的段落，一次在源码的 accDescr 行
+         self.assertIn("错误率 < 1%?", md)
+ 
++    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
++    def test_mermaid_nodes_become_buttons_in_both_variants(self):
++        """interactions.md「可点击的 Mermaid 节点」的脚本：有详情的节点变成按钮，点一个，宽窄两版同时标成选中，详情栏换内容。"""
++        page = self.copy_fixture("mermaid-flow.html")
++        script = """<aside id="node-detail" aria-live="polite" data-md-skip></aside>
++<script>
++const DETAIL = { A: { title: "提交 PR", body: "作者侧先验证。" }, F: { title: "灰度 5%", body: "观察 30 分钟。" } };
++const nodes = document.querySelectorAll(".pele-node[data-id]");
++const pick = (id) => {
++  nodes.forEach((n) => n.hasAttribute("role") && n.setAttribute("aria-pressed", String(n.dataset.id === id)));
++  const detail = document.getElementById("node-detail");
++  const title = document.createElement("h3");
++  const body = document.createElement("p");
++  title.textContent = DETAIL[id].title;
++  body.textContent = DETAIL[id].body;
++  detail.replaceChildren(title, body);
++};
++nodes.forEach((g) => {
++  const value = DETAIL[g.dataset.id];
++  if (!value) return;
++  g.closest("svg").setAttribute("role", "group");
++  g.setAttribute("role", "button");
++  g.setAttribute("tabindex", "0");
++  g.setAttribute("aria-label", value.title);
++  g.setAttribute("aria-pressed", "false");
++  g.addEventListener("click", () => pick(g.dataset.id));
++  g.addEventListener("keydown", (e) => {
++    if (e.key === "Enter" || e.key === " ") {
++      e.preventDefault();
++      pick(g.dataset.id);
++    }
++  });
++});
++</script>
++"""
++        page.write_text(page.read_text(encoding="utf-8").replace("<!--SHOW-ME:JS-->", script + "<!--SHOW-ME:JS-->"), encoding="utf-8")
++        result = run_build(page)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++
++        run_jobs = runpy.run_path(str(BUILD))["run_jobs"]
++        probe = """(function(){
++          var q = function(s){ return document.querySelectorAll(s).length; };
++          var before = [q('.pele-node[role="button"]'), q('svg.pele[role="group"]'), q('svg.pele[role="img"]')];
++          document.querySelector('.diagram-wide .pele-node[data-id="F"]').dispatchEvent(new MouseEvent('click', {bubbles: true}));
++          var shown = getComputedStyle(document.querySelector('.diagram-wide .pele-node[data-id="F"] > :first-child'));
++          return JSON.stringify({before: before, pressed: q('.pele-node[aria-pressed="true"]'),
++            ids: Array.from(document.querySelectorAll('.pele-node[aria-pressed="true"]')).map(function(n){ return n.dataset.id; }).join(''),
++            detail: document.getElementById('node-detail').textContent, cursor: shown.cursor, width: shown.strokeWidth});
++        })()"""
++        results, err = run_jobs([{"url": page.as_uri(), "width": 1280, "eval": probe}])
++        self.assertIsNotNone(results, err)
++        got = json.loads(results[0]["value"])
++        self.assertEqual(got["before"], [4, 2, 1])  # A、F 各在宽窄两版里；时序图没有可点节点，保持 role="img"
++        self.assertEqual((got["pressed"], got["ids"]), (2, "FF"))
++        self.assertEqual(got["detail"], "灰度 5%观察 30 分钟。")
++        self.assertEqual((got["cursor"], got["width"]), ("pointer", "2.5px"))
++
+     def test_uncompiled_latex_is_an_error_in_check_only(self):
+         page = self.copy_fixture()
+         page.write_text(page.read_text(encoding="utf-8").replace("<h1>", "<p>$x^2$</p><h1>", 1), encoding="utf-8")

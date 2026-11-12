@@ -553,3 +553,65 @@ advisor 在 `90fb8af` 上按计划 Step 1–2 做样张（临时目录，不进�
 - **charts.md 顶部加「编号 → gallery 文件 → 块名」速查表**（调研建议 11）：读文档只占那次会话 2.6 分钟，「数据形状 → 候选」「运行时与查代码」两节已经承担这个作用。
 - **`PROBE` 改为直接返回 JSON**：要同时改 017–019、023 的全部解析代码，收益只是代码整洁，以后单独做。
 - **800 宽通栏数据图在窄屏过小**（调研第 7 条的「配套」）：与上一节「未规划」里的「窄屏上的通栏图」是同一件事，不重复登记。
+
+## show-me-html 连线图改用 Mermaid（2026-11-12，基线 `fdf3059`）
+
+由 improve 技能应维护者请求生成：评估 show-me-html 的流程图绘制和对 Mermaid 的支持，判断要不要引入 pele（JS 写的 Mermaid 渲染器，tufte-reader 自 11-03 起 vendor 了 1.13.0）。审计结论：show-me-html 没有任何 Mermaid 通道，示意图全靠手写 SVG；本机真实页面里找到的手绘连线图都是不超过 7 条连线的小图，多为单列直链，看过截图的两张直链图质量没问题，但一例汇入型用了斜线（构建 ERROR）、一例 780 宽横向图按现在的检查在 1024px 下只有 7.7px。advisor 把两张真实手绘图改写成 Mermaid 并用 pele 重做，插在原页面里对比：源码约为手写 SVG 的八分之一（680 对 5400 字符），加三个布局参数后尺寸接近（325×637 对 400×564），焦点节点、两级文字、明暗主题都能对上；差在节点宽度不齐、做不出「左侧编号列」、分组框留白偏大。维护者看过对比后选「Mermaid 默认」。
+
+advisor 在 `/tmp` 的仓库副本上实现了两份计划的全部改动，再在仓库的全新克隆上按计划原文套补丁复跑：030 之后 71 个测试 OK，031 之后 72 个 OK，`make check` 通过；夹具页两种主题、390 与 1280 的截图看过，另在 `flowchart` 配方自己的容器（`.diagram-layout > .diagram-canvas` 加 `aside.node-detail`）里放了一幅带 `subgraph`、`:::external` 和可点节点的图，同样四种组合看过；五个冻结场景页（`2026-10-27-e0d1995-split`）用改前改后的构建器各重建一遍，`probe.json` 相同，终版补丁那一轮 30 张截图全部逐字节相同（前一轮预演是 29 张相同，另一张只有一行文字内 189 个像素不同，属字形抗锯齿）。补丁在各计划的附件目录里。
+
+审计后向维护者提的是三份计划（接入、两项构建检查、交互示例加回归样本），实际写成两份：两项检查在原型阶段没有找到真实命中，撤掉了（见本节「Findings considered and rejected」）；点击接线从接入那份里拆出来，和交互示例合成 031；回归样本改为 030 的夹具加单元测试。
+
+### Decisions recorded（2026-11-12，维护者）
+
+- 引入 pele，构建期编译，页面不带 Mermaid 运行时；vendor 文件在 show-me-html 里再存一份（技能各自安装，不能跨技能 import）。
+- 节点连线的图（流程、架构、汇入、时序、状态、类、ER、树）默认写 Mermaid 源码；手写 SVG 留给 Mermaid 没有对应图型的图（时间线、泳道、象限、层叠、循环）和非节点连线的示意图。`diagrams.md` 里「照抄 Mermaid 的自动布局」这条反模式随之撤掉。维护者的理由：引入一个确定性的库是更合惯例的方向。
+
+以下由 advisor 定，维护者可改：宽版排出来超过 960px 报 WARN（再宽到渲染后的字小于 8px，由已有的渲染检查报 ERROR）；编译时默认注入三个布局参数（换行宽度 360、层间距 20、节点间距 20，源码自带 frontmatter 或 `%%{init}%%` 时不注入）；图先按 720px 排，超过 400px 的再按 340px 排一版，两版复用现有的 `diagram-wide` / `diagram-narrow`；缺 `accTitle` / `accDescr` 报 WARN（与手写图缺 `<title>` / `<desc>` 同级）；节点语义用 `:::focus` / `:::store` / `:::external` / `:::optional` 四个 class；`timeline`、`quadrantChart`、`mindmap` 三种图型不用（依次是：色块文字对比度不过、轴名竖排、不接受 `accTitle`）；不做 tufte-reader 那样的源码开关，改由「复制为 Markdown」导出 mermaid 代码块。
+
+### Execution order & status
+
+| Plan | Title                                                                   | Priority | Effort | Depends on | Status                                                                 |
+| ---- | ----------------------------------------------------------------------- | -------- | ------ | ---------- | ---------------------------------------------------------------------- |
+| 030  | 连线图改写 Mermaid 源码，构建时由 pele 编译成内联 SVG，横向图自动出窄版 | P1       | M      | —          | DONE（2026-11-12 审阅通过，已合入 main `615fdd9`；见「030 执行记录」） |
+| 031  | Mermaid 图节点可以点开详情，手写图的可点示例对齐无障碍契约              | P2       | S      | 030        | DONE（2026-11-12 审阅通过，已合入 main `e547f46`；见「031 执行记录」） |
+
+### Dependency notes
+
+- 031 的补丁建在 030 套用后的 `show-me.css` 和 `tests/test_build.py` 上，并用 030 新建的夹具 `tests/fixtures/mermaid-flow.html`。
+- 两份计划都改 `show-me.css`、`build.py` 或 `shell.js`，按 MAINTENANCE.md「联动规则」要跑冻结场景对照；030 的 Step 6 写了做法，031 只加对 `role="button"` 节点生效的三条规则，没有再要求一轮。
+- 合入后由维护者 `make install SKILL=show-me-html SOURCE=.`，安装副本才会带上 pele。
+
+### 030 执行记录（2026-11-12）
+
+- **执行**：sonnet 执行者在隔离 worktree 里一次通过，无 REVISE。基点 `fdf3059`，分支 `advisor/030-show-me-html-mermaid`，一个提交 `615fdd9`，15 个文件全部在 `skills/show-me-html/` 下，没有 trailer。执行者报告：71 个测试 OK、`make check` 通过、反证失败于 `AssertionError: 0 != 1` 后还原、夹具页两次重建 md5 相同、四张截图与计划描述相符、冻结场景五页 `无问题`、`probe.json` 相同、截图 30/30 逐字节相同。
+- **advisor 复核**：提交相对 `fdf3059` 的 diff 与计划附件 `030.patch` 逐行相同（pre-commit 的 prettier 没有改动任何内容）；`pele.mjs` 与 tufte-reader 那份逐字节相同，许可证校验和相符；`skills/show-me-html` 之外零改动，worktree 干净，`node_modules` 链接已删。在 worktree 里重跑：全量 `Ran 71 tests` OK，文档门禁通过（122 个文件），四条计数（`compile_mermaid` 2、「Mermaid 图」一节 1、「照抄 Mermaid」0、`PHONE_PX = 400` 1）相符。执行者夹具页的 md5（`1bf5f629…`）与 advisor 写计划时在全新克隆上构建并看过截图的那一页相同，截图没有再看一遍。
+- **合入**：随 031 一起合入，见「031 执行记录」。
+
+### 031 执行记录（2026-11-12）
+
+- **与计划的偏差**：计划的前置条件是 030 已合入 `main`，执行时 030 还在分支上。advisor 让执行者从 `advisor/030-show-me-html-mermaid`（`615fdd9`）开出 031 的分支，其余按计划原文；`main` 没有动。
+- **执行**：sonnet 执行者一次通过，无 REVISE。一个提交 `e547f46`，三个文件，没有 trailer。执行者报告：新用例 `OK`（没有被跳过）、全量 72 个测试 OK、`make check` 与 prettier 通过、反证失败于 `('pointer', '1.2px') != ('pointer', '2.5px')` 后手工还原、三条计数相符。
+- **advisor 复核**：`615fdd9..e547f46` 的 diff 与计划附件 `031.patch` 逐行相同；`skills/show-me-html` 之外零改动，worktree 干净。在 worktree 里重跑：全量 `Ran 72 tests` OK，新用例单独跑为 `ok`，文档门禁通过（122 个文件），计数相符。
+- **合入**：维护者 2026-11-12 确认，main 从 `fdf3059` 快进到 `e547f46`（含 030 的 `615fdd9`）。合入后的 main 上 72 个测试 OK；`make install SKILL=show-me-html SOURCE=.` 后安装副本与仓库一致，用安装副本的构建器编译夹具页通过。两个 worktree 和执行分支已删除，未推送。
+
+### Verification baseline（2026-11-12）
+
+- `python3 -m unittest skills.show-me-html.tests.test_build` 在 `fdf3059` 上 65 个用例。跑了三次，其中一次 `test_interrupted_build_leaves_no_chrome_profile` 失败（`AssertionError: 0 != -2`），另两次全过；与本节计划无关，没有查原因。
+- `make check` 通过。
+
+### Open decisions for the maintainer (not planned)
+
+- **手写可点图的角色**：`interactions.md`「可点击的 SVG 节点」的示例把 `role="button"` 的节点放在 `role="img"` 的 SVG 里，按 ARIA 规定 `img` 的子元素对辅助技术不可见。031 给编译图的做法是运行时把含按钮的 SVG 改成 `role="group"`；手写图的角色写在静态标记里，改它要同时放宽 `check_svgs` 对 `role="img"` 的要求。没有用读屏器实测过，未规划。
+- **pele 的 vendor 体积**：716 KB，两个技能各一份。上游有按图型注册的入口（`pele/core`），可能减小体积，没试。
+- **存量页面**：已有页面里的手绘图不迁移；要迁移时逐页把图改写成 Mermaid 源码再构建。
+
+### Findings considered and rejected
+
+- **用 pele 整体替换手写 SVG**：`diagrams.md` 的 11 类图里，泳道、层叠、循环 / 飞轮在 Mermaid 里没有对应图型，时间线和象限的 pele 输出在本技能的样式下不合格，`svg-illustrations` 配方的示意图也不是节点连线图。手写规则保留。
+- **构建检查补「连接线 path 的斜向直线段」**：审计时提过（现有检查只查斜的 `<line>`）。原型在图库 4 页、夹具 4 页、五个冻结场景页和本机约 30 张真实页面上跑过，约 90 条带箭头的 path 里 0 处命中。没有出现过的失败不编码（MAINTENANCE.md「毕业规则」）；连线图改走 Mermaid 后手写的连接线更少。
+- **构建检查补「示意图被拉大」**：`.fig svg { width: 100% }` 会把小 viewBox 的图拉满，审计时只在 advisor 自己的 pele 试验里出现过（288 宽的时序图放大约 3 倍），030 的适配脚本已经给编译图写上像素 `max-width`。两张真实的手绘纵向图都由页面自己写了 `max-width`，没有出现被拉大的实例，不编码。
+- **复杂度预算（节点 ≤9、连线 ≤12）做成机械检查**：手写 SVG 里遮罩和分区框也是 `<rect>`，数不准；Mermaid 图可以数，但真实样本里没有超预算的图，先不做。
+- **在冻结场景里加一个含连线图的场景**：最近一轮五个场景页都没有带箭头的连线图，图示改动没有场景级样本。加场景要冻结新的材料和判据，成本高于收益；030 用夹具 `mermaid-flow.html` 加单元测试覆盖，足够。
+- **改用本机已装的 archify 技能画图**：它接受 Mermaid 输入，但不在本仓库，产出的是另一套独立页面，进不了 show-me-html 的页内图框和主题。
+- **beautiful-mermaid、官方 Mermaid**：2026-10-20 评估 tufte-reader 时已否决（外链字体、写死底色；官方版要运行时 JS 或无头浏览器），结论对 show-me-html 同样成立。

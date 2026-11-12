@@ -42,6 +42,8 @@
 - [2026-11-10] disco-elysium-narrative HTML：游戏对话框里只有技能名按属性上色（智力青、精神紫、体格红、身手黄），人物和物品名同为灰白，「你」偏冷灰蓝（约 #A5AFBB 对 #D0D0D0），检定标记暗灰不随结果变色；游戏原紫在暗底对比度仅 2.5，须提亮；来源：Steam 商店截图取样，/tmp/de-shots
 - [2026-11-10] Claude Code 界面：回复正文只有粗体、斜体、行内代码淡紫和代码块高亮色，凑不出四种属性色；Bash 工具输出保留 ANSI 真彩色、粗体、斜体且整段显示，所以终端彩色版走 scripts/render_tui.py；来源：herdr 读相邻窗格的 ANSI 输出
 - [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
+- [2026-11-12] show-me-html 的节点连线图默认写 Mermaid 源码、构建期由 pele 编译（用户看过两张真实手绘图的重做对比后定，理由是确定性的库更合惯例）；手写 SVG 只留给时间线、泳道、象限、层叠、循环和示意图。计划 plans/030、031，决定与否决项在 plans/README.md 同名节
+- [2026-11-12] pele 默认排得松（200px 折行、层距约 50px），直链图比手绘高近一倍；源码首行注入 `%%{init}%%` 的 flowchart wrappingWidth 360、rankSpacing 20、nodeSpacing 20 后与手绘接近，但 init 不能放在 frontmatter 前（报 No diagram type）。来源：/tmp/smh-pele 对比
 
 ## 失败尝试
 
@@ -55,19 +57,22 @@
 - [2026-10-19] 手写进 specimen.html 的 figlib SVG 被 prettier 拆开 <text> 里的 <tspan>，换行渲染成空格（「( dx )²」）；这类 SVG 前加 <!-- prettier-ignore -->
 - [2026-10-20] beautiful-mermaid（pretty-mermaid 的底层）不适合读本：SVG 里 @import Google Fonts（外链）、写死 --bg:#FFFFFF 盖住页面变量、图型少；官方 Mermaid 要运行时 JS 或无头浏览器
 - [2026-10-20] macOS 上复制出来的 /bin/sleep 一运行就被系统 kill，冒烟测试要找可按路径标记的子进程时改用 `perl -e "sleep 300" <标记路径>`（plans/015 的 smoke.sh）
+- [2026-11-12] pele 在 show-me-html 样式下不能用的图型：timeline 色块文字对比度 2.0–3.7（构建报 ERROR）、quadrantChart 轴名竖排且点用回退蓝、mindmap 不接受 accTitle；可用的是 flowchart、sequence、state、class、er
+- [2026-11-12] show-me.css 注释里写了带尖括号的 pre.mermaid 开标签，CSS 内联进页面后被 mermaid.mjs 当成一幅图去编译；按文本找源码的脚本，样式和文档注释里都不要出现它要找的字面量
 
 ## 上次会话
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-10] main：disco-elysium-narrative 按审查建议改完（选角改约束、scripts/draw.py 抽型、scripts/draft_check.py 交付前检查、style.md 瘦身、清掉 format.md 旧层），已 make install；同日按 Steam 截图重做 HTML 模板；加 scripts/render_tui.py 和 SKILL.md「终端彩色版」，后改为 Claude Code 里默认出、子 agent 只交回路径由主会话渲染，加 `--light`；这几处文档改动未提交
-  验证：test_draft_check / test_draw ok；test_render_tui ok；check_quotes 0 问题；make check 通过；同批 6 条请求用 opus 各写一篇，跨篇计数见「已验证的事实」；稿件 /tmp/writing-room/out，旧稿 /tmp/de-review/v4
+- [2026-11-12] main：show-me-html 接入 pele（plans/030、031，经 /improve 评估、执行、审阅后快进合入，e547f46），已 make install；未推送
+  验证：合入后 main 上 72 个测试 OK，make check 通过，安装副本与仓库一致并能编译夹具页；五个冻结场景页 probe.json 相同、截图 30/30 相同。对比页在 /tmp/smh-pele/cmp-a.html、cmp-c.html
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
+- [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。未推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
+  [2026-11-03] tufte-reader：pele 迁移与 specimen/figprobe 待用户确认后提交并 `make install SKILL=tufte-reader SOURCE=.`；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
   disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加

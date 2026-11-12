@@ -1,0 +1,757 @@
+diff --git a/skills/show-me-html/MAINTENANCE.md b/skills/show-me-html/MAINTENANCE.md
+index 9473871..2ea5f89 100644
+--- a/skills/show-me-html/MAINTENANCE.md
++++ b/skills/show-me-html/MAINTENANCE.md
+@@ -60,6 +60,7 @@
+ ## Vendor 升级
+ 
+ - Temml：`npm pack temml@<版本>`，取 `dist/temml.cjs` 与 `dist/Temml-Local.css` 覆盖 `assets/vendor/temml/`，更新 `README.md` 第三方表的版本。`math.mjs` 在运行时剥掉 CSS 里的 `@font-face`（外链 woff2）和 `math {}` 字体栈，升级后确认这两个正则仍能命中。
++- pele（Mermaid 图编译）：用上游 npm 包 `pele` 的 `dist/pele.js` 覆盖 `assets/vendor/pele/pele.mjs`，更新 `README.md` 第三方表的版本；tufte-reader 技能 vendor 了同一个文件，两处一起升。升级后跑单元测试（`-k mermaid`），再构建 `tests/fixtures/mermaid-flow.html` 的副本加 `--snap`，两种主题、390 与 1280 各看一遍：布局参数（`scripts/mermaid.mjs` 的 `LAYOUT`）和 `show-me.css` 里按 pele 的 class 写的规则都依赖上游的输出结构。
+ - 图型目录与 lieflat-charts 的对应关系写在 `references/charts.md` 顶部；上游更新时按数据形状对比目录，不整页照搬（上游模板依赖 ECharts/Chart.js 与联网字体，本 skill 全部用 SVG 重做）。
+ - 改视觉方向只动 `show-me.css` 原语层（`--ink` / `--paper` / `--hero` / `--tone-*`）；派生层不写字面色。`tests/test_build.py` 有一条测试盯着这个数。
+ 
+diff --git a/skills/show-me-html/README.md b/skills/show-me-html/README.md
+index 90c1cd0..78d242f 100644
+--- a/skills/show-me-html/README.md
++++ b/skills/show-me-html/README.md
+@@ -15,7 +15,7 @@
+ npx skills add master-g/skills --skill show-me-html -g
+ ```
+ 
+-需要 Python 3（合成脚本用标准库，无第三方包）；页面含 LaTeX 公式时还需要 Node.js（Temml 已 vendor，不用 npm install）。项目级共享放 `<repo>/.claude/skills/`。
++需要 Python 3（合成脚本用标准库，无第三方包）；页面含 LaTeX 公式或 Mermaid 图时还需要 Node.js（Temml、pele 已 vendor，不用 npm install）。项目级共享放 `<repo>/.claude/skills/`。
+ 
+ ## 用法
+ 
+@@ -51,10 +51,11 @@ npx skills add master-g/skills --skill show-me-html -g
+ | `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                                        |
+ | `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                                 |
+ | `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                                         |
++| `scripts/mermaid.mjs`         | Mermaid 源码 → 内联 SVG 编译（pele），横向图自动出窄版                               |
+ | `scripts/probe_round.mjs`     | 冻结场景轮次探针：主题、动效、三档宽度截图、真实键盘、打印与场景判据                 |
+ | `scripts/render.mjs`          | `build.py` 的 Chrome 运行器：一个无头实例跑完渲染检查、`--snap` 切片与 `--shot` 截图 |
+ | `scripts/cdp.mjs`             | 无头 Chrome 的 CDP 连接（启动、收发、清理），`render.mjs` 与 `probe_round.mjs` 共用  |
+-| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                              |
++| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml、pele                        |
+ 
+ ## 视觉系统
+ 
+@@ -71,6 +72,7 @@ effective-html 已由本 skill 取代并从仓库删除，历史内容见 Git 
+ | [basecoat](https://basecoatui.com)（只保留 JS 行为层）                                                   | 1.0.2   | MIT © Ronan Berder        | `assets/vendor/LICENSE-basecoat.md` |
+ | [lucide](https://lucide.dev) 图标                                                                        | 1.31.0  | ISC © Lucide Contributors | `assets/vendor/LICENSE-lucide.txt`  |
+ | [Temml](https://temml.org) 公式编译                                                                      | 0.13.5  | MIT © Ron Kok             | `assets/vendor/LICENSE-temml.txt`   |
++| [pele](https://github.com/obsidianmd/pele) Mermaid 图编译（只在构建时运行）                              | 1.13.0  | MIT © kepano              | `assets/vendor/LICENSE-pele.txt`    |
+ | [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型概念与选型规则来源，无代码衍生 | eace082 | 不适用                    | —                                   |
+ 
+-前三项的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用；lieflat-charts 只提供图型概念，没有代码进入产出。
++前三项的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用；pele 只在构建时运行，进入产出的是它编译出的 SVG；lieflat-charts 只提供图型概念，没有代码进入产出。
+diff --git a/skills/show-me-html/SKILL.md b/skills/show-me-html/SKILL.md
+index 82d68c6..503f878 100644
+--- a/skills/show-me-html/SKILL.md
++++ b/skills/show-me-html/SKILL.md
+@@ -47,7 +47,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件
+ 新页面从 `assets/shell.html` 开始，说明选定结构后直接继续。
+ 读取 [合成与验收](references/compose-and-check.md) 中适用部分，以及 [视觉系统](references/visual-system.md)。
+ 写 markup 时只查 [组件](references/components.md) 中实际需要的 DOM、ARIA 和 `data-*` 契约。
+-画示意图时读 [图示规则](references/diagrams.md)；材料含数值、占比、分布、网络或流向时读 [数据图规则](references/charts.md)，
++画示意图时读 [图示规则](references/diagrams.md)，节点连线的图写 Mermaid 源码、由构建编译；材料含数值、占比、分布、网络或流向时读 [数据图规则](references/charts.md)，
+ 先判数据形状再从图型目录选编号，渲染块从 `assets/gallery/` 复制；加交互时读 [交互实现](references/interactions.md)。
+ 
+ 必须保留：
+@@ -55,6 +55,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件
+ - 未合成源码中的 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->`；合成后占位符由内联资源替代，编辑成品时不重新插入。两种状态都保留工具条和目录，内容位于 `main#doc`，直接子元素为 `section`。
+ - `show-me.css` 的语义 token、现有组件契约与可访问的键盘路径；页面只补材料特有几何。
+ - 公式写 LaTeX（行内 `$…$` 线性，块级 `$$…$$`），由构建器编译成 MathML；不手写 `<math>`，不引 KaTeX/MathJax。
++- Mermaid 图写 `<pre class="mermaid">` 源码，由构建器编译成内联 SVG；不引 Mermaid 的运行时脚本，不手改编译出的 SVG。
+ - 资源内联，仅允许骨架自带的 Google Fonts 及本地回退。离线可读，不保证字体外观完全一致。
+ - 三态主题与 Markdown 复制功能；所有承诺控件实际可用。
+ 
+diff --git a/skills/show-me-html/assets/shell.js b/skills/show-me-html/assets/shell.js
+index 059b3a5..4118ecb 100644
+--- a/skills/show-me-html/assets/shell.js
++++ b/skills/show-me-html/assets/shell.js
+@@ -334,7 +334,8 @@
+       } else if (t === "PRE") {
+         var code = n.querySelector("code");
+         var lang =
+-          (code && (code.className.match(/language-([\w+-]+)/) || [])[1]) || "";
++          (code && (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
++          (n.classList.contains("mermaid") ? "mermaid" : "");
+         out +=
+           "```" +
+           lang +
+diff --git a/skills/show-me-html/assets/show-me.css b/skills/show-me-html/assets/show-me.css
+index f735946..fb88bd5 100644
+--- a/skills/show-me-html/assets/show-me.css
++++ b/skills/show-me-html/assets/show-me.css
+@@ -1556,6 +1556,74 @@ math.tml-display {
+ .fig svg text.name {
+   font-family: var(--font-sans);
+ }
++/* Mermaid 图（构建时由 scripts/mermaid.mjs 用 vendor 的 pele 编译成 SVG）。pele 的颜色、字体读 --pele-* 变量，
++   这里接到页面的 token 上，切换主题不用重新编译。线宽 pele 不写属性，从根元素继承。
++   源码（pre.mermaid）留在页面里供下次构建和 Markdown 导出，不显示。
++   注释里不要写出带尖括号的 pre 开标签：mermaid.mjs 按文本找源码，会把它当成一幅图。 */
++.pele {
++  --pele-bg: var(--color-background);
++  --pele-fg: var(--color-foreground);
++  --pele-muted: var(--color-muted-foreground);
++  --pele-line: var(--color-muted-foreground);
++  --pele-surface: var(--color-card);
++  --pele-surface-alt: color-mix(
++    in srgb,
++    var(--color-foreground) 6%,
++    transparent
++  );
++  --pele-border: var(--color-border);
++  --pele-accent: var(--chart-1);
++  --pele-critical: var(--chart-1);
++  --pele-radius: 8px;
++  --pele-font: var(--font-sans);
++  --pele-font-mono: var(--font-mono);
++  --pele-title-weight: 600;
++  --pele-heading-weight: 600;
++  --pele-bold-weight: 600;
++  stroke-width: 1.2px;
++  display: block;
++  width: 100%;
++  height: auto;
++  margin-inline: auto;
++}
++/* 连线标签下面的遮罩取图所在那一层的底色：图框和 flowchart 配方的画布都是卡面色 */
++.fig-box .pele,
++.diagram-canvas .pele {
++  --pele-bg: var(--color-card);
++}
++.fig svg.pele text {
++  font-family: var(--font-sans);
++}
++.mermaid-figure > pre.mermaid {
++  display: none;
++}
++/* 两级文字的节点：标签写成 "`**标题**⏎说明`" 时，粗体行之后的行是说明，用次要色、小一号 */
++.pele .pele-label tspan[font-weight] ~ tspan:not([font-weight]) {
++  fill: var(--color-muted-foreground);
++  font-size: 0.85em;
++}
++/* 节点语义（diagrams.md「节点语义 → 处理」）：源码里写 A:::focus / :::store / :::external / :::optional */
++.pele .pele-node.focus > :first-child {
++  fill: color-mix(in srgb, var(--chart-1) 10%, transparent);
++  stroke: var(--chart-1);
++  stroke-width: 1.6px;
++}
++.pele .pele-node.store > :first-child {
++  fill: var(--color-muted);
++}
++.pele .pele-node.external > :first-child,
++.pele .pele-node.optional > :first-child {
++  fill: none;
++  stroke: var(--color-muted-foreground);
++  stroke-width: 1px;
++}
++.pele .pele-node.optional > :first-child {
++  stroke-dasharray: 4 3;
++}
++.pele .pele-cluster > rect {
++  stroke: color-mix(in srgb, var(--color-foreground) 15%, transparent);
++  stroke-width: 0.8px;
++}
+ .fig-replay {
+   opacity: 0;
+   transition: opacity 140ms var(--ease-expo);
+diff --git a/skills/show-me-html/assets/vendor/pele/README.md b/skills/show-me-html/assets/vendor/pele/README.md
+new file mode 100644
+index 0000000..850c7e1
+--- /dev/null
++++ b/skills/show-me-html/assets/vendor/pele/README.md
+@@ -0,0 +1,11 @@
++# pele vendor
++
++来源：[pele](https://github.com/obsidianmd/pele) v1.13.0（npm 包 `pele`），MIT，许可证原文在 `../LICENSE-pele.txt`。
++JS 写的 Mermaid 渲染器，没有依赖。`scripts/mermaid.mjs` 在构建时用 node 调用它，把 `<pre class="mermaid">`
++编译成内联 SVG，页面不带任何 Mermaid 运行时。语法按 Mermaid，布局与外观是 pele 自己的；
++颜色、字体读 `--pele-*` 变量，由 `show-me.css` 接到页面的 token 上。
++
++- `pele.mjs` — 上游 `dist/pele.js` 原样，单文件、没有 import，含全部图型。改成 `.mjs` 后缀，node 直接按 ES 模块加载。
++  与 `skills/tufte-reader/assets/vendor/pele/pele.mjs` 是同一个文件；技能各自安装，所以各存一份。
++
++升级步骤见技能根目录 `MAINTENANCE.md` 的「Vendor 升级」。
+diff --git a/skills/show-me-html/references/compose-and-check.md b/skills/show-me-html/references/compose-and-check.md
+index fbaa245..07df744 100644
+--- a/skills/show-me-html/references/compose-and-check.md
++++ b/skills/show-me-html/references/compose-and-check.md
+@@ -64,7 +64,7 @@
+ python3 <skill-path>/scripts/build.py 输出文件.html
+ ```
+ 
+-它先把正文里的 LaTeX 编译成 MathML（需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
++它先把正文里的 LaTeX 编译成 MathML、把 `<pre class="mermaid">` 里的 Mermaid 源码编译成内联 SVG（都需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
+ 页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、页面有 `data-chart` 时内联图表运行时 `charts.js`、
+ 按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
+ 
+diff --git a/skills/show-me-html/references/diagrams.md b/skills/show-me-html/references/diagrams.md
+index 1c6dccf..405272e 100644
+--- a/skills/show-me-html/references/diagrams.md
++++ b/skills/show-me-html/references/diagrams.md
+@@ -3,6 +3,11 @@
+ 页面里的每一张 SVG 图（流程图、架构图、时序图、示意图）都按这份文件画。
+ 它只管图本身；图外的 figure 外壳（编号 + 标题 + 操作提示 + 图注）见 `interactions.md`。
+ 
++图有两种画法。节点加连线的图（流程、架构、汇入、时序、状态、类、ER、树）写 Mermaid 源码，构建时编译成 SVG，
++布局、连线和窄屏版都由编译器给出，写法见「Mermaid 图」。Mermaid 没有对应图型的图（时间线、泳道、象限、层叠、循环）
++和不是节点连线的示意图手写 SVG，「连线六条硬规则」到「窄屏另画一版」讲的是手写的画法。
++「什么时候画图」「复杂度预算」「反模式」两种画法都适用。
++
+ 规则来源：cathrynlavery/diagram-design 的连线规则与预算体系，颜色与字体已换成本 skill 的 token。
+ 
+ ## 什么时候画图
+@@ -15,25 +20,75 @@
+ 
+ ## 类型路由
+ 
+-| 要展示什么               | 类型             | 布局约定                                               |
+-| ------------------------ | ---------------- | ------------------------------------------------------ |
+-| 系统的组件与连接         | 架构图           | 按层或信任边界分组；主流向只有一个方向（左→右或上→下） |
+-| 决策逻辑、分支           | 流程图           | 菱形判断；每个分支标注条件；主线保持一条               |
+-| 角色之间按时间排序的消息 | 时序图           | 生命线 ≤5 条；消息水平、按序编号                       |
+-| 状态与迁移               | 状态机           | 迁移线上标触发条件；终态收口                           |
+-| 事件在时间上的位置       | 时间线           | 一根轴；事件上下交替，不并排堆叠                       |
+-| 跨角色的流程交接         | 泳道             | 一条道一个责任方；流向跨道，不在道内打转               |
+-| 两维定位、优先级         | 象限             | 两根轴各有名字和方向；项 ≤12                           |
+-| 分层结构                 | 层叠             | ≤6 层；调用方向全图一致                                |
+-| 层级归属                 | 树 / 组织图      | 深度 ≤4；同层等高对齐                                  |
+-| 自我强化的循环           | 循环 / 飞轮      | 3–6 个节点围成环；箭头沿切线，看得出方向               |
+-| 多来源汇入一点、瓶颈     | 数据流（汇入型） | 左入右出；瓶颈节点用焦点处理                           |
++| 要展示什么               | 类型             | 画法                                 | 布局约定                                               |
++| ------------------------ | ---------------- | ------------------------------------ | ------------------------------------------------------ |
++| 系统的组件与连接         | 架构图           | Mermaid `flowchart` + subgraph       | 按层或信任边界分组；主流向只有一个方向（左→右或上→下） |
++| 决策逻辑、分支           | 流程图           | Mermaid `flowchart`                  | 菱形判断；每个分支标注条件；主线保持一条               |
++| 角色之间按时间排序的消息 | 时序图           | Mermaid `sequenceDiagram`            | 生命线 ≤5 条；消息水平、按序编号                       |
++| 状态与迁移               | 状态机           | Mermaid `stateDiagram-v2`            | 迁移线上标触发条件；终态收口                           |
++| 类、表与它们的关系       | 类图 / ER 图     | Mermaid `classDiagram` / `erDiagram` | 一张图 ≤6 个类或表；只画讲到的字段                     |
++| 层级归属                 | 树 / 组织图      | Mermaid `flowchart TD`               | 深度 ≤4；同层等高对齐                                  |
++| 多来源汇入一点、瓶颈     | 数据流（汇入型） | Mermaid `flowchart LR`               | 左入右出；瓶颈节点用焦点处理                           |
++| 事件在时间上的位置       | 时间线           | 手写                                 | 一根轴；事件上下交替，不并排堆叠                       |
++| 跨角色的流程交接         | 泳道             | 手写                                 | 一条道一个责任方；流向跨道，不在道内打转               |
++| 两维定位、优先级         | 象限             | 手写                                 | 两根轴各有名字和方向；项 ≤12                           |
++| 分层结构                 | 层叠             | 手写                                 | ≤6 层；调用方向全图一致                                |
++| 自我强化的循环           | 循环 / 飞轮      | 手写                                 | 3–6 个节点围成环；箭头沿切线，看得出方向               |
+ 
+ 没有现成类型对得上时，取结构上最近的一种，在图注里说明。
+ 
++## Mermaid 图
++
++把源码写在 figure 外壳的 `.fig-box` 里，构建时由 vendor 的 pele 编译成内联 SVG，页面不带 Mermaid 的脚本：
++
++```html
++<figure class="fig">
++  <div class="fig-box">
++    <div class="fig-head">
++      <span class="fig-title">两道判断，一条回边</span>
++    </div>
++    <pre class="mermaid">
++flowchart LR
++  accTitle: 从提交到全量的发布流程
++  accDescr: 提交 PR 后过 CI，通过则合并并灰度，错误率达标则全量；不过就回到修复。
++  A[提交 PR] --> B{CI 通过?}
++  B -- 是 --> C[合并 main]
++  B -- 否 --> D[修复]:::optional
++  D --> A
++  C --> F["`**灰度 5%**
++观察 30 分钟`"]:::focus
++  F --> G{错误率 &lt; 1%?}
++</pre>
++  </div>
++  <figcaption>回滚之后回到修复，不直接重发。</figcaption>
++</figure>
++```
++
++- **开标签**只写 `<pre class="mermaid">` 这一种形式，源码顶格写。加别的属性或 class 构建认不出，报 ERROR。
++- **转义**：源码按 HTML 写，`<` 写成 `&lt;`，`&` 写成 `&amp;`，箭头 `-->` 里的 `>` 照写。标签里换行写 `&lt;br&gt;`。
++- **无障碍**：图型声明的下一行写 `accTitle:`（一句话说清这张图展示什么）和 `accDescr:`（节点与流向的文字版）。
++  它们编译成 `<title>` 和 `<desc>`，「复制为 Markdown」也靠 `accDescr` 带出图的内容；缺了构建报 WARN。
++- **节点语义**用 class 表达，颜色由 `show-me.css` 按主题给：`:::focus` 焦点（全图 1–2 个）、`:::store` 存储 / 状态、
++  `:::external` 外部 / 第三方、`:::optional` 可选 / 异步（虚线框）。不写 `classDef`、`style` 和 `%%{init}%%` 里的颜色：
++  写死的颜色不跟随主题，构建报 WARN。分组用 `subgraph`，至多 3 个。
++- **两级文字**：节点要「标题 + 一行说明」时，标签写成 Markdown 字符串，第一行加粗，说明另起一行：
++  ``A["`**标题**⏎说明`"]``（⏎ 处直接换行）。粗体行之后的行自动用次要色、小一号。一个节点至多两行。
++- **宽窄两版自动出**：构建先按 720px 排一版；排出来超过 400px 的再按 340px 排一版，横向（`LR`）的流程图会改成纵向。
++  两版各带 `diagram-wide` / `diagram-narrow`，按视口只显示一版。时序图、类图这类不能重排的只出一版，
++  太宽时构建报 WARN，减少并排的生命线或拆成两幅。纵向（`TD`）的直链图通常一版就够。
++  宽版排出来超过 960px 时构建报 WARN，再宽到渲染后的字小于 8px 就是 ERROR：横向超过六七个节点的链改成 `TD`，或缩短标签、拆成两幅。
++- **源码留在页面里**：`<pre class="mermaid">` 编译后原样保留（不显示），是这幅图唯一的来源。每次构建都拆掉上一次的 SVG、
++  从源码重新编译。改图就改已构建页面里这段源码再构建，不动 SVG。
++- **布局由编译器定**：节点位置、连线走法、折行都是 pele 排的，连线是曲线。想改变主流向换 `LR` / `TD`，
++  想控制折行用 `&lt;br&gt;`；排出来不满意、又必须逐个节点摆位的图，改为手写。
++- **语法错误**：构建报 ERROR，指明第几幅图、源码第几行第几列，这幅图留着源码不编译。
++- **可用图型**（2026-11 在页面样式下看过）：`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`classDiagram`、`erDiagram`。
++  `timeline` 的色块文字对比度不够、`quadrantChart` 的轴名是竖排字、`mindmap` 不接受 `accTitle`，这三种不用；
++  带坐标轴要读数值的图（`xychart`、`pie`）按 `charts.md` 画。
++
+ ## 连线六条硬规则
+ 
+-这六条不可商量。`build.py` 会拦第 1 条（斜线 `<line>` 报 ERROR），其余五条靠眼睛关。
++这一节到「窄屏另画一版」讲手写 SVG 的图。这六条不可商量。`build.py` 会拦第 1 条（斜线 `<line>` 报 ERROR），其余五条靠眼睛关。
+ 
+ **1. 不共轴的节点之间必须走圆角直角肘形线。** 斜线 `<line>` 与斜向直 path 一律判失败。
+ 两端共 x 或共 y 时才允许用直线 `<line>`。肘形 path 公式（两段弯，r=8；拥挤处最小 r=6）：
+@@ -190,12 +245,13 @@
+ | 阴影、发光、渐变填充     | 与全页设计语言冲突                        |
+ | 竖排文字（writing-mode） | 读不了                                    |
+ | 图例浮在绘图区里         | 撞节点；图例固定在图下方横排              |
+-| 照抄 Mermaid 的自动布局  | 那是排版输出，不是设计                    |
++| 超预算的图交给 Mermaid   | 自动布局不替你取舍，12 个节点照样读不动   |
++| 手写能写成 Mermaid 的图  | 坐标算错、窄版漏画；先查「类型路由」      |
+ | 圆角 >10px               | 廉价感                                    |
+ 
+ ## 画完之后的自检
+ 
+-机械关（`build.py` 自动跑）：斜线 `<line>`、无障碍契约、写死颜色。
++机械关（`build.py` 自动跑）：斜线 `<line>`（手写的图）、Mermaid 语法、无障碍契约、写死颜色、宽窄两版渲染后的字号。
+ 眼睛关（浏览器里两种主题各看一遍）：
+ 
+ - 每条连线追得动：没有重叠、没有穿节点背后、交叉处有桥。
+diff --git a/skills/show-me-html/references/layouts.md b/skills/show-me-html/references/layouts.md
+index 54a4761..4731955 100644
+--- a/skills/show-me-html/references/layouts.md
++++ b/skills/show-me-html/references/layouts.md
+@@ -313,11 +313,11 @@ Token 表 → 每类组件一节（真实组件 + 用法说明 + markup 代码
+ 
+ ### `flowchart` · 逐节点追一条流程
+ 
+-**视觉契约** — 首屏：完整图面与阅读提示；主要证据：可聚焦节点和连线；细节：选中节点详情栏；结束：复制结论或跳到实现；窄屏：横向图另画纵向窄版（diagrams.md「窄屏另画一版」），画不了时图面局部滚动，详情栏置于图后。
++**视觉契约** — 首屏：完整图面与阅读提示；主要证据：可聚焦节点和连线；细节：选中节点详情栏；结束：复制结论或跳到实现；窄屏：窄版由构建自动排成纵向（diagrams.md「Mermaid 图」），详情栏置于图后。
+ 
+ 流程总览 SVG（节点可点）→ 详情面板（点节点切换）→ 节点清单表。
+ 
+-- 节点画法、连线规则、复杂度预算一律按 `diagrams.md`；点击换详情的代码见 `interactions.md`。
++- 主图写 Mermaid `flowchart`，构建时编译并自动出窄版（`diagrams.md`「Mermaid 图」）；复杂度预算照旧。点击换详情的代码见 `interactions.md`。
+ 
+ ### `svg-illustrations` · 拿走一组示意图
+ 
+diff --git a/skills/show-me-html/scripts/build.py b/skills/show-me-html/scripts/build.py
+index 78701b1..d5dcb7f 100644
+--- a/skills/show-me-html/scripts/build.py
++++ b/skills/show-me-html/scripts/build.py
+@@ -51,6 +51,11 @@ SHELL_JS = ASSETS / "shell.js"
+ # 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
+ LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
+ MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
++MERMAID_SCRIPT = Path(__file__).resolve().parent / "mermaid.mjs"
++# Mermaid 源码留在页面里，每次构建都从它重新编译（见 mermaid.mjs）。开标签写法不对的源码 mermaid.mjs 认不出，
++# 检查用宽松的写法把这些也数进来
++MERMAID_ANY_RE = re.compile(r'<pre\b[^>]*\bclass="[^"]*\bmermaid\b')
++MERMAID_DONE = '<div class="mermaid-figure">'
+ # 作者写 LaTeX：行内 \( … \) 或 $ … $（pandoc 规则），块级 \[ … \] 或 $$ … $$。
+ MATH_DELIM_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?:^|[^\\$])\$(?=\S)[^$\n]*?\S\$(?!\d)")
+ CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style)\b[\s\S]*?</\1\s*>", re.I)
+@@ -276,11 +281,18 @@ def check_svgs(html, warns, errors):
+             missing.append("<title>")
+         if not re.search(r"<desc[\s>]", body):
+             missing.append("<desc>")
+-        if missing:
++        compiled = bool(re.search(r'\bclass="[^"]*\bpele\b', attrs))  # Mermaid 图，mermaid.mjs 的产物
++        if missing and compiled:
++            warns.append("有一幅 Mermaid 图没写 accTitle / accDescr：读屏器和「复制为 Markdown」拿不到这幅图的内容。"
++                         "在源码里图型声明的下一行加 accTitle: 一句话标题 和 accDescr: 节点与流向的文字版"
++                         "（references/diagrams.md「Mermaid 图」）")
++        elif missing:
+             snippet = re.sub(r"\s+", " ", m.group(0)[:80]).strip()
+             warns.append(f"SVG 图缺少 {'、'.join(missing)}（{snippet}…）：读屏器拿不到这张图的内容。"
+                          "契约见 references/diagrams.md「无障碍 SVG 契约」；"
+                          "纯装饰图写 aria-hidden=\"true\"")
++        if compiled:
++            continue  # 连线由 pele 排，不按手绘图的连线规则查
+         diagonals = []
+         for line in LINE_TAG_RE.findall(body):
+             nums = dict(LINE_ATTR_RE.findall(line))
+@@ -531,6 +543,31 @@ def compile_math(page, errors, warns):
+     return True
+ 
+ 
++def compile_mermaid(page, errors, warns):
++    """作者写 Mermaid 源码（<pre class="mermaid">），这里用 vendor 的 pele 编译成内联 SVG。返回是否改写了文件。
++
++    需要 node，理由同 compile_math。源码留在页面里，每次构建重新编译。
++    """
++    import shutil, subprocess
++    html = page.read_text(encoding="utf-8")
++    if not MERMAID_ANY_RE.search(html):
++        return False
++    node = shutil.which("node")
++    if not node:
++        errors.append("页面里有 Mermaid 图（<pre class=\"mermaid\">），但找不到 node 来编译成 SVG；装 Node.js 后重跑")
++        return False
++    out = subprocess.run([node, str(MERMAID_SCRIPT), str(page)], capture_output=True, text=True, encoding="utf-8")
++    if out.returncode != 0:
++        errors.append("Mermaid 图编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
++        return False
++    for line in out.stdout.splitlines():
++        if line.startswith("ERROR"):
++            errors.append(line[5:].strip())
++        elif line.startswith("WARN"):
++            warns.append(line[4:].strip())
++    return page.read_text(encoding="utf-8") != html
++
++
+ def runtime_scripts(html, warns):
+     """按页面当前内容算出应当内联的运行时脚本。每次构建都重算：加了就补，删了就去。
+     返回 (拼好的 <script> 串, 语言名集合)。判断时先剥掉已内联的系统脚本，免得脚本自身的文本误命中。"""
+@@ -653,6 +690,11 @@ def check(html, path, allow_legacy_recipe=False):
+     for slot in (CSS_SLOT, JS_SLOT):
+         if slot in html:
+             errors.append(f"占位符 {slot} 未被替换")
++    own_html = SYSTEM_STYLE_RE.sub("", SYSTEM_SCRIPT_RE.sub("", stripped))
++    raw_mermaid = len(MERMAID_ANY_RE.findall(own_html)) - own_html.count(MERMAID_DONE)
++    if raw_mermaid > 0:
++        errors.append(f"有 {raw_mermaid} 幅 Mermaid 图没有编译成 SVG：开标签只写 <pre class=\"mermaid\">，"
++                      "不要加别的属性或 class；同时修掉上面关于 Mermaid 图的 ERROR")
+     if CSS_MARK not in html:
+         errors.append("页面里没有内联的 show-me-html CSS")
+ 
+@@ -1262,7 +1304,8 @@ def render_check(page, widths=(500, 1024, 1280)):
+             diag = htmllib.unescape(m.group(6).strip())
+             if diag:
+                 issues.append(f"{cw}px 下示意图字号渲染后低于 8px：{diag}。宽版缩得太小就画窄版，"
+-                              "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）")
++                              "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）；Mermaid 图把主流向改成 TD、"
++                              "缩短标签或拆成两幅（diagrams.md「Mermaid 图」）")
+             contrast = htmllib.unescape(m.group("contrast").strip())
+             if contrast and w == max(widths):
+                 issues.append(f"文字对比度不足（亮色主题；正文要 4.5:1，大字要 3:1）：{contrast}。次要文字用 --color-muted-foreground，"
+@@ -1335,6 +1378,8 @@ def main():
+     if not args.check_only:
+         if compile_math(args.page, build_errors, build_warns):
+             html = args.page.read_text(encoding="utf-8")
++        if compile_mermaid(args.page, build_errors, build_warns):
++            html = args.page.read_text(encoding="utf-8")
+         html, changed, used, langs, warns_from_build = build(html, build_errors)
+         build_warns += warns_from_build
+         if changed:
+diff --git a/skills/show-me-html/scripts/mermaid.mjs b/skills/show-me-html/scripts/mermaid.mjs
+new file mode 100644
+index 0000000..cf30e20
+--- /dev/null
++++ b/skills/show-me-html/scripts/mermaid.mjs
+@@ -0,0 +1,146 @@
++#!/usr/bin/env node
++/* mermaid.mjs 页面.html —— 把页面里的 <pre class="mermaid"> 编译成内联 SVG，就地改写。由 build.py 调用。
++
++   编译器是 vendor 的 pele（JS 写的 Mermaid 渲染器）：语法按 Mermaid，布局与外观是 pele 自己的。
++   SVG 的颜色、字体读 --pele-* 变量，show-me.css 把它们接到页面的 token 上，切换主题不用重新编译。
++   源码留在页面里，是图的唯一来源：每次构建先拆掉上一次的产物，再从源码重新编译，改图只改源码。
++   产物是 div.mermaid-figure：SVG（一版或宽窄两版）加原样的 <pre class="mermaid">（show-me.css 把它隐藏，
++   「复制为 Markdown」把它导出成 mermaid 代码块）。
++   宽窄两版：先按 WIDE_PX 排一版；排出来比 PHONE_PX 宽的，再按 NARROW_PX 排一版，pele 会把横向的流程图改成纵向。
++   第二版确实变窄了就两版都留（class 为 diagram-wide / diagram-narrow，show-me.css 按视口只显示一版）；
++   没变窄（时序图这类不能重排的）只留宽版并发 WARN。
++   源码按 HTML 写：< 和 & 写成 &lt; &amp;（标签里换行写 &lt;br&gt;），编译前还原。 */
++import { readFileSync, writeFileSync } from "node:fs";
++import { PeleError, render } from "../assets/vendor/pele/pele.mjs";
++
++const WIDE_PX = 720; // 48rem 版心里图框的可用宽度约 728px
++const NARROW_PX = 340; // 390px 手机视口里图框的可用宽度约 318px，340 的图缩到九成多
++const PHONE_PX = 400; // 不超过这个宽度的图在手机上基本按原大显示，不用第二版
++const CROWDED_PX = 960; // 宽版超过它，在 720 的图框里缩到 0.75 倍以下，11px 的连线标签接近 8px 的渲染下限
++const FONT_PX = 13;
++/* pele 默认在 200px 处折行、层间距约 50px，直链图会比手绘的高出近一倍。这三个值是 2026-11 用两张真实页面的
++   手绘图对照后定的；源码自带 frontmatter 或 %%{init}%% 时不注入，由作者自己负责。 */
++const LAYOUT =
++  '%%{init: {"flowchart": {"wrappingWidth": 360, "rankSpacing": 20, "nodeSpacing": 20}}}%%\n';
++
++const file = process.argv[2];
++if (!file) {
++  console.error("用法：mermaid.mjs 页面.html");
++  process.exit(2);
++}
++/* 构建时没有浏览器，pele 自带的字宽表按窄一些的西文字体估，标签会顶出框。
++   这里按字符分档估算，单位 em，宁宽勿窄；汉字按 1em。 */
++const CJK =
++  /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\ufe30-\ufe4f\uff00-\uffef]/u;
++const EM = [
++  [/[ijl.,:;'|I]/, 0.3],
++  [/[ !]/, 0.35],
++  [/[frt()[\]{}"`]/, 0.45],
++  [/[mwMW@%]/, 0.97],
++  [/[A-Z&]/, 0.75],
++];
++const BOLD = 1; // pele 的 style 位
++const MONO = 4;
++function em(c, style) {
++  if (CJK.test(c)) return 1;
++  if (style & MONO) return 0.6;
++  return EM.find(([re]) => re.test(c))?.[1] ?? 0.62;
++}
++const measurer = {
++  width: (text, size, style) =>
++    [...text].reduce((w, c) => w + em(c, style), 0) *
++    size *
++    (style & BOLD ? 1.06 : 1),
++};
++
++// 拆掉上一次的产物，只留源码
++const UNWRAP_RE =
++  /<div class="mermaid-figure"\s*>[\s\S]*?(<pre\b[^>]*\bclass="[^"]*\bmermaid\b[^>]*>[\s\S]*?<\/pre\s*>)\s*<\/div\s*>/g;
++const html = readFileSync(file, "utf8");
++const bare = html.replace(UNWRAP_RE, "$1");
++const errors = [];
++const warns = [];
++let ok = 0;
++let seq = 0;
++
++const unescape = (t) =>
++  t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
++
++/* pele 的 SVG 自带 role="graphics-document document" 和写死的 width / height / max-width:100%。
++   页面的无障碍契约要 role="img"；尺寸改成「最宽不超过排出来的宽度」，小图不会被 .fig svg 的 width:100% 拉大。 */
++function adapt(r, cls) {
++  let svg = r.svg
++    .replace(/ role="[^"]*"/, ' role="img"')
++    .replace(/ width="[\d.]+" height="[\d.]+"/, "")
++    .replace(
++      'style="max-width:100%;height:auto;',
++      `style="max-width:${Math.ceil(r.width)}px;`
++    );
++  if (cls) svg = svg.replace('class="pele ', `class="${cls} pele `);
++  return svg;
++}
++
++const out = bare.replace(
++  /<pre class="mermaid"\s*>([\s\S]*?)<\/pre\s*>/g,
++  (whole, body) => {
++    seq++;
++    const where = `第 ${seq} 幅`;
++    const raw = unescape(body)
++      .replace(/^\s*\n/, "")
++      .trimEnd();
++    const own = /^\s*---/.test(raw) || raw.includes("%%{");
++    const src = own ? raw : LAYOUT + raw;
++    const opts = { measurer, fontSize: FONT_PX };
++    try {
++      const wide = render(src, {
++        ...opts,
++        idPrefix: `mmd${seq}-`,
++        maxWidth: WIDE_PX,
++      });
++      let svgs = adapt(wide, "");
++      if (wide.width > CROWDED_PX)
++        warns.push(
++          `Mermaid 图${where}排出来宽 ${Math.round(wide.width)}px，放进图框要缩到 ${(WIDE_PX / wide.width).toFixed(2)} 倍，字会偏小：` +
++            "把主流向改成 TD、缩短标签或用 &lt;br&gt; 断行，或拆成两幅"
++        );
++      if (wide.width > PHONE_PX) {
++        const narrow = render(src, {
++          ...opts,
++          idPrefix: `mmd${seq}n-`,
++          maxWidth: NARROW_PX,
++        });
++        if (narrow.width <= PHONE_PX)
++          svgs = adapt(wide, "diagram-wide") + adapt(narrow, "diagram-narrow");
++        else
++          warns.push(
++            `Mermaid 图${where}宽 ${Math.round(wide.width)}px，按 ${NARROW_PX}px 重排后仍有 ${Math.round(narrow.width)}px，` +
++              "手机上会整体缩小：减少并排的节点或生命线，或拆成两幅"
++          );
++      }
++      ok++;
++      return `<div class="mermaid-figure">${svgs}${whole}</div>`;
++    } catch (e) {
++      if (!(e instanceof PeleError)) throw e;
++      // 消息形如「Parse error on line 4: / 源码 / ^ / Expecting …」，最后一行是要点
++      const reason = e.message
++        .split("\n")
++        .map((l) => l.trim())
++        .filter(Boolean)
++        .pop();
++      const n = e.line ? e.line - (own ? 0 : 1) : 0; // 注入的布局参数占了第一行
++      const text = raw.split("\n")[n - 1]?.trim();
++      const line = n
++        ? `源码第 ${n} 行第 ${e.column} 列${text ? `（${text}）` : ""}，`
++        : "";
++      errors.push(`Mermaid 图${where}编译失败，${line}${reason}`);
++      return whole;
++    }
++  }
++);
++
++if (out !== html) writeFileSync(file, out);
++for (const e of errors) console.log(`ERROR ${e}`);
++for (const w of warns) console.log(`WARN ${w}`);
++console.log(
++  `Mermaid 编译 ${ok} 幅` + (errors.length ? `，失败 ${errors.length} 幅` : "")
++);
+diff --git a/skills/show-me-html/tests/fixtures/mermaid-flow.html b/skills/show-me-html/tests/fixtures/mermaid-flow.html
+new file mode 100644
+index 0000000..652f100
+--- /dev/null
++++ b/skills/show-me-html/tests/fixtures/mermaid-flow.html
+@@ -0,0 +1,69 @@
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="utf-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1" />
++    <title>Mermaid 图夹具</title>
++    <!--SHOW-ME:CSS-->
++  </head>
++  <body data-recipe="flowchart">
++    <header class="page-chrome" data-md-skip>
++      <div class="chrome-inner">
++        <span class="chrome-title">Mermaid 图夹具</span>
++        <button type="button" class="btn" data-copy-md>复制为 Markdown</button>
++      </div>
++    </header>
++    <div class="layout">
++      <main id="doc">
++        <section>
++          <h1>发布流程</h1>
++          <p>有分支和回边的横向流程图，构建时编译成宽窄两版。</p>
++          <figure class="fig">
++            <div class="fig-box">
++              <div class="fig-head">
++                <span class="fig-title">两道判断，一条回边</span>
++              </div>
++              <pre class="mermaid">
++flowchart LR
++  accTitle: 从提交到全量的发布流程
++  accDescr: 提交 PR 后过 CI，通过则合并并灰度，错误率达标则全量；任何一步不过都回到修复。
++  A[提交 PR] --> B{CI 通过?}
++  B -- 是 --> C[合并 main]
++  B -- 否 --> D[修复]:::optional
++  D --> A
++  C --> E[(制品库)]:::store
++  E --> F["`**灰度 5%**
++观察 30 分钟`"]:::focus
++  F --> G{错误率 &lt; 1%?}
++  G -- 是 --> H[全量]
++  G -- 否 --> I[回滚]
++  I -.-> D
++</pre>
++            </div>
++            <figcaption>回滚之后回到修复，不直接重发。</figcaption>
++          </figure>
++          <figure class="fig">
++            <div class="fig-box">
++              <div class="fig-head">
++                <span class="fig-title">一次请求</span>
++              </div>
++              <pre class="mermaid">
++sequenceDiagram
++  accTitle: 一次请求经过网关到服务
++  accDescr: 用户请求网关，网关转发给服务，服务响应后网关返回 200。
++  participant U as 用户
++  participant G as 网关
++  participant S as 服务
++  U->>G: 请求
++  G->>S: 转发
++  S-->>G: 响应
++  G-->>U: 200
++</pre>
++            </div>
++          </figure>
++        </section>
++      </main>
++    </div>
++    <!--SHOW-ME:JS-->
++  </body>
++</html>
+diff --git a/skills/show-me-html/tests/test_build.py b/skills/show-me-html/tests/test_build.py
+index d071c99..02fae1b 100644
+--- a/skills/show-me-html/tests/test_build.py
++++ b/skills/show-me-html/tests/test_build.py
+@@ -873,6 +873,95 @@ class BuildCliTests(unittest.TestCase):
+         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+         self.assertEqual(page.read_text(encoding="utf-8"), out)
+ 
++    @unittest.skipUnless(shutil.which("node"), "需要 node")
++    def test_mermaid_compiles_to_wide_and_narrow_svg_and_stays_idempotent(self):
++        """横向流程图编译成宽窄两版，时序图只出一版；源码留在页面里，重复构建结果不变。"""
++        page = self.copy_fixture("mermaid-flow.html")
++
++        result = run_build(page)
++
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        out = page.read_text(encoding="utf-8")
++        self.assertEqual(out.count('<div class="mermaid-figure">'), 2)
++        self.assertEqual(out.count('<pre class="mermaid">'), 2)
++        self.assertEqual(out.count('class="diagram-wide pele pele-flowchart"'), 1)
++        self.assertEqual(out.count('class="diagram-narrow pele pele-flowchart"'), 1)
++        self.assertEqual(out.count('class="pele pele-sequence"'), 1)
++        svgs = re.findall(r"<svg\b[^>]*\bpele\b[^>]*>", out)
++        self.assertEqual(len(svgs), 3)
++        for tag in svgs:
++            self.assertIn('role="img"', tag)
++            self.assertIn("aria-labelledby=", tag)
++            self.assertRegex(tag, r'style="max-width:\d+px;')
++            self.assertNotRegex(tag, r'\swidth="')
++        self.assertIn('class="pele-node pele-shape-rect focus"', out)
++        self.assertNotIn("SVG 图缺少", result.stdout)
++        self.assertNotIn("斜线", result.stdout)
++        again = run_build(page)
++        self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
++        self.assertEqual(page.read_text(encoding="utf-8"), out)
++
++    @unittest.skipUnless(shutil.which("node"), "需要 node")
++    def test_mermaid_syntax_error_names_the_source_line(self):
++        page = self.copy_fixture("mermaid-flow.html")
++        page.write_text(page.read_text(encoding="utf-8").replace("  D --> A\n", "  D --> [[\n", 1), encoding="utf-8")
++
++        result = run_build(page)
++
++        self.assertEqual(result.returncode, 1, result.stdout)
++        self.assertIn("Mermaid 图第 1 幅编译失败，源码第 7 行", result.stdout)
++        self.assertIn("有 1 幅 Mermaid 图没有编译成 SVG", result.stdout)
++        self.assertEqual(page.read_text(encoding="utf-8").count('<div class="mermaid-figure">'), 1)
++
++    def test_uncompiled_mermaid_is_an_error_in_check_only(self):
++        page = self.copy_fixture("mermaid-flow.html")
++        result = run_build(page, "--check-only")
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn("有 2 幅 Mermaid 图没有编译成 SVG", result.stdout)
++
++    @unittest.skipUnless(shutil.which("node"), "需要 node")
++    def test_mermaid_without_acc_title_warns(self):
++        page = self.copy_fixture("mermaid-flow.html")
++        html = re.sub(r"  acc(Title|Descr): [^\n]*\n", "", page.read_text(encoding="utf-8"), count=2)
++        page.write_text(html, encoding="utf-8")
++
++        result = run_build(page)
++
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertEqual(result.stdout.count("Mermaid 图没写 accTitle / accDescr"), 2, result.stdout)
++
++    @unittest.skipUnless(shutil.which("node"), "需要 node")
++    def test_mermaid_overwide_chart_warns(self):
++        """横向图排出来超过 960px：放进图框字会偏小，构建点名这一幅并给出 Mermaid 的改法。"""
++        page = self.copy_fixture("mermaid-flow.html")
++        html = page.read_text(encoding="utf-8").replace(
++            "  I -.-> D\n", "  I -.-> D\n  H --> J[通知全体干系人和值班] --> K[更新对外发布说明文档]\n", 1)
++        page.write_text(html, encoding="utf-8")
++
++        result = run_build(page)
++
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertRegex(result.stdout, r"WARN   Mermaid 图第 1 幅排出来宽 \d{4}px，放进图框要缩到 0\.\d\d 倍")
++        self.assertIn("把主流向改成 TD", result.stdout)
++
++    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
++    def test_mermaid_page_passes_render_check_and_exports_source(self):
++        """宽窄两版都过渲染检查；「复制为 Markdown」带出 accDescr 和 mermaid 代码块，各一次。"""
++        page = self.copy_fixture("mermaid-flow.html")
++        snap = page.parent / "snap"
++
++        result = subprocess.run([sys.executable, str(BUILD), str(page), "--snap", str(snap),
++                                 "--snap-theme", "light", "--snap-width", "1280"],
++                                text=True, capture_output=True, check=False)
++
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertNotIn("WARN   ", result.stdout)
++        md = (snap / "export.md").read_text(encoding="utf-8")
++        self.assertEqual(md.count("```mermaid\nflowchart LR\n"), 1, md)
++        self.assertEqual(md.count("```mermaid\nsequenceDiagram\n"), 1, md)
++        self.assertEqual(md.count("任何一步不过都回到修复。"), 2, md)  # 一次是 desc 导出的段落，一次在源码的 accDescr 行
++        self.assertIn("错误率 < 1%?", md)
++
+     def test_uncompiled_latex_is_an_error_in_check_only(self):
+         page = self.copy_fixture()
+         page.write_text(page.read_text(encoding="utf-8").replace("<h1>", "<p>$x^2$</p><h1>", 1), encoding="utf-8")
