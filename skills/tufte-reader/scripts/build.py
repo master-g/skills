@@ -284,8 +284,10 @@ def place_footnotes(html, errors):
         body = "".join(out)
         total += len(items)
         block = "\n".join(items)
-        if '<section class="footnotes">' in body:
-            body = re.sub(r'(<section class="footnotes">.*?)(</ol>)', lambda mm: mm.group(1) + block + "\n" + mm.group(2), body, count=1, flags=re.S)
+        sec_at = body.find('<section class="footnotes">')
+        if sec_at >= 0:
+            at = element_end(body, body.index("<ol", sec_at), "ol") - len("</ol>")
+            body = body[:at] + block + "\n" + body[at:]
         else:
             sec = f'<section class="footnotes"><ol>\n{block}\n</ol></section>\n'
             at = body.rfind("</article>")

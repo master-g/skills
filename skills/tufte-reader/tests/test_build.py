@@ -72,6 +72,16 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(rc, 0, out)
         self.assertEqual(first, second)
 
+    def test_footnote_added_after_one_holding_a_list(self):
+        first_fn = '<p>甲<span class="footnote">第一条：<ol><li>子项</li></ol></span>。</p>'
+        _, built, _ = run(PAGE.replace("BODY", first_fn))
+        added = built.replace('<section class="footnotes">', '<section><p>乙<span class="footnote">第二条</span>。</p></section><section class="footnotes">', 1)
+        rc, html, out = run(added)
+        self.assertEqual(rc, 0, out)
+        notes = html[html.index('<section class="footnotes">'):html.index('</section>', html.index('<section class="footnotes">'))]
+        self.assertIn('</ol> <a class="fn-back" href="#fnref-one-1"', notes)
+        self.assertLess(notes.index('href="#fnref-one-1"'), notes.index('<li id="fn-one-2">'))
+
     def test_note_outside_paragraph_is_error(self):
         rc, _, out = run(PAGE.replace("BODY", '<span class="sidenote">悬空</span><p>正文。</p>'))
         self.assertEqual(rc, 1)
