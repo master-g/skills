@@ -72,7 +72,8 @@
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。冻结场景里没有连线图，等第一张真实页面出来再拿它的材料加场景（联动处见 plans/README.md「032 规划记录」）。未推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
-  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；shelf 六份 `src/assemble.py` 已改成一行调用技能脚本（副本上成品逐字节相同），改动留在 shelf 工作区、未提交，由用户处理；figprobe 不测边标签和菱形斜边
+  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；shelf 六份 `src/assemble.py` 已改成一行调用技能脚本（副本上成品逐字节相同），改动留在 shelf 工作区、未提交，由用户处理
+  tufte-reader 甘特图：不画「今天」线（`now: 0`），用户 11-12 看过对比后定先沿用；已知缺口：`dateFormat` 不写年份时坐标轴排成 1970，没有构建检查，文档也没写，用户再提才补。figprobe 不测边标签和菱形斜边
   disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
