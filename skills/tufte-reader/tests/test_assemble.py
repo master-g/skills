@@ -85,6 +85,12 @@ class AssembleTest(unittest.TestCase):
         self.assertNotIn("重复的 id", out)
         self.assertEqual(page.read_text(encoding="utf-8").count('aria-label="箭头"'), 2)
 
+    def test_unknown_flag_fails_before_writing_the_page(self):
+        rc, page, out = assemble({"ch01.html": chapter("one", 1)}, "--only=ch01")
+        self.assertEqual(rc, 2)
+        self.assertIn("不认识的参数：--only=ch01", out)
+        self.assertFalse(page.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

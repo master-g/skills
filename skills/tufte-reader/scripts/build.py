@@ -181,6 +181,10 @@ def glue_math_punctuation(html):
 
 
 # ── 平衡扫描：取出一个元素的完整外层 HTML ──────────────────────────────
+class Unclosed(ValueError):
+    """作者漏写了闭合标签。"""
+
+
 def element_end(html, start, tag):
     """start 指向 <tag 的 '<'，返回对应闭合标签之后的位置。"""
     pat = re.compile(rf"<(/?){tag}\b[^>]*>", re.I)
@@ -191,7 +195,7 @@ def element_end(html, start, tag):
         depth += -1 if m.group(1) else 1
         if depth == 0:
             return m.end()
-    raise ValueError(f"<{tag}> 没有闭合")
+    raise Unclosed(f"<{tag}> 没有闭合")
 
 
 # ── 边注 ────────────────────────────────────────────────────────────────
@@ -560,7 +564,7 @@ def inline_assets(html, warns, errors):
 # ── 检查 ────────────────────────────────────────────────────────────────
 NOTE_HOSTS = {"p", "figure", "li", "dd", "blockquote", "td", "figcaption"}
 BLOCK_BREAKERS = {"section", "article", "header", "footer", "div", "nav", "body", "main"}
-PARAGRAPH_HOSTS_SKIPPED = {"li", "blockquote", "figure", "td", "th", "details"}  # 这些里面的 <p> 不算正文段落
+PARAGRAPH_HOSTS_SKIPPED = {"li", "blockquote", "figure", "td", "th", "details"}  # 这些里面的 <p> 不算正文段落；章末脚注都在 <li> 里
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 
@@ -598,8 +602,7 @@ class Checker(HTMLParser):
             self.chapter, self.chapter_depth = a.get("id") or f"第 {self.stats['章']} 章", len(self.stack)
             self.by_chapter.setdefault(self.chapter, {k: 0 for k in self.stats if k != "章"})
         if tag == "p" and not cls and self.chapter is not None \
-                and not PARAGRAPH_HOSTS_SKIPPED & set(self.stack[self.chapter_depth:]) \
-                and not any("footnotes" in c for c in self.classes[self.chapter_depth:]):
+                and not PARAGRAPH_HOSTS_SKIPPED & set(self.stack[self.chapter_depth:]):
             self.bump("段落")
         if tag == "h3":
             self.bump("小节(h3)")
@@ -794,7 +797,7 @@ def main(argv):
         compile_mermaid(page, errors, warns)  # 在公式之后：图题里的公式已经编译，取得出文字
         try:
             synthesize(page, errors, warns)
-        except ValueError as e:  # element_end：作者漏写了闭合标签
+        except Unclosed as e:
             for w in warns:
                 print("WARN  ", w)
             for line in [*errors, f"{e}，构建中止：补上闭合标签后重跑"]:

@@ -19,18 +19,18 @@
 其余以 -- 开头的参数（如 --open）原样交给 build.py，退出码也是它的。
 """
 import importlib.util
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-FIG_RE = re.compile(r"<!--FIG:([\w-]+)-->")
+sys.path.insert(0, str(SCRIPTS))
+import build  # noqa: E402  —— 认识哪些参数由它定
+from figlib import embed  # noqa: E402
 
 
 def load_figs(paths):
     """依次执行画图脚本，收集各自的 FIGS。全书的图在同一个进程里画，图内 id 的前缀才各不相同。"""
-    sys.path.insert(0, str(SCRIPTS))
     figs = {}
     for i, path in enumerate(paths):
         sys.path.insert(0, str(path.parent))
@@ -44,6 +44,10 @@ def load_figs(paths):
 def main(argv):
     flags = [a for a in argv if a.startswith("--") and a != "--only"]
     rest = [a for a in argv if a not in flags]
+    unknown = sorted(set(flags) - build.FLAGS)
+    if unknown:
+        print("ERROR 不认识的参数：" + "、".join(unknown))
+        return 2
     opts = {}
     for key in ("-o", "--only"):
         if key in rest:
@@ -79,12 +83,13 @@ def main(argv):
     fig_scripts = [p for p in [src / "figs.py", *sorted(src.glob("ch[0-9][0-9].figs.py")), *sorted(src.glob("apx*.figs.py"))]
                    if p.is_file() and (not only or p.name in ("figs.py", f"{only}.figs.py"))]
     figs = load_figs(fig_scripts)
-    absent = sorted({m for m in FIG_RE.findall(html) if m not in figs})
-    if absent:
-        print("ERROR 缺图：" + "、".join(absent))
+    try:
+        page = embed(html, figs)
+    except KeyError as e:
+        print(f"ERROR {e.args[0]}")
         return 1
-    out.write_text(FIG_RE.sub(lambda m: figs[m.group(1)], html), encoding="utf-8")
-    print(f"拼接    片段 {len(chapters)} 个，图 {len(FIG_RE.findall(html))} 幅  →  {out}", flush=True)
+    out.write_text(page, encoding="utf-8")
+    print(f"拼接    片段 {len(chapters)} 个  →  {out}", flush=True)
     return subprocess.call([sys.executable, str(SCRIPTS / "build.py"), str(out), *flags])
 
 
