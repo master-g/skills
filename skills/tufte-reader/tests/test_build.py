@@ -102,6 +102,31 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertIn("build.py 页面.html", out.getvalue())
 
+    def test_paragraph_count_skips_lists_quotes_and_footnotes(self):
+        body = ('<p>一<span class="footnote">脚注。<ol><li><p>注里的段</p></li></ol></span></p><p>二</p>'
+                "<ul><li><p>列表里的段</p></li></ul><blockquote><p>引文里的段</p></blockquote>")
+        rc, _, out = run(PAGE.replace("BODY", body))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("章 2  段落 3  小节(h3) 0", out)
+
+    def test_by_chapter_prints_one_line_per_chapter(self):
+        body = '<p>甲<span class="sidenote">注</span></p><p>乙</p>'
+        rc, _, out = run(PAGE.replace("BODY", body), args=["--by-chapter"])
+        self.assertEqual(rc, 0, out)
+        lines = out.splitlines()
+        one = next(l for l in lines if l.startswith("  one "))
+        two = next(l for l in lines if l.startswith("  two "))
+        self.assertIn("段落 2 ", one)
+        self.assertIn("边注 1 ", one)
+        self.assertIn("段落 1 ", two)
+        self.assertIn("边注 0 ", two)
+        self.assertNotIn("章 ", one.split("段落")[0])
+
+    def test_without_by_chapter_only_totals(self):
+        rc, _, out = run(PAGE.replace("BODY", "<p>甲</p>"))
+        self.assertEqual(rc, 0, out)
+        self.assertFalse([l for l in out.splitlines() if l.startswith("  one") or l.startswith("  two")])
+
     def test_note_outside_paragraph_is_error(self):
         rc, _, out = run(PAGE.replace("BODY", '<span class="sidenote">悬空</span><p>正文。</p>'))
         self.assertEqual(rc, 1)

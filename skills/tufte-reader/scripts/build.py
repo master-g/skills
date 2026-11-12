@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""build.py 页面.html [--open] [--check-only]
+"""build.py 页面.html [--open] [--check-only] [--by-chapter]
 
 把作者写的读本源码就地合成为单文件成品，再做检查。可重复运行：成品再跑一遍会刷新内联的
 CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处理。
@@ -17,6 +17,9 @@ CSS/JS、重建目录，已展开的边注和已归位的脚注不会重复处�
      （jsDelivr，离线时回退系统字体）
 
 ERROR 必须修；WARN 需要判断。
+
+--check-only 不合成，只检查并打印统计；--by-chapter 在全书的「统计」行之后每章再打印一行，
+和结构清单逐章对账时用；--open 在检查通过后用默认浏览器打开。
 """
 import base64
 import mimetypes
@@ -557,6 +560,7 @@ def inline_assets(html, warns, errors):
 # ── 检查 ────────────────────────────────────────────────────────────────
 NOTE_HOSTS = {"p", "figure", "li", "dd", "blockquote", "td", "figcaption"}
 BLOCK_BREAKERS = {"section", "article", "header", "footer", "div", "nav", "body", "main"}
+PARAGRAPH_HOSTS_SKIPPED = {"li", "blockquote", "figure", "td", "th", "details"}  # 这些里面的 <p> 不算正文段落
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 
@@ -564,12 +568,19 @@ class Checker(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.classes, self.ids, self.hrefs = [], [], [], []
-        self.stats = {"章": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "题图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "图内公式": 0, "分步图": 0, "帧": 0}
+        self.stats = {"章": 0, "段落": 0, "小节(h3)": 0, "图": 0, "页边图": 0, "题图": 0, "表": 0, "代码块": 0, "边注": 0, "旁注": 0, "脚注": 0, "块级公式": 0, "行内公式": 0, "图内公式": 0, "分步图": 0, "帧": 0}
+        self.by_chapter = {}  # 章 id → 同样的各项计数，只含落在这一章里的元素
+        self.chapter, self.chapter_depth = None, 0
         self.errors, self.text = [], []
         self.deep_heading = []
         self.external = []
         self.after_toggle = False  # 上一个标签是不是边注开关的 checkbox
         self.raw_notes = self.raw_footnotes = self.raw_steps = 0
+
+    def bump(self, key, n=1):
+        self.stats[key] += n
+        if self.chapter is not None and key != "章":
+            self.by_chapter[self.chapter][key] += n
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -584,37 +595,43 @@ class Checker(HTMLParser):
             self.external.append(a.get("src") or a.get("href"))
         if tag == "article" and "chapter" in cls:
             self.stats["章"] += 1
+            self.chapter, self.chapter_depth = a.get("id") or f"第 {self.stats['章']} 章", len(self.stack)
+            self.by_chapter.setdefault(self.chapter, {k: 0 for k in self.stats if k != "章"})
+        if tag == "p" and not cls and self.chapter is not None \
+                and not PARAGRAPH_HOSTS_SKIPPED & set(self.stack[self.chapter_depth:]) \
+                and not any("footnotes" in c for c in self.classes[self.chapter_depth:]):
+            self.bump("段落")
         if tag == "h3":
-            self.stats["小节(h3)"] += 1
+            self.bump("小节(h3)")
         if tag == "figure" and "plate" in cls:
-            self.stats["题图"] += 1
+            self.bump("题图")
             if not (a.get("data-source") and a.get("data-license")):
                 self.errors.append("题图缺 data-source 或 data-license：用 scripts/plate.py 取图，它打印的写法带出处与许可")
         elif tag == "figure":
-            self.stats["图"] += 1
-            self.stats["分步图"] += "steps" in cls
+            self.bump("图")
+            self.bump("分步图", "steps" in cls)
         if tag == "li" and self.classes and "step-frames" in self.classes[-1]:
-            self.stats["帧"] += 1
+            self.bump("帧")
         if "data-step" in a:
             self.raw_steps += 1
         if tag == "table":
-            self.stats["表"] += 1
+            self.bump("表")
         if tag == "pre" and "mermaid" not in cls:  # Mermaid 图留在页面里的源码不算代码块
-            self.stats["代码块"] += 1
+            self.bump("代码块")
         if tag == "li" and (a.get("id") or "").startswith("fn-"):
-            self.stats["脚注"] += 1
+            self.bump("脚注")
         if tag == "math":
-            self.stats["图内公式" if "svg" in self.stack else "块级公式" if a.get("display") == "block" else "行内公式"] += 1
+            self.bump("图内公式" if "svg" in self.stack else "块级公式" if a.get("display") == "block" else "行内公式")
         if tag == "span" and "footnote" in cls:
             self.raw_footnotes += 1
         if tag == "span" and ("sidenote" in cls or "marginnote" in cls):
-            self.stats["边注" if "sidenote" in cls else "旁注"] += 1
+            self.bump("边注" if "sidenote" in cls else "旁注")
             self.raw_notes += not self.after_toggle
             host = next((t for t in reversed(self.stack) if t in NOTE_HOSTS | BLOCK_BREAKERS), None)
             if host not in NOTE_HOSTS:
                 self.errors.append(f"{'边注' if 'sidenote' in cls else '旁注'}不在 <p>/<figure>/<li> 里（直接挂在 <{host}> 下），页边定位会错位")
         if tag == "img" and any("marginnote" in c for c in self.classes) and "figure" not in self.stack:
-            self.stats["页边图"] += 1
+            self.bump("页边图")
         self.after_toggle = tag == "input" and "margin-toggle" in cls
         if tag not in VOID:
             self.stack.append(tag)
@@ -626,6 +643,8 @@ class Checker(HTMLParser):
                 self.classes.pop()
                 if self.stack.pop() == tag:
                     break
+            if self.chapter is not None and len(self.stack) <= self.chapter_depth:
+                self.chapter = None
 
     def handle_data(self, data):
         if data.strip():
@@ -698,7 +717,7 @@ def check(html, errors, warns):
     if fixed:
         warns.append(f"插图里有 {len(fixed)} 处写死的颜色（{'、'.join(dict.fromkeys(fixed))[:40]}），不跟随明暗主题："
                      "改用 currentColor，数据分成几类时用 var(--fig-1) … var(--fig-4)")
-    return c.stats
+    return c.stats, c.by_chapter
 
 
 # ── 插图颜色 ────────────────────────────────────────────────────────────
@@ -734,7 +753,7 @@ def open_page(path):
     return False
 
 
-FLAGS = {"--open", "--check-only"}
+FLAGS = {"--open", "--check-only", "--by-chapter"}
 
 
 def synthesize(page, errors, warns):
@@ -784,8 +803,11 @@ def main(argv):
             return 1
 
     html = page.read_text(encoding="utf-8")
-    stats = check(html, errors, warns)
+    stats, by_chapter = check(html, errors, warns)
     print("统计    " + "  ".join(f"{k} {v}" for k, v in stats.items()))
+    if "--by-chapter" in flags:
+        for cid, counts in by_chapter.items():
+            print(f"  {cid}    " + "  ".join(f"{k} {v}" for k, v in counts.items()))
     size = page.stat().st_size
     if size > SIZE_WARN:
         warns.append(f"页面 {size / 1024 / 1024:.1f} MB：检查是否有可压缩的大图")
