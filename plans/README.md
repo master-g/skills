@@ -645,7 +645,7 @@ advisor 在 `/tmp` 的仓库副本上实现了两份计划的全部改动，再�
 
 ### 执行记录（033）
 
-五步各一个提交，全量 81 个测试 OK，`make check` 通过，specimen 成品在各步前后逐字节相同，shelf 六本副本对照全部相同。两路审查（规范、是否符合计划）之后另修三处，合在一个提交里：`assemble.py` 在写页面之前拒绝 `build.py` 不认识的参数（原来会先用拼接稿覆盖页面再报错），并改用 `figlib.embed`，所以仓库里的脚本与本计划附件不再逐字节相同；`build.py` 只把 `element_end` 的未闭合报成 ERROR，不再接住所有 `ValueError`；`markup.md` 开头加一句，分章派发的读本改片段、不改页面。与计划原文的两处出入：`SKILL.md` 保留了「修改本技能」这个标题，下面只剩一行指针；Step 4 的 grep 仍命中 `dispatch.md` 里「示例章不保留」一句，那是计划自己要求写的。未做：`make install`、推送。
+五步各一个提交，全量 81 个测试 OK，`make check` 通过，specimen 成品在各步前后逐字节相同，shelf 六本副本对照全部相同。两路审查（规范、是否符合计划）之后另修三处，合在一个提交里：`assemble.py` 在写页面之前拒绝 `build.py` 不认识的参数（原来会先用拼接稿覆盖页面再报错），并改用 `figlib.embed`，所以仓库里的脚本与本计划附件不再逐字节相同；`build.py` 只把 `element_end` 的未闭合报成 ERROR，不再接住所有 `ValueError`；`markup.md` 开头加一句，分章派发的读本改片段、不改页面。与计划原文的两处出入：`SKILL.md` 保留了「修改本技能」这个标题，下面只剩一行指针；Step 4 的 grep 仍命中 `dispatch.md` 里「示例章不保留」一句，那是计划自己要求写的。之后维护者又选了三个小项，合在一个提交里：两个画图脚本用同一个 `FIGS` 键名时 `assemble.py` 报 ERROR；`SKILL.md` 的「修改本技能」标题删掉，只留末尾一行指针（与计划原文一致了）；甘特图不再画「今天」线（`mermaid.mjs` 给 pele 传 `now: 0`，同一份源码隔天重建成品不变）。全量 83 个测试 OK。
 
 ### Deferred（033 规划记录）
 

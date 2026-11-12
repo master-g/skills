@@ -91,6 +91,17 @@ class AssembleTest(unittest.TestCase):
         self.assertIn("不认识的参数：--only=ch01", out)
         self.assertFalse(page.exists())
 
+    def test_same_figure_key_in_two_scripts_is_an_error(self):
+        rc, page, out = assemble({
+            "ch01.html": chapter("one", 1, figure("flow")),
+            "ch02.html": chapter("two", 2, figure("flow")),
+            "ch01.figs.py": ARROW.format(key="flow"),
+            "ch02.figs.py": ARROW.format(key="flow"),
+        })
+        self.assertEqual(rc, 1)
+        self.assertIn("图的键名重复：flow（ch01.figs.py、ch02.figs.py）", out)
+        self.assertFalse(page.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

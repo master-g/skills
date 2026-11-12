@@ -72,7 +72,7 @@
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。冻结场景里没有连线图，等第一张真实页面出来再拿它的材料加场景（联动处见 plans/README.md「032 规划记录」）。未推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
-  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行并提交（81 个测试 OK），还没 `make install SKILL=tufte-reader SOURCE=.`、未推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过；shelf 六份 `assemble.py` 要不要改调技能脚本，用户未定；甘特图「今天」线随构建日期变化（ondine 时就有），pele 可传 `now` 固定，用户未定；figprobe 不测边标签和菱形斜边
+  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；figprobe 不测边标签和菱形斜边
   disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
   storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加

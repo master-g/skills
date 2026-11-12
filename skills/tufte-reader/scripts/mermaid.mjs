@@ -109,6 +109,9 @@ const out = bare.replace(
         idPrefix: `mmd${seq}-`,
         maxWidth: max,
         measurer,
+        // 甘特图的「今天」线取这个时刻；不给时是构建当时，同一份源码隔天重建成品就不同。
+        // 定在 1970 年：落在图的范围之外，不画这条线
+        now: 0,
       });
       ok++;
       if (r.width > max)

@@ -387,6 +387,14 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(html, second)
 
     @unittest.skipUnless(shutil.which("node"), "需要 node 编译 Mermaid 图")
+    def test_gantt_has_no_today_line(self):
+        fig = ('<figure><pre class="mermaid">gantt\n  dateFormat YYYY-MM-DD\n  section 甲\n'
+               "  取材 :a1, 2000-01-01, 10d\n  撰写 :after a1, 36500d</pre></figure>")
+        rc, html, out = run(PAGE.replace("BODY", fig))
+        self.assertEqual(rc, 0, out)
+        self.assertIn('<div class="mermaid-figure">', html)
+        self.assertNotIn("pele-today", html.split("</style>", 1)[1])
+
     def test_mermaid_recompiles_from_kept_source(self):
         fig = '<figure><pre class="mermaid">flowchart TD\n  A[旧标签] --> B[乙]</pre></figure>'
         _, first, _ = run(PAGE.replace("BODY", fig + fig))

@@ -211,6 +211,7 @@ flowchart TD
 - **外观**：pele 不是 Mermaid 本身，语法照 Mermaid，布局和画法是它自己的；tufte.css 把它设成方角的框、不填底色。字体、线宽、颜色由 tufte.css 接到页面上，与图元库的示意图同一种无衬线字；`%%{init}%%` 和 Mermaid 的主题变量不起作用。`classDef`、`style` 里写的颜色不跟随主题，构建发 WARN；要区分几类节点，用 `subgraph` 分组，或在标签里写明。
 - **语法错误**：构建报 ERROR，指明是哪幅图（取图题的开头）、源码第几行第几列和那一行，这幅图留着源码不编译。
 - **范围**：结构图用 Mermaid。带坐标轴、要读数值的图（折线、散点、柱状）照上面的「曲线图」用图元库画，不用 Mermaid 的 `xychart`、`pie`；标签里有公式的图也用图元库，Mermaid 的标签里写 `$…$` 构建报 ERROR。实测能编译的图型：`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`classDiagram`、`erDiagram`、`timeline`、`mindmap`、`gantt`、`block`、`architecture-beta`、`gitGraph`。
+- **甘特图**不画「今天」线：读本是静态页面，构建那天的日期读者看到时已经过期，同一份源码隔天重建成品也会不同。要标出某一天，加一个 `milestone` 任务。
 - 统计里 Mermaid 图计入「图」；构建另打一行「Mermaid 编译 N 幅」。
 
 ## 分步图

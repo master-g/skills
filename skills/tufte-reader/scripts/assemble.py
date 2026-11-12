@@ -31,13 +31,20 @@ from figlib import embed  # noqa: E402
 
 def load_figs(paths):
     """依次执行画图脚本，收集各自的 FIGS。全书的图在同一个进程里画，图内 id 的前缀才各不相同。"""
-    figs = {}
+    figs, owner, clashes = {}, {}, []
     for i, path in enumerate(paths):
         sys.path.insert(0, str(path.parent))
         spec = importlib.util.spec_from_file_location(f"_tr_figs_{i}", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        figs.update(getattr(mod, "FIGS", {}))
+        for key, fig in getattr(mod, "FIGS", {}).items():
+            # 各脚本可能共用 figlib 的那个 FIGS：同一个键换了一幅图，才是后一个脚本覆盖了前一个的
+            if key in figs and figs[key] is not fig:
+                clashes.append(f"{key}（{owner[key]}、{path.name}）")
+            owner.setdefault(key, path.name)
+            figs[key] = fig
+    if clashes:
+        raise KeyError("图的键名重复：" + "；".join(clashes) + "。键名以章 id 开头")
     return figs
 
 
@@ -82,9 +89,8 @@ def main(argv):
 
     fig_scripts = [p for p in [src / "figs.py", *sorted(src.glob("ch[0-9][0-9].figs.py")), *sorted(src.glob("apx*.figs.py"))]
                    if p.is_file() and (not only or p.name in ("figs.py", f"{only}.figs.py"))]
-    figs = load_figs(fig_scripts)
     try:
-        page = embed(html, figs)
+        page = embed(html, load_figs(fig_scripts))
     except KeyError as e:
         print(f"ERROR {e.args[0]}")
         return 1
