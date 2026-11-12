@@ -734,9 +734,33 @@ def open_page(path):
     return False
 
 
+FLAGS = {"--open", "--check-only"}
+
+
+def synthesize(page, errors, warns):
+    """合成各步；页面只在全部做完之后写回。"""
+    html = glue_math_punctuation(page.read_text(encoding="utf-8"))
+    html, notes = expand_notes(html)
+    html, fns = place_footnotes(html, errors)
+    html = build_toc(html, errors)
+    html, imgs = inline_images(html, page.parent, errors)
+    html, wide = widen_code(html)
+    html, steps = expand_steps(html, errors, warns)
+    html = inline_assets(html, warns, errors)
+    page.write_text(html, encoding="utf-8")
+    print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个，展开分步图 {steps} 幅")
+
+
 def main(argv):
-    args = [a for a in argv if not a.startswith("--")]
-    flags = {a for a in argv if a.startswith("--")}
+    args = [a for a in argv if not a.startswith("-")]
+    flags = {a for a in argv if a.startswith("-")}
+    if flags & {"-h", "--help"}:
+        print(__doc__)
+        return 0
+    unknown = sorted(flags - FLAGS)
+    if unknown:
+        print("ERROR 不认识的参数：" + "、".join(unknown))
+        return 2
     if len(args) != 1:
         print(__doc__)
         return 2
@@ -749,16 +773,15 @@ def main(argv):
     if "--check-only" not in flags:
         compile_math(page, errors, warns)
         compile_mermaid(page, errors, warns)  # 在公式之后：图题里的公式已经编译，取得出文字
-        html = glue_math_punctuation(page.read_text(encoding="utf-8"))
-        html, notes = expand_notes(html)
-        html, fns = place_footnotes(html, errors)
-        html = build_toc(html, errors)
-        html, imgs = inline_images(html, page.parent, errors)
-        html, wide = widen_code(html)
-        html, steps = expand_steps(html, errors, warns)
-        html = inline_assets(html, warns, errors)
-        page.write_text(html, encoding="utf-8")
-        print(f"合成    新展开边注/旁注 {notes} 条，新归位脚注 {fns} 条，内联图片 {imgs} 张，加宽代码块 {wide} 个，展开分步图 {steps} 幅")
+        try:
+            synthesize(page, errors, warns)
+        except ValueError as e:  # element_end：作者漏写了闭合标签
+            for w in warns:
+                print("WARN  ", w)
+            for line in [*errors, f"{e}，构建中止：补上闭合标签后重跑"]:
+                print("ERROR ", line)
+            print(f"失败：{len(errors) + 1} 个 ERROR，{len(warns)} 个 WARN  →  {page}")
+            return 1
 
     html = page.read_text(encoding="utf-8")
     stats = check(html, errors, warns)

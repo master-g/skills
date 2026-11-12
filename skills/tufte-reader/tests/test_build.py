@@ -23,7 +23,7 @@ PAGE = """<!doctype html><html lang="zh-CN"><head><title>测试 · Test</title><
 PNG_1PX = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
 
-def run(html, files=None):
+def run(html, files=None, args=()):
     d = Path(tempfile.mkdtemp())
     for name, data in (files or {}).items():
         (d / name).parent.mkdir(parents=True, exist_ok=True)
@@ -32,7 +32,7 @@ def run(html, files=None):
     page.write_text(html, encoding="utf-8")
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        rc = build.main([str(page)])
+        rc = build.main([str(page), *args])
     return rc, page.read_text(encoding="utf-8"), out.getvalue()
 
 
@@ -81,6 +81,26 @@ class BuildTest(unittest.TestCase):
         notes = html[html.index('<section class="footnotes">'):html.index('</section>', html.index('<section class="footnotes">'))]
         self.assertIn('</ol> <a class="fn-back" href="#fnref-one-1"', notes)
         self.assertLess(notes.index('href="#fnref-one-1"'), notes.index('<li id="fn-one-2">'))
+
+    def test_unclosed_tag_is_reported_as_error(self):
+        rc, _, out = run(PAGE.replace("</article>", "", 1))
+        self.assertEqual(rc, 1)
+        self.assertIn("ERROR", out)
+        self.assertIn("没有闭合", out)
+
+    def test_unknown_flag_leaves_page_untouched(self):
+        source = PAGE.replace("BODY", "<p>正文 $x^2$。</p>")
+        rc, html, out = run(source, args=["--chek-only"])
+        self.assertEqual(rc, 2)
+        self.assertIn("不认识的参数：--chek-only", out)
+        self.assertEqual(html, source)
+
+    def test_help_needs_no_page(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = build.main(["--help"])
+        self.assertEqual(rc, 0)
+        self.assertIn("build.py 页面.html", out.getvalue())
 
     def test_note_outside_paragraph_is_error(self):
         rc, _, out = run(PAGE.replace("BODY", '<span class="sidenote">悬空</span><p>正文。</p>'))
