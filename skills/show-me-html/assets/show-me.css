@@ -1624,6 +1624,18 @@ math.tml-display {
   stroke: color-mix(in srgb, var(--color-foreground) 15%, transparent);
   stroke-width: 0.8px;
 }
+/* 可点的节点：页面脚本给节点加 role="button"（interactions.md「可点击的 Mermaid 节点」），选中态用 aria-pressed */
+.pele .pele-node[role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+.pele .pele-node[role="button"]:is(:hover, :focus-visible) > :first-child {
+  stroke: var(--color-ring);
+}
+.pele .pele-node[aria-pressed="true"] > :first-child {
+  stroke: var(--color-ring);
+  stroke-width: 2.5px;
+}
 .fig-replay {
   opacity: 0;
   transition: opacity 140ms var(--ease-expo);

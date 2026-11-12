@@ -817,8 +817,12 @@ JS 数字动效使用上面 odometer 代码里的 `EASE`，它与 `--ease-expo` 
 
 ## 可点击的 SVG 节点
 
+手写 SVG 的图按这一节写；Mermaid 源码编译出来的图见下一节「可点击的 Mermaid 节点」。
+
 ```html
-<svg viewBox="0 0 720 220" role="img" aria-label="请求处理流程">
+<svg viewBox="0 0 720 220" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">请求处理流程</title>
+  <desc id="flow-desc">请求先到 ingress，再转给后端服务。</desc>
   <g
     class="node"
     tabindex="0"
@@ -884,6 +888,74 @@ document.querySelectorAll("svg .node").forEach((g) => {
   });
 });
 ```
+
+## 可点击的 Mermaid 节点
+
+Mermaid 图（`diagrams.md`「Mermaid 图」）的 SVG 每次构建都重新生成，按钮属性写不进源码，由页面脚本在加载时补上。
+编译出的每个节点是 `g.pele-node`，`data-id` 就是源码里的节点 id（`A[提交 PR]` 的 `A`）。详情表用节点 id 作键：
+
+```html
+<div class="diagram-layout">
+  <div class="diagram-canvas">
+    <pre class="mermaid">
+flowchart LR
+  accTitle: 请求处理流程
+  accDescr: 请求先到 ingress，再转给后端服务。
+  ingress[ingress] --> svc[后端服务]
+</pre>
+  </div>
+  <aside
+    class="node-detail"
+    id="node-detail"
+    aria-live="polite"
+    data-md-skip
+  ></aside>
+</div>
+```
+
+`.diagram-layout`、`.diagram-canvas`、`.node-detail` 是 `flowchart` 配方的版式类（图在左、详情栏在右并随滚动停靠，窄屏时详情栏排到图后）；
+别的配方里把图放进普通的 `figure.fig > .fig-box`，详情栏跟在 figure 后面，脚本不变。
+
+```js
+const DETAIL = {
+  ingress: { title: "ingress", body: "TLS 终止与路由。" },
+  // …键是 Mermaid 源码里的节点 id；没有详情的节点不写，保持不可点
+};
+const nodes = document.querySelectorAll(".pele-node[data-id]");
+const pick = (id) => {
+  nodes.forEach(
+    (n) =>
+      n.hasAttribute("role") &&
+      n.setAttribute("aria-pressed", String(n.dataset.id === id))
+  );
+  const title = document.createElement("h3");
+  const body = document.createElement("p");
+  title.textContent = DETAIL[id].title;
+  body.textContent = DETAIL[id].body;
+  document.getElementById("node-detail").replaceChildren(title, body);
+};
+nodes.forEach((g) => {
+  const value = DETAIL[g.dataset.id];
+  if (!value) return;
+  g.closest("svg").setAttribute("role", "group");
+  g.setAttribute("role", "button");
+  g.setAttribute("tabindex", "0");
+  g.setAttribute("aria-label", value.title);
+  g.setAttribute("aria-pressed", "false");
+  g.addEventListener("click", () => pick(g.dataset.id));
+  g.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      pick(g.dataset.id);
+    }
+  });
+});
+```
+
+- 悬停、聚焦和选中的样式 `show-me.css` 已经给了（认 `role="button"` 和 `aria-pressed`），页面不用再写。
+- 横向图有宽窄两版，同一个节点在两版里各有一个 `g`。上面的写法按 id 选中，两版一起标记，切换视口后选中态还在。
+- 含按钮的图把 `<svg>` 的 `role` 从 `img` 改成 `group`：`img` 的子元素对读屏器不可见，按钮会读不到。
+- 一页有多幅 Mermaid 图、节点 id 又重名时，把选择器收窄到那一幅图的容器（给 `figure` 一个 id）。
 
 ## 筛选 / 搜索
 

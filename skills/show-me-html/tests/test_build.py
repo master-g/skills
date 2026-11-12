@@ -962,6 +962,63 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(md.count("任何一步不过都回到修复。"), 2, md)  # 一次是 desc 导出的段落，一次在源码的 accDescr 行
         self.assertIn("错误率 < 1%?", md)
 
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_mermaid_nodes_become_buttons_in_both_variants(self):
+        """interactions.md「可点击的 Mermaid 节点」的脚本：有详情的节点变成按钮，点一个，宽窄两版同时标成选中，详情栏换内容。"""
+        page = self.copy_fixture("mermaid-flow.html")
+        script = """<aside id="node-detail" aria-live="polite" data-md-skip></aside>
+<script>
+const DETAIL = { A: { title: "提交 PR", body: "作者侧先验证。" }, F: { title: "灰度 5%", body: "观察 30 分钟。" } };
+const nodes = document.querySelectorAll(".pele-node[data-id]");
+const pick = (id) => {
+  nodes.forEach((n) => n.hasAttribute("role") && n.setAttribute("aria-pressed", String(n.dataset.id === id)));
+  const detail = document.getElementById("node-detail");
+  const title = document.createElement("h3");
+  const body = document.createElement("p");
+  title.textContent = DETAIL[id].title;
+  body.textContent = DETAIL[id].body;
+  detail.replaceChildren(title, body);
+};
+nodes.forEach((g) => {
+  const value = DETAIL[g.dataset.id];
+  if (!value) return;
+  g.closest("svg").setAttribute("role", "group");
+  g.setAttribute("role", "button");
+  g.setAttribute("tabindex", "0");
+  g.setAttribute("aria-label", value.title);
+  g.setAttribute("aria-pressed", "false");
+  g.addEventListener("click", () => pick(g.dataset.id));
+  g.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      pick(g.dataset.id);
+    }
+  });
+});
+</script>
+"""
+        page.write_text(page.read_text(encoding="utf-8").replace("<!--SHOW-ME:JS-->", script + "<!--SHOW-ME:JS-->"), encoding="utf-8")
+        result = run_build(page)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        run_jobs = runpy.run_path(str(BUILD))["run_jobs"]
+        probe = """(function(){
+          var q = function(s){ return document.querySelectorAll(s).length; };
+          var before = [q('.pele-node[role="button"]'), q('svg.pele[role="group"]'), q('svg.pele[role="img"]')];
+          document.querySelector('.diagram-wide .pele-node[data-id="F"]').dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          var shown = getComputedStyle(document.querySelector('.diagram-wide .pele-node[data-id="F"] > :first-child'));
+          return JSON.stringify({before: before, pressed: q('.pele-node[aria-pressed="true"]'),
+            ids: Array.from(document.querySelectorAll('.pele-node[aria-pressed="true"]')).map(function(n){ return n.dataset.id; }).join(''),
+            detail: document.getElementById('node-detail').textContent, cursor: shown.cursor, width: shown.strokeWidth});
+        })()"""
+        results, err = run_jobs([{"url": page.as_uri(), "width": 1280, "eval": probe}])
+        self.assertIsNotNone(results, err)
+        got = json.loads(results[0]["value"])
+        self.assertEqual(got["before"], [4, 2, 1])  # A、F 各在宽窄两版里；时序图没有可点节点，保持 role="img"
+        self.assertEqual((got["pressed"], got["ids"]), (2, "FF"))
+        self.assertEqual(got["detail"], "灰度 5%观察 30 分钟。")
+        self.assertEqual((got["cursor"], got["width"]), ("pointer", "2.5px"))
+
     def test_uncompiled_latex_is_an_error_in_check_only(self):
         page = self.copy_fixture()
         page.write_text(page.read_text(encoding="utf-8").replace("<h1>", "<p>$x^2$</p><h1>", 1), encoding="utf-8")
