@@ -97,7 +97,7 @@ python3 <skill-path>/scripts/plate.py "File:<Commons 上的文件名>" -o figure
 - **alt**：描述画面本身（人物、动作、器物），不写寓意。
 - `data-source` 和 `data-license` 由脚本写好，不要删：构建靠它们检查题图有没有出处。
 - 读本说明里写一句：题图是译者（原创撰写时是撰写者）所加，列出各幅的来源与许可。
-- 分章派发时，子 agent 不放题图；主 agent 拼接完各章后统一放。
+- 分章派发时，子 agent 不放题图；各章片段返回后由主 agent 统一放进 `src/` 里的片段，再运行 `assemble.py`。放进页面的题图下次拼接就没了。
 
 ## 图录
 

@@ -150,6 +150,8 @@ page = embed(源码, FIGS)   # 把 <!--FIG:shard--> 换成图
 </figure>
 ```
 
+分章派发的读本把片段放在工作区的 `src/`，画图脚本由 `scripts/assemble.py` 执行、占位符由它填回，不用自己调 `embed`（见 [分章派发](dispatch.md)）。
+
 - **坐标**是 `viewBox` 里的用户单位。`svg(w, h, body, label)` 的 `w`、`h` 是画布大小，页面上的显示宽度默认是 `w` 的 1.15 倍、不超过 600px（正文栏在 1280 宽的窗口里是 616px）；图里 13 号字显示出来约 15px。
 - **图元**：`text`、`mathtext`、`rect`、`circ`、`line`、`poly`（折线）、`elbow`（直角拐弯的连线）、`box`（带字的方块）、`boxes`（一行 token 方块）、`panel`（分组底板）、`cells`（网格，填充、颜色、标签都可以按行列给）、`heat`（矩阵热图），以及曲线图用的 `axes`、`curve`（见下面的「曲线图」）。各自的参数见源码里的说明。
 - **颜色**：每个图元都有 `color` 参数，不写是 `currentColor`，写 1 到 4 是分类色，写 `"accent"` 是页面的朱砂色 `--mark`；`fill` 是 0 到 1 的不透明度。`rect(…, hatch=True)` 叠一层斜线，表示「被缓存」「被屏蔽」这类状态。

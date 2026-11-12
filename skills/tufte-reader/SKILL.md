@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 ## 1. 取材，列结构清单
 
-输出路径是用户指定的位置，否则当前目录。页面文件名默认是 `YYYY-MM-DD-<标题>.html`：日期取动笔当天的本机日期（运行 `date +%F`），标题部分取原文标题（原创撰写取书名）的英文 kebab-case，中文标题先意译成简短英文，例如 `2026-10-16-attention-is-all-you-need.html`。用户给了完整文件名时照用；续写或修订已有读本时沿用原文件名。页面旁建**工作区** `<页面名>.work/`：取到的原文、结构清单 `outline.md`、术语表 `glossary.md` 都放在这里，不进页面。
+输出路径是用户指定的位置，否则当前目录。页面文件名默认是 `YYYY-MM-DD-<标题>.html`：日期取动笔当天的本机日期（运行 `date +%F`），标题部分取原文标题（原创撰写取书名）的英文 kebab-case，中文标题先意译成简短英文，例如 `2026-10-16-attention-is-all-you-need.html`。用户给了完整文件名时照用；续写或修订已有读本时沿用原文件名；工作区里有 `src/` 的读本是分章派发写成的，改 `src/` 里的片段后运行 `assemble.py`，不改页面（见 [分章派发](references/dispatch.md)）。页面旁建**工作区** `<页面名>.work/`：取到的原文、结构清单 `outline.md`、术语表 `glossary.md` 都放在这里，不进页面。
 
 按材料来源取全文：
 
@@ -38,14 +38,14 @@ disable-model-invocation: true
 
 ## 3. 逐章写读本
 
-把 `assets/shell.html` 复制到输出路径，按 [标记契约](references/markup.md) 和 [行文](references/style.md) 写。先写扉页和参考文献，再写各章。
+按 [标记契约](references/markup.md) 和 [行文](references/style.md) 写。先按下面的两种写法定下用哪一种，再写扉页和参考文献，然后写各章。
 
-用户要求配题图时，按 [题图](references/plates.md) 选图、取图：扉页题图随扉页写，章首题图在各章写完后统一放（分章派发时在拼接之后）。
+用户要求配题图时，按 [题图](references/plates.md) 选图、取图：扉页题图随扉页写，章首题图在各章写完后统一放（分章派发时等各章片段返回后，放进 `src/` 里对应的片段，扉页题图放进 `head.html`）。
 
 各章的写法按章数和环境二选一：
 
-- **分章派发**：全书三章以上、环境里有子 agent 工具时，每章交给一个子 agent 写成片段，再拼回页面。按 [分章派发](references/dispatch.md) 做。
-- **逐章自己写**：其余情况。一次写一章，写完一章再写下一章。
+- **分章派发**：全书三章以上、环境里有子 agent 工具时，每章交给一个子 agent 写成片段，放在工作区的 `src/`，用 `scripts/assemble.py` 拼成页面。扉页和参考文献也写成 `src/` 里的片段，不在输出路径手建页面。按 [分章派发](references/dispatch.md) 做。
+- **逐章自己写**：其余情况。把 `assets/shell.html` 复制到输出路径，在这个页面里一次写一章，写完一章再写下一章。
 
 完成标准：每章的段落、脚注、图、表、公式都和原文一一对应（整理模式下，删掉的部分已在该章译注里写明）。原创撰写时，每写完一章就和结构清单里该章的计划数对一遍，有出入就改正文或改清单，并记下原因。分章派发时，页面里章的数目和顺序还要与结构清单一致。
 
@@ -54,6 +54,8 @@ disable-model-invocation: true
 ```sh
 python3 <skill-path>/scripts/build.py 页面.html
 ```
+
+分章派发的读本改用 `python3 <skill-path>/scripts/assemble.py <源目录> -o 页面.html`：它拼接片段后自己调用 `build.py`，参数照传。
 
 构建需要 node，用来编译公式和 Mermaid 图。修掉所有 ERROR，逐条判断 WARN。
 
