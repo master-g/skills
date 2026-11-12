@@ -575,6 +575,7 @@ advisor 在 `/tmp` 的仓库副本上实现了两份计划的全部改动，再�
 | ---- | ----------------------------------------------------------------------- | -------- | ------ | ---------- | ---------------------------------------------------------------------- |
 | 030  | 连线图改写 Mermaid 源码，构建时由 pele 编译成内联 SVG，横向图自动出窄版 | P1       | M      | —          | DONE（2026-11-12 审阅通过，已合入 main `615fdd9`；见「030 执行记录」） |
 | 031  | Mermaid 图节点可以点开详情，手写图的可点示例对齐无障碍契约              | P2       | S      | 030        | DONE（2026-11-12 审阅通过，已合入 main `e547f46`；见「031 执行记录」） |
+| 032  | 配方和反模式文字里剩下的四处「内联 SVG / 另画窄版」改为指向 Mermaid     | P3       | S      | —          | DONE（2026-11-12 审阅通过，已合入 main `6ac16b5`；见「032 执行记录」） |
 
 ### Dependency notes
 
@@ -594,6 +595,20 @@ advisor 在 `/tmp` 的仓库副本上实现了两份计划的全部改动，再�
 - **执行**：sonnet 执行者一次通过，无 REVISE。一个提交 `e547f46`，三个文件，没有 trailer。执行者报告：新用例 `OK`（没有被跳过）、全量 72 个测试 OK、`make check` 与 prettier 通过、反证失败于 `('pointer', '1.2px') != ('pointer', '2.5px')` 后手工还原、三条计数相符。
 - **advisor 复核**：`615fdd9..e547f46` 的 diff 与计划附件 `031.patch` 逐行相同；`skills/show-me-html` 之外零改动，worktree 干净。在 worktree 里重跑：全量 `Ran 72 tests` OK，新用例单独跑为 `ok`，文档门禁通过（122 个文件），计数相符。
 - **合入**：维护者 2026-11-12 确认，main 从 `fdf3059` 快进到 `e547f46`（含 030 的 `615fdd9`）。合入后的 main 上 72 个测试 OK；`make install SKILL=show-me-html SOURCE=.` 后安装副本与仓库一致，用安装副本的构建器编译夹具页通过。两个 worktree 和执行分支已删除，未推送。
+
+### 032 规划记录（2026-11-12，基线 `5510e7e`）
+
+- 维护者在 030、031 合入后要求评估「样板文件」要不要跟着改。逐类看过：`assets/shell.html`、`assets/gallery/*.html`（全是数据图）、`tests/fixtures/`、`diagrams.md` 的示例都不用改；`layouts.md:186`、`layouts.md:260`、`anti-patterns.md:21`、`visual-system.md:119` 四处文字仍把连线图引向手写 SVG 或手画窄版，写成 032。向维护者汇报时说的是三处，`visual-system.md:119` 是写计划时搜出来的第四处，同一类问题。
+- advisor 在仓库的全新克隆上改好四句、跑过 prettier（`anti-patterns.md` 的表整体重排列宽，16 行对 16 行），`make check` 通过、72 个测试 OK，导出为 `032-show-me-html-mermaid-recipe-wording/032.patch`；`git apply --check` 在 `5510e7e` 上通过。
+- 没有规划：新增连线图冻结场景。本节「Findings considered and rejected」里否决过一次，这次的看法是等第一张用 Mermaid 画的真实页面出来，再拿它的材料冻结；联动处有 `scenarios/<名>/SCENARIO.md`、`scripts/probe_round.mjs` 的场景清单与判据、`MAINTENANCE.md` 里写死的五个场景名、第一轮基线页面。
+- 顺带看到、没有处理：`show-me.css` 的 `.diagram-node` 只有夹具 `tests/fixtures/component-states.html` 在用，文档里没有提到它。
+
+### 032 执行记录（2026-11-12）
+
+- **第一次派发作废**：执行者的 worktree 起在远端的 `fdf3059` 上（计划基于本地 main 的 `5510e7e`），它按要求停下汇报；worktree 因为没有改动被自动回收。advisor 让它继续后，它切目录失败却没有检查，把补丁套到了主工作区，随即 `git apply -R` 撤销。advisor 核对：主工作区三份参考文档无改动，仍在 `5510e7e`，没有残留分支。教训：worktree 起点不是本地 HEAD 时，要在第一次派发的指令里就写明从哪个提交开分支，不要等执行者停下后再续。
+- **第二次执行**：新的 sonnet 执行者第一步就从 `5510e7e` 开分支，一次通过，无 REVISE。一个提交 `6ac16b5`，三个文件，19 增 19 删，没有 trailer。
+- **advisor 复核**：`5510e7e..6ac16b5` 的 diff 与 `032.patch` 逐行相同；`skills/show-me-html/references/` 之外零改动，worktree 干净，`node_modules` 链接已删。在 worktree 里重跑：全量 `Ran 72 tests` OK，文档门禁通过（122 个文件）。
+- **合入**：维护者 2026-11-12 确认，main 从 `5510e7e` 快进到 `6ac16b5`，`make install SKILL=show-me-html SOURCE=.` 后安装副本与仓库一致。worktree 和执行分支已删除，未推送。
 
 ### Verification baseline（2026-11-12）
 
