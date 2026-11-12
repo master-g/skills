@@ -1556,6 +1556,74 @@ math.tml-display {
 .fig svg text.name {
   font-family: var(--font-sans);
 }
+/* Mermaid 图（构建时由 scripts/mermaid.mjs 用 vendor 的 pele 编译成 SVG）。pele 的颜色、字体读 --pele-* 变量，
+   这里接到页面的 token 上，切换主题不用重新编译。线宽 pele 不写属性，从根元素继承。
+   源码（pre.mermaid）留在页面里供下次构建和 Markdown 导出，不显示。
+   注释里不要写出带尖括号的 pre 开标签：mermaid.mjs 按文本找源码，会把它当成一幅图。 */
+.pele {
+  --pele-bg: var(--color-background);
+  --pele-fg: var(--color-foreground);
+  --pele-muted: var(--color-muted-foreground);
+  --pele-line: var(--color-muted-foreground);
+  --pele-surface: var(--color-card);
+  --pele-surface-alt: color-mix(
+    in srgb,
+    var(--color-foreground) 6%,
+    transparent
+  );
+  --pele-border: var(--color-border);
+  --pele-accent: var(--chart-1);
+  --pele-critical: var(--chart-1);
+  --pele-radius: 8px;
+  --pele-font: var(--font-sans);
+  --pele-font-mono: var(--font-mono);
+  --pele-title-weight: 600;
+  --pele-heading-weight: 600;
+  --pele-bold-weight: 600;
+  stroke-width: 1.2px;
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+/* 连线标签下面的遮罩取图所在那一层的底色：图框和 flowchart 配方的画布都是卡面色 */
+.fig-box .pele,
+.diagram-canvas .pele {
+  --pele-bg: var(--color-card);
+}
+.fig svg.pele text {
+  font-family: var(--font-sans);
+}
+.mermaid-figure > pre.mermaid {
+  display: none;
+}
+/* 两级文字的节点：标签写成 "`**标题**⏎说明`" 时，粗体行之后的行是说明，用次要色、小一号 */
+.pele .pele-label tspan[font-weight] ~ tspan:not([font-weight]) {
+  fill: var(--color-muted-foreground);
+  font-size: 0.85em;
+}
+/* 节点语义（diagrams.md「节点语义 → 处理」）：源码里写 A:::focus / :::store / :::external / :::optional */
+.pele .pele-node.focus > :first-child {
+  fill: color-mix(in srgb, var(--chart-1) 10%, transparent);
+  stroke: var(--chart-1);
+  stroke-width: 1.6px;
+}
+.pele .pele-node.store > :first-child {
+  fill: var(--color-muted);
+}
+.pele .pele-node.external > :first-child,
+.pele .pele-node.optional > :first-child {
+  fill: none;
+  stroke: var(--color-muted-foreground);
+  stroke-width: 1px;
+}
+.pele .pele-node.optional > :first-child {
+  stroke-dasharray: 4 3;
+}
+.pele .pele-cluster > rect {
+  stroke: color-mix(in srgb, var(--color-foreground) 15%, transparent);
+  stroke-width: 0.8px;
+}
 .fig-replay {
   opacity: 0;
   transition: opacity 140ms var(--ease-expo);

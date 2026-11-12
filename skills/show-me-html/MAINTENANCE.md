@@ -60,6 +60,7 @@
 ## Vendor 升级
 
 - Temml：`npm pack temml@<版本>`，取 `dist/temml.cjs` 与 `dist/Temml-Local.css` 覆盖 `assets/vendor/temml/`，更新 `README.md` 第三方表的版本。`math.mjs` 在运行时剥掉 CSS 里的 `@font-face`（外链 woff2）和 `math {}` 字体栈，升级后确认这两个正则仍能命中。
+- pele（Mermaid 图编译）：用上游 npm 包 `pele` 的 `dist/pele.js` 覆盖 `assets/vendor/pele/pele.mjs`，更新 `README.md` 第三方表的版本；tufte-reader 技能 vendor 了同一个文件，两处一起升。升级后跑单元测试（`-k mermaid`），再构建 `tests/fixtures/mermaid-flow.html` 的副本加 `--snap`，两种主题、390 与 1280 各看一遍：布局参数（`scripts/mermaid.mjs` 的 `LAYOUT`）和 `show-me.css` 里按 pele 的 class 写的规则都依赖上游的输出结构。
 - 图型目录与 lieflat-charts 的对应关系写在 `references/charts.md` 顶部；上游更新时按数据形状对比目录，不整页照搬（上游模板依赖 ECharts/Chart.js 与联网字体，本 skill 全部用 SVG 重做）。
 - 改视觉方向只动 `show-me.css` 原语层（`--ink` / `--paper` / `--hero` / `--tone-*`）；派生层不写字面色。`tests/test_build.py` 有一条测试盯着这个数。
 

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mermaid 图夹具</title>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="flowchart">
+    <header class="page-chrome" data-md-skip>
+      <div class="chrome-inner">
+        <span class="chrome-title">Mermaid 图夹具</span>
+        <button type="button" class="btn" data-copy-md>复制为 Markdown</button>
+      </div>
+    </header>
+    <div class="layout">
+      <main id="doc">
+        <section>
+          <h1>发布流程</h1>
+          <p>有分支和回边的横向流程图，构建时编译成宽窄两版。</p>
+          <figure class="fig">
+            <div class="fig-box">
+              <div class="fig-head">
+                <span class="fig-title">两道判断，一条回边</span>
+              </div>
+              <pre class="mermaid">
+flowchart LR
+  accTitle: 从提交到全量的发布流程
+  accDescr: 提交 PR 后过 CI，通过则合并并灰度，错误率达标则全量；任何一步不过都回到修复。
+  A[提交 PR] --> B{CI 通过?}
+  B -- 是 --> C[合并 main]
+  B -- 否 --> D[修复]:::optional
+  D --> A
+  C --> E[(制品库)]:::store
+  E --> F["`**灰度 5%**
+观察 30 分钟`"]:::focus
+  F --> G{错误率 &lt; 1%?}
+  G -- 是 --> H[全量]
+  G -- 否 --> I[回滚]
+  I -.-> D
+</pre>
+            </div>
+            <figcaption>回滚之后回到修复，不直接重发。</figcaption>
+          </figure>
+          <figure class="fig">
+            <div class="fig-box">
+              <div class="fig-head">
+                <span class="fig-title">一次请求</span>
+              </div>
+              <pre class="mermaid">
+sequenceDiagram
+  accTitle: 一次请求经过网关到服务
+  accDescr: 用户请求网关，网关转发给服务，服务响应后网关返回 200。
+  participant U as 用户
+  participant G as 网关
+  participant S as 服务
+  U->>G: 请求
+  G->>S: 转发
+  S-->>G: 响应
+  G-->>U: 200
+</pre>
+            </div>
+          </figure>
+        </section>
+      </main>
+    </div>
+    <!--SHOW-ME:JS-->
+  </body>
+</html>

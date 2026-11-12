@@ -873,6 +873,95 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
         self.assertEqual(page.read_text(encoding="utf-8"), out)
 
+    @unittest.skipUnless(shutil.which("node"), "需要 node")
+    def test_mermaid_compiles_to_wide_and_narrow_svg_and_stays_idempotent(self):
+        """横向流程图编译成宽窄两版，时序图只出一版；源码留在页面里，重复构建结果不变。"""
+        page = self.copy_fixture("mermaid-flow.html")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        out = page.read_text(encoding="utf-8")
+        self.assertEqual(out.count('<div class="mermaid-figure">'), 2)
+        self.assertEqual(out.count('<pre class="mermaid">'), 2)
+        self.assertEqual(out.count('class="diagram-wide pele pele-flowchart"'), 1)
+        self.assertEqual(out.count('class="diagram-narrow pele pele-flowchart"'), 1)
+        self.assertEqual(out.count('class="pele pele-sequence"'), 1)
+        svgs = re.findall(r"<svg\b[^>]*\bpele\b[^>]*>", out)
+        self.assertEqual(len(svgs), 3)
+        for tag in svgs:
+            self.assertIn('role="img"', tag)
+            self.assertIn("aria-labelledby=", tag)
+            self.assertRegex(tag, r'style="max-width:\d+px;')
+            self.assertNotRegex(tag, r'\swidth="')
+        self.assertIn('class="pele-node pele-shape-rect focus"', out)
+        self.assertNotIn("SVG 图缺少", result.stdout)
+        self.assertNotIn("斜线", result.stdout)
+        again = run_build(page)
+        self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+        self.assertEqual(page.read_text(encoding="utf-8"), out)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node")
+    def test_mermaid_syntax_error_names_the_source_line(self):
+        page = self.copy_fixture("mermaid-flow.html")
+        page.write_text(page.read_text(encoding="utf-8").replace("  D --> A\n", "  D --> [[\n", 1), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("Mermaid 图第 1 幅编译失败，源码第 7 行", result.stdout)
+        self.assertIn("有 1 幅 Mermaid 图没有编译成 SVG", result.stdout)
+        self.assertEqual(page.read_text(encoding="utf-8").count('<div class="mermaid-figure">'), 1)
+
+    def test_uncompiled_mermaid_is_an_error_in_check_only(self):
+        page = self.copy_fixture("mermaid-flow.html")
+        result = run_build(page, "--check-only")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("有 2 幅 Mermaid 图没有编译成 SVG", result.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node")
+    def test_mermaid_without_acc_title_warns(self):
+        page = self.copy_fixture("mermaid-flow.html")
+        html = re.sub(r"  acc(Title|Descr): [^\n]*\n", "", page.read_text(encoding="utf-8"), count=2)
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.count("Mermaid 图没写 accTitle / accDescr"), 2, result.stdout)
+
+    @unittest.skipUnless(shutil.which("node"), "需要 node")
+    def test_mermaid_overwide_chart_warns(self):
+        """横向图排出来超过 960px：放进图框字会偏小，构建点名这一幅并给出 Mermaid 的改法。"""
+        page = self.copy_fixture("mermaid-flow.html")
+        html = page.read_text(encoding="utf-8").replace(
+            "  I -.-> D\n", "  I -.-> D\n  H --> J[通知全体干系人和值班] --> K[更新对外发布说明文档]\n", 1)
+        page.write_text(html, encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertRegex(result.stdout, r"WARN   Mermaid 图第 1 幅排出来宽 \d{4}px，放进图框要缩到 0\.\d\d 倍")
+        self.assertIn("把主流向改成 TD", result.stdout)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_mermaid_page_passes_render_check_and_exports_source(self):
+        """宽窄两版都过渲染检查；「复制为 Markdown」带出 accDescr 和 mermaid 代码块，各一次。"""
+        page = self.copy_fixture("mermaid-flow.html")
+        snap = page.parent / "snap"
+
+        result = subprocess.run([sys.executable, str(BUILD), str(page), "--snap", str(snap),
+                                 "--snap-theme", "light", "--snap-width", "1280"],
+                                text=True, capture_output=True, check=False)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("WARN   ", result.stdout)
+        md = (snap / "export.md").read_text(encoding="utf-8")
+        self.assertEqual(md.count("```mermaid\nflowchart LR\n"), 1, md)
+        self.assertEqual(md.count("```mermaid\nsequenceDiagram\n"), 1, md)
+        self.assertEqual(md.count("任何一步不过都回到修复。"), 2, md)  # 一次是 desc 导出的段落，一次在源码的 accDescr 行
+        self.assertIn("错误率 < 1%?", md)
+
     def test_uncompiled_latex_is_an_error_in_check_only(self):
         page = self.copy_fixture()
         page.write_text(page.read_text(encoding="utf-8").replace("<h1>", "<p>$x^2$</p><h1>", 1), encoding="utf-8")

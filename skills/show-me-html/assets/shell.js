@@ -334,7 +334,8 @@
       } else if (t === "PRE") {
         var code = n.querySelector("code");
         var lang =
-          (code && (code.className.match(/language-([\w+-]+)/) || [])[1]) || "";
+          (code && (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
+          (n.classList.contains("mermaid") ? "mermaid" : "");
         out +=
           "```" +
           lang +

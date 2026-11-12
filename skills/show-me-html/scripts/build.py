@@ -51,6 +51,11 @@ SHELL_JS = ASSETS / "shell.js"
 # 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
 LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
 MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
+MERMAID_SCRIPT = Path(__file__).resolve().parent / "mermaid.mjs"
+# Mermaid 源码留在页面里，每次构建都从它重新编译（见 mermaid.mjs）。开标签写法不对的源码 mermaid.mjs 认不出，
+# 检查用宽松的写法把这些也数进来
+MERMAID_ANY_RE = re.compile(r'<pre\b[^>]*\bclass="[^"]*\bmermaid\b')
+MERMAID_DONE = '<div class="mermaid-figure">'
 # 作者写 LaTeX：行内 \( … \) 或 $ … $（pandoc 规则），块级 \[ … \] 或 $$ … $$。
 MATH_DELIM_RE = re.compile(r"\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?:^|[^\\$])\$(?=\S)[^$\n]*?\S\$(?!\d)")
 CODE_ISLAND_RE = re.compile(r"<(pre|code|script|style)\b[\s\S]*?</\1\s*>", re.I)
@@ -276,11 +281,18 @@ def check_svgs(html, warns, errors):
             missing.append("<title>")
         if not re.search(r"<desc[\s>]", body):
             missing.append("<desc>")
-        if missing:
+        compiled = bool(re.search(r'\bclass="[^"]*\bpele\b', attrs))  # Mermaid 图，mermaid.mjs 的产物
+        if missing and compiled:
+            warns.append("有一幅 Mermaid 图没写 accTitle / accDescr：读屏器和「复制为 Markdown」拿不到这幅图的内容。"
+                         "在源码里图型声明的下一行加 accTitle: 一句话标题 和 accDescr: 节点与流向的文字版"
+                         "（references/diagrams.md「Mermaid 图」）")
+        elif missing:
             snippet = re.sub(r"\s+", " ", m.group(0)[:80]).strip()
             warns.append(f"SVG 图缺少 {'、'.join(missing)}（{snippet}…）：读屏器拿不到这张图的内容。"
                          "契约见 references/diagrams.md「无障碍 SVG 契约」；"
                          "纯装饰图写 aria-hidden=\"true\"")
+        if compiled:
+            continue  # 连线由 pele 排，不按手绘图的连线规则查
         diagonals = []
         for line in LINE_TAG_RE.findall(body):
             nums = dict(LINE_ATTR_RE.findall(line))
@@ -531,6 +543,31 @@ def compile_math(page, errors, warns):
     return True
 
 
+def compile_mermaid(page, errors, warns):
+    """作者写 Mermaid 源码（<pre class="mermaid">），这里用 vendor 的 pele 编译成内联 SVG。返回是否改写了文件。
+
+    需要 node，理由同 compile_math。源码留在页面里，每次构建重新编译。
+    """
+    import shutil, subprocess
+    html = page.read_text(encoding="utf-8")
+    if not MERMAID_ANY_RE.search(html):
+        return False
+    node = shutil.which("node")
+    if not node:
+        errors.append("页面里有 Mermaid 图（<pre class=\"mermaid\">），但找不到 node 来编译成 SVG；装 Node.js 后重跑")
+        return False
+    out = subprocess.run([node, str(MERMAID_SCRIPT), str(page)], capture_output=True, text=True, encoding="utf-8")
+    if out.returncode != 0:
+        errors.append("Mermaid 图编译失败：" + (out.stderr.strip().splitlines() or ["未知错误"])[-1])
+        return False
+    for line in out.stdout.splitlines():
+        if line.startswith("ERROR"):
+            errors.append(line[5:].strip())
+        elif line.startswith("WARN"):
+            warns.append(line[4:].strip())
+    return page.read_text(encoding="utf-8") != html
+
+
 def runtime_scripts(html, warns):
     """按页面当前内容算出应当内联的运行时脚本。每次构建都重算：加了就补，删了就去。
     返回 (拼好的 <script> 串, 语言名集合)。判断时先剥掉已内联的系统脚本，免得脚本自身的文本误命中。"""
@@ -653,6 +690,11 @@ def check(html, path, allow_legacy_recipe=False):
     for slot in (CSS_SLOT, JS_SLOT):
         if slot in html:
             errors.append(f"占位符 {slot} 未被替换")
+    own_html = SYSTEM_STYLE_RE.sub("", SYSTEM_SCRIPT_RE.sub("", stripped))
+    raw_mermaid = len(MERMAID_ANY_RE.findall(own_html)) - own_html.count(MERMAID_DONE)
+    if raw_mermaid > 0:
+        errors.append(f"有 {raw_mermaid} 幅 Mermaid 图没有编译成 SVG：开标签只写 <pre class=\"mermaid\">，"
+                      "不要加别的属性或 class；同时修掉上面关于 Mermaid 图的 ERROR")
     if CSS_MARK not in html:
         errors.append("页面里没有内联的 show-me-html CSS")
 
@@ -1262,7 +1304,8 @@ def render_check(page, widths=(500, 1024, 1280)):
             diag = htmllib.unescape(m.group(6).strip())
             if diag:
                 issues.append(f"{cw}px 下示意图字号渲染后低于 8px：{diag}。宽版缩得太小就画窄版，"
-                              "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）")
+                              "窄版控制 viewBox 宽度（diagrams.md「窄屏另画一版」）；Mermaid 图把主流向改成 TD、"
+                              "缩短标签或拆成两幅（diagrams.md「Mermaid 图」）")
             contrast = htmllib.unescape(m.group("contrast").strip())
             if contrast and w == max(widths):
                 issues.append(f"文字对比度不足（亮色主题；正文要 4.5:1，大字要 3:1）：{contrast}。次要文字用 --color-muted-foreground，"
@@ -1334,6 +1377,8 @@ def main():
     build_errors, build_warns = [], []
     if not args.check_only:
         if compile_math(args.page, build_errors, build_warns):
+            html = args.page.read_text(encoding="utf-8")
+        if compile_mermaid(args.page, build_errors, build_warns):
             html = args.page.read_text(encoding="utf-8")
         html, changed, used, langs, warns_from_build = build(html, build_errors)
         build_warns += warns_from_build

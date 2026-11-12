@@ -15,7 +15,7 @@
 npx skills add master-g/skills --skill show-me-html -g
 ```
 
-需要 Python 3（合成脚本用标准库，无第三方包）；页面含 LaTeX 公式时还需要 Node.js（Temml 已 vendor，不用 npm install）。项目级共享放 `<repo>/.claude/skills/`。
+需要 Python 3（合成脚本用标准库，无第三方包）；页面含 LaTeX 公式或 Mermaid 图时还需要 Node.js（Temml、pele 已 vendor，不用 npm install）。项目级共享放 `<repo>/.claude/skills/`。
 
 ## 用法
 
@@ -51,10 +51,11 @@ npx skills add master-g/skills --skill show-me-html -g
 | `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                                        |
 | `tests/`                      | 构建契约、组件状态和 21 配方 fixture                                                 |
 | `scripts/math.mjs`            | LaTeX → MathML 编译（Temml）                                                         |
+| `scripts/mermaid.mjs`         | Mermaid 源码 → 内联 SVG 编译（pele），横向图自动出窄版                               |
 | `scripts/probe_round.mjs`     | 冻结场景轮次探针：主题、动效、三档宽度截图、真实键盘、打印与场景判据                 |
 | `scripts/render.mjs`          | `build.py` 的 Chrome 运行器：一个无头实例跑完渲染检查、`--snap` 切片与 `--shot` 截图 |
 | `scripts/cdp.mjs`             | 无头 Chrome 的 CDP 连接（启动、收发、清理），`render.mjs` 与 `probe_round.mjs` 共用  |
-| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml                              |
+| `assets/vendor/`              | basecoat 行为 JS、lucide sprite、speed-highlight、Temml、pele                        |
 
 ## 视觉系统
 
@@ -71,6 +72,7 @@ effective-html 已由本 skill 取代并从仓库删除，历史内容见 Git �
 | [basecoat](https://basecoatui.com)（只保留 JS 行为层）                                                   | 1.0.2   | MIT © Ronan Berder        | `assets/vendor/LICENSE-basecoat.md` |
 | [lucide](https://lucide.dev) 图标                                                                        | 1.31.0  | ISC © Lucide Contributors | `assets/vendor/LICENSE-lucide.txt`  |
 | [Temml](https://temml.org) 公式编译                                                                      | 0.13.5  | MIT © Ron Kok             | `assets/vendor/LICENSE-temml.txt`   |
+| [pele](https://github.com/obsidianmd/pele) Mermaid 图编译（只在构建时运行）                              | 1.13.0  | MIT © kepano              | `assets/vendor/LICENSE-pele.txt`    |
 | [lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) 图型概念与选型规则来源，无代码衍生 | eace082 | 不适用                    | —                                   |
 
-前三项的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用；lieflat-charts 只提供图型概念，没有代码进入产出。
+前三项的代码都以内联形式进入产出的 HTML，转发页面即在转发这些代码，许可条款随之适用；pele 只在构建时运行，进入产出的是它编译出的 SVG；lieflat-charts 只提供图型概念，没有代码进入产出。

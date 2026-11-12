@@ -64,7 +64,7 @@
 python3 <skill-path>/scripts/build.py 输出文件.html
 ```
 
-它先把正文里的 LaTeX 编译成 MathML（需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
+它先把正文里的 LaTeX 编译成 MathML、把 `<pre class="mermaid">` 里的 Mermaid 源码编译成内联 SVG（都需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
 页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、页面有 `data-chart` 时内联图表运行时 `charts.js`、
 按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
 
