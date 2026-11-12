@@ -64,15 +64,15 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-12] main：show-me-html 接入 pele（plans/030、031），再把配方与反模式里剩下的四处手写 SVG 措辞改为指向 Mermaid（plans/032），都经 /improve 执行、审阅后快进合入并 make install；未推送
+- [2026-11-12] main：show-me-html 接入 pele（plans/030、031），再把配方与反模式里剩下的四处手写 SVG 措辞改为指向 Mermaid（plans/032），都经 /improve 执行、审阅后快进合入并 make install，已推送
   验证：032 合入后 72 个测试 OK，make check 通过，安装副本与仓库一致；030 合入时安装副本能编译夹具页，五个冻结场景页 probe.json 相同、截图 30/30 相同。对比页在 /tmp/smh-pele/cmp-a.html、cmp-c.html
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。冻结场景里没有连线图，等第一张真实页面出来再拿它的材料加场景（联动处见 plans/README.md「032 规划记录」）。未推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
-  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；shelf 六份 `src/assemble.py` 已改成一行调用技能脚本并提交在 shelf 本地（未推送），shelf 以后依赖已安装的 `assemble.py`
+- [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。冻结场景里没有连线图，等第一张真实页面出来再拿它的材料加场景（联动处见 plans/README.md「032 规划记录」）。已推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
+  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；shelf 六份 `src/assemble.py` 已改成一行调用技能脚本并提交、推送，shelf 以后依赖已安装的 `assemble.py`
   tufte-reader 甘特图：不画「今天」线（`now: 0`），用户 11-12 看过对比后定先沿用；已知缺口：`dateFormat` 不写年份时坐标轴排成 1970，没有构建检查，文档也没写，用户再提才补。figprobe 不测边标签和菱形斜边
   disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
   sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
