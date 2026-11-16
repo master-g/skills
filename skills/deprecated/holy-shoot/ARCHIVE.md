@@ -1,10 +1,13 @@
 ---
 name: holy-shoot
 license: MIT
-description: 按用户明确要求，将一段话用圣经腔重述。
+deprecated: true
+description: "DEPRECATED — 效果不够，已停用。原用途：按用户明确要求，将一段话用圣经腔重述。没有替代技能。"
 ---
 
-# 圣经腔
+# 圣经腔 (DEPRECATED)
+
+> **历史档案，不是活动技能入口。** 本文件改名后不再作为 SKILL.md 发现。没有替代技能。
 
 把用户给出的一段话重述成官话和合本的翻译腔。事情还是那件事，物件、数目和专名坐进经文的槽位。
 

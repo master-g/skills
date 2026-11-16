@@ -66,11 +66,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-16] main：新增 holy-shoot。腔调样本是知乎「如何模仿《圣经》体翻译腔？」那篇回答的经文部分；知乎搜索没返回该文，正文从打开的页面读到。技能只写走法，不收整段样文（样文会被照搬，见已验证的事实里 disco 那条）
-  验证：`make check` 通过（236 个文件），`memory.py check` 全 PASS。`make install SKILL=holy-shoot SOURCE=.` 无 TTY，停在选择 agent，未装上。未推送
+- [2026-11-16] main：用户判定 holy-shoot 不够用，已 `make deprecate SKILL=holy-shoot`。正文在 skills/deprecated/holy-shoot/ARCHIVE.md，无替代技能。本机 ~/.agents 与 ~/.claude 的副本已卸掉。
+  验证：`make check` 通过（235 个文件），`memory.py check` 全 PASS。未推送，origin 上仍是活动技能。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-16] holy-shoot 要在会话里生效，运行 `make install SKILL=holy-shoot SOURCE=.`。推送等用户开口
+- [2026-11-16] 弃用提交还在本地。推送后 origin 的技能列表才不再包含 holy-shoot。
