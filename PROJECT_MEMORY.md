@@ -44,6 +44,8 @@
 - [2026-11-03] pele 在 node 里的内置字宽表比 -apple-system 窄（i 2.7px 对实测 4.4px），类图成员行会顶出框；mermaid.mjs 用按 Chrome 实测分档的自写 measurer，8 幅对比图文字离框 ≥11px。汉字它本来按 1em，不是问题；来源：/tmp/pele-cmp 探针
 - [2026-11-12] show-me-html 的节点连线图默认写 Mermaid 源码、构建期由 pele 编译（用户看过两张真实手绘图的重做对比后定，理由是确定性的库更合惯例）；手写 SVG 只留给时间线、泳道、象限、层叠、循环和示意图。计划 plans/030、031，决定与否决项在 plans/README.md 同名节
 - [2026-11-12] pele 默认排得松（200px 折行、层距约 50px），直链图比手绘高近一倍；源码首行注入 `%%{init}%%` 的 flowchart wrappingWidth 360、rankSpacing 20、nodeSpacing 20 后与手绘接近，但 init 不能放在 frontmatter 前（报 No diagram type）。来源：/tmp/smh-pele 对比
+- [2026-11-14] tufte-reader 西文字体沿用 STIX Two Text，用户 11-14 决定先不换 EB Garamond，再提才做；实测（样张 /tmp/ebg-compare，临时目录可能已清）：x 高 0.400（STIX Two Text 0.473），原样排在中文旁偏小，`size-adjust: 112%` 后 400 字重与思源宋体相称，500 过重；默认数字是等高数字
+- [2026-11-14] fontsource 的 eb-garamond 子集没有 onum/lnum/smcp，拉丁分片不含 U+2070–209F 和 →≤≈；带全部特性的在 octaviopardo/EBGaramond12 的 fonts/webfonts（每个 21–24 万字节，无 tag，要钉提交号）。Garamond-Math 只有 84 万字节的 OTF、无 tag、2022 年后未更新，x 高 0.450
 
 ## 失败尝试
 
@@ -64,21 +66,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-12] main：show-me-html 接入 pele（plans/030、031），再把配方与反模式里剩下的四处手写 SVG 措辞改为指向 Mermaid（plans/032），都经 /improve 执行、审阅后快进合入并 make install，已推送
-  验证：032 合入后 72 个测试 OK，make check 通过，安装副本与仓库一致；030 合入时安装副本能编译夹具页，五个冻结场景页 probe.json 相同、截图 30/30 相同。对比页在 /tmp/smh-pele/cmp-a.html、cmp-c.html
+- [2026-11-16] main：新增 holy-shoot。腔调样本是知乎「如何模仿《圣经》体翻译腔？」那篇回答的经文部分；知乎搜索没返回该文，正文从打开的页面读到。技能只写走法，不收整段样文（样文会被照搬，见已验证的事实里 disco 那条）
+  验证：`make check` 通过（236 个文件），`memory.py check` 全 PASS。`make install SKILL=holy-shoot SOURCE=.` 无 TTY，停在选择 agent，未装上。未推送
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-12] show-me-html：Mermaid 通道已合入并安装，还没在真实页面上用过；首次用时留意标签是否顶出框（字宽表沿用 tufte-reader 的）。冻结场景里没有连线图，等第一张真实页面出来再拿它的材料加场景（联动处见 plans/README.md「032 规划记录」）。已推送。基线上 test_interrupted_build_leaves_no_chrome_profile 三次里失败一次（0 != -2），没查原因
-  [2026-11-03] tufte-reader：[2026-11-12] plans/033 已执行、安装并推送；分章派发的新布局（工作区 `src/` 加 `assemble.py`）还没在真实读本上用过，首次用时留意；shelf 六份 `src/assemble.py` 已改成一行调用技能脚本并提交、推送，shelf 以后依赖已安装的 `assemble.py`
-  tufte-reader 甘特图：不画「今天」线（`now: 0`），用户 11-12 看过对比后定先沿用；已知缺口：`dateFormat` 不写年份时坐标轴排成 1970，没有构建检查，文档也没写，用户再提才补。figprobe 不测边标签和菱形斜边
-  disco-elysium-narrative：新一轮每格只写了一篇、未盲评，稿件质量只有我通读的判断；待办：幽默机制集中在客服循环和集体背书（各 2/6），可交给 draw.py 抽；7 个技能仍未出场；draft_check 样本下限 8 条，删到 7 条即不判；缓冲词、虚指、数字三项偏差未动
-  sharpen：正文最后三处澄清没有再跑评测；还没在有人值守下走过一次完整的 AskUserQuestion 流程
-  storage-price-is-too-damn-high：首跑中记为「未归类」的 `~/.espressif`、CoreDevice 容器的 AppInstallationBinaryDeltas、Chromium 的 OptGuideOnDeviceModel 还没收录，用户再提才加
-  show-me-html：冻结场景对照基线仍是 `2026-10-23-eec315f-026`（10-27 轮次与它逐字节相同，没换）；「未规划」里有 `.progress` div 无填充、gallery 10 张 desc 只重复单位行、9 张通栏图没有窄版等，由用户决定是否另开计划；还没在真实页面上复测构建耗时（交接调研那页），用户没选
-  bedrock 进房基线页删「本页覆盖」块并重建的改动留在 bedrock 工作区，用户说自己看，不要替用户提交或还原
-  bench 地图已冻结（用户 10-21），用户再提才恢复。恢复入口 `/wayfinder .scratch/llm-bench/map.md`，前沿只剩 prototype 票「任务定义样张」
-  bench 待用户定：「首批任务清单」是只写到每题的来源、起始状态与评判依据出处（资料包、参考答案撰写归实施），还是写全；「校准轮与题量」是否写成规格里的实施步骤
-  bench 待查：pi 能否只排除 hermes 扩展，记在「运行隔离、联网与启动方式」的 Comments
+- [2026-11-16] holy-shoot 要在会话里生效，运行 `make install SKILL=holy-shoot SOURCE=.`。推送等用户开口

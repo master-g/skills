@@ -34,6 +34,7 @@ npx skills add master-g/skills --skill '*' -g
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker (host-native subagent or CLI), with acceptance gates.
+- `holy-shoot`: restate a passage in the voice of the Chinese Union Version.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `mdxcn-term`: draw mdxcn-style framed ASCII figures in the terminal, aligned for CJK labels (derived from MIT-licensed [mdxcn](https://github.com/keshav-exe/mdxcn)).
 - `office-hours`: explain one concept in a single session, calibrating to the user's level first when it is hard.
