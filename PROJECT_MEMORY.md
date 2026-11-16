@@ -66,11 +66,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-16] main：用户判定 holy-shoot 不够用，已 `make deprecate SKILL=holy-shoot`。正文在 skills/deprecated/holy-shoot/ARCHIVE.md，无替代技能。本机 ~/.agents 与 ~/.claude 的副本已卸掉。
-  验证：`make check` 通过（235 个文件），`memory.py check` 全 PASS。未推送，origin 上仍是活动技能。
+- [2026-11-16] main：holy-shoot 弃用已在 origin。正文在 skills/deprecated/holy-shoot/ARCHIVE.md，无替代技能。本机 ~/.agents 与 ~/.claude 的副本已卸掉。
+  验证：`make check` 通过（235 个文件），`memory.py check` 全 PASS。`git push origin main` 成功，HEAD 与 origin/main 同为 928085d。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-16] 弃用提交还在本地。推送后 origin 的技能列表才不再包含 holy-shoot。
+- [2026-11-16] 无排队任务。
