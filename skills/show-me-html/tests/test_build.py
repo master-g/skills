@@ -344,6 +344,27 @@ class BuildCliTests(unittest.TestCase):
         self.assertEqual(md["1280"].count("单位：次 · 9 月"), 1)
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_markdown_export_names_inlined_images_without_data(self):
+        """内联后的图片导出成 ![说明](文件名)：文件名取 data-img-name，带空格时用尖括号包住；
+        没有文件名的 data: 图片写 image。export.md 里不出现 data: 地址。"""
+        page = self.copy_fixture()
+        png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aG1cAAAAASUVORK5CYII="
+        imgs = f"""<section><h2>截图</h2>
+          <figure class="fig"><img alt="登录页报错" data-img-name="login-error.png" src="{png}" />
+          <figcaption>提交后弹出 500。</figcaption></figure>
+          <p>行内图 <img alt="旧版图标" src="{png}" /> 已替换。</p>
+          <img alt="设置页" data-img-name="Screenshot 2026-11-17 at 10.00.png" src="{png}" />
+          </section>"""
+        page.write_text(page.read_text(encoding="utf-8").replace("</main>", imgs + "</main>"), encoding="utf-8")
+
+        md = (self.snap_one(page) / "export.md").read_text(encoding="utf-8")
+
+        self.assertIn("![登录页报错](login-error.png)\n\n提交后弹出 500。", md)
+        self.assertIn("行内图 ![旧版图标](image) 已替换。", md)
+        self.assertIn("![设置页](<Screenshot 2026-11-17 at 10.00.png>)", md)
+        self.assertNotIn("data:", md)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_snap_narrows_to_one_theme_and_width(self):
         page = self.copy_fixture()
         out = page.parent / "snap"
@@ -1618,6 +1639,13 @@ class VisualContractTests(unittest.TestCase):
         self.assertGreaterEqual(variants, {"secondary", "outline", "ghost", "link", "destructive"})
         for name in sorted(variants):
             self.assertRegex(css, rf'\.btn\[data-variant="{name}"\]:hover:not\(:disabled\)', name)
+
+    def test_images_fit_the_column_and_stay_whole_in_print(self):
+        """截图按原尺寸会撑破版心、在窄屏横滚；打印时跨页会被切成两半。"""
+        css = CSS.read_text(encoding="utf-8")
+        self.assertRegex(css, r"(?m)^img \{[^}]*max-width:\s*100%[^}]*height:\s*auto")
+        print_css = "".join(re.findall(r"@media print \{(.*?)\n\}", css, re.S))
+        self.assertRegex(print_css, r"img[^{]*\{[^}]*break-inside:\s*avoid")
 
     def test_spacing_scale_is_complete(self):
         css = CSS.read_text(encoding="utf-8")

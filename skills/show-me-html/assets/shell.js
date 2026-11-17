@@ -192,6 +192,17 @@
   function txt(s) {
     return (s || "").replace(/\s+/g, " ");
   }
+  /* 图片导出成 ![说明](文件名)。build 内联后 src 是整段 base64，文件名在 data-img-name；
+     没有文件名的 data: 图片写 image，导出里任何时候都不带 data: 地址。
+     文件名带空格或括号时用尖括号包住，否则 Markdown 链接会在空格处断开。 */
+  function image(img) {
+    var src = img.getAttribute("src") || "";
+    var name =
+      img.getAttribute("data-img-name") ||
+      (/^data:/i.test(src) ? "image" : src);
+    if (/[\s()<>]/.test(name)) name = "<" + name.replace(/[<>]/g, "") + ">";
+    return "![" + txt(img.alt).trim() + "](" + name + ")";
+  }
 
   function inline(node) {
     var out = "";
@@ -214,9 +225,7 @@
         return;
       }
       if (t === "BR") out += "  \n";
-      else if (t === "IMG")
-        out +=
-          "![" + (n.alt || "") + "](" + (n.getAttribute("src") || "") + ")";
+      else if (t === "IMG") out += image(n);
       else if (
         t === "CODE" ||
         t === "KBD" ||
@@ -398,6 +407,9 @@
           "$$\n\n";
       } else if (t === "HR") {
         out += "---\n\n";
+      } else if (t === "IMG") {
+        /* 直接放在 figure / section 里的图自成一段；inline() 只走子节点，img 没有子节点 */
+        out += image(n) + "\n\n";
       } else if (t === "FIELDSET" && n.classList.contains("decision")) {
         out += decision(n);
       } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {

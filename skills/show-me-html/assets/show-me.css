@@ -1645,7 +1645,8 @@ math.tml-display {
   letter-spacing: 0.1em;
   color: var(--color-muted-foreground);
 }
-.fig figcaption {
+.fig figcaption,
+figure:has(> img) > figcaption {
   margin-top: 0.6rem;
   padding: 0 0.25rem;
   font-size: 0.8rem;
@@ -1657,6 +1658,22 @@ math.tml-display {
   width: 100%;
   height: auto;
   margin-top: 0.75rem;
+}
+/* 图片（components.md「图片」）：截图按原尺寸会撑破版心、在窄屏横滚，这里压到容器宽，高度随比例。
+   只用元素选择器，优先级最低，.avatar img 这类组件自己定的尺寸照样生效。 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+figure:has(> img) {
+  margin-inline: 0;
+}
+/* 截图常是白底或深底，和纸面同色时看不出边：描一圈内描边，不占版心宽度 */
+figure > img {
+  display: block;
+  border-radius: var(--radius);
+  outline: 1px solid var(--color-border);
+  outline-offset: -1px;
 }
 /* 宽窄两版图（diagrams.md「窄屏另画一版」）：横向图在手机宽度下字会缩到读不了时，另画一版纵向的。
    两版都写在页面里，按视口只显示一版；隐藏的那版是 display:none，读屏和 Tab 都跳过它。
@@ -1909,6 +1926,15 @@ svg.focused .nodelab:not(.hot) {
   }
   .fig-box {
     break-inside: avoid;
+  }
+  /* 图和图注不跨页切开；比一页还高的长截图缩到一页内，按比例留白 */
+  img,
+  figure:has(> img) {
+    break-inside: avoid;
+  }
+  img {
+    max-height: 90vh;
+    object-fit: contain;
   }
 }
 /* 只管正文里的分隔线；组件内部的 hr（.item-group、菜单、按钮组）交给自有组件层 */
