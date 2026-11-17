@@ -67,13 +67,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-17] main：plans/034 七步执行完，都是本地提交，没有推送，没有 make install。分流文字（Step 3 第 1、2 点和约定块第一条）按停止条件没做。
-  验证：test_memory、test_setup_context 通过；回放对拍一致；eval 5、6 新版各 3/3；临时克隆里钩子拦下无去向的删除，补声明后通过；make check 通过。
-  移出：Agent 工具 `isolation: worktree` 开出的分支；Agent 工具开的 worktree 里没有 node_modules → AGENTS.md「工作流与陷阱」
-  移出：bootstrap-claude 记忆门禁实测 → 并入 bootstrap-claude 的条目去向检查按 plans/034 落地
+- [2026-11-17] main：plans/034 七步执行完并已推到 origin，本机还没 make install。分流文字（Step 3 第 1、2 点和约定块第一条）按停止条件没做。
+  验证：make check 通过（含记忆门禁）；`git push origin main` 成功，HEAD 与 origin/main 一致。验收明细在 plans/README.md 的「执行记录（034）」。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-17] 等用户决定两件事：`make install SKILL=bootstrap-claude SOURCE=.`（装后本机另两个仓库的提交钩子立刻用上去向检查）和推送 main。034 没做的事在 plans/README.md 的 Deferred 里。
+- [2026-11-17] 等用户决定：`make install SKILL=bootstrap-claude SOURCE=.`（装后本机另两个仓库的提交钩子立刻用上去向检查）。034 没做的事在 plans/README.md 的 Deferred 里。
