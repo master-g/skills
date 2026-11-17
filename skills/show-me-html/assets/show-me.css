@@ -802,6 +802,115 @@ input[type="checkbox"][role="switch"]:checked::before {
   transform: translateX(1rem);
 }
 
+/* ── 决定块与按节评论（components.md「决定块」）。选项是原生单选框 / 复选框，不隐藏；
+     「建议」标记、评论入口和工具条上的回复按钮由回复运行时（assets/reply.js）生成 ── */
+fieldset.decision {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin-inline: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--color-card);
+}
+fieldset.decision > legend {
+  padding-inline: var(--space-2);
+  color: var(--color-foreground);
+  font-weight: 600;
+  line-height: 1.45;
+}
+fieldset.decision > label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+fieldset.decision > label:hover {
+  background: var(--color-muted);
+}
+fieldset.decision > label:has(input:checked) {
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-card));
+}
+fieldset.decision > label > input {
+  flex: none;
+}
+fieldset.decision > label > small {
+  flex-basis: 100%;
+  padding-inline-start: calc(1rem + var(--space-2));
+  color: var(--color-muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.reply-comment {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+/* 评论入口是标题的附属：比块间距紧，按钮文字与正文左缘对齐 */
+main > section > .reply-comment {
+  margin-block-start: var(--space-2);
+}
+.reply-comment > .btn {
+  margin-inline-start: -0.625rem;
+  color: var(--color-muted-foreground);
+}
+.reply-comment > .btn[aria-expanded="true"] {
+  color: var(--color-foreground);
+}
+.reply-comment-panel {
+  justify-self: stretch;
+}
+.reply-comment-panel > textarea {
+  min-height: 5rem;
+}
+.reply-comment-print {
+  display: none;
+}
+.reply-foot {
+  border-block-start: 1px solid var(--color-border);
+  padding-block-start: var(--space-5);
+}
+.reply-foot > p {
+  color: var(--color-muted-foreground);
+  font-size: 0.875rem;
+}
+.reply-foot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+/* 工具条：页面标题和回复按钮一组。目录在侧时这一组占版心列，操作区仍只放复制与主题 */
+.chrome-lead {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.chrome-lead > .reply-copy {
+  flex: none;
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+@media screen {
+  body.toc-side .chrome-lead {
+    grid-column: 2;
+  }
+}
+@media print {
+  .reply-foot {
+    display: none;
+  }
+}
+
 .progress,
 progress {
   width: 100%;
@@ -2040,8 +2149,21 @@ body.has-toc:not(.toc-side) .read-progress {
     break-after: avoid;
   }
   .item,
-  .card {
+  .card,
+  fieldset.decision {
     break-inside: avoid;
+  }
+  /* 纸上保留决定块和读者的当前选择；评论入口收起，写了内容的评论以文字随节印出，空的不占位 */
+  .reply-comment > .btn,
+  .reply-comment-panel,
+  .reply-comment:not(:has(.reply-comment-print:not(:empty))) {
+    display: none;
+  }
+  .reply-comment-print:not(:empty) {
+    display: block;
+    border-inline-start: 2px solid var(--color-border);
+    padding-inline-start: var(--space-3);
+    white-space: pre-wrap;
   }
   /* 条目组有边框，分页会落在边框内首行之前，页底只剩空框和标题；
      禁止首行前断，断点退回标题之前 */

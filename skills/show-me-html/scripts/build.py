@@ -47,6 +47,10 @@ CHART_MARK = 'data-show-me="charts"'
 CHART_JS = ASSETS / "charts.js"
 MATH_MARK = 'data-show-me="math"'
 SHELL_MARK = 'data-show-me="shell"'
+REPLY_MARK = 'data-show-me="reply"'
+REPLY_JS = ASSETS / "reply.js"
+# 回复能力的开关：<body> 开标签上的 data-reply。后面不能紧跟 -，免得 data-reply-xxx 一类属性误开
+REPLY_FLAG_RE = re.compile(r"<body\b[^>]*\sdata-reply(?![\w-])", re.I)
 SHELL_JS = ASSETS / "shell.js"
 # 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
 LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
@@ -69,7 +73,7 @@ JS_COMPONENTS = (
 # 页面自己写死的颜色。show-me-html 自有 CSS 不算。
 SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette|math)"[^>]*>.*?</style>', re.S)
 SYSTEM_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
-SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts|shell)"[^>]*>.*?</script>', re.S)
+SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts|reply|shell)"[^>]*>.*?</script>', re.S)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -363,6 +367,85 @@ def main_children(html):
     return p.children
 
 
+# ── 决定块（components.md「决定块」）────────────────────────────────────
+class DecisionBlocks(HTMLParser):
+    """收集 <fieldset class="decision"> 的标识、问题文字和选项（单选框 / 复选框，是否建议项）。"""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.blocks = []
+        self.depth = 0  # 当前决定块内 fieldset 的嵌套层数，0 表示不在块里
+        self.in_legend = False
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "fieldset":
+            if self.depth:
+                self.depth += 1
+            elif "decision" in (a.get("class") or "").split() or "data-decision" in a:
+                self.depth = 1
+                self.blocks.append({"id": (a.get("data-decision") or "").strip(), "question": "", "inputs": []})
+            return
+        if not self.depth:
+            return
+        if tag == "legend":
+            self.in_legend = True
+        elif tag == "input" and (a.get("type") or "").lower() in ("radio", "checkbox"):
+            self.blocks[-1]["inputs"].append(((a.get("type") or "").lower(), "data-suggested" in a))
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag == "fieldset" and self.depth:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        if tag == "legend":
+            self.in_legend = False
+        elif tag == "fieldset" and self.depth:
+            self.depth -= 1
+
+    def handle_data(self, data):
+        if self.depth and self.in_legend:
+            self.blocks[-1]["question"] += data
+
+
+def check_decisions(html, errors):
+    """决定块的标记契约。markup 里写死的选中状态是作者的事（应当都不选中），这里不查。"""
+    parser = DecisionBlocks()
+    parser.feed(SYSTEM_SCRIPT_RE.sub("", html))
+    blocks = parser.blocks
+    if not blocks:
+        return
+    if not reply_enabled(html):
+        errors.append(f"页面有 {len(blocks)} 个决定块，但 <body> 没有 data-reply：决定块要靠回复运行时作答和汇总，"
+                      "在 <body> 上加 data-reply 开启回复能力，或删掉决定块（components.md「决定块」）")
+    for i, b in enumerate(blocks, 1):
+        b["question"] = re.sub(r"\s+", " ", b["question"]).strip()
+        b["shown"] = f"「{b['question']}」" if b["question"] else f"第 {i} 个"
+    seen = {}
+    for b in blocks:
+        if not b["id"]:
+            errors.append(f"决定块{b['shown']}缺少 data-decision 标识：每个决定块写一个页内唯一的标识，"
+                          "回复和读者保存的作答都按它对应")
+            continue
+        seen.setdefault(b["id"], []).append(b)
+    for ident, same in seen.items():
+        if len(same) > 1:
+            errors.append(f"决定块标识 {ident} 重复：{''.join(b['shown'] for b in same)}。每个决定块的 data-decision 页内唯一")
+    for b in blocks:
+        name = b["id"] or b["shown"]
+        n = len(b["inputs"])
+        if not 2 <= n <= 6:
+            errors.append(f"决定块 {name} 有 {n} 个选项：要 2 到 6 个，每个选项是 <label> 里的一个单选框或复选框")
+        kinds = {kind for kind, _ in b["inputs"]}
+        if len(kinds) > 1:
+            errors.append(f"决定块 {name} 混用了单选框和复选框：单选全用 type=\"radio\"，多选全用 type=\"checkbox\"")
+        elif kinds == {"radio"}:
+            picked = sum(1 for _, s in b["inputs"] if s)
+            if picked != 1:
+                errors.append(f"单选决定块 {name} 的建议项有 {picked} 个：要恰好 1 个，在建议的那个选项的 <input> 上写 data-suggested")
+
+
 # ── 自造 grid 容器 ──────────────────────────────────────────────────
 # 隐式轨道溢出（anti-patterns.md #3）：`display: grid` 不写
 # `grid-template-columns` 时，隐式 auto 轨道按内容 max-content 计宽，
@@ -582,9 +665,15 @@ def runtime_scripts(html, warns):
     if hl:
         # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
         slot += f'<script {HL_MARK}>{hl}</script>'
+    if reply_enabled(authored):
+        slot += f'<script {REPLY_MARK}>{REPLY_JS.read_text(encoding="utf-8")}</script>'
     # 骨架放最后：原先它就紧跟在这些运行时脚本之后，页面脚本与它的相对顺序因此不变
     slot += f'<script {SHELL_MARK}>{SHELL_JS.read_text(encoding="utf-8")}</script>'
     return slot, langs
+
+
+def reply_enabled(html):
+    return bool(REPLY_FLAG_RE.search(re.sub(r"<!--.*?-->", "", html, flags=re.S)))
 
 
 def needs_basecoat(html):
@@ -718,6 +807,9 @@ def check(html, path, allow_legacy_recipe=False):
     authored_markup = SYSTEM_SCRIPT_RE.sub("", stripped)
     if re.search(r'\bdata-chart=', authored_markup) and CHART_MARK not in html:
         errors.append("页面有 data-chart 但没有内联图表运行时：跑一遍不带 --check-only 的 build")
+    if reply_enabled(authored_markup) and REPLY_MARK not in html:
+        errors.append("页面开启了回复能力（data-reply）但没有内联回复运行时：跑一遍不带 --check-only 的 build")
+    check_decisions(stripped, errors)
     if needs_basecoat(authored_markup) and JS_MARK not in html:
         errors.append("页面用了需要 JS 的组件（tabs / dropdown-menu 等）但没有内联 basecoat JS：跑一遍不带 --check-only 的 build")
     if "data-copy-md" not in html:
@@ -1140,7 +1232,8 @@ SNAP_EVAL = """(function(){
   var heads = [].map.call(document.querySelectorAll('#doc h2'), function(h){
     return [Math.round(h.getBoundingClientRect().top + scrollY), h.textContent.replace(/\\s+/g, ' ').trim()];
   });
-  return {md: window.showMeMarkdown ? window.showMeMarkdown() : null, heads: heads};
+  return {md: window.showMeMarkdown ? window.showMeMarkdown() : null,
+    reply: window.showMeReply ? window.showMeReply() : null, heads: heads};
 })()"""
 SNAP_SLICE = {390: 1600, 500: 1600}  # 每片高度：读图时不被明显降采样（2026-10 实测 1280×1500、500×1600 读得清）；其余宽度 1500
 
@@ -1170,6 +1263,12 @@ def snap_page(page, out_dir, widths=(390, 500, 1280), themes=("light", "dark")):
             outs.append((md, ""))
             if r["value"]["md"] is None:
                 notes.append("页面没有 window.showMeMarkdown：导出器缺失，export.md 为空")
+            reply = out_dir / "reply.md"
+            if r["value"].get("reply") is not None:  # 只有开启回复能力的页面有 showMeReply
+                reply.write_text(r["value"]["reply"], encoding="utf-8")
+                outs.append((reply, ""))
+            elif reply.exists():  # 复用的输出目录里留着上次的回复，页面已经关掉回复能力
+                reply.unlink()
     return outs, notes, None
 
 

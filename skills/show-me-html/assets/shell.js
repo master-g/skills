@@ -285,6 +285,38 @@
     return out;
   }
 
+  /* 决定块（components.md「决定块」）导出问题和选项、标出建议项。读者的选择属于回复（assets/reply.js），不进页面导出 */
+  function decision(fs) {
+    var legend = fs.querySelector("legend");
+    var multi = !!fs.querySelector('input[type="checkbox"]');
+    var out =
+      "**" +
+      (legend ? inline(legend).trim() : "") +
+      "**（" +
+      (multi ? "多选" : "单选") +
+      "）\n\n";
+    fs.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(
+      function (input) {
+        var label = input.closest("label");
+        if (!label) return;
+        var copy = label.cloneNode(true);
+        var note = copy.querySelector("small");
+        copy
+          .querySelectorAll("input, small, .decision-tag")
+          .forEach(function (x) {
+            x.remove();
+          });
+        out +=
+          "- " +
+          inline(copy).trim() +
+          (input.hasAttribute("data-suggested") ? "（建议）" : "") +
+          (note && inline(note).trim() ? " — " + inline(note).trim() : "") +
+          "\n";
+      }
+    );
+    return out + "\n";
+  }
+
   function block(el, depth) {
     var out = "";
     Array.from(el.children).forEach(function (n) {
@@ -353,6 +385,8 @@
           "$$\n\n";
       } else if (t === "HR") {
         out += "---\n\n";
+      } else if (t === "FIELDSET" && n.classList.contains("decision")) {
+        out += decision(n);
       } else if (t === "BLOCKQUOTE" || n.classList.contains("alert")) {
         out +=
           block(n, depth)

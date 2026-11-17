@@ -1086,6 +1086,174 @@ nodes.forEach((g) => {
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertLess(time.monotonic() - started, 20)
 
+    # ── 回复能力：读者在页面上作答，再把决定和评论汇总成一段 Markdown ──
+
+    def test_reply_page_inlines_reply_runtime_once(self):
+        page = self.copy_fixture("reply-decisions.html")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertEqual(built.count('data-show-me="reply"'), 1)
+        self.assertIn("window.showMeReply", built)
+        before = hashlib.sha256(page.read_bytes()).digest()
+        self.assertEqual(run_build(page).returncode, 0)
+        self.assertEqual(hashlib.sha256(page.read_bytes()).digest(), before)
+
+    def test_page_without_reply_flag_has_no_reply_runtime(self):
+        page = self.copy_fixture()
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertNotIn('data-show-me="reply"', built)
+        self.assertNotIn("showMeReply", built)
+
+    def test_rebuild_drops_reply_runtime_when_flag_is_removed(self):
+        page = self.copy_fixture("reply-decisions.html")
+        html = page.read_text(encoding="utf-8")
+        page.write_text(re.sub(r"<fieldset.*?</fieldset>", "", html, flags=re.S), encoding="utf-8")
+        self.assertEqual(run_build(page).returncode, 0)
+        page.write_text(page.read_text(encoding="utf-8").replace(" data-reply>", ">", 1), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        built = page.read_text(encoding="utf-8")
+        self.assertNotIn('data-show-me="reply"', built)
+        self.assertNotIn("showMeReply", built)
+
+    def snap_one(self, page):
+        """--snap 只拍一个主题、一个宽度；返回输出目录。"""
+        out = page.parent / "snap"
+        result = run_build(page, "--snap", str(out), "--snap-theme", "light", "--snap-width", "1280")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("--snap 未完成", result.stdout)
+        return out
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_snap_writes_reply_md_only_for_reply_pages(self):
+        out = self.snap_one(self.copy_fixture("reply-decisions.html"))
+        self.assertEqual((out / "reply.md").read_text(encoding="utf-8"),
+                         "# 回复：任务队列选型\n\n## 决定\n\n"
+                         "- 采用哪个队列方案？：未作答（建议是 方案乙）\n"
+                         "- 哪些前提要在上线前满足？：未作答（建议是 压测报告、回滚演练）\n")
+
+        plain = self.snap_one(self.copy_fixture())
+        self.assertTrue((plain / "export.md").exists())
+        self.assertFalse((plain / "reply.md").exists())
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_reply_md_reports_adopted_and_changed_decisions(self):
+        """标记里预选的状态就是读者的选择：预选建议项是采纳，预选别的项是改选；多选列出全部选中项。"""
+        cases = (
+            ('<input type="radio" data-suggested />', '<input type="radio" data-suggested checked />',
+             "- 采用哪个队列方案？：方案乙（采纳建议）\n"),
+            ('<input type="radio" /> 方案丙', '<input type="radio" checked /> 方案丙',
+             "- 采用哪个队列方案？：方案丙（改选，建议是 方案乙）\n"),
+            ('<input type="checkbox" /> 灰度一周', '<input type="checkbox" checked /> 灰度一周',
+             "- 哪些前提要在上线前满足？：灰度一周（改选，建议是 压测报告、回滚演练；加选 灰度一周；未选 压测报告、回滚演练）\n"),
+            ('<input type="checkbox" data-suggested />', '<input type="checkbox" data-suggested checked />',
+             "- 哪些前提要在上线前满足？：压测报告、回滚演练（采纳建议）\n"),
+        )
+        for old, new, line in cases:
+            with self.subTest(line=line):
+                page = self.copy_fixture("reply-decisions.html")
+                html = page.read_text(encoding="utf-8")
+                self.assertIn(old, html)
+                page.write_text(html.replace(old, new), encoding="utf-8")
+
+                reply = (self.snap_one(page) / "reply.md").read_text(encoding="utf-8")
+
+                self.assertIn(line, reply)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_reply_md_lists_every_checked_option_of_a_multi_choice(self):
+        page = self.copy_fixture("reply-decisions.html")
+        html = page.read_text(encoding="utf-8").replace('<input type="checkbox" />', '<input type="checkbox" checked />')
+        page.write_text(html.replace('<input type="checkbox" data-suggested />', '<input type="checkbox" data-suggested checked />', 1),
+                        encoding="utf-8")
+
+        reply = (self.snap_one(page) / "reply.md").read_text(encoding="utf-8")
+
+        self.assertIn("- 哪些前提要在上线前满足？：压测报告、灰度一周（改选，建议是 压测报告、回滚演练；加选 灰度一周；未选 回滚演练）\n", reply)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_reply_md_restores_initial_state_with_section_comments(self):
+        """初始状态数据与保存的状态同形：决定按选项名、评论按节标题；评论带节标题、逐行引用原文。"""
+        state = {"decisions": {"queue": ["方案甲"]},
+                 "comments": {"方案对比": "方案乙的运维成本没算进去。\n\n谁来值班？", "上线前提": "  "}}
+        page = self.copy_fixture("reply-decisions.html")
+        self.insert(page, '<script type="application/json" data-reply-state>'
+                    + json.dumps(state, ensure_ascii=False) + "</script>\n", before="<!--SHOW-ME:JS-->")
+
+        reply = (self.snap_one(page) / "reply.md").read_text(encoding="utf-8")
+
+        self.assertIn("- 采用哪个队列方案？：方案甲（改选，建议是 方案乙）\n", reply)
+        self.assertTrue(reply.endswith(
+            "\n## 评论\n\n- 「方案对比」\n  > 方案乙的运维成本没算进去。\n  >\n  > 谁来值班？\n"), reply)
+        self.assertNotIn("上线前提", reply)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_markdown_export_lists_decision_options_without_reader_answers(self):
+        """「复制为 Markdown」导出的是页面内容：决定块出问题和选项、标出建议项；读者的选择、评论入口和回复控件都不进导出。"""
+        state = {"comments": {"方案对比": "读者原文不该进导出"}}
+        page = self.copy_fixture("reply-decisions.html")
+        html = page.read_text(encoding="utf-8").replace('<input type="radio" /> 方案丙', '<input type="radio" checked /> 方案丙')
+        page.write_text(html, encoding="utf-8")
+        self.insert(page, '<script type="application/json" data-reply-state>'
+                    + json.dumps(state, ensure_ascii=False) + "</script>\n", before="<!--SHOW-ME:JS-->")
+
+        md = (self.snap_one(page) / "export.md").read_text(encoding="utf-8")
+
+        self.assertIn("## 方案对比\n\n三个方案的代价。\n\n**采用哪个队列方案？**（单选）\n\n"
+                      "- 方案甲 — 沿用现有 cron\n- 方案乙（建议） — 引入 Redis 队列\n- 方案丙\n", md)
+        self.assertIn("**哪些前提要在上线前满足？**（多选）\n\n- 压测报告（建议）\n- 灰度一周\n- 回滚演练（建议）\n", md)
+        for leaked in ("读者原文", "评论", "清空作答", "复制回复", "已选", "[x]"):
+            self.assertNotIn(leaked, md)
+
+    def test_decision_block_without_reply_flag_fails(self):
+        page = self.copy_fixture("reply-decisions.html")
+        page.write_text(page.read_text(encoding="utf-8").replace(" data-reply>", ">", 1), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ERROR  页面有 2 个决定块，但 <body> 没有 data-reply", result.stdout)
+
+    def test_malformed_decision_blocks_fail_and_name_the_block(self):
+        extra = '<label><input type="checkbox" /> 其他</label>'
+        cases = (
+            ('<fieldset class="decision" data-decision="queue">', '<fieldset class="decision">', 1,
+             "决定块「采用哪个队列方案？」缺少 data-decision 标识"),
+            ('data-decision="queue"', 'data-decision="gates"', 1,
+             "决定块标识 gates 重复：「采用哪个队列方案？」「哪些前提要在上线前满足？」"),
+            ('<label><input type="radio" /> 方案丙</label>', "", 1, "决定块 queue 有 2 个选项"),
+            ('<input type="radio" />', "", -1, "决定块 queue 有 1 个选项：要 2 到 6 个"),
+            ("上线前满足？</legend>", "上线前满足？</legend>" + extra * 4, 1, "决定块 gates 有 7 个选项：要 2 到 6 个"),
+            ('<input type="radio" data-suggested />', '<input type="radio" />', 1,
+             "单选决定块 queue 的建议项有 0 个：要恰好 1 个"),
+            ('<input type="radio" />', '<input type="radio" data-suggested />', 1,
+             "单选决定块 queue 的建议项有 2 个：要恰好 1 个"),
+        )
+        for old, new, count, message in cases:
+            with self.subTest(message=message):
+                page = self.copy_fixture("reply-decisions.html")
+                html = page.read_text(encoding="utf-8")
+                self.assertIn(old, html)
+                page.write_text(html.replace(old, new, count), encoding="utf-8")
+
+                result = run_build(page)
+
+                if "有 2 个选项" in message:  # 2 个选项是合法的下限
+                    self.assertEqual(result.returncode, 0, result.stdout)
+                    self.assertNotIn(message, result.stdout)
+                    continue
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn(f"ERROR  {message}", result.stdout)
+
 
 class VisualContractTests(unittest.TestCase):
     def test_css_covers_every_recipe(self):

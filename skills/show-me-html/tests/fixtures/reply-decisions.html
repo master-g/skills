@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>任务队列选型</title>
+    <!--SHOW-ME:CSS-->
+  </head>
+  <body data-recipe="approach-compare" data-reply>
+    <header class="page-chrome" data-md-skip>
+      <button type="button" class="btn" data-copy-md>复制为 Markdown</button>
+      <div class="button-group" role="group" aria-label="主题">
+        <button type="button" class="btn" data-theme-set="light">浅色</button>
+        <button type="button" class="btn" data-theme-set="system">系统</button>
+        <button type="button" class="btn" data-theme-set="dark">深色</button>
+      </div>
+    </header>
+    <main id="doc">
+      <section>
+        <h1>任务队列选型</h1>
+        <p>推荐方案乙。</p>
+      </section>
+      <section>
+        <h2>方案对比</h2>
+        <p>三个方案的代价。</p>
+        <fieldset class="decision" data-decision="queue">
+          <legend>采用哪个队列方案？</legend>
+          <label
+            ><input type="radio" /> 方案甲<small>沿用现有 cron</small></label
+          >
+          <label
+            ><input type="radio" data-suggested /> 方案乙<small
+              >引入 Redis 队列</small
+            ></label
+          >
+          <label><input type="radio" /> 方案丙</label>
+        </fieldset>
+      </section>
+      <section>
+        <h2>上线前提</h2>
+        <p>上线前要满足的条件。</p>
+        <fieldset class="decision" data-decision="gates">
+          <legend>哪些前提要在上线前满足？</legend>
+          <label><input type="checkbox" data-suggested /> 压测报告</label>
+          <label><input type="checkbox" /> 灰度一周</label>
+          <label><input type="checkbox" data-suggested /> 回滚演练</label>
+        </fieldset>
+      </section>
+    </main>
+    <!--SHOW-ME:JS-->
+  </body>
+</html>
