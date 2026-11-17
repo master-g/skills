@@ -72,7 +72,7 @@ check that it's defined before writing it down.
 python3 <skill>/scripts/setup_context.py --dir <workspace> --validate
 ```
 
-Read-only. It reports each required section as 已填写 / 占位符 / 空, checks CLAUDE.md/AGENTS.md pointer consistency, gates the context file at 200 lines (`--max-lines` to override; move module-specific material into nested files or `.claude/rules/`, see Nested instruction files), and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
+Read-only. It reports each required section as 已填写 / 占位符 / 空, checks CLAUDE.md/AGENTS.md pointer consistency, gates the context file at 200 lines (`--max-lines` to override; move module-specific material into nested files or `.claude/rules/`, and keep the rules every session must follow in the root file, see Nested instruction files), and runs the PROJECT_MEMORY.md size gate (`memory.py check`).
 Fix every FAIL before calling the bootstrap done — a surviving placeholder
 reads as "covered" when it isn't. Exit code 1 means at least one FAIL.
 
@@ -103,7 +103,10 @@ note some sessions cannot, so the pointer stays.
 Claude Code loads a subdirectory's `CLAUDE.md` / `AGENTS.md` on demand when it reads or
 edits a file in that directory, and `.claude/rules/*.md` with a `paths:` frontmatter does
 the same by glob. Use them for module-specific commands and gotchas in large repos so the
-root stays under 200 lines. List in the root 「导航」 section which directories carry their
+root stays under 200 lines. Both kinds load into the conversation, so context compaction
+summarizes them away until their trigger file is read again; only the root file and
+`.claude/rules/*.md` without `paths:` are re-injected from disk. A rule every session must
+follow therefore stays in the root file. List in the root 「导航」 section which directories carry their
 own file, and open each child file with one line saying the root still applies
 (`../AGENTS.md 仍然适用`). Do **not** run `setup_context.py --dir <subdir>` to make one —
 it would lay down a full root skeleton plus a second PROJECT_MEMORY.md. Write the child
