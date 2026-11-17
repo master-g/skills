@@ -46,6 +46,8 @@
 - [2026-11-12] pele 默认排得松（200px 折行、层距约 50px），直链图比手绘高近一倍；源码首行注入 `%%{init}%%` 的 flowchart wrappingWidth 360、rankSpacing 20、nodeSpacing 20 后与手绘接近，但 init 不能放在 frontmatter 前（报 No diagram type）。来源：/tmp/smh-pele 对比
 - [2026-11-14] tufte-reader 西文字体沿用 STIX Two Text，用户 11-14 决定先不换 EB Garamond，再提才做；实测（样张 /tmp/ebg-compare，临时目录可能已清）：x 高 0.400（STIX Two Text 0.473），原样排在中文旁偏小，`size-adjust: 112%` 后 400 字重与思源宋体相称，500 过重；默认数字是等高数字
 - [2026-11-14] fontsource 的 eb-garamond 子集没有 onum/lnum/smcp，拉丁分片不含 U+2070–209F 和 →≤≈；带全部特性的在 octaviopardo/EBGaramond12 的 fonts/webfonts（每个 21–24 万字节，无 tag，要钉提交号）。Garamond-Math 只有 84 万字节的 OTF、无 tag、2022 年后未更新，x 高 0.450
+- [2026-11-17] Claude Code 压缩后，项目根 CLAUDE.md、无 paths 的 rules 和自动记忆从磁盘重新注入；子目录指令文件和带 paths 的规则会被摘要掉，Read 过的文件最多重读 5 个且超 5,000 token 只留路径。所以规则的晋升目标应是根 AGENTS.md 或无 paths 的 rules（@ 导入的内容是否重新注入文档没明说，属推断），PROJECT_MEMORY.md 压缩后不保证还在。来源：code.claude.com/docs/en 的 context-window.md、memory.md，2026-11-17 核对原文
+- [2026-11-17] bootstrap-claude 记忆门禁实测（本机 5 个贴着 24 KB 的仓库的 Git 历史，迁移类提交除外）：文件 ≥21.6 KB 时每次提交消失 0.35 条追加节条目，更小时 0.07 条，其中 1 个仓库两档无差别；59 条消失的规则性条目里脚本给 21 条找到去向，从其余 38 条挑 20 条按关键词手核：6 条在 AGENTS.md、7 条仍在记忆、6 条只在 docs、1 条部分找不到。超限路径只写合并和搬出，没有晋升，也不核对去向。回放脚本在 plans/034-bootstrap-claude-memory-removal-gate/
 
 ## 失败尝试
 
@@ -66,11 +68,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-16] main：holy-shoot 弃用已在 origin。正文在 skills/deprecated/holy-shoot/ARCHIVE.md，无替代技能。本机 ~/.agents 与 ~/.claude 的副本已卸掉。
-  验证：`make check` 通过（235 个文件），`memory.py check` 全 PASS。`git push origin main` 成功，HEAD 与 origin/main 同为 928085d。
+- [2026-11-17] main：调查 bootstrap-claude 的记忆机制后写了 plans/034 和三份附件（参考实现、测试、历史回放），登记进 plans/README.md；没有改技能，没有提交。
+  验证：`test_removal_gate.py` 通过，`replay.py .` 退出 0，`memory.py check` 全 PASS。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-16] 无排队任务。
+- [2026-11-17] plans/034（bootstrap-claude 记忆条目的去向）已写好、未执行、未提交，等用户发话；共七步，执行从 Step 1 的 eval 基线开始。用户没提就不动。
