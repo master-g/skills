@@ -1313,7 +1313,8 @@ nodes.forEach((g) => {
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.inlined(page), [("b.gif", "image/gif", b"GIF89a" + b"\x00" * 16)])
-        self.assertEqual(page.read_text(encoding="utf-8").count("data-img-name"), 1)
+        tags = re.findall(r"<img\b[^>]*>", page.read_text(encoding="utf-8"))
+        self.assertEqual(sum(tag.count("data-img-name") for tag in tags), 1)
 
     def test_image_without_alt_fails_and_empty_alt_passes(self):
         data = "data:image/png;base64," + base64.b64encode(self.PNG).decode()
@@ -1387,7 +1388,7 @@ nodes.forEach((g) => {
 
                 self.assertEqual(len(errors), 1, errors)
                 self.assertIn("外部资源引用", errors[0])
-                self.assertNotIn("data-img-name", page.read_text(encoding="utf-8"))
+                self.assertIn(f'<img src="{src}" alt="图">', page.read_text(encoding="utf-8"))
 
     def test_page_with_a_large_image_checks_fast_without_false_alarms(self):
         """图片数据不算页面自己的样式和脚本：未编码的 SVG data URI 里写到颜色和 innerHTML 也不报。"""
