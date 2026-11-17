@@ -2,14 +2,17 @@
 """Inspect, write and compact PROJECT_MEMORY.md.
 
 Subcommands:
-  check   <file> [--max-bytes N] [--max-line N]
+  check   <file> [--max-bytes N] [--max-line N] [--base REF] [--base-file PATH]
           size gate: whole file <= max-bytes, no line longer than max-line chars,
           replace-sections (上次会话, 下次运行) hold exactly one dated block.
-          Prints per-section bytes; exit 1 on any FAIL.
+          Then diffs append-section entries against the baseline (git REF, default
+          HEAD, or --base-file): every entry gone and not rewritten needs a line
+          "移出：<锚> → <去向>" in 上次会话. Prints per-section bytes; exit 1 on any FAIL.
   add     <file> --section S --text T [--date D]
           append-sections (已验证的事实, 失败尝试): append a dated bullet at the end
           replace-sections (上次会话, 下次运行):   overwrite the section with one dated
-          block; newlines in T become indented continuation lines.
+          block; newlines in T become indented continuation lines. Rewriting
+          上次会话 keeps the 移出 lines that still account for an entry gone since HEAD.
   compact <file>
           replace-sections: keep only the newest dated block, drop the rest.
           append-sections are never auto-evicted — merge, or promote to docs/ and
@@ -20,16 +23,30 @@ a line cap was; the per-line cap closes the other loophole.
 """
 import argparse
 import datetime
+import difflib
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 REPLACE_SECTIONS = ["上次会话", "下次运行", "Last Session", "Next Session"]
+LEDGER_SECTIONS = ["上次会话", "Last Session"]
 DEFAULT_MAX_BYTES = 24000   # ~8k tokens of mixed zh/en; sisyphus was at 150k
 DEFAULT_MAX_LINE = 300      # chars; median line in the worst files was 350+
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 BULLET_RE = re.compile(r"^-\s+")
 DATE_RE = re.compile(r"\[(\d{4}-\d{2}-\d{2})\]")
+# 36 hand-labelled history pairs at similarity 0.5-0.7: 35 were the same entry rewritten
+REWRITE_RATIO = 0.5
+# confirmed promotions shared 7%-42% of keywords with AGENTS.md (rules get reworded); all 304 gone entries: median 0, p95 13%
+MIN_SHARED = 0.05
+SHRINK_NOTE = 0.7
+INSTRUCTION_NAMES = ("AGENTS.md", "CLAUDE.md")
+ANCHOR_BREAK_RE = re.compile(r"[；;]|→|->")
+MOVE_RE = re.compile(r"^\s*(?:-\s*)?移出[:：]\s*(.+?)\s*(?:→|->)\s*(.+?)\s*$")
+DATE_PREFIX_RE = re.compile(r"^-\s+(?:\[\d{4}-\d\d-\d\d\]\s*)*")
+OVER_LIMIT_HINT = ("超限时：先把每次都要照做的规则晋升到 AGENTS.md，再把长条知识搬进 docs/、合并同主题条目、"
+                   "作废过期条目；每条消失的条目在「上次会话」里写一行「移出：<条目开头> → <去向>」。")
 
 
 def read_lines(path: Path):
@@ -113,6 +130,177 @@ def check_memory(text: str, max_bytes=DEFAULT_MAX_BYTES, max_line=DEFAULT_MAX_LI
     return checks
 
 
+def section_bodies(text):
+    """{title: [body lines]} of the level-2 sections; a repeated title concatenates."""
+    lines = text.split("\n")
+    out = {}
+    for s in parse_sections(lines):
+        if s["level"] == 2:
+            out.setdefault(s["title"], []).extend(lines[i] for i in s["body"])
+    return out
+
+
+def append_entries(text):
+    entries = []
+    for title, body in section_bodies(text).items():
+        if title in REPLACE_SECTIONS:
+            continue
+        for idxs in section_entries(range(len(body)), body):
+            head, *rest = (body[i] for i in idxs)
+            rest = [l.rstrip() for l in rest if l.strip() and not l.lstrip().startswith("<!--")]
+            entries.append("\n".join([head.rstrip()] + rest))
+    return entries
+
+
+def tokens(s):
+    s = DATE_PREFIX_RE.sub("", s)
+    out = set(re.findall(r"[A-Za-z_][A-Za-z0-9_./:\-]{3,}", s))
+    cjk = re.sub(r"[^一-鿿]", "", s)
+    out |= {cjk[i:i + 4] for i in range(0, max(0, len(cjk) - 3), 2)}
+    return out
+
+
+def shared(entry, text):
+    tk = tokens(entry)
+    return len(tk & tokens(text)) / len(tk) if tk else 0.0
+
+
+def diff_entries(old_text, new_text, ratio=REWRITE_RATIO):
+    """(rewritten [(old, new, similarity)], gone [old]) between two versions."""
+    old, new = append_entries(old_text), append_entries(new_text)
+    new_set, old_set = set(new), set(old)
+    added = [e for e in new if e not in old_set]
+    rewritten, gone = [], []
+    for e in old:
+        if e in new_set:
+            continue
+        best = max(added, key=lambda a: difflib.SequenceMatcher(None, e, a).ratio(), default=None)
+        r = difflib.SequenceMatcher(None, e, best).ratio() if best else 0.0
+        (rewritten.append((e, best, r)) if r >= ratio else gone.append(e))
+    return rewritten, gone
+
+
+def parse_moves(text):
+    """[(anchor, destination)] from 移出 lines in the last-session block."""
+    moves = []
+    secs = section_bodies(text)
+    for title in LEDGER_SECTIONS:
+        for line in secs.get(title, []):
+            m = MOVE_RE.match(line)
+            if m:
+                for anchor in re.split(r"[；;]", m.group(1)):
+                    if anchor.strip():
+                        moves.append((anchor.strip(), m.group(2)))
+    return moves
+
+
+def suggest_anchor(entry, others):
+    """Shortest prefix of a separator-free segment that no other entry contains."""
+    head = entry.split("\n")[0][2:]
+    segments = [s.strip() for s in ANCHOR_BREAK_RE.split(head) if len(s.strip()) >= 8]
+    for seg in segments:
+        for n in range(min(28, len(seg)), len(seg) + 1, 4):
+            if not any(seg[:n] in o for o in others):
+                return seg[:n]
+    return segments[0] if segments else head
+
+
+def keep_moves(old_ledger_text, base_text, new_text):
+    """移出 lines from a ledger about to be overwritten that still account for an
+    entry gone since the baseline: an earlier session removed it and did not commit."""
+    _, gone = diff_entries(base_text, new_text)
+    kept = []
+    for line in old_ledger_text.split("\n"):
+        m = MOVE_RE.match(line)
+        if m and any(a.strip() and a.strip() in g for a in re.split(r"[；;]", m.group(1)) for g in gone):
+            kept.append(line.strip())
+    return kept
+
+
+def classify(dest, entry, new_text, root):
+    """(ok, kind, message) for one destination string."""
+    if dest.startswith("并入"):
+        target = dest[2:].strip(" ：:「」")
+        hits = [e for e in append_entries(new_text) if target and target in e]
+        if len(hits) != 1:
+            return False, "并入", f"并入的目标「{target}」对上 {len(hits)} 条现存条目，须正好 1 条"
+        return True, "并入", "并入现存条目"
+    if dest.startswith("作废"):
+        reason = dest[2:].strip(" ：:（）()")
+        if len(reason) < 4:
+            return False, "作废", "作废要写原因（至少 4 个字）"
+        return True, "作废", reason
+    rel = re.split(r"[\s「]", dest, maxsplit=1)[0]
+    path = Path(root) / rel
+    if not path.is_file():
+        return False, "搬出", f"去向文件不存在：{rel}"
+    kind = "晋升" if (path.name in INSTRUCTION_NAMES or ".claude/rules" in rel) else "搬出"
+    body = path.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"「(.+?)」", dest)
+    if m and not any(h and m.group(1) in h.group(2) for h in map(HEADING_RE.match, body.split("\n"))):
+        return False, kind, f"{rel} 里没有标题含「{m.group(1)}」的小节"
+    got = shared(entry, body)
+    if got < MIN_SHARED:
+        return False, kind, f"{rel} 里找不到这条的关键词（{got:.0%}，须 ≥{MIN_SHARED:.0%}）：先把内容写进去"
+    return True, kind, f"{rel}（关键词 {got:.0%}）"
+
+
+def check_removed(old_text, new_text, root="."):
+    """[(ok, message)] in the same shape check_memory returns."""
+    rewritten, gone = diff_entries(old_text, new_text)
+    checks = []
+    for old, new, r in rewritten:
+        if len(new) < SHRINK_NOTE * len(old):
+            checks.append((True, f"改写后缩短 {1 - len(new) / len(old):.0%}：{suggest_anchor(old, [])}"))
+    if not gone:
+        checks.append((True, f"追加节无条目消失（改写 {len(rewritten)} 条）"))
+        return checks
+    moves = parse_moves(new_text)
+    tally = {}
+    for e in gone:
+        mine = [(a, d) for a, d in moves if a in e and sum(a in g for g in gone) == 1]
+        anchor = suggest_anchor(e, [g for g in gone if g is not e])
+        if not mine:
+            checks.append((False, f"消失的条目没有去向，在「上次会话」里补一行：\n      移出：{anchor} → <AGENTS.md | docs/… | 并入 <现存条目的开头> | 作废（原因）>"))
+            continue
+        ok, kind, msg = classify(mine[0][1], e, new_text, root)
+        tally[kind] = tally.get(kind, 0) + ok
+        checks.append((ok, f"{kind}：{anchor} → {msg}"))
+    summary = "、".join(f"{k} {v}" for k, v in tally.items()) or "无"
+    checks.append((True, f"消失 {len(gone)} 条，已交代：{summary}"))
+    return checks
+
+
+def git_out(cwd, *args):
+    try:
+        r = subprocess.run(["git", "-C", str(cwd), *args], capture_output=True)
+    except OSError:
+        return None
+    return r.stdout.decode("utf-8", errors="replace") if r.returncode == 0 else None
+
+
+def read_base(path: Path, ref="HEAD"):
+    """The file as committed at ref, or None outside Git or when ref lacks it."""
+    d = path.resolve().parent
+    prefix = git_out(d, "rev-parse", "--show-prefix")
+    if prefix is None:
+        return None
+    return git_out(d, "show", f"{ref}:{prefix.rstrip()}{path.name}")
+
+
+def bad_ref(path: Path, ref):
+    """True inside a Git repository where ref names no commit: a typo must not skip the gate."""
+    d = path.resolve().parent
+    return git_out(d, "rev-parse", "--show-prefix") is not None and \
+        git_out(d, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}") is None
+
+
+def repo_root(path: Path):
+    d = path.resolve().parent
+    top = git_out(d, "rev-parse", "--show-toplevel")
+    return Path(top.rstrip("\n")) if top else d
+
+
 def print_checks(name, checks):
     fails = sum(1 for ok, _ in checks if not ok)
     print(f"check: {name}")
@@ -124,11 +312,21 @@ def print_checks(name, checks):
 
 def cmd_check(args):
     path = Path(args.file)
-    fails = print_checks(path.name, check_memory(path.read_text(encoding="utf-8"),
-                                                 args.max_bytes, args.max_line))
+    text = path.read_text(encoding="utf-8")
+    checks = check_memory(text, args.max_bytes, args.max_line)
+    if args.base_file is not None:
+        base = Path(args.base_file).read_text(encoding="utf-8")
+    else:
+        base = read_base(path, args.base)
+    if base is None and args.base_file is None and args.base != "HEAD" and bad_ref(path, args.base):
+        checks.append((False, f"--base {args.base} 不是这个仓库里的提交"))
+    elif base is None:
+        checks.append((True, "无基线，跳过条目去向检查"))
+    else:
+        checks += check_removed(base, text, repo_root(path))
+    fails = print_checks(path.name, checks)
     if fails:
-        print("超限时：先把 上次会话／下次运行 压成一块，再合并同主题事实或搬入 docs/ 留一行指针。",
-              file=sys.stderr)
+        print(OVER_LIMIT_HINT, file=sys.stderr)
     sys.exit(1 if fails else 0)
 
 
@@ -163,7 +361,7 @@ def cmd_compact(args):
         print(f"{path.name}: replace-sections already single-block, nothing to do")
     fails = print_checks(path.name, check_memory("\n".join(lines) + "\n"))
     if fails:
-        print("追加节不自动淘汰：合并同主题条目，或搬入 docs/ 后只留一行指针。", file=sys.stderr)
+        print(OVER_LIMIT_HINT, file=sys.stderr)
         sys.exit(1)
 
 
@@ -181,6 +379,13 @@ def cmd_add(args):
     first, *rest = args.text.split("\n")
     block = [f"- [{date}] {first}"] + [("  " + r if r.strip() else "") for r in rest]
     if args.section in REPLACE_SECTIONS:
+        kept = []
+        base = read_base(path) if args.section in LEDGER_SECTIONS else None
+        if base is not None:
+            written = {l.strip() for l in args.text.split("\n")}
+            old_ledger = "\n".join(lines[i] for i in sec["body"])
+            kept = [l for l in keep_moves(old_ledger, base, "\n".join(lines)) if l not in written]
+            block += ["  " + l for l in kept]
         # keep the HTML-comment hint, drop every previous entry
         keep = [i for i in sec["body"] if lines[i].strip().startswith("<!--")]
         for i in sorted(set(sec["body"]) - set(keep), reverse=True):
@@ -193,6 +398,8 @@ def cmd_add(args):
             lines.insert(after, "")
         write_lines(path, lines)
         print(f"replaced ## {args.section}: {block[0]}")
+        if kept:
+            print(f"kept {len(kept)} 条移出声明")
         return
     if rest:
         print("ERROR: append-sections take one line per entry (≤2 行时用一条长句，不用换行)",
@@ -215,6 +422,8 @@ def main():
     p_check.add_argument("file")
     p_check.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
     p_check.add_argument("--max-line", type=int, default=DEFAULT_MAX_LINE)
+    p_check.add_argument("--base", default="HEAD")
+    p_check.add_argument("--base-file", default=None)
     p_check.set_defaults(func=cmd_check)
 
     p_compact = sub.add_parser("compact")
