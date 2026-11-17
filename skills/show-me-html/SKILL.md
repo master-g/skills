@@ -47,7 +47,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 新页面从 `assets/shell.html` 开始，说明选定结构后直接继续。
 读取 [合成与验收](references/compose-and-check.md) 中适用部分，以及 [视觉系统](references/visual-system.md)。
 写 markup 时只查 [组件](references/components.md) 中实际需要的 DOM、ARIA 和 `data-*` 契约。
-展示仓库里的真实代码时推荐写代码引用（`<pre><code data-src="路径" data-lines="18-30"></code></pre>`），由构建器从文件读进来，路径按运行构建命令的目录解析，在仓库根目录构建；伪代码、调用树这类示意代码照旧手写（[组件](references/components.md)「代码引用」）。
+展示仓库里的真实代码时推荐写代码引用，写法和路径规则见 [组件](references/components.md)「代码引用」。
 画示意图时读 [图示规则](references/diagrams.md)，节点连线的图写 Mermaid 源码、由构建编译；材料含数值、占比、分布、网络或流向时读 [数据图规则](references/charts.md)，
 先判数据形状再从图型目录选编号，渲染块从 `assets/gallery/` 复制；加交互时读 [交互实现](references/interactions.md)。
 
