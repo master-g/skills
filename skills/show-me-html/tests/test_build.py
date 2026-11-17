@@ -20,6 +20,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 CSS = SKILL / "assets" / "show-me.css"
 
 RECIPES = runpy.run_path(str(BUILD))["RECIPES"]
+SECRET_DIRS = runpy.run_path(str(BUILD))["SECRET_DIRS"]
 FIND_CHROME = runpy.run_path(str(BUILD))["find_chrome"]
 RENDERER = bool(FIND_CHROME() and shutil.which("node"))
 SHELL = SKILL / "assets" / "shell.html"
@@ -44,6 +45,14 @@ def run_build(page, *args, cwd=None):
         check=False,
         cwd=cwd,
     )
+
+
+def warn_lines(result):
+    return [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+
+
+def error_lines(result):
+    return [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
 
 
 class BuildCliTests(unittest.TestCase):
@@ -475,7 +484,7 @@ class BuildCliTests(unittest.TestCase):
                 result = run_build(page)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertNotIn("ERROR", result.stdout)
-                warns = [l for l in result.stdout.splitlines() if l.startswith("WARN")]
+                warns = warn_lines(result)
                 self.assertEqual(warns, [])
                 built = page.read_text(encoding="utf-8")
                 self.assertIn('data-show-me="charts"', built)
@@ -498,7 +507,7 @@ class BuildCliTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn("ERROR", result.stdout)
-        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        warns = warn_lines(result)
         self.assertEqual(len(warns), 1, warns)
         self.assertIn("超过 400 KB", warns[0])
         built = (Path(tmp.name) / "all-charts.html").read_text(encoding="utf-8")
@@ -1183,7 +1192,7 @@ nodes.forEach((g) => {
     def image_errors(self, page, *args):
         result = run_build(page, *args)
         self.assertEqual(result.returncode, 1, result.stdout)
-        return [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+        return error_lines(result)
 
     def test_missing_image_names_the_path_and_the_folder_it_was_read_from(self):
         page = self.image_page('<img src="shots/gone.png" alt="截图">')
@@ -1288,7 +1297,7 @@ nodes.forEach((g) => {
         self.assertIn("不是文件", errors[0])
 
     def test_images_in_secret_folders_are_not_inlined(self):
-        for folder in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store", ".SSH"):
+        for folder in (*SECRET_DIRS, ".SSH"):
             with self.subTest(folder=folder):
                 page = self.image_page(f'<img src="{folder}/a.png" alt="图">', [(f"{folder}/a.png", self.PNG)])
 
@@ -1583,7 +1592,7 @@ nodes.forEach((g) => {
     def build_ref(self, page, *args):
         return run_build(page, *args, cwd=page.parent)
 
-    def code_refs(self, page):
+    def code_blocks(self, page):
         """成品里每个 <pre> 的 (来源标注, <code> 开标签, 代码文字)。来源标注没有时是 None。"""
         found = []
         for pre in re.findall(r"<pre\b[^>]*>(.*?)</pre>", page.read_text(encoding="utf-8"), re.S):
@@ -1602,7 +1611,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        [(label, tag, text)] = self.code_refs(page)
+        [(label, tag, text)] = self.code_blocks(page)
         self.assertEqual(label, "src/app.ts")
         self.assertEqual(text, "const a = 1;\nconst b = 2;")
         self.assertIn('data-src-start="1"', tag)
@@ -1617,7 +1626,7 @@ nodes.forEach((g) => {
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("代码引用=2 处", result.stdout)
-        (label1, tag1, text1), (label2, tag2, text2) = self.code_refs(page)
+        (label1, tag1, text1), (label2, tag2, text2) = self.code_blocks(page)
         self.assertEqual(label1, "a.py:18-30")
         self.assertEqual(text1, "".join(f"line {n} <&>\n" for n in range(18, 31)).rstrip("\n"))
         self.assertIn('data-src-start="18"', tag1)
@@ -1637,7 +1646,7 @@ nodes.forEach((g) => {
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn("WARN", result.stdout)
-        classes = [re.search(r'class="([^"]*)"', tag).group(1) for _, tag, _ in self.code_refs(page)]
+        classes = [re.search(r'class="([^"]*)"', tag).group(1) for _, tag, _ in self.code_blocks(page)]
         self.assertEqual(classes, ["language-rs", "language-js", "language-text", "language-make"])
         self.assertRegex(result.stdout, r"语法=[^ ]*\bjs\b")
         self.assertRegex(result.stdout, r"语法=[^ ]*\brs\b")
@@ -1649,13 +1658,13 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        [(_, _, text)] = self.code_refs(page)
+        [(_, _, text)] = self.code_blocks(page)
         self.assertEqual(text, "<b>&amp;</b>\n\tindented  \n</code></pre><p>x\n")
 
     def code_ref_errors(self, page, *args):
         result = self.build_ref(page, *args)
         self.assertEqual(result.returncode, 1, result.stdout)
-        return [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+        return error_lines(result)
 
     def assert_ref_rejected(self, block, files, *needles):
         """block 构建失败，恰好一条 ERROR，点名 needles 里的每一段；代码块保持原样没有填充。"""
@@ -1699,8 +1708,7 @@ nodes.forEach((g) => {
         self.assertIn("越出", errors[0])
 
     def test_files_in_secret_folders_or_with_credential_names_are_rejected(self):
-        names = [f"{d}/config" for d in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker",
-                                         ".password-store", ".SSH")]
+        names = [f"{d}/config" for d in (*SECRET_DIRS, ".SSH")]
         names += [".env", ".env.local", ".env.production", ".env.example.local", "deploy/.netrc", ".npmrc",
                   ".pypirc", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "id_xmss", "id_ecdsa_sk",
                   "id_ed25519_sk", "certs/server.pem", "tls.key", "store.p12", "store.pfx"]
@@ -1727,7 +1735,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual([label for label, _, _ in self.code_refs(page)], names)
+        self.assertEqual([label for label, _, _ in self.code_blocks(page)], names)
 
     def test_building_from_inside_a_secret_folder_is_rejected(self):
         page = self.code_ref_page('<pre><code data-src="credentials"></code></pre>',
@@ -1736,7 +1744,7 @@ nodes.forEach((g) => {
         result = run_build(page, cwd=page.parent / ".aws")
 
         self.assertEqual(result.returncode, 1, result.stdout)
-        errors = [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+        errors = error_lines(result)
         self.assertEqual(len(errors), 1, errors)
         self.assertIn('data-src="credentials"', errors[0])
         self.assertIn("密钥", errors[0])
@@ -1783,7 +1791,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        warns = warn_lines(result)
         self.assertEqual(len(warns), 1, warns)
         self.assertIn('data-lines="1-41"', warns[0])
         self.assertIn("41 行", warns[0])
@@ -1842,7 +1850,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        [(label, tag, text)] = self.code_refs(page)
+        [(label, tag, text)] = self.code_blocks(page)
         self.assertEqual((label, text), ("a.ts:3-4", "changed 3\nchanged 4"))
         self.assertIn('data-src-start="3"', tag)
         self.assertNotIn('data-src-start="2"', page.read_text(encoding="utf-8"))
@@ -1862,7 +1870,7 @@ nodes.forEach((g) => {
             result = self.build_ref(page)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(page.read_bytes(), before)
-        [(label, _, text)] = self.code_refs(page)
+        [(label, _, text)] = self.code_blocks(page)
         self.assertEqual(label, "a.ts")
         self.assertEqual(text, source.rstrip("\n"))
         self.assertNotIn('data-show-me="js"', before.decode("utf-8"))
@@ -1876,7 +1884,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        (label1, tag1, text1), (label2, tag2, _) = self.code_refs(page)
+        (label1, tag1, text1), (label2, tag2, _) = self.code_blocks(page)
         self.assertEqual((label1, text1), ("b.py", "a = 1"))
         self.assertIn('class="language-py"', tag1)
         self.assertNotIn("language-ts", tag1)
@@ -1884,7 +1892,7 @@ nodes.forEach((g) => {
         self.assertIn('class="language-js"', tag2)
         self.assertNotIn("language-py", tag2)
         self.assertEqual(self.build_ref(page).returncode, 0)
-        self.assertEqual([t for _, t, _ in self.code_refs(page)], [tag1, tag2])
+        self.assertEqual([t for _, t, _ in self.code_blocks(page)], [tag1, tag2])
 
     def test_missing_file_keeps_the_filled_code_on_rebuild_and_fails_the_first_build(self):
         page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="2"></code></pre>', [("a.ts", self.SOURCE)])
@@ -1895,7 +1903,7 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        warns = warn_lines(result)
         self.assertEqual(len(warns), 1, warns)
         self.assertIn('data-src="a.ts" data-lines="2"', warns[0])
         self.assertIn("保留", warns[0])
