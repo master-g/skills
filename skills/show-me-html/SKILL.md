@@ -47,6 +47,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 新页面从 `assets/shell.html` 开始，说明选定结构后直接继续。
 读取 [合成与验收](references/compose-and-check.md) 中适用部分，以及 [视觉系统](references/visual-system.md)。
 写 markup 时只查 [组件](references/components.md) 中实际需要的 DOM、ARIA 和 `data-*` 契约。
+展示仓库里的真实代码时推荐写代码引用（`<pre><code data-src="路径" data-lines="18-30"></code></pre>`），由构建器从文件读进来，路径按运行构建命令的目录解析，在仓库根目录构建；伪代码、调用树这类示意代码照旧手写（[组件](references/components.md)「代码引用」）。
 画示意图时读 [图示规则](references/diagrams.md)，节点连线的图写 Mermaid 源码、由构建编译；材料含数值、占比、分布、网络或流向时读 [数据图规则](references/charts.md)，
 先判数据形状再从图型目录选编号，渲染块从 `assets/gallery/` 复制；加交互时读 [交互实现](references/interactions.md)。
 
@@ -58,7 +59,6 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 - Mermaid 图写 `<pre class="mermaid">` 源码，由构建器编译成内联 SVG；不引 Mermaid 的运行时脚本，不手改编译出的 SVG。
 - 资源内联，仅允许骨架自带的 Google Fonts 及本地回退。离线可读，不保证字体外观完全一致。
 - 截图写 `<img src="本地路径" alt="说明">`，由构建器内联进页面（[组件](references/components.md)「图片」）。
-- 仓库里的真实代码写代码引用 `<pre><code data-src="路径" data-lines="18-30"></code></pre>`，由构建器从文件读进来；路径按运行构建命令的目录解析，在仓库根目录构建。伪代码、调用树这类示意代码照旧手写（[组件](references/components.md)「代码引用」）。
 - 三态主题与 Markdown 复制功能；所有承诺控件实际可用。
 - 以决定收尾的配方在 `<body>` 上加 `data-reply`，会改变下一步做法的分岔写成决定块，一页 1 到 5 个（[配方](references/layouts.md)「回复能力（决定块与按节评论）」）。
 

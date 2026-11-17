@@ -198,7 +198,7 @@ diff 行着色写进页面 CSS，四条代码类配方共用（负外边距是�
 
 入口 → 时序图（Mermaid `sequenceDiagram`，写法见 `diagrams.md`「Mermaid 图」；调用是一条直线时改用编号步骤）→ 每步一节（真实代码 + 解释）→ 边界与坑。
 
-- 代码片段必须来自真实文件，写成代码引用（`components.md`「代码引用」）：构建器从文件读进来，并在代码块上方生成 `path/to/file.ts:42-58` 这样的来源标注。
+- 代码片段必须来自真实文件，推荐写成代码引用（`components.md`「代码引用」）：构建器从文件读进来，并在代码块上方生成 `path/to/file.ts:42-58` 这样的来源标注；手写时在 `<pre>` 上方自己标注。
 - 步骤编号用 `.item-group`，`figure` 里放数字而非图标。
 
 ### `design-system-ref` · 设计系统 / 风格指南
