@@ -67,12 +67,12 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-17] main：probe_round 的同名单选组算一个 Tab 停靠点，已提交（未推送）。代码引用的设计问答已完成，决定落进 docs/research/2026-11-17-show-me-html-code-reference-decisions.md，show-me-html 术语表与 GLOSSARY-MAP.md 一并提交。
-  验证：探针改后五页原样副本与 hover 轮 probe.json 相同、30 张截图逐字节相同，加决定块的副本无误报；make check 全 PASS。
+- [2026-11-17] main：issue #3 代码引用经集成分支 show-me-html-code-reference 快进合入（14 个提交），已 make install；两路审阅的发现由第二个实现者修完。未推送，issue #3 未关。
+  验证：146 个单元测试全过；make check、prettier 通过；冻结场景完整重建后与 2026-11-17-hover 轮 probe.json 相同、30/30 截图相同；对齐实测与样例页在 /tmp/code-ref-check。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-17] 代码引用的规格已发为 issue #3（ready-for-agent），下一步由用户触发 /implement-spec。ADR（路径按构建目录算）要不要写用户还没答。
-  main 超前 origin 3 个提交，推送等用户要求。
+- [2026-11-17] 等用户：推送 main 并关闭 issue #3（issue 正文仍是收窄前的 id_* 与 .env.* 规则，关前补一条评论）；ADR（路径按构建目录算）写不写。
+  已知小缺口：代码引用「读不了」「不是文件」两条报错没有命令行测试。
