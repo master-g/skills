@@ -67,6 +67,35 @@
         "The pre-existing 技术栈 (Python 3.11 / poetry / ruff), 命令, 代码风格, 禁止文件, 审查规则 content is unchanged",
         "`setup_context.py --validate` reports the convention as latest"
       ]
+    },
+    {
+      "id": 5,
+      "name": "rule-on-first-sight",
+      "prompt": "Wrapping up for today. Three things from this session to keep for next time: (1) the integration tests need `make db-reset` run first — leftovers from the previous migration made three cases fail for no real reason and it cost us half an hour; (2) we confirmed the export endpoint caps page size at 500; (3) we decided not to put a Redis cache in front of the report endpoint for now — revisit if p95 goes over 2 s. Please write this session back into the project's memory setup.",
+      "expected_output": "The db-reset rule is an every-time operating rule, so it goes into AGENTS.md「工作流与陷阱」with its reason (migration leftovers cause false failures) and is not written into PROJECT_MEMORY.md. The page-size cap of 500 is a verified fact appended to 已验证的事实 with today's date. The no-Redis-cache decision stays in PROJECT_MEMORY.md with its reason and revisit condition, and is not promoted. The 8 pre-existing append-section entries survive, 上次会话/下次运行 are rewritten as one block each, and the memory gate passes. Identifiers for the original entries are in plans/034-bootstrap-claude-memory-removal-gate/answer-key.json under memory-triage.original.",
+      "files": ["evals/files/memory-triage"],
+      "expectations": [
+        "AGENTS.md's 工作流与陷阱 section now contains the rule to run `make db-reset` before the integration tests (`make test-integration`), together with its reason (leftovers from the previous migration cause false failures), and PROJECT_MEMORY.md does not contain this rule",
+        "The export endpoint's page-size cap of 500 is recorded in PROJECT_MEMORY.md's 已验证的事实 section as a '- [YYYY-MM-DD]' entry carrying the date the eval was run",
+        "The decision not to put a Redis cache in front of the report endpoint is in PROJECT_MEMORY.md with its reason or revisit condition (p95 over 2 s), and AGENTS.md's 工作流与陷阱 section does not contain it",
+        "All 8 pre-existing append-section entries are still in PROJECT_MEMORY.md: each identifier in answer-key.json memory-triage.original still matches exactly one line",
+        "`memory.py check PROJECT_MEMORY.md --base-file <the fixture's original PROJECT_MEMORY.md>` exits 0"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "make-room-at-cap",
+      "prompt": "Before I close out: we confirmed this session that the settlement export has to be generated in the merchant's local timezone, not UTC — finance reconciles against bank statements dated in local time, and a UTC cut-off pushed three late-night transactions into the next day's file. Please record that in the project memory and finish the session writeback.",
+      "expected_output": "PROJECT_MEMORY.md starts within 100 bytes of the 24,000-byte gate, so appending the timezone fact overflows it and the agent has to make room. The three every-time rules (`make release-tag`, `make migration-dryrun`, `secret/settlekit/sftp`) are promoted into AGENTS.md「工作流与陷阱」; the six long reconciliation facts may move to one docs/ file with a pointer; the four stale entries are dropped as obsolete; each of the two follow-up pairs may be merged into one entry; every other entry stays. Every entry that leaves the append sections is declared with a `移出：<anchor> → <destination>` line in 上次会话, the new timezone fact is recorded, and the memory gate passes. Group membership by identifier is in plans/034-bootstrap-claude-memory-removal-gate/answer-key.json under memory-at-cap.",
+      "files": ["evals/files/memory-at-cap"],
+      "expectations": [
+        "`memory.py check PROJECT_MEMORY.md --base-file <the fixture's original PROJECT_MEMORY.md>` exits 0, and PROJECT_MEMORY.md is at most 24,000 bytes",
+        "The content of the three rules — `make release-tag` (release), `make migration-dryrun` (database migration) and `secret/settlekit/sftp` (secrets) — is in AGENTS.md's 工作流与陷阱 section; none of the three was only moved into docs/",
+        "Every append-section entry that disappeared from PROJECT_MEMORY.md has a `移出：` line in the 上次会话 block",
+        "Entries declared 作废 come only from the stale group (answer-key.json memory-at-cap.stale); no entry from the rule, long or keep groups is declared 作废",
+        "Every keep-group entry (answer-key.json memory-at-cap.keep) is still in PROJECT_MEMORY.md, either verbatim or rewritten with its content intact",
+        "AGENTS.md is at most 200 lines"
+      ]
     }
   ]
 }

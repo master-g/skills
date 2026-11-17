@@ -162,7 +162,7 @@
 
 现行 `maintain.md` 要等「第二次命中」才晋升，所以第一条期望在基线上预计不通过。这是预测，以 Step 1 的实际结果为准。
 
-**夹具 `evals/files/memory-at-cap/`**：同样的项目骨架。`PROJECT_MEMORY.md` 在 23,600–23,900 字节之间，现行 `memory.py check` 全 PASS。条目按下面的构成写，每条带一个不与别条重复的标识词，eval 的期望按标识词点名：
+**夹具 `evals/files/memory-at-cap/`**：同样的项目骨架。`PROJECT_MEMORY.md` 在 23,900–23,980 字节之间，现行 `memory.py check` 全 PASS。条目按下面的构成写，每条带一个不与别条重复的标识词，eval 的期望按标识词点名：
 
 | 组  | 条数 | 内容                                                         | 正确去向                    |
 | --- | ---- | ------------------------------------------------------------ | --------------------------- |
@@ -189,7 +189,7 @@ git init -q && git add -A && git -c user.name=eval -c user.email=eval@example.in
 
 先 `cp -r skills/bootstrap-claude "$TMPDIR/bootstrap-claude-baseline"` 留一份现行技能。eval 5、6 各跑 3 次，都用这份基线技能。把每次运行每条期望的通过情况记进 `plans/034-bootstrap-claude-memory-removal-gate/eval-baseline.md`，写明用的模型。现行脚本不认识 `--base-file`，这一条和 eval 6 的 `移出：` 行那一条在基线上记为「不适用」。
 
-**Verify**：eval 文件合法的命令退出 0；`eval-baseline.md` 里有 6 次运行的结果表；`python3 skills/bootstrap-claude/scripts/memory.py check skills/bootstrap-claude/evals/files/memory-at-cap/PROJECT_MEMORY.md` 全 PASS 且总大小在 23,600–23,900 之间。
+**Verify**：eval 文件合法的命令退出 0；`eval-baseline.md` 里有 6 次运行的结果表；`python3 skills/bootstrap-claude/scripts/memory.py check skills/bootstrap-claude/evals/files/memory-at-cap/PROJECT_MEMORY.md` 全 PASS 且总大小在 23,900–23,980 之间。
 
 **Commit**：`test(bootstrap-claude): evals for promotion and making room at the size gate`
 

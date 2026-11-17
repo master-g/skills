@@ -1,0 +1,101 @@
+{
+  "memory-triage": {
+    "original": [
+      "FIN-2231",
+      "fin_import.py",
+      "EXPORT_FILENAME_TZ",
+      "lineterminator",
+      "proxy_buffering off",
+      "pandas.DataFrame.to_csv",
+      "QUOTE_NONNUMERIC",
+      "GZipMiddleware"
+    ]
+  },
+  "memory-at-cap": {
+    "rule": [
+      "make release-tag",
+      "secret/settlekit/sftp",
+      "make migration-dryrun"
+    ],
+    "long": [
+      "recon_match_key",
+      "recon_value_date_offset",
+      "RECON_TOLERANCE_FEN",
+      "break_status",
+      "recon_full_scan",
+      "pdfplumber"
+    ],
+    "stale": [
+      "bank-sandbox-e2e",
+      "SETTLE_BATCH_SIZE",
+      "sftp-bak.icbc-gw.internal",
+      "cryptography==42.0.8"
+    ],
+    "pairs": [
+      ["bocom_fixed_320", "trailer_crc32"],
+      ["body_sha256", "idem_window_hours"]
+    ],
+    "keep": [
+      "CRON_TZ=Asia/Shanghai",
+      "currency_exponent",
+      "fee_precision",
+      "CMB_SETTLE_",
+      "ccb_flag_suffix",
+      "push_retry_max",
+      "webhook_retry_schedule",
+      "values-prod.yaml",
+      "settlekit-staging",
+      "sqlalchemy<2.1",
+      "python:3.12-slim-bookworm",
+      "merchant_prefix_map",
+      "mt103_builder",
+      "settle_calendar",
+      "settle_job_duration_seconds",
+      "SETTLE_DB_READONLY",
+      "check_totals",
+      "NotoSansCJKsc-Regular",
+      "sig_max_skew",
+      "truncate_gb_bytes",
+      ".github/workflows/ci.yml",
+      "types-paramiko",
+      "SETTLE_WORKERS",
+      "disabled_algorithms",
+      "settle_cycle_days",
+      "legacy_payouts",
+      "xlsx_rows_per_sheet",
+      "refund_notice",
+      "cnaps_code",
+      "SETTLEKIT_ENV",
+      "legacy_csv_merchants",
+      "pg_advisory_xact_lock",
+      "compare_type=True",
+      "ABC_HDR_V3",
+      "fx_snapshot_at",
+      "account_change_hold_hours",
+      "/var/lib/settlekit/outbox",
+      "known_hosts.d/banks",
+      "HTTPX_TIMEOUT_SECONDS",
+      "bank-sim",
+      "contract_currency",
+      "renovate.json",
+      "mask_account",
+      "asyncssh",
+      "s3_handoff",
+      "pandas.to_string",
+      "generate_series",
+      "autoretry_for",
+      "PYTHONWARNINGS=error",
+      "timestamptz",
+      "merchant_encoding",
+      "webhook_batch_size",
+      "SSH_FX_FAILURE",
+      "uv sync --frozen",
+      "webhook_outbox",
+      "activeDeadlineSeconds",
+      ".git-blame-ignore-revs",
+      "ProcessPoolExecutor",
+      "PARTITION BY LIST",
+      "chardet"
+    ]
+  }
+}
