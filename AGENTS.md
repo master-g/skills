@@ -101,4 +101,4 @@
 
 ### Domain docs
 
-单上下文：根目录 `GLOSSARY.md` 加 `docs/adr/`。见 `docs/agents/domain.md`。
+多上下文：根目录 `GLOSSARY-MAP.md` 列出各语境的术语表（bench 在根目录 `GLOSSARY.md`，show-me-html 在 `skills/show-me-html/GLOSSARY.md`），决策记录放 `docs/adr/`。见 `docs/agents/domain.md`。

@@ -67,12 +67,12 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-17] main：probe_round 的可 Tab 清单把同表单同名单选组算成一个停靠点（有选中取选中的，否则取第一个），决定块不再误报 unreached。
-  验证：往 hover 轮 approach-compare 副本加三选一决定块重建，改前报 2 个 unreached、改后五页无问题；五页原样副本与 hover 轮 probe.json 相同、30 张截图逐字节相同；选中第三项、组内带正 tabindex 两种情况下清单与真实 Tab 落点一致。副本在 /tmp/probe-radio。
+- [2026-11-17] main：probe_round 的同名单选组算一个 Tab 停靠点，已提交（未推送）。代码引用的设计问答已完成，决定落进 docs/research/2026-11-17-show-me-html-code-reference-decisions.md，show-me-html 术语表与 GLOSSARY-MAP.md 一并提交。
+  验证：探针改后五页原样副本与 hover 轮 probe.json 相同、30 张截图逐字节相同，加决定块的副本无误报；make check 全 PASS。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-17] 无排队任务。issue #2 的五处规格偏离用户已选保持现状（issue #2 评论），不用再改。
-  构建期按 src/lines 引用真实代码待用户点头，先 grill-with-docs 定路径基准和行号。
+- [2026-11-17] 用户手动跑 /to-spec 写代码引用的规格，输入是上面那份决定文档（含「留标记」补充）；ADR 要不要写用户还没答。
+  main 超前 origin 2 个提交，推送等用户要求。
