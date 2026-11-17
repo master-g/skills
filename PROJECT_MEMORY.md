@@ -68,11 +68,11 @@
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
 - [2026-11-17] feat/show-me-html-images（未并入 main、未推送）：issue #2 本地图片内联已实现并修完代码审查；之前的悬停修复已推送。
-  验证：115 个单元测试全过；make check 全 PASS；五个冻结场景重建后与 2026-11-17-hover 轮 probe.json 相同、30 张截图逐字节相同；探针页四种本地 img 写法内联或报 ERROR（/tmp/smh-images）。
+  验证：117 个单元测试全过；make check 全 PASS；五个冻结场景重建后与 2026-11-17-hover 轮 probe.json 相同、30 张截图逐字节相同；探针页四种本地 img 写法内联或报 ERROR（/tmp/smh-images）。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
 - [2026-11-17] 等用户决定是否把 feat/show-me-html-images 并入 main（并入时 rebase 拉直，去掉分支上那个合并提交），再推送、make install、关 issue #2。规格外的几处（figure 图片描边圆角、打印限高 90vh、带空格文件名导出包尖括号、本地 script src 也报错）写在 issue #2 评论里待用户答复。
-  已知未修：外链检查漏了字符串 @import "https://…" 和 embed、object、track、video poster、input type=image 的 http 地址；AVIF 只用手工样本验过。构建期按 src/lines 引用真实代码仍待用户点头。
+  外链检查已改成和本地引用共用一份列举，作者脚本文本里的 url() 不扫。AVIF 用 ImageMagick 真实文件验过。构建期按 src/lines 引用真实代码仍待用户点头，先 grill-with-docs 定路径基准和行号。

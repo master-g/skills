@@ -499,7 +499,7 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 - `alt` 必填，写图里要读者看到的内容。纯装饰图写 `alt=""`。
 - 有图注时放进 `<figure>`，图注用 `<figcaption>`，写成一句能独立成立的结论。图片宽度自动压到版心以内，高度随比例；打印时图和图注不跨页。
 - 换图：把 `src` 改回文件路径再构建。已经是 `data:` 的图片构建时原样保留，重复构建结果不变。
-- 本地资源只走 `<img src>` 这一种写法，路径后的 `?…`、`#…` 读文件时忽略。其他写法指向本地文件时 `build.py` 报 ERROR：图片类的 `srcset`、`<picture>` 的 `<source>`、`<video poster>`、`<input type="image">`、SVG 里的 `<image href>`、`<feImage href>` 和指向别的文件的 `<use href="x.svg#a">`、样式里的 `url()` 和 `image-set()`，改用 `<img src>`；非图片的 `<video>` / `<audio>`、`<track>`、`<iframe>`、`<object>`、`<embed>`、`<script src>`、加载样式或图标的 `<link>`、样式里的 `@import`，页面必须自包含，把内容写进页面或删掉。`<a href>` 是链接不受限，`#id` 片段引用和 `data:` 地址也不算。上面任何一种写法（含 `<img src>`）指向 http(s) 或 `//` 开头的远程地址时同样报 ERROR，唯一放行的是骨架自带的 Google Fonts。
+- 本地资源只走 `<img src>` 这一种写法，路径后的 `?…`、`#…` 读文件时忽略。其他写法指向本地文件时 `build.py` 报 ERROR：图片类的 `srcset`、`<picture>` 的 `<source>`、`<video poster>`、`<input type="image">`、SVG 里的 `<image href>`、`<feImage href>` 和指向别的文件的 `<use href="x.svg#a">`、样式里的 `url()` 和 `image-set()`，改用 `<img src>`；非图片的 `<video>` / `<audio>`、`<track>`、`<iframe>`、`<object>`、`<embed>`、`<script src>`、会联网或加载内容的 `<link>`、样式里的 `@import`，页面必须自包含；`@font-face` 的 `src` 指向本地字体文件也是 ERROR，字体用骨架的 Google Fonts 或在字体栈里写 `local()` 兜底，把内容写进页面或删掉。`<a href>` 是链接不受限，`#id` 片段引用和 `data:` 地址也不算。上面任何一种写法（含 `<img src>`）指向 http(s) 或 `//` 开头的远程地址时同样报 ERROR，唯一放行的是骨架那几个指向 Google Fonts 的 `<link>`。
 - 「复制为 Markdown」把图片导出成 `![alt](文件名)`，不带图片数据。
 
 ## 其余

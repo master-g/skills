@@ -570,22 +570,24 @@ IMAGE_MAGIC = {
 }
 
 
-REMOTE_REF_RE = re.compile(r"(?:https?:)?//([^/?#\s]*)", re.I)
+# http(s): 后面的斜杠可多可少、可以是反斜杠，浏览器都按远程地址解析；没有协议时两个斜杠起头是协议相对地址
+REMOTE_REF_RE = re.compile(r"(?:https?:|(?=[/\\]{2}))[/\\]*([^/\\?#\s]*)", re.I)
 
 
-def remote_host(ref):
-    """http(s) 或协议相对地址的主机名，小写；不是远程地址时返回 None。"""
-    m = REMOTE_REF_RE.match(ref.strip())
-    return m.group(1).lower() if m else None
+def ref_place(ref):
+    """地址指向哪里：("local", None) 是本机文件（file: 也算）；("remote", 主机名) 会联网；
+    (None, None) 是空串、页内片段、data: 这类不加载别处内容的地址。"""
+    ref = ref.strip()
+    if not ref or ref.startswith("#"):
+        return None, None
+    if m := REMOTE_REF_RE.match(ref):
+        return "remote", m.group(1).lower()
+    scheme = re.match(r"([a-z][a-z0-9+.-]+):", ref, re.I)  # 两个字母起：Windows 盘符不算协议
+    return ("local", None) if not scheme or scheme.group(1).lower() == "file" else (None, None)
 
 
 def is_local_ref(ref):
-    """指向本机文件的引用：不是空串、页内片段、data:、http(s) 或协议相对地址等带协议的地址；file: 算本地。"""
-    ref = ref.strip()
-    if not ref or ref.startswith(("#", "//")):
-        return False
-    scheme = re.match(r"([a-z][a-z0-9+.-]+):", ref, re.I)  # 两个字母起：Windows 盘符不算协议
-    return not scheme or scheme.group(1).lower() == "file"
+    return ref_place(ref)[0] == "local"
 
 
 StartTag = namedtuple("StartTag", "start text name attrs")  # 起始偏移、开标签原文、标签名、属性字典
@@ -705,7 +707,7 @@ def image_label(attrs):
 
 
 # 会加载资源的属性。本地地址里只有 <img src> 会被内联，其余写法指向本地文件或远程地址时，成品转发后失效或会去联网。
-# 每项是 (属性, 类别)：inlined 是构建时内联的 <img src>，image 提示改用 <img src>，other 提示页面必须自包含。<a href> 是链接不是资源，不在其中
+# 每项是 (属性, 类别)，类别的含义见 REF_KINDS。<a href> 是链接不是资源，不在其中
 RESOURCE_ATTRS = {
     "img": (("src", "inlined"), ("srcset", "image")),
     "source": (("srcset", "image"), ("src", "other")),
@@ -718,24 +720,33 @@ RESOURCE_ATTRS = {
     "iframe": (("src", "other"),),
     "embed": (("src", "other"),),
     "object": (("data", "other"),),
-    "script": (("src", "other"),),
+    "script": (("src", "other"), ("href", "other"), ("xlink:href", "other")),
 }
-# <link> 只有这些 rel 会加载 href（canonical、alternate 之类只是指向）；<input> 只有 type=image 才加载 src
-LOADING_RELS = {"stylesheet", "icon", "apple-touch-icon", "apple-touch-icon-precomposed", "mask-icon", "manifest",
-                "preload", "modulepreload", "prefetch"}
+# <link> 只有这些 rel 会让 href 联网或加载（canonical、alternate 之类只是指向）；<input> 只有 type=image 才加载 src
+NETWORK_RELS = {"stylesheet", "icon", "apple-touch-icon", "apple-touch-icon-precomposed", "mask-icon", "manifest",
+                "preload", "modulepreload", "prefetch", "preconnect", "dns-prefetch", "prerender"}
 # 写得进 url() 的属性：内联样式和 SVG 的绘制属性。alt、title 这类文字属性里提到 url() 不算
-URL_ATTRS = {"style", "fill", "stroke", "clip-path", "mask", "filter", "marker-start", "marker-mid", "marker-end"}
+URL_ATTRS = {"style", "fill", "stroke", "clip-path", "mask", "filter", "marker-start", "marker-mid", "marker-end",
+             "cursor"}
 CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))""", re.I)
 # image-set() 的候选可以直接写成字符串（"a.png" 1x），不经过 url()；括号里允许一层 url(…)
 IMAGE_SET_RE = re.compile(r"image-set\(((?:[^()]|\([^()]*\))*)\)", re.I)
 CSS_STRING_RE = re.compile(r""""([^"]*)"|'([^']*)'""")
-LOCAL_REF_HINTS = {
-    "image": "图片改用 <img src=\"路径\" alt=\"说明\">",
-    "background": "图片改用 <img src=\"路径\" alt=\"说明\">；样式背景图不支持本地文件",
-    "other": "页面必须自包含，视频、音频、字幕、框架页、外部样式和脚本都不支持本地文件，把内容写进页面或删掉这个引用",
+# 资源引用的类别：指向本地文件时给哪句提示（None 表示构建时内联、不报），指向远程时放行哪些主机。
+# 只有骨架的 Google Fonts <link> 放行：取不到时静默回退到系统字体栈，页面照常可读（骨架把它写成异步加载，首屏不会被卡住）
+RefKind = namedtuple("RefKind", "local_hint remote_ok")
+_SELF_CONTAINED = "页面必须自包含，视频、音频、字幕、框架页、外部样式和脚本都不支持本地文件，把内容写进页面或删掉这个引用"
+REF_KINDS = {
+    "inlined": RefKind(None, ()),
+    "image": RefKind("图片改用 <img src=\"路径\" alt=\"说明\">", ()),
+    "background": RefKind("图片改用 <img src=\"路径\" alt=\"说明\">；样式背景图不支持本地文件", ()),
+    "font": RefKind("字体不支持本地文件：用骨架自带的 Google Fonts，或在字体栈里写 local() 和系统字体兜底", ()),
+    "other": RefKind(_SELF_CONTAINED, ()),
+    "link": RefKind(_SELF_CONTAINED, FONT_HOSTS),
 }
-# 样式里的 @import，字符串和 url() 两种写法；先单独取出，免得 url() 写法再按背景图报一遍
-CSS_IMPORT_RE = re.compile(r"""@import\s+(?:url\(\s*(["']?)([^"')\s]*)\1\s*\)|(["'])(.*?)\3)""", re.I | re.S)
+FONT_FACE_RE = re.compile(r"@font-face\s*\{[^}]*\}", re.I)
+# 样式里的 @import，字符串和 url() 两种写法，@import 后可以不留空格；先单独取出，免得 url() 写法再按背景图报一遍
+CSS_IMPORT_RE = re.compile(r"""@import\s*(?:url\(\s*(["']?)([^"')\s]*)\1\s*\)|(["'])(.*?)\3)""", re.I | re.S)
 
 
 def srcset_urls(value):
@@ -756,16 +767,18 @@ def css_urls(text):
 
 def tag_refs(tag):
     """一个开标签里会加载资源的地址：逐个给出 (位置说明, 地址, 类别)。
-    类别是 inlined（构建时内联的 <img src>）、image（图片）、background（样式 url()，多半是背景图）或 other（非图片资源）。"""
+    类别是 REF_KINDS 的键。"""
     attrs = tag.attrs
     keys = list(RESOURCE_ATTRS.get(tag.name, ()))
     if tag.name == "input" and (attrs.get("type") or "").strip().lower() == "image":
         keys.append(("src", "image"))
-    if tag.name == "link" and LOADING_RELS & set((attrs.get("rel") or "").lower().split()):
-        keys.append(("href", "other"))
+    if tag.name == "link":
+        keys.append(("imagesrcset", "image"))
+        if NETWORK_RELS & set((attrs.get("rel") or "").lower().split()):
+            keys.append(("href", "link"))
     for key, kind in keys:
         value = attrs.get(key) or ""
-        for ref in srcset_urls(value) if key == "srcset" else [value]:
+        for ref in srcset_urls(value) if key.endswith("srcset") else [value]:
             yield f"<{tag.name} {key}> 的 {ref}", ref, kind
     for key in URL_ATTRS & attrs.keys():
         for form, ref in css_urls(attrs[key] or ""):
@@ -773,16 +786,20 @@ def tag_refs(tag):
 
 
 def style_refs(css):
-    """一段 <style> 内容里的 @import（非图片）和 url()、image-set()（按背景图算）。"""
+    """一段 <style> 内容里的 @import（非图片）、@font-face 的 src（字体），其余 url()、image-set() 按背景图算。"""
     for m in CSS_IMPORT_RE.finditer(css):
         ref = m.group(2) if m.group(2) is not None else m.group(4)
         yield f"<style> 里 @import 的 {ref}", ref, "other"
-    for form, ref in css_urls(CSS_IMPORT_RE.sub("", css)):
+    rest = CSS_IMPORT_RE.sub("", css)
+    for face in FONT_FACE_RE.findall(rest):
+        for _form, ref in css_urls(face):
+            yield f"<style> 里 @font-face 的 {ref}", ref, "font"
+    for form, ref in css_urls(FONT_FACE_RE.sub("", rest)):
         yield f"<style> 里 {form} 的 {ref}", ref, "background"
 
 
 def check_resources(authored, errors, just_built):
-    """图片的 alt，以及作者标记里每个资源引用：本地的只有 <img src> 能内联，远程的只放行 Google Fonts。
+    """图片的 alt，以及作者标记里每个资源引用：本地的只有 <img src> 能内联，远程的只放行骨架的 Google Fonts <link>。
     authored 是去掉注释、系统脚本和系统样式后作者写的标记。
     just_built：刚跑过合成，没能内联的本地图片已在合成阶段逐张报过原因。"""
     parsed = TagsAndStyles(authored)
@@ -794,13 +811,13 @@ def check_resources(authored, errors, just_built):
             if "alt" not in tag.attrs:
                 errors.append(f"图片 {image_label(tag.attrs)} 缺少 alt：写一句说明图上是什么，导出和读屏都用它；纯装饰图写 alt=\"\"")
     refs = [r for tag in parsed.tags for r in tag_refs(tag)] + [r for css in parsed.styles for r in style_refs(css)]
-    local = {where: kind for where, ref, kind in refs if kind != "inlined" and is_local_ref(ref)}
-    for where, kind in local.items():
-        errors.append(f"本地资源引用 {where[:120]} 不会内联，转发后失效：只有 <img src> 的本地图片会在构建时写进页面，{LOCAL_REF_HINTS[kind]}")
-    # Google Fonts 是唯一例外：取不到时静默回退到系统字体栈，页面照常可读（骨架把它写成异步加载，首屏不会被卡住）
-    remote = [where for where, ref, _kind in refs if remote_host(ref) not in (None, *FONT_HOSTS)]
-    for where in dict.fromkeys(remote):
-        errors.append(f"外部资源引用 {where[:120]}：页面必须离线可开，把内容写进页面或删掉这个引用")
+    for where, ref, kind in dict.fromkeys(refs):
+        place, host = ref_place(ref)
+        rule, shown = REF_KINDS[kind], where[:120]
+        if place == "local" and rule.local_hint:
+            errors.append(f"本地资源引用 {shown} 不会内联，转发后失效：只有 <img src> 的本地图片会在构建时写进页面，{rule.local_hint}")
+        elif place == "remote" and host not in rule.remote_ok:
+            errors.append(f"外部资源引用 {shown}：页面必须离线可开，把内容写进页面或删掉这个引用")
 
 
 def fail(msg):

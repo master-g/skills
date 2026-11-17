@@ -1509,6 +1509,14 @@ nodes.forEach((g) => {
             '<video poster="https://example.com/p.png" controls></video>',
             '<video controls><track src="https://example.com/t.vtt"></video>',
             '<form><input type="image" src="https://example.com/b.png" alt="提交"></form>',
+            '<style>@import"https://example.com/b.css";</style>',
+            '<img src="https:example.com/c.png" alt="图">',
+            '<img src="https:\\\\example.com/d.png" alt="图">',
+            '<link rel="preconnect" href="https://example.com">',
+            '<link rel="preload" as="image" imagesrcset="https://example.com/e.png 1x" href="data:,">',
+            '<script src="https://fonts.googleapis.com/example.com.js"></script>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><script href="https://example.com/s.js"></script></svg>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><rect cursor="url(https://example.com/c.cur), auto"/></svg>',
         )
         for snippet in cases:
             with self.subTest(snippet=snippet):
@@ -1519,6 +1527,16 @@ nodes.forEach((g) => {
                 self.assertEqual(len(errors), 1, errors)
                 self.assertIn("外部资源引用", errors[0])
                 self.assertIn("example.com", errors[0])
+
+    def test_local_font_files_fail_with_a_font_hint(self):
+        page = self.image_page('<style>@font-face { font-family: X; src: url("fonts/x.woff2") }</style>')
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("fonts/x.woff2", errors[0])
+        self.assertIn("字体", errors[0])
+        self.assertNotIn("<img src=", errors[0])
 
     def test_page_with_a_large_image_checks_fast_without_false_alarms(self):
         """图片数据不算页面自己的样式和脚本：未编码的 SVG data URI 里写到颜色和 innerHTML 也不报。"""
