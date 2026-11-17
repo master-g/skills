@@ -184,14 +184,29 @@ const DESCRIBE = `(() => {
 const TABBABLE = `(() => {
   window.__kbSeq = window.__kbSeq || 0;
   const sel = 'a[href],button,input,select,textarea,summary,[tabindex],[contenteditable="true"]';
-  return [...document.querySelectorAll(sel)].filter((el) => {
+  const focusable = [...document.querySelectorAll(sel)].filter((el) => {
     if (el.disabled || el.tabIndex < 0) return false;
     if (el.closest("[hidden],[inert]")) return false;
     const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none" || (!r.width && !r.height)) return false;
     if (el.closest("details:not([open])") && el.tagName !== "SUMMARY") return false;
     return true;
-  }).map((el) => { if (!el.__kbId) el.__kbId = ++window.__kbSeq; return { id: el.__kbId, tag: el.tagName.toLowerCase(), label: (el.getAttribute("aria-label") || el.textContent || "").replace(/\\s+/g, " ").trim().slice(0, 28), pos: el.tabIndex > 0 }; });
+  });
+  // 同名单选框（同一表单，不在表单里时同一文档根）只占一个 Tab 停靠点：浏览器停在选中的那个，都没选时停在组里按 Tab 顺序的第一个
+  const stops = new Map();
+  const tabRank = (el) => (el.tabIndex > 0 ? el.tabIndex : Infinity);
+  const groupOf = (el) => {
+    if (el.type !== "radio" || !el.name) return null;
+    const scope = el.form || el.getRootNode();
+    if (!stops.has(scope)) stops.set(scope, new Map());
+    return stops.get(scope);
+  };
+  for (const el of focusable) {
+    const group = groupOf(el), cur = group && group.get(el.name);
+    if (group && (!cur || (el.checked && !cur.checked) || (el.checked === cur.checked && tabRank(el) < tabRank(cur)))) group.set(el.name, el);
+  }
+  const stopsOnly = focusable.filter((el) => { const group = groupOf(el); return !group || group.get(el.name) === el; });
+  return stopsOnly.map((el) => { if (!el.__kbId) el.__kbId = ++window.__kbSeq; return { id: el.__kbId, tag: el.tagName.toLowerCase(), label: (el.getAttribute("aria-label") || el.textContent || "").replace(/\\s+/g, " ").trim().slice(0, 28), pos: el.tabIndex > 0 }; });
 })()`;
 
 // 场景判据的页内读数。q() 取必需元素，不命中记进 missing。
