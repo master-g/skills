@@ -570,6 +570,15 @@ IMAGE_MAGIC = {
 }
 
 
+REMOTE_REF_RE = re.compile(r"(?:https?:)?//([^/?#\s]*)", re.I)
+
+
+def remote_host(ref):
+    """http(s) 或协议相对地址的主机名，小写；不是远程地址时返回 None。"""
+    m = REMOTE_REF_RE.match(ref.strip())
+    return m.group(1).lower() if m else None
+
+
 def is_local_ref(ref):
     """指向本机文件的引用：不是空串、页内片段、data:、http(s) 或协议相对地址等带协议的地址；file: 算本地。"""
     ref = ref.strip()
@@ -695,10 +704,10 @@ def image_label(attrs):
     return name or (src[:60] + "…" if len(src) > 60 else src) or "<img>"
 
 
-# 只有 <img src> 的本地图片会被内联；下面这些写法指向本地文件时成品转发后就失效。
-# 每项是 (属性, 类别)：image 提示改用 <img src>，other 提示页面必须自包含。<a href> 是链接不是资源，不在其中
-LOCAL_REF_ATTRS = {
-    "img": (("srcset", "image"),),
+# 会加载资源的属性。本地地址里只有 <img src> 会被内联，其余写法指向本地文件或远程地址时，成品转发后失效或会去联网。
+# 每项是 (属性, 类别)：inlined 是构建时内联的 <img src>，image 提示改用 <img src>，other 提示页面必须自包含。<a href> 是链接不是资源，不在其中
+RESOURCE_ATTRS = {
+    "img": (("src", "inlined"), ("srcset", "image")),
     "source": (("srcset", "image"), ("src", "other")),
     "video": (("poster", "image"), ("src", "other")),
     "image": (("href", "image"), ("xlink:href", "image")),
@@ -746,10 +755,10 @@ def css_urls(text):
 
 
 def tag_refs(tag):
-    """一个开标签里会加载资源的地址（<img src> 除外）：逐个给出 (位置说明, 地址, 类别)。
-    类别是 image（图片）、background（样式 url()，多半是背景图）或 other（非图片资源）。"""
+    """一个开标签里会加载资源的地址：逐个给出 (位置说明, 地址, 类别)。
+    类别是 inlined（构建时内联的 <img src>）、image（图片）、background（样式 url()，多半是背景图）或 other（非图片资源）。"""
     attrs = tag.attrs
-    keys = list(LOCAL_REF_ATTRS.get(tag.name, ()))
+    keys = list(RESOURCE_ATTRS.get(tag.name, ()))
     if tag.name == "input" and (attrs.get("type") or "").strip().lower() == "image":
         keys.append(("src", "image"))
     if tag.name == "link" and LOADING_RELS & set((attrs.get("rel") or "").lower().split()):
@@ -772,8 +781,9 @@ def style_refs(css):
         yield f"<style> 里 {form} 的 {ref}", ref, "background"
 
 
-def check_images(authored, errors, just_built):
-    """authored 是去掉注释、系统脚本和系统样式后作者写的标记。
+def check_resources(authored, errors, just_built):
+    """图片的 alt，以及作者标记里每个资源引用：本地的只有 <img src> 能内联，远程的只放行 Google Fonts。
+    authored 是去掉注释、系统脚本和系统样式后作者写的标记。
     just_built：刚跑过合成，没能内联的本地图片已在合成阶段逐张报过原因。"""
     parsed = TagsAndStyles(authored)
     for tag in parsed.tags:
@@ -784,9 +794,13 @@ def check_images(authored, errors, just_built):
             if "alt" not in tag.attrs:
                 errors.append(f"图片 {image_label(tag.attrs)} 缺少 alt：写一句说明图上是什么，导出和读屏都用它；纯装饰图写 alt=\"\"")
     refs = [r for tag in parsed.tags for r in tag_refs(tag)] + [r for css in parsed.styles for r in style_refs(css)]
-    local = {where: kind for where, ref, kind in refs if is_local_ref(ref)}
+    local = {where: kind for where, ref, kind in refs if kind != "inlined" and is_local_ref(ref)}
     for where, kind in local.items():
         errors.append(f"本地资源引用 {where[:120]} 不会内联，转发后失效：只有 <img src> 的本地图片会在构建时写进页面，{LOCAL_REF_HINTS[kind]}")
+    # Google Fonts 是唯一例外：取不到时静默回退到系统字体栈，页面照常可读（骨架把它写成异步加载，首屏不会被卡住）
+    remote = [where for where, ref, _kind in refs if remote_host(ref) not in (None, *FONT_HOSTS)]
+    for where in dict.fromkeys(remote):
+        errors.append(f"外部资源引用 {where[:120]}：页面必须离线可开，把内容写进页面或删掉这个引用")
 
 
 def fail(msg):
@@ -1096,25 +1110,6 @@ def check(html, path, allow_legacy_recipe=False, just_built=False):
     without_state = REPLY_STATE_OR_SYSTEM_RE.sub(lambda m: m.group(1) or "", html)
     stripped = re.sub(r"<!--.*?-->", "", without_state, flags=re.S)
 
-    # 页面必须离线可开。唯一例外是 Google Fonts —— 它取不到时会静默回退到系统字体栈，
-    # 页面照常可读（骨架把它写成异步加载，首屏也不会被卡住）。别的外部资源没有这个性质。
-    for m in re.finditer(r'<(link|script|img|iframe|source|video|audio|use)\b[^>]*'
-                         r'(?:src|href|xlink:href)="(https?:)?//([^"/]+)[^"]*"', stripped, re.I):
-        if m.group(3).lower() in FONT_HOSTS:
-            continue
-        errors.append(f"外部资源引用：{m.group(0)[:90]}…（页面必须离线可开）")
-    for m in re.finditer(r'url\(\s*["\']?(?:https?:)?//', stripped):
-        errors.append("CSS 里有外部 url() 引用")
-    if re.search(r"@import\s+url\(\s*[\"']?(?:https?:)?//", stripped):
-        errors.append("CSS 里有外部 @import")
-    # 只用 local() 的 @font-face 永远不会联网（配平面就是这么写的），别误报
-    for face in re.findall(r"@font-face\s*\{[^}]*\}", stripped, re.S):
-        srcs = re.findall(r"url\(\s*[\"']?([^)\"']+)", face)
-        if srcs and not all(u.startswith("data:") for u in srcs):
-            warns.append("有 @font-face 的 src 不是 data: URI，页面可能会去联网取字体："
-                         f"{srcs[0][:60]}")
-            break
-
     for slot in (CSS_SLOT, JS_SLOT):
         if slot in html:
             errors.append(f"占位符 {slot} 未被替换")
@@ -1149,7 +1144,7 @@ def check(html, path, allow_legacy_recipe=False, just_built=False):
     if reply_enabled(authored_markup) and REPLY_MARK not in html:
         errors.append("页面开启了回复能力（data-reply）但没有内联回复运行时：跑一遍不带 --check-only 的 build")
     check_decisions(authored_markup, errors)
-    check_images(without_system(stripped), errors, just_built)
+    check_resources(without_system(stripped), errors, just_built)
     if needs_basecoat(authored_markup) and JS_MARK not in html:
         errors.append("页面用了需要 JS 的组件（tabs / dropdown-menu 等）但没有内联 basecoat JS：跑一遍不带 --check-only 的 build")
     if "data-copy-md" not in html:

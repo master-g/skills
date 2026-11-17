@@ -1499,6 +1499,27 @@ nodes.forEach((g) => {
                 self.assertIn("外部资源引用", errors[0])
                 self.assertIn(f'<img src="{src}" alt="图">', page.read_text(encoding="utf-8"))
 
+    def test_remote_resources_in_any_attribute_form_fail_as_external(self):
+        cases = (
+            "<img src='https://example.com/q.png' alt=\"图\">",
+            '<img src=https://example.com/u.png alt="图">',
+            '<style>@import "https://example.com/a.css";</style>',
+            '<embed src="https://example.com/a.pdf">',
+            '<object data="https://example.com/a.svg"></object>',
+            '<video poster="https://example.com/p.png" controls></video>',
+            '<video controls><track src="https://example.com/t.vtt"></video>',
+            '<form><input type="image" src="https://example.com/b.png" alt="提交"></form>',
+        )
+        for snippet in cases:
+            with self.subTest(snippet=snippet):
+                page = self.image_page(snippet)
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("外部资源引用", errors[0])
+                self.assertIn("example.com", errors[0])
+
     def test_page_with_a_large_image_checks_fast_without_false_alarms(self):
         """图片数据不算页面自己的样式和脚本：未编码的 SVG data URI 里写到颜色和 innerHTML 也不报。"""
         near_limit = self.PNG + os.urandom(5 * 1024 * 1024 - 64 * 1024)
