@@ -88,3 +88,17 @@
 - 结束前核对门槛：全文 ≤ 24 KB，单行 ≤ 300 字符，改写节各一块。超限时先晋升规则，再搬出、合并，最后作废已过期的条目。装了 bootstrap-claude 技能的会话用它的 `scripts/memory.py check` 校验门槛和每条消失条目的去向，`compact` 只压改写节；追加节条目由人处理，脚本不自动删。
 
 <!-- bootstrap-claude convention v4 -->
+
+## Agent skills
+
+### Issue tracker
+
+工单和规格放在 GitHub Issues（`master-g/skills`），用 `gh` 操作。见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+沿用默认五个分诊标签：`needs-triage`、`needs-info`、`ready-for-agent`、`ready-for-human`、`wontfix`。见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文：根目录 `GLOSSARY.md` 加 `docs/adr/`。见 `docs/agents/domain.md`。
