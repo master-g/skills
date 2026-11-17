@@ -758,8 +758,8 @@ def without_code_refs(html):
 
 def ref_name(attrs):
     """报错里点名一个代码引用：写的 data-src 和 data-lines 原文。"""
-    name = f'data-src="{attrs["data-src"]}"' if attrs.get("data-src") is not None else "（没写 data-src）"
-    return name + (f' data-lines="{attrs["data-lines"]}"' if attrs.get("data-lines") is not None else "")
+    name = f'data-src="{attrs["data-src"] or ""}"' if "data-src" in attrs else "（没写 data-src）"
+    return name + (f' data-lines="{attrs["data-lines"] or ""}"' if "data-lines" in attrs else "")
 
 
 # 常用来放凭据的文件名：.env 与 .env.*、几种包管理器和 netrc 的登录配置、私钥（id_* 里只有 .pub 是公钥）
@@ -841,10 +841,12 @@ def fill_code_refs(html, base_dir, errors, warns):
     out, last, count = [], 0, 0
     for ref in code_refs(html):
         attrs = ref.tag.attrs
-        src, lines = attrs.get("data-src"), attrs.get("data-lines")
+        # 只写属性名不写值时解析器给 None，按空串处理
+        src = attrs.get("data-src") or ""
+        lines = None if "data-lines" not in attrs else attrs["data-lines"] or ""
         filled = "data-src-start" in attrs
         name = ref_name(attrs)
-        if src is None:
+        if "data-src" not in attrs:
             errors.append(f"代码块写了 data-lines=\"{lines}\" 却没写 data-src：代码引用要用 data-src 写明文件路径；"
                           "手写的示意代码去掉 data-lines")
             continue
