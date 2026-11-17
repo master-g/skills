@@ -1139,6 +1139,7 @@ nodes.forEach((g) => {
         result = run_build(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("图标=0 个  图片=1 张", result.stdout)
         self.assertEqual(self.inlined(page), [("a.png", "image/png", self.PNG)])
         html = page.read_text(encoding="utf-8")
         self.assertNotIn("shots/", html)
@@ -1161,6 +1162,21 @@ nodes.forEach((g) => {
                 self.assertEqual(self.inlined(page), [("my shot.png", "image/png", self.PNG)])
                 self.assertNotIn(elsewhere.name, page.read_text(encoding="utf-8"))
 
+    def test_image_path_with_a_query_or_fragment_reads_the_file_without_it(self):
+        for src in ("p.png?v=2", "p.png#x", "~/p.png?v=2#x", "file:///HOME/p.png?v=2"):
+            with self.subTest(src=src):
+                elsewhere = tempfile.TemporaryDirectory()
+                self.addCleanup(elsewhere.cleanup)
+                (Path(elsewhere.name) / "p.png").write_bytes(self.PNG)
+                page = self.image_page(f'<img src="{src.replace("/HOME", elsewhere.name)}" alt="图">',
+                                       [("p.png", self.PNG)])
+
+                result = subprocess.run([sys.executable, str(BUILD), str(page), "--no-render"], text=True,
+                                        capture_output=True, env={**os.environ, "HOME": elsewhere.name})
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(self.inlined(page), [("p.png", "image/png", self.PNG)])
+
     def image_errors(self, page, *args):
         result = run_build(page, *args)
         self.assertEqual(result.returncode, 1, result.stdout)
@@ -1174,6 +1190,15 @@ nodes.forEach((g) => {
         self.assertEqual(len(errors), 1, errors)
         self.assertIn("shots/gone.png", errors[0])
         self.assertIn(str(page.parent), errors[0])
+
+    def test_missing_image_at_an_uppercase_file_url_names_the_resolved_path(self):
+        page = self.image_page('<img src="FILE:///nowhere/gone.png" alt="截图">')
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("解析为 /nowhere/gone.png", errors[0])
+        self.assertNotIn("相对路径", errors[0])
 
     def test_unsupported_image_extension_lists_the_supported_formats(self):
         page = self.image_page('<img src="a.bmp" alt="截图">', [("a.bmp", b"BM" + b"\x00" * 40)])
@@ -1194,6 +1219,8 @@ nodes.forEach((g) => {
         ("b.gif", "image/gif", b"GIF87a" + b"\x00" * 16),
         ("a.webp", "image/webp", b"RIFF\x10\x00\x00\x00WEBPVP8 " + b"\x00" * 8),
         ("a.avif", "image/avif", b"\x00\x00\x00\x1cftypavif" + b"\x00" * 16),
+        ("b.avif", "image/avif", b"\x00\x00\x00\x1cftypmif1\x00\x00\x00\x00mif1miafavif" + b"\x00" * 8),
+        ("c.avif", "image/avif", b"\x00\x00\x00\x18ftypmsf1\x00\x00\x00\x00avis" + b"\x00" * 8),
         ("a.svg", "image/svg+xml", SVG),
         ("b.svg", "image/svg+xml", b'\xef\xbb\xbf<?xml version="1.0"?>\n<!-- made by hand -->\n'
                                    b'<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "x.dtd">\n' + SVG),
@@ -1212,6 +1239,7 @@ nodes.forEach((g) => {
     def test_image_content_that_is_not_the_claimed_format_fails(self):
         cases = (("a.png", b"\xff\xd8\xff\xe0" + b"\x00" * 16), ("a.jpg", self.PNG), ("a.gif", b"GIF90a"),
                  ("a.webp", b"RIFF\x10\x00\x00\x00WAVEfmt "), ("a.avif", b"\x00\x00\x00\x1cftypmp42"),
+                 ("b.avif", b"\x00\x00\x00\x18ftypmif1\x00\x00\x00\x00mif1heic" + b"\x00\x00\x00\x08avif"),
                  ("a.svg", b"<html><svg></svg></html>"), ("b.png", b"not an image at all"))
         for name, data in cases:
             with self.subTest(name=name):
@@ -1280,7 +1308,8 @@ nodes.forEach((g) => {
 
     def test_svg_image_that_looks_like_it_holds_a_secret_is_not_inlined(self):
         tokens = ("-----BEGIN OPENSSH PRIVATE KEY-----", "AKIA" + "ABCDEFGHIJKLMNOP", "ghp_" + "a" * 36,
-                  "sk-ant-api03-abc", "https://user:hunter2@example.com/", 'api_key="abcdefghijklmnop"')
+                  "sk-ant-api03-abc", "https://user:hunter2@example.com/",
+                  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.sig")
         for token in tokens:
             with self.subTest(token=token):
                 svg = self.SVG.replace(b"</svg>", f"<text>{token}</text></svg>".encode())
@@ -1291,6 +1320,16 @@ nodes.forEach((g) => {
                 self.assertEqual(len(errors), 1, errors)
                 self.assertIn("a.svg", errors[0])
                 self.assertIn("令牌", errors[0])
+
+    def test_svg_image_with_password_like_labels_is_inlined(self):
+        text = '<text>api_key = "abcdefghijklmnop"</text><text>password: "correct-horse-battery"</text>'
+        svg = self.SVG.replace(b"</svg>", text.encode() + b"</svg>")
+        page = self.image_page('<img src="form.svg" alt="登录表单示意">', [("form.svg", svg)])
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.inlined(page), [("form.svg", "image/svg+xml", svg)])
 
     def test_rebuilding_a_page_with_inlined_images_is_byte_identical(self):
         page = self.image_page('<figure>\n  <img\n    src="a.png"\n    alt="截图"\n  />\n  <figcaption>图注</figcaption>\n</figure>',
@@ -1373,6 +1412,59 @@ nodes.forEach((g) => {
 
                 self.assertEqual(len(errors), 1, errors)
                 self.assertIn("<img src>", errors[0])
+
+    def test_local_image_references_outside_img_src_fail_and_point_at_img_src(self):
+        cases = (
+            '<video poster="cover.png" controls></video>',
+            '<form><input type="IMAGE" src="go.png" alt="提交"></form>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><use href="sprite.svg#a"/></svg>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><use xlink:href="./sprite.svg#b"/></svg>',
+        )
+        for snippet in cases:
+            with self.subTest(snippet=snippet):
+                page = self.image_page(snippet)
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("改用 <img src", errors[0])
+
+    def test_local_non_image_resources_fail_and_say_the_page_must_be_self_contained(self):
+        cases = (
+            '<iframe src="other.html" title="页"></iframe>',
+            '<object data="chart.pdf" aria-label="图"></object>',
+            '<embed src="movie.swf">',
+            '<video src="data:video/mp4;base64,AAAA"><track src="subs.vtt" kind="captions"></video>',
+            '<link rel="stylesheet" href="extra.css">',
+            '<link rel="Preload" href="font.woff2" as="font">',
+            '<link rel="shortcut icon" href="favicon.ico">',
+            '<script src="app.js"></script>',
+            '<style>@import "local.css"; .a { color: var(--color-fg) }</style>',
+            "<style>@import 'theme/base.css' screen;</style>",
+        )
+        for snippet in cases:
+            with self.subTest(snippet=snippet):
+                page = self.image_page(snippet)
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("自包含", errors[0])
+
+    def test_links_fragments_and_non_loading_references_are_not_local_image_resources(self):
+        snippet = (
+            '<p><a href="notes.html">笔记</a> <a href="#top">回到顶部</a></p>'
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><defs><rect id="r" width="4" height="4"/></defs>'
+            '<use href="#r"/></svg>'
+            '<link rel="canonical" href="page.html">'
+            '<form><input type="text" src="x.png" aria-label="名字"></form>'
+            '<p>导入写法：<code>@import "x.css";</code></p>'
+        )
+        page = self.image_page(snippet)
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_fragment_and_data_references_are_not_local_image_resources(self):
         png = "data:image/png;base64," + base64.b64encode(self.PNG).decode()

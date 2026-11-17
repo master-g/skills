@@ -42,7 +42,7 @@
 
 图片内联（`components.md`「图片」）分在三处，契约是成品里的 `<img data-img-name="文件名" src="data:…">`：
 
-- `build.py` 合成阶段把 `<img src>` 的本地文件内联，并检查格式与文件头、5 MB 上限、密钥目录、SVG 里的令牌、缺 `alt`，以及其他写法的本地资源引用（`srcset`、`<source>`、`<video>` / `<audio>`、SVG `<image>`、样式 `url()`）。整页检查前先把 `data:` 地址的数据换成短占位，图片数据不进任何检查正则。这些 ERROR 与 `components.md`「图片」的规则一一对应。
+- `build.py` 合成阶段把 `<img src>` 的本地文件内联，并检查格式与文件头、5 MB 上限、密钥目录、SVG 里的令牌、缺 `alt`，以及其他写法的本地资源引用。图片类提示改用 `<img src>`：`<img srcset>`、`<source srcset>`、`<video poster>`、`<input type="image" src>`、SVG `<image href>` 与指向文件的 `<use href>`、样式 `url()`；非图片类提示页面必须自包含：`<video>` / `<audio>` / `<source>` 的 `src`、`<track>`、`<iframe>`、`<object data>`、`<embed>`、`<script src>`、会加载资源的 `<link href>`（`rel` 为 stylesheet、icon、preload 等，清单是 `LOADING_RELS`）、样式里的 `@import`。`<a href>` 与 `#id` 片段不算。整页检查前先把 `data:` 地址的数据换成短占位，图片数据不进任何检查正则。这些 ERROR 与 `components.md`「图片」的规则一一对应。
 - `shell.js` 的 Markdown 导出读 `data-img-name` 写 `![alt](文件名)`，导出里不出现 `data:`。
 - `show-me.css` 的 `img` 规则把图片压到容器宽、打印时不跨页。
 
