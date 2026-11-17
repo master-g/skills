@@ -308,6 +308,22 @@ textarea:disabled {
   background: var(--color-accent);
   color: var(--color-accent-foreground);
 }
+/* 基础 :hover 把底色换成主色。变体各自声明 hover 的底色，否则它们的文字色会落在主色底上，读不出来 */
+.btn[data-variant="secondary"]:hover:not(:disabled) {
+  background: color-mix(
+    in oklab,
+    var(--color-secondary) 88%,
+    var(--color-foreground)
+  );
+}
+/* 告急按钮两种主题下都是橙底深字：掺墨会把底压向文字色，所以底色不动，用提亮表示悬停 */
+.btn[data-variant="destructive"]:hover:not(:disabled) {
+  background: var(--color-destructive);
+  filter: brightness(1.08);
+}
+.btn[data-variant="link"]:hover:not(:disabled) {
+  background: transparent;
+}
 .btn[data-size="sm"] {
   min-height: 2rem;
   padding: 0.375rem 0.625rem;

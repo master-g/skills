@@ -1308,6 +1308,14 @@ class VisualContractTests(unittest.TestCase):
         css = CSS.read_text(encoding="utf-8")
         self.assertNotRegex(css, r"transition(?:-property)?\s*:\s*all\b")
 
+    def test_every_button_variant_has_its_own_hover(self):
+        """基础 .btn:hover 把底色换成主色；变体不自带 hover 时，会拿着自己的文字色落在主色底上。"""
+        css = CSS.read_text(encoding="utf-8")
+        variants = set(re.findall(r'^\.btn\[data-variant="([\w-]+)"\] \{', css, flags=re.M))
+        self.assertGreaterEqual(variants, {"secondary", "outline", "ghost", "link", "destructive"})
+        for name in sorted(variants):
+            self.assertRegex(css, rf'\.btn\[data-variant="{name}"\]:hover:not\(:disabled\)', name)
+
     def test_spacing_scale_is_complete(self):
         css = CSS.read_text(encoding="utf-8")
         for step in range(1, 8):
