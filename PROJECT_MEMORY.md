@@ -25,8 +25,6 @@
 - [2026-10-21] bench 的规划以 `.scratch/llm-bench/map.md`（wayfinder 本地跟踪器）为准，决策细节在各票里；用户确认：只用公开 repo、farm 无头红线不约束 bench、研究分支不推送；推进地图的代理不替用户启动选手运行。main 上的 bench 提交已于 10-22 随 017 推到 origin
 - [2026-10-20] 写书慢不在构建，也不缺分章派发：tufte-reader 自 64b7cbb（10-10）起就能分章派发，shelf 不用是因为它的 docs/books.md 规定一次写一章、自己写；shelf 四本书重建 0.3–1.0 s，how-llms-work 1014 个公式重编 0.8 s
 - [2026-11-03] 本机无头 Chrome 不读 HTTP(S)_PROXY，系统代理关着，页面直连 Google Fonts/jsDelivr 单次 12～69s；加 `--proxy-server` 5～7s，屏蔽字体域名 4s；另外不给 `--user-data-dir` 每次启动多约 4s，给空 profile 后 figprobe 整次 2.6s。来源：docs/research/2026-10-22-show-me-html-build-time-handoff.md、figprobe 实测
-- [2026-10-23] Agent 工具 `isolation: worktree` 开出的分支基于 origin/main，不是本地 main：本地有未推送提交时执行者看不到，合入要 cherry-pick（023/024 就是这样）；计划照旧放只读快照到 /tmp 给执行者读
-- [2026-10-23] Agent 工具开的 worktree 里没有 node_modules：在 worktree 根目录 `ln -s /Users/mg/github/skills/node_modules node_modules` 就能跑 prettier 和 pre-commit，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。来源：028、026 执行
 - [2026-10-27] sharpen 的成稿模板是从 Anthropic「Prompting Claude Opus 5.5」里提炼的可迁移原则（点名具体行为与模式、动手前先探索、验收与停下时机写明、贴入材料用 pasted_content 标签），不链接该文档：它主要讲 harness 层（effort、thinking 显示、无人值守循环），且本地副本在未跟踪的 tmp/
 - [2026-10-27] Claude Code 没有把文本回写到输入框的 API（`--bg`、`--resume`、`--fork-session` 都不是），sharpen 的交接改为 AskUserQuestion 三选项：本会话执行、写 $TMPDIR 文件并 pbcopy、先改；用户选的这个方案
 - [2026-10-24] `xcrun simctl runtime delete` 返回后镜像空间在后台回收：紧接着的 df 只多 0.5 GiB，约 7 GiB 落进下一项的差值；storage 技能逐项记释放量时把这种差额记回 runtime 那一项。来源：storage 技能首跑
@@ -47,7 +45,8 @@
 - [2026-11-14] tufte-reader 西文字体沿用 STIX Two Text，用户 11-14 决定先不换 EB Garamond，再提才做；实测（样张 /tmp/ebg-compare，临时目录可能已清）：x 高 0.400（STIX Two Text 0.473），原样排在中文旁偏小，`size-adjust: 112%` 后 400 字重与思源宋体相称，500 过重；默认数字是等高数字
 - [2026-11-14] fontsource 的 eb-garamond 子集没有 onum/lnum/smcp，拉丁分片不含 U+2070–209F 和 →≤≈；带全部特性的在 octaviopardo/EBGaramond12 的 fonts/webfonts（每个 21–24 万字节，无 tag，要钉提交号）。Garamond-Math 只有 84 万字节的 OTF、无 tag、2022 年后未更新，x 高 0.450
 - [2026-11-17] Claude Code 压缩后，项目根 CLAUDE.md、无 paths 的 rules 和自动记忆从磁盘重新注入；子目录指令文件和带 paths 的规则会被摘要掉，Read 过的文件最多重读 5 个且超 5,000 token 只留路径。所以规则的晋升目标应是根 AGENTS.md 或无 paths 的 rules（@ 导入的内容是否重新注入文档没明说，属推断），PROJECT_MEMORY.md 压缩后不保证还在。来源：code.claude.com/docs/en 的 context-window.md、memory.md，2026-11-17 核对原文
-- [2026-11-17] bootstrap-claude 记忆门禁实测（本机 5 个贴着 24 KB 的仓库的 Git 历史，迁移类提交除外）：文件 ≥21.6 KB 时每次提交消失 0.35 条追加节条目，更小时 0.07 条，其中 1 个仓库两档无差别；59 条消失的规则性条目里脚本给 21 条找到去向，从其余 38 条挑 20 条按关键词手核：6 条在 AGENTS.md、7 条仍在记忆、6 条只在 docs、1 条部分找不到。超限路径只写合并和搬出，没有晋升，也不核对去向。回放脚本在 plans/034-bootstrap-claude-memory-removal-gate/
+- [2026-11-17] bootstrap-claude 的条目去向检查按 plans/034 落地。eval（Opus 5.5，每组 3 次）只在「消失的条目有去向」上分出新旧版（0/3 对 3/3）；现行文字在规则首次出现时已经会晋升，所以分流文字没做。真实历史里「进指令文件的少」没被夹具复现，不算已解决。实测数字和脚本在 plans/034-bootstrap-claude-memory-removal-gate/
+- [2026-11-17] 在本仓库用子 agent 跑技能 eval：子 agent 继承本仓库的 AGENTS.md，两组执行者都派出之后才能改它；夹具是普通目录，要先在副本里建基线提交；被测技能放中性路径并去掉 evals/，事后从运行记录核对实际跑的脚本路径。来源：plans/034 附件里的 eval-baseline.md
 
 ## 失败尝试
 
@@ -68,11 +67,13 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-17] main：调查 bootstrap-claude 的记忆机制后写了 plans/034 和三份附件（参考实现、测试、历史回放），登记进 plans/README.md；没有改技能，没有提交。
-  验证：`test_removal_gate.py` 通过，`replay.py .` 退出 0，`memory.py check` 全 PASS。
+- [2026-11-17] main：plans/034 七步执行完，都是本地提交，没有推送，没有 make install。分流文字（Step 3 第 1、2 点和约定块第一条）按停止条件没做。
+  验证：test_memory、test_setup_context 通过；回放对拍一致；eval 5、6 新版各 3/3；临时克隆里钩子拦下无去向的删除，补声明后通过；make check 通过。
+  移出：Agent 工具 `isolation: worktree` 开出的分支；Agent 工具开的 worktree 里没有 node_modules → AGENTS.md「工作流与陷阱」
+  移出：bootstrap-claude 记忆门禁实测 → 并入 bootstrap-claude 的条目去向检查按 plans/034 落地
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-17] plans/034（bootstrap-claude 记忆条目的去向）已写好、未执行、未提交，等用户发话；共七步，执行从 Step 1 的 eval 基线开始。用户没提就不动。
+- [2026-11-17] 等用户决定两件事：`make install SKILL=bootstrap-claude SOURCE=.`（装后本机另两个仓库的提交钩子立刻用上去向检查）和推送 main。034 没做的事在 plans/README.md 的 Deferred 里。

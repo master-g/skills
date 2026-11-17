@@ -41,6 +41,8 @@
 - 仓库里的改动不会自动生效：`~/.claude/skills` 里是副本，改完要 `make install SKILL=<name> SOURCE=.`，否则会话和依赖该技能的构建仍用旧版。
 - pre-commit 跑 lint-staged（prettier）和 `make check`。`make check` 包含 `memory.py check`：从记忆的追加节删了条目却没在「上次会话」写 `移出：` 行，提交会被拦下，报错里有可照抄的那一行。
 - prettier 会重排 Markdown 表格对齐，提交后的 diff 可能比手改的大，这是预期。
+- 用 Agent 工具的 `isolation: worktree` 派执行者前，确认它要用的提交已在 origin/main：worktree 的分支基于 origin/main，本地未推送的提交执行者看不到。没推送时把只读快照放到 /tmp 给执行者读，合入用 cherry-pick。
+- 在 Agent 工具开的 worktree 里跑 prettier 或 pre-commit，先在 worktree 根目录 `ln -s <主仓库路径>/node_modules node_modules`，不要 `npm install`（会改 package-lock.json）；删 worktree 前先 `rm node_modules`（不带结尾斜杠，只删链接）。
 - 技能脚本的测试直接 `python3 test_*.py` 运行，不要用 pytest（未安装）。
 - `test_memory.py` 运行中会打印一行 `ERROR: append-sections take one line per entry`，那是负例用例的被测输出，结尾 `test_memory: ok` 才是结果。
 
