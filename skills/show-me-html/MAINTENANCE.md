@@ -40,6 +40,14 @@
 
 改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k reply -k decision`，再用一个开启回复能力的页面跑 `--snap` 读 `reply.md`、`export.md` 与切片，`probe_page.mjs` 点一遍控件，并按 `interactions.md`「页面回复」在浏览器里核对存储、清空、键盘和打印。
 
+图片内联（`components.md`「图片」）分在三处，契约是成品里的 `<img data-img-name="文件名" src="data:…">`：
+
+- `build.py` 合成阶段把 `<img src>` 的本地文件内联，并检查格式与文件头、5 MB 上限、密钥目录、SVG 里的令牌、缺 `alt`，以及其他写法的本地资源引用（`srcset`、`<source>`、`<video>` / `<audio>`、SVG `<image>`、样式 `url()`）。整页检查前先把 `data:` 地址的数据换成短占位，图片数据不进任何检查正则。这些 ERROR 与 `components.md`「图片」的规则一一对应。
+- `shell.js` 的 Markdown 导出读 `data-img-name` 写 `![alt](文件名)`，导出里不出现 `data:`。
+- `show-me.css` 的 `img` 规则把图片压到容器宽、打印时不跨页。
+
+改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k image -k img`，再用一页带宽截图、长截图和行内小图的页面跑 `--snap`（看 390 / 1280 两种主题与 `export.md`）和 `--pdf`（看图和图注是否同页、长图是否缩进一页）。
+
 改 `reveal` 的生命周期时另测常驻开销：用 `scripts/gallery.py` 拼好的 `all-charts.html`（59 图、约 20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
 
 旧页面重新跑一遍 `build.py` 会拿到当前的 CSS 与骨架脚本（`shell.js`，旧页面里复制的骨架块按段首注释认出并替换）；

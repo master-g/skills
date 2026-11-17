@@ -25,7 +25,9 @@
 3. **按配方搭结构**，见 `layouts.md`。材料撑不起的章节直接删 —— 短而诚实的页面胜过填满的空壳。
 4. **要加交互时读 `interactions.md`**：拖拽、键盘翻页、旋钮联动、可点 SVG、筛选、滚动高亮都有现成代码。
 5. **自包含是硬约束，只有一个例外。** 不引 CDN、不引外链图片、不引框架。图标写 `<i data-lucide="名字"></i>`
-   由 `build.py` 内联，插图用内联 SVG，脚本用原生 JS。`<a href>` 指向外部可以；**加载**外部资源不行。
+   由 `build.py` 内联，插图用内联 SVG，脚本用原生 JS。截图写 `<img src="本地路径" alt="说明">`，
+   `build.py` 把它内联成 `data:` 地址（路径、格式与上限见 `components.md`「图片」）；其他写法的本地资源引用都是 ERROR。
+   `<a href>` 指向外部可以；**加载**外部资源不行。
    浏览器底线：Chrome 111+ / Safari 16.2+ / Firefox 113+（2023-03 起，`color-mix()`、`:focus-visible`、`oklab` 全量可用）；
    更旧的浏览器上 tone 卡片面色与 header 背景会静默丢失，不做逐条 fallback。
 
@@ -65,11 +67,11 @@
 python3 <skill-path>/scripts/build.py 输出文件.html
 ```
 
-它先把正文里的 LaTeX 编译成 MathML、把 `<pre class="mermaid">` 里的 Mermaid 源码编译成内联 SVG（都需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
+它先把正文里的 LaTeX 编译成 MathML、把 `<pre class="mermaid">` 里的 Mermaid 源码编译成内联 SVG（都需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、把 `<img src>` 指向的本地图片内联成 `data:` 地址、
 页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、页面有 `data-chart` 时内联图表运行时 `charts.js`、
 `<body>` 带 `data-reply` 时内联回复运行时 `reply.js`、按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
 
-- **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
+- **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源，本地图片都已内联，每个 `<img>` 都有 `alt`）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
   `<meta charset>`/viewport/`lang`/`<title>` 齐全、无样例残留、`<main>` 非空、页面没有写死颜色、
   `body[data-recipe]` 是 21 个受支持配方之一、动态内容不使用 `innerHTML`/`outerHTML` 赋值、
   决定块的标记契约（开启了回复能力、标识唯一、2 到 6 个选项、单选恰好一个建议项，见 `components.md`「决定块」）、
@@ -111,6 +113,8 @@ python3 <skill-path>/scripts/build.py 输出文件.html
   有目录和没目录两种状态下，工具条左右缘都要与内容对齐。
 - 点一次复制按钮（剪贴板图标，点后变对勾），把结果粘出来看：标题层级对不对、表格完整不完整、
   工具条、目录和筛选器有没有混进去（应该被 `data-md-skip` 挡掉）。
+- 带截图的页面：390 切片上截图里要读者看的字还读得清（整屏截图缩到手机宽度后多半读不了，裁到相关区域再放）；
+  `export.md` 里每张图是 `![alt](文件名)`，`alt` 说清了图里的内容。
 - 开启了回复能力的页面（`<body data-reply>`）：`--snap` 多出一份 `reply.md`，未作答的页面里每个决定都写「未作答（建议是 …）」，
   问题和选项名读起来完整、建议项对；`export.md` 里决定块是问题加选项列表、建议项标「（建议）」，没有「评论」字样。
   切片上看：每个决定块的「建议」徽章可见、所有选项都没选中，390 下选项与说明换行不溢出，深色下选中的选项边框和底色看得出；

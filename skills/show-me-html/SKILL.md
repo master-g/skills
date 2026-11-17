@@ -57,6 +57,7 @@ description: 将素材制作成可离线阅读、便于团队转发的单文件 
 - 公式写 LaTeX（行内 `$…$` 线性，块级 `$$…$$`），由构建器编译成 MathML；不手写 `<math>`，不引 KaTeX/MathJax。
 - Mermaid 图写 `<pre class="mermaid">` 源码，由构建器编译成内联 SVG；不引 Mermaid 的运行时脚本，不手改编译出的 SVG。
 - 资源内联，仅允许骨架自带的 Google Fonts 及本地回退。离线可读，不保证字体外观完全一致。
+- 截图写 `<img src="本地路径" alt="说明">`，由构建器内联进页面（[组件](references/components.md)「图片」）。
 - 三态主题与 Markdown 复制功能；所有承诺控件实际可用。
 - 以决定收尾的配方在 `<body>` 上加 `data-reply`，会改变下一步做法的分岔写成决定块，一页 1 到 5 个（[配方](references/layouts.md)「回复能力（决定块与按节评论）」）。
 

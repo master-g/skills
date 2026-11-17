@@ -481,6 +481,27 @@ id / `aria-controls` / `aria-labelledby` 必须对得上，否则 JS 接不上�
 不要把口径塞进正文段落。侧栏 `.with-rail` / `.method-rail` 的结构见 layouts.md「报告节律」；
 侧栏是卡片面色，不是第二套目录。
 
+## 图片
+
+截图用来呈现只能拍下来的东西：真实界面、报错弹窗、监控面板、设计稿。能画出来的示意（流程、结构、数据）照 `diagrams.md` 画 SVG、写 Mermaid，或照 `charts.md` 画数据图，它们跟随主题、能放大、导出时保留数据。
+
+```html
+<figure class="fig">
+  <img src="shots/login-error.png" alt="登录页提交后弹出 500 错误" />
+  <figcaption>改动前：提交后直接 500，没有可读的报错。</figcaption>
+</figure>
+```
+
+- 写普通的 `<img src="路径" alt="说明">`。`build.py` 构建时把文件读进来，改写成页面内的 `data:` 地址，并在 `<img>` 上记下 `data-img-name="文件名"`，成品仍是一个文件，转发、离线都能看。
+- 路径：相对路径按页面文件所在目录解析（和直接在浏览器里打开未构建的页面看到的是同一张）；绝对路径、`~/` 开头的路径和 `file://` 地址也可以。成品里只留文件名，不留目录。
+- 格式：PNG、JPEG、GIF、WebP、AVIF、SVG，扩展名要和文件内容一致。单张上限 5 MB，大图先裁剪或压缩再放。
+- 存放密钥和登录信息的目录（`.git`、`.ssh`、`.aws`、`.azure`、`.gnupg`、`.kube`、`.docker`、`.password-store`）里的文件不能内联，看起来含密钥或令牌的 SVG 也不能。截图先存到工作目录。
+- `alt` 必填，写图里要读者看到的内容。纯装饰图写 `alt=""`。
+- 有图注时放进 `<figure>`，图注用 `<figcaption>`，写成一句能独立成立的结论。图片宽度自动压到版心以内，高度随比例；打印时图和图注不跨页。
+- 换图：把 `src` 改回文件路径再构建。已经是 `data:` 的图片构建时原样保留，重复构建结果不变。
+- 本地资源只走 `<img src>` 这一种写法。`srcset`、`<picture>` 的 `<source>`、`<video>` / `<audio>`、SVG 里的 `<image href>`、样式里的 `url()` 指向本地文件时，`build.py` 报 ERROR；外链图片同样是 ERROR。
+- 「复制为 Markdown」把图片导出成 `![alt](文件名)`，不带图片数据。
+
 ## 其余
 
 ```html
