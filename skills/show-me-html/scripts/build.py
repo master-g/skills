@@ -55,8 +55,10 @@ REPLY_MARK = 'data-show-me="reply"'
 REPLY_JS = ASSETS / "reply.js"
 # 回复能力的开关：<body> 开标签上的 data-reply。后面不能紧跟 -，免得 data-reply-xxx 一类属性误开
 REPLY_FLAG_RE = re.compile(r"<body\b[^>]*\sdata-reply(?![\w-])", re.I)
-# 页面带的初始状态（components.md「读者状态与初始状态」）：不执行的读者原文，自检不把它当页面的标记、脚本或样式
-REPLY_STATE_RE = re.compile(r"<script\b[^>]*\sdata-reply-state(?![\w-])[^>]*>.*?</script>", re.S | re.I)
+# 页面带的初始状态（components.md「读者状态与初始状态」）：不执行的读者原文，自检不把它当页面的标记、脚本或样式。
+# 与运行时的选择器一致，要同时有 data-reply-state 和 type="application/json"
+REPLY_STATE_RE = re.compile(r"<script\b(?=[^>]*\sdata-reply-state(?![\w-]))(?=[^>]*\stype=[\"']application/json[\"'])"
+                            r"[^>]*>.*?</script>", re.S | re.I)
 MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
 MERMAID_SCRIPT = Path(__file__).resolve().parent / "mermaid.mjs"
 # Mermaid 源码留在页面里，每次构建都从它重新编译（见 mermaid.mjs）。开标签写法不对的源码 mermaid.mjs 认不出，
@@ -77,6 +79,8 @@ JS_COMPONENTS = (
 SYSTEM_STYLE_RE = re.compile(r'<style data-show-me="(?:css|palette|math)"[^>]*>.*?</style>', re.S)
 SYSTEM_CSS_RE = re.compile(r'<style data-show-me="css"[^>]*>.*?</style>', re.S)
 SYSTEM_SCRIPT_RE = re.compile(r'<script data-show-me="(?:js|hl|charts|reply|shell)"[^>]*>.*?</script>', re.S)
+# 剥初始状态时系统脚本整段跳过：回复运行时的注释里写着初始状态的开标签，单用 REPLY_STATE_RE 会从那里吃进运行时源码
+REPLY_STATE_OR_SYSTEM_RE = re.compile(f"({SYSTEM_SCRIPT_RE.pattern})|{REPLY_STATE_RE.pattern}", re.S | re.I)
 HARDCODED_COLOR_RE = re.compile(
     r'(?::|=")\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\()'
 )
@@ -790,7 +794,8 @@ def writes_dynamic_html(script):
 
 def check(html, path, allow_legacy_recipe=False):
     errors, warns = [], []
-    stripped = re.sub(r"<!--.*?-->", "", REPLY_STATE_RE.sub("", html), flags=re.S)
+    without_state = REPLY_STATE_OR_SYSTEM_RE.sub(lambda m: m.group(1) or "", html)
+    stripped = re.sub(r"<!--.*?-->", "", without_state, flags=re.S)
 
     # 页面必须离线可开。唯一例外是 Google Fonts —— 它取不到时会静默回退到系统字体栈，
     # 页面照常可读（骨架把它写成异步加载，首屏也不会被卡住）。别的外部资源没有这个性质。
