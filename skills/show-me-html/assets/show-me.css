@@ -1646,7 +1646,7 @@ math.tml-display {
   color: var(--color-muted-foreground);
 }
 .fig figcaption,
-figure:has(> img) > figcaption {
+figure > img ~ figcaption {
   margin-top: 0.6rem;
   padding: 0 0.25rem;
   font-size: 0.8rem;
@@ -1927,14 +1927,15 @@ svg.focused .nodelab:not(.hot) {
   .fig-box {
     break-inside: avoid;
   }
-  /* 图和图注不跨页切开；比一页还高的长截图缩到一页内，按比例留白 */
-  img,
-  figure:has(> img) {
-    break-inside: avoid;
-  }
+  /* 图和图注不跨页切开；比一页还高的长截图缩到一页内，按比例留白。
+     :has() 单独成规则：不认它的浏览器（Firefox 121 前）只丢这一条，不连累 img 的规则 */
   img {
+    break-inside: avoid;
     max-height: 90vh;
     object-fit: contain;
+  }
+  figure:has(> img) {
+    break-inside: avoid;
   }
 }
 /* 只管正文里的分隔线；组件内部的 hr（.item-group、菜单、按钮组）交给自有组件层 */
