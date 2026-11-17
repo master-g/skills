@@ -30,7 +30,7 @@
 - 安装依赖: `npm install`（只装格式化与钩子）
 - 构建: 无
 - 测试: 无统一测试；带脚本的技能自带 `python3 skills/<name>/scripts/test_*.py`（如 bootstrap-claude 的 `test_setup_context.py`、`test_memory.py`，各打印 `…: ok`）；farm 的脚本在技能根目录，测试是 `python3 skills/farm/test_subagent.py`；tufte-reader 的测试在 `tests/` 目录，用 `python3 -m unittest discover -s skills/tufte-reader/tests`
-- Lint / 格式化: `make check`（引用与链接检查）；`npx prettier --write <file>`
+- Lint / 格式化: `make check`（引用与链接检查，加项目记忆门禁）；`npx prettier --write <file>`
 - 安装到本机: `make install SKILL=<name> SOURCE=.`；列出可用技能 `make list`
 
 ## 工作流与陷阱
@@ -39,7 +39,8 @@
 
 - 推送到 origin、`make deprecate`（移动目录并卸载本机技能）须用户明确要求：前者对外可见，后者改本机环境。
 - 仓库里的改动不会自动生效：`~/.claude/skills` 里是副本，改完要 `make install SKILL=<name> SOURCE=.`，否则会话和依赖该技能的构建仍用旧版。
-- pre-commit 跑 lint-staged（prettier）和 `make check`；prettier 会重排 Markdown 表格对齐，提交后的 diff 可能比手改的大，这是预期。
+- pre-commit 跑 lint-staged（prettier）和 `make check`。`make check` 包含 `memory.py check`：从记忆的追加节删了条目却没在「上次会话」写 `移出：` 行，提交会被拦下，报错里有可照抄的那一行。
+- prettier 会重排 Markdown 表格对齐，提交后的 diff 可能比手改的大，这是预期。
 - 技能脚本的测试直接 `python3 test_*.py` 运行，不要用 pytest（未安装）。
 - `test_memory.py` 运行中会打印一行 `ERROR: append-sections take one line per entry`，那是负例用例的被测输出，结尾 `test_memory: ok` 才是结果。
 

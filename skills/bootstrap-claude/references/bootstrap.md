@@ -76,6 +76,22 @@ Read-only. It reports each required section as 已填写 / 占位符 / 空, chec
 Fix every FAIL before calling the bootstrap done — a surviving placeholder
 reads as "covered" when it isn't. Exit code 1 means at least one FAIL.
 
+### Step 4: offer a commit hook
+
+The size gate and the removed-entry check only run when someone runs `memory.py check`.
+A commit hook runs them on every commit. Changing hooks affects every commit in the
+repository, so propose it and edit only after the user agrees.
+
+- The repository already has a hook system (husky, pre-commit, lefthook, a `Makefile`
+  check target the hook calls): offer to add this command to it. It exits 0 on machines
+  where the skill is not installed, so it never blocks a teammate:
+
+  ```bash
+  s="$HOME/.claude/skills/bootstrap-claude/scripts/memory.py"; [ -f "$s" ] || exit 0; python3 "$s" check PROJECT_MEMORY.md
+  ```
+
+- The repository has no hook system: tell the user the option exists and leave it there.
+
 ## Compatibility
 
 Many tools read `AGENTS.md`; Claude Code reads `CLAUDE.md`, and expands `@path` imports

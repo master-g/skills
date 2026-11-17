@@ -32,8 +32,9 @@ install: ## 全局安装指定技能（需要 SKILL=<name>）
 install-all: ## 全局安装全部技能
 	$(NPX) skills add $(SOURCE) --skill '*' -g
 
-check: ## 检查技能文档的交叉引用（失效链接、按编号引用章节）
+check: ## 检查技能文档的交叉引用和项目记忆门禁（失效链接、按编号引用章节、记忆体积与条目去向）
 	node scripts/check-skills.mjs
+	python3 -B skills/bootstrap-claude/scripts/memory.py check PROJECT_MEMORY.md
 
 deprecate: ## 归档并卸载指定技能（需要 SKILL=<name>）
 	@test -n "$(SKILL)" || { echo "错误: 请指定 SKILL=<name>" >&2; exit 2; }
