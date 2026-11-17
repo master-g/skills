@@ -385,7 +385,8 @@ class DecisionBlocks(HTMLParser):
                 self.depth += 1
             elif "decision" in (a.get("class") or "").split() or "data-decision" in a:
                 self.depth = 1
-                self.blocks.append({"id": (a.get("data-decision") or "").strip(), "question": "", "inputs": []})
+                self.blocks.append({"id": (a.get("data-decision") or "").strip(), "question": "", "inputs": [],
+                                    "classed": "decision" in (a.get("class") or "").split()})
             return
         if not self.depth:
             return
@@ -412,12 +413,13 @@ class DecisionBlocks(HTMLParser):
 
 def check_decisions(html, errors):
     """决定块的标记契约。markup 里写死的选中状态是作者的事（应当都不选中），这里不查。"""
+    authored = SYSTEM_SCRIPT_RE.sub("", html)  # 回复运行时的源码里也写着开关，不能算页面的
     parser = DecisionBlocks()
-    parser.feed(SYSTEM_SCRIPT_RE.sub("", html))
+    parser.feed(authored)
     blocks = parser.blocks
     if not blocks:
         return
-    if not reply_enabled(html):
+    if not reply_enabled(authored):
         errors.append(f"页面有 {len(blocks)} 个决定块，但 <body> 没有 data-reply：决定块要靠回复运行时作答和汇总，"
                       "在 <body> 上加 data-reply 开启回复能力，或删掉决定块（components.md「决定块」）")
     for i, b in enumerate(blocks, 1):
@@ -435,6 +437,9 @@ def check_decisions(html, errors):
             errors.append(f"决定块标识 {ident} 重复：{''.join(b['shown'] for b in same)}。每个决定块的 data-decision 页内唯一")
     for b in blocks:
         name = b["id"] or b["shown"]
+        if not b["classed"]:
+            errors.append(f"决定块 {name} 的 <fieldset> 缺少 class=\"decision\"：运行时、样式和导出都按这个 class 认决定块，"
+                          "漏写时这个决定不会进回复")
         n = len(b["inputs"])
         if not 2 <= n <= 6:
             errors.append(f"决定块 {name} 有 {n} 个选项：要 2 到 6 个，每个选项是 <label> 里的一个单选框或复选框")
@@ -1264,12 +1269,10 @@ def snap_page(page, out_dir, widths=(390, 500, 1280), themes=("light", "dark")):
             outs.append((md, ""))
             if r["value"]["md"] is None:
                 notes.append("页面没有 window.showMeMarkdown：导出器缺失，export.md 为空")
-            reply = out_dir / "reply.md"
             if r["value"].get("reply") is not None:  # 只有开启回复能力的页面有 showMeReply
+                reply = out_dir / "reply.md"
                 reply.write_text(r["value"]["reply"], encoding="utf-8")
                 outs.append((reply, ""))
-            elif reply.exists():  # 复用的输出目录里留着上次的回复，页面已经关掉回复能力
-                reply.unlink()
     return outs, notes, None
 
 

@@ -1223,11 +1223,24 @@ nodes.forEach((g) => {
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("ERROR  页面有 2 个决定块，但 <body> 没有 data-reply", result.stdout)
 
+    def test_check_only_flags_decision_blocks_after_flag_is_removed(self):
+        """已构建的页面带着回复运行时的源码，运行时里写到的开关不能被当成页面的开关。"""
+        page = self.copy_fixture("reply-decisions.html")
+        self.assertEqual(run_build(page).returncode, 0)
+        page.write_text(page.read_text(encoding="utf-8").replace(" data-reply>", ">", 1), encoding="utf-8")
+
+        result = run_build(page, "--check-only")
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("ERROR  页面有 2 个决定块，但 <body> 没有 data-reply", result.stdout)
+
     def test_malformed_decision_blocks_fail_and_name_the_block(self):
         extra = '<label><input type="checkbox" /> 其他</label>'
         cases = (
             ('<fieldset class="decision" data-decision="queue">', '<fieldset class="decision">', 1,
              "决定块「采用哪个队列方案？」缺少 data-decision 标识"),
+            ('<fieldset class="decision" data-decision="queue">', '<fieldset data-decision="queue">', 1,
+             '决定块 queue 的 <fieldset> 缺少 class="decision"'),
             ('data-decision="queue"', 'data-decision="gates"', 1,
              "决定块标识 gates 重复：「采用哪个队列方案？」「哪些前提要在上线前满足？」"),
             ('<label><input type="radio" /> 方案丙</label>', "", 1, "决定块 queue 有 2 个选项"),
