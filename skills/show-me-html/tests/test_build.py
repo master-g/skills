@@ -1674,7 +1674,7 @@ nodes.forEach((g) => {
         self.addCleanup(outside.cleanup)
         secret = Path(outside.name) / "x.ts"
         secret.write_text("const leak = 1;\n", encoding="utf-8")
-        for src in ("../x.ts", str(secret), "~/x.ts", secret.as_uri(), ""):
+        for src in ("../x.ts", str(secret), "~/x.ts", secret.as_uri()):
             with self.subTest(src=src):
                 page = self.code_ref_page(f'<pre><code data-src="{src}"></code></pre>')
 
@@ -1804,7 +1804,10 @@ nodes.forEach((g) => {
                                          [("a.ts", self.SOURCE)], f'data-lines="{lines}"')
         self.assert_ref_rejected('<pre><code data-src="a.ts" data-lines></code></pre>', [("a.ts", self.SOURCE)],
                                  'data-lines=""', "写法不对")
-        self.assert_ref_rejected('<pre><code data-src></code></pre>', [], 'data-src=""', "相对路径")
+        for block in ('<pre><code data-src></code></pre>', '<pre><code data-src="  "></code></pre>'):
+            with self.subTest(block=block):
+                error = self.assert_ref_rejected(block, [], "路径是空的", 'data-src="src/app.ts"')
+                self.assertNotIn("去掉开头", error)
 
     def test_combinations_that_are_not_code_references_are_rejected(self):
         cases = (

@@ -785,8 +785,11 @@ def read_code_ref(src, lines, base_dir):
         first, last = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
         if not m or first < 1 or last < first:
             raise ValueError("的 data-lines 写法不对：写成 N 或 N-M，从 1 起算，起始行不大于结束行，例如 data-lines=\"18-30\"")
+    if not src:
+        raise ValueError(f"的路径是空的：在 data-src 里写要引用的文件，相对运行构建命令的目录 {base_dir}，"
+                         "例如 data-src=\"src/app.ts\"")
     rel = Path(src)
-    if not src or src.startswith("~") or src.lower().startswith("file:") or rel.is_absolute() or re.match(r"[A-Za-z]:[\\/]", src):
+    if src.startswith("~") or src.lower().startswith("file:") or rel.is_absolute() or re.match(r"[A-Za-z]:[\\/]", src):
         raise ValueError(f"的路径要写成相对路径，按运行构建命令的目录 {base_dir} 解析：去掉开头的 /、~ 或 file:")
     path = base_dir / rel
     real = path.resolve()
