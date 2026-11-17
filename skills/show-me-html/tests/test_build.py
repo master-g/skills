@@ -1955,6 +1955,29 @@ nodes.forEach((g) => {
         self.assertIn("`src/a.ts:2-5`\n\n```ts\n   两行 */\nconst a = 1;\n\n\tconst b = `x\n```", md)
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_copy_button_copies_the_code_without_line_numbers(self):
+        """渲染后的页面里点「复制」：拿到的是文件那几行原文；行号已经画出来了，但不在里面。"""
+        source = "/* 注释跨\n   两行 */\nconst a = 1;\n\n\tconst b = 2;\n"
+        page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="2-5"></code></pre>', [("a.ts", source)])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        run_jobs = runpy.run_path(str(BUILD))["run_jobs"]
+        probe = """(function(){
+          var copied = null;
+          window.showMeCopy = function(text){ copied = text; };
+          var pre = document.querySelector('pre:has(> code[data-src-start])');
+          Array.from(pre.querySelectorAll('.code-tools button')).find(function(b){ return b.textContent === '复制'; }).click();
+          return JSON.stringify({copied: copied, numbers: Array.from(pre.querySelectorAll('.code-line')).map(function(l){
+            return getComputedStyle(l, '::before').content; })});
+        })()"""
+
+        results, err = run_jobs([{"url": page.as_uri(), "width": 1280, "eval": probe}])
+
+        self.assertIsNotNone(results, err)
+        got = json.loads(results[0]["value"])
+        self.assertEqual([re.match(r'"(\d+)"', c).group(1) for c in got["numbers"]], ["2", "3", "4", "5"])
+        self.assertEqual(got["copied"], "   两行 */\nconst a = 1;\n\n\tconst b = 2;")
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_markdown_export_keeps_the_code_label_apart_inside_list_items_and_table_cells(self):
         """列表项和表格单元格里的代码块导出时压成一行：来源标注和代码之间要隔开。"""
         page = self.code_ref_page('<ul><li>入口：<pre><code data-src="a.ts" data-lines="1"></code></pre></li></ul>'
