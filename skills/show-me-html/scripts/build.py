@@ -7,12 +7,13 @@
     python3 build.py page.html --open         # 自检通过后用系统默认浏览器打开
     python3 build.py page.html --pdf          # 自检通过后出一份 A4 PDF
 
-做四件事，然后自检：
+做下面几件事，然后自检：
   1. 把 show-me-html 自有 CSS 内联到 <!--SHOW-ME:CSS--> 处。
   2. 把用到的 lucide 图标从 sprite 里抽出来，替换 data-lucide="name"。
   3. 页面用到需要 JS 的组件时，把保留的 basecoat JS 内联到 <!--SHOW-ME:JS--> 处。
   4. 按页面实际出现的 language-* 内联语法高亮：只带上用到的语言。
   5. 注入骨架行为脚本 assets/shell.js（主题切换、目录、Markdown 导出等）。每次构建重算，旧页面重建也拿到最新骨架。
+  6. <body> 带 data-reply 时内联回复运行时 assets/reply.js（决定块作答、按节评论、汇总回复）。
 
 对已合成的文件重复运行是安全的：占位符已消失时只跑自检。
 """
@@ -1455,7 +1456,7 @@ def main():
         nargs="?",
         const="",
         metavar="DIR",
-        help="自检通过后按 light/dark × 390/500/1280px 切片截图（每片约一屏多高，输出时写明每片含哪几节），并导出 Markdown 到 export.md；不给 DIR 时写到新建的临时目录。供眼睛关读图用",
+        help="自检通过后按 light/dark × 390/500/1280px 切片截图（每片约一屏多高，输出时写明每片含哪几节），并导出 Markdown 到 export.md，开启回复能力的页面另写 reply.md；不给 DIR 时写到新建的临时目录。供眼睛关读图用",
     )
     ap.add_argument("--snap-theme", choices=("light", "dark", "both"), default="both",
                     help="--snap 拍哪个主题，默认 both；小修只拍受影响的主题")

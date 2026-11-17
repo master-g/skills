@@ -12,6 +12,7 @@
    主题三态切换、复制为 Markdown（单图标按钮）、右侧目录（扫描 h2/h3 自动生成，条目 ≥2 且版心右侧放得下时出现，放不下时工具条下边线显示阅读进度），
    以及 `<!--SHOW-ME:CSS-->` / `<!--SHOW-ME:JS-->` 两个占位符。
    改标题（`<title>` 和 `.chrome-title` 两处），在 `<body data-recipe="配方名">` 写入选定配方，内容写进 `<main id="doc">`。
+   以决定收尾的配方同时加 `data-reply` 开启回复能力（`layouts.md`「回复能力（决定块与按节评论）」）。
    页面自己的 `<script>` 写在 `<!--SHOW-ME:JS-->` 之后：骨架行为脚本由 `build.py` 注入到占位符处，页面脚本运行时它已就绪（如 `window.showMeMarkdown`）。
    **占位符、工具条与目录结构不要删**，`build.py` 会检查。
 2. **先读 `visual-system.md`，写 markup 前定位 `components.md` 中实际用到的组件。** 前者规定视觉所有权与配方几何，后者规定稳定的 DOM、ARIA 和 `data-*` 契约。按钮、卡片、徽章、表格、提示块的状态已经在两套主题下调好；
@@ -66,11 +67,12 @@ python3 <skill-path>/scripts/build.py 输出文件.html
 
 它先把正文里的 LaTeX 编译成 MathML、把 `<pre class="mermaid">` 里的 Mermaid 源码编译成内联 SVG（都需要 `node`），再把自有 `../assets/show-me.css` 内联进来、把用到的 lucide 图标从 sprite 里抽出来替换掉、
 页面用到 tabs/dropdown-menu 等需要 JS 的组件时再内联保留的 basecoat JS、页面有 `data-chart` 时内联图表运行时 `charts.js`、
-按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
+`<body>` 带 `data-reply` 时内联回复运行时 `reply.js`、按页面出现的 `language-*` 内联语法高亮（只带用到的那几种语言），然后跑两组检查：
 
 - **文本级**：自包含（除骨架的 Google Fonts 外无任何外部资源）、字体栈有本地兜底、占位符已替换、图标名有效、主题切换与复制按钮还在、
   `<meta charset>`/viewport/`lang`/`<title>` 齐全、无样例残留、`<main>` 非空、页面没有写死颜色、
   `body[data-recipe]` 是 21 个受支持配方之一、动态内容不使用 `innerHTML`/`outerHTML` 赋值、
+  决定块的标记契约（开启了回复能力、标识唯一、2 到 6 个选项、单选恰好一个建议项，见 `components.md`「决定块」）、
   **`<main>` 的直接子元素全是 `<section>`**（间距节奏挂在 `main > section > * + *` 上，
   不包 section 的内容拿不到任何块间距，整页会挤成一团 —— 这条是 ERROR）。
 - **渲染级**：装了 Chrome/Chromium 和 Node 22+ 就用一个无头 Chrome 在 500、1024 与 1280px 下实际渲染，检出横向溢出并点名越界元素；390px 按手机模拟，只查横向溢出、报 WARN。
@@ -109,6 +111,11 @@ python3 <skill-path>/scripts/build.py 输出文件.html
   有目录和没目录两种状态下，工具条左右缘都要与内容对齐。
 - 点一次复制按钮（剪贴板图标，点后变对勾），把结果粘出来看：标题层级对不对、表格完整不完整、
   工具条、目录和筛选器有没有混进去（应该被 `data-md-skip` 挡掉）。
+- 开启了回复能力的页面（`<body data-reply>`）：`--snap` 多出一份 `reply.md`，未作答的页面里每个决定都写「未作答（建议是 …）」，
+  问题和选项名读起来完整、建议项对；`export.md` 里决定块是问题加选项列表、建议项标「（建议）」，没有「评论」字样。
+  切片上看：每个决定块的「建议」徽章可见、所有选项都没选中，390 下选项与说明换行不溢出，深色下选中的选项边框和底色看得出；
+  工具条上的回复按钮在页面标题右端、计数可读，每个 h1/h2 下有「评论」按钮，正文末尾有作答进度与「复制回复」「清空作答」。
+  交互按 `interactions.md`「页面回复」核对。
 - 通读一遍：只看各级标题，故事应该是通的。
 - 没有 AI 味的填充 —— 复述标题的段落、为了对称而存在的空章节、编造的统计数字。
 - 对照 `anti-patterns.md` 的名册过一遍：统计孤儿、双头导出、隐式轨道溢出都是检查抓不到、靠识别的失败。

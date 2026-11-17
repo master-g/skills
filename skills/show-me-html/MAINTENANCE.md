@@ -27,9 +27,18 @@
 
 ## 联动规则
 
-改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、390 / 500 / 1280px 几何、真实键盘、reduced motion、打印和 Markdown，由 `node scripts/probe_round.mjs <本轮> <上一轮>` 一次跑完，截图仍要人眼看。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
+改 `assets/show-me.css`、`assets/shell.html`、`assets/shell.js`、`assets/reply.js` 或 `scripts/build.py` 后，先运行 `python3 -m unittest skills.show-me-html.tests.test_build`，再按 `scenarios/README.md` 的轮次流程跑五个冻结场景：`status-report`、`approach-compare`、`code-review`、`concept-explainer`、`triage-board`。检查 light / dark / system、390 / 500 / 1280px 几何、真实键盘、reduced motion、打印和 Markdown，由 `node scripts/probe_round.mjs <本轮> <上一轮>` 一次跑完，截图仍要人眼看。轮次产出存 `scenarios/rounds/<日期>-<git短sha>/`，不进 git。
 
 改 `assets/charts.js`、`assets/gallery/*.html` 或 `show-me.css` 的图表段后，跑 `python3 scripts/gallery.py --shots`：它把四个 gallery 页拼成 `all-charts.html` 构建一遍（只该有两条 WARN：「超过 400 KB」，以及「500px 下数据图字号渲染后低于 8px」——后者列的是没画窄版的通栏图，图库只给宽版参考实现），再给每张图截 light/dark 两张 PNG，`index.md` 开头列出空图、控制台报错和低于下限的字号。逐张看改到的图，人也可以直接打开 `all-charts.html`，`#fig-编号` 直达、`?only=编号` 单看。`tests/test_build.py` 里的 gallery 测试只保证能构建、脚本能解析，外加 `setInterval` 都登记进了 `keep`。
+
+回复能力（`components.md`「决定块」）分在四处，改一处要对照其余几处：
+
+- 节的定义：`reply.js` 的评论入口、`shell.js` 的目录与 Markdown 导出共用一张组件容器排除表（`.card, .fig-box, …`），改一处三处一起改。
+- 回复格式：`components.md`「回复」是契约，`reply.js` 的 `showMeReply` 实现它，`tests/test_build.py` 里 `reply_md` 系列用例逐字断言；SKILL.md「收到页面回复怎么处理」按它的开头和分节识别回复。改格式四处同步。
+- 选项名：`reply.js`（回复、状态）和 `shell.js` 的导出器各取一次，规则都是 label 里去掉 `<input>`、`<small>` 和「建议」徽章后的文字。状态按选项名和节标题存，改了取名规则，读者已存的作答和页面带的初始状态都会对不上。
+- 标记契约：`build.py` 的 `check_decisions` 与 `components.md`「决定块」的 ERROR 清单一一对应。运行时的系统脚本标记 `data-show-me="reply"` 登记在 `SYSTEM_SCRIPT_RE`，开关只认 `<body>` 开标签上的 `data-reply`。
+
+改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k reply -k decision`，再用一个开启回复能力的页面跑 `--snap` 读 `reply.md`、`export.md` 与切片，`probe_page.mjs` 点一遍控件，并按 `interactions.md`「页面回复」在浏览器里核对存储、清空、键盘和打印。
 
 改 `reveal` 的生命周期时另测常驻开销：用 `scripts/gallery.py` 拼好的 `all-charts.html`（59 图、约 20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
 

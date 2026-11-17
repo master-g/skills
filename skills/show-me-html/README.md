@@ -7,6 +7,8 @@
 - **light / dark / system 三态主题切换**，选择记在 localStorage，首屏前生效，不闪。
 - **「复制为 Markdown」按钮**，一键把整页变成 GFM，能贴进文档、粘进 IM、喂给别的模型。
 
+以决定收尾的页面（方案对比、视觉方向、代码评审、实施计划）还默认带**回复**：读者在页面的决定块上点选、对任意一节写评论，再一键把所有决定和评论复制成一段 Markdown 贴回给 Agent。作答存在浏览器本地，刷新后还在；回复里写明每个决定是采纳建议、改选还是未作答。其他配方按需开启（`<body data-reply>`），没开启的页面不带相关脚本和控件。
+
 ## 安装
 
 使用 skills CLI 安装：
@@ -46,6 +48,7 @@ npx skills add master-g/skills --skill show-me-html -g
 | `references/interactions.md`  | 拖拽、键盘翻页、旋钮联动等交互代码                                                   |
 | `references/charts.md`        | 数据图选型：数据形状决策树、硬规则、图型目录                                         |
 | `assets/charts.js`            | 数据图运行时（页面有 `data-chart` 时内联）                                           |
+| `assets/reply.js`             | 回复运行时：决定块作答、按节评论、汇总回复（`<body data-reply>` 时内联）             |
 | `assets/gallery/`             | 59 张图型的参考实现，按家族四个页面                                                  |
 | `scripts/build.py`            | 内联资产 + 自检                                                                      |
 | `scripts/gallery.py`          | 59 张图拼成一页总览，`--shots` 逐张截图供评估                                        |
