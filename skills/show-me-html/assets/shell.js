@@ -67,6 +67,53 @@
   window.showMeCopy = copyText;
 })();
 
+/* ── 代码引用的行号 ──
+   build.py 从文件读进来的代码块（code[data-src-start]）按行拆成 span.code-line，每行带 data-n，
+   数字由样式的 ::before 画出：不进 code 的文字，复制和 Markdown 导出照旧取 textContent，读屏器也不念。
+   每行的换行符留在行内，textContent 一字不差。高亮脚本先跑，已把 <code> 改写成着色 span；
+   跨行的 span（多行注释、模板字符串）在行尾截断，下一行按同样的祖先链重开。 */
+(function () {
+  document
+    .querySelectorAll("pre > code[data-src-start]")
+    .forEach(function (code) {
+      var n = parseInt(code.getAttribute("data-src-start"), 10) || 1;
+      var lines = document.createDocumentFragment();
+      var cur;
+      function open(chain) {
+        var line = document.createElement("span");
+        line.className = "code-line";
+        line.setAttribute("data-n", n++);
+        lines.appendChild(line);
+        cur = line;
+        chain.forEach(function (el) {
+          cur = cur.appendChild(el.cloneNode(false));
+        });
+      }
+      function walk(parent, chain) {
+        Array.from(parent.childNodes).forEach(function (node) {
+          if (node.nodeType === 3) {
+            node.nodeValue.split("\n").forEach(function (part, i) {
+              if (i) {
+                cur.appendChild(document.createTextNode("\n"));
+                open(chain);
+              }
+              if (part) cur.appendChild(document.createTextNode(part));
+            });
+          } else if (node.nodeType === 1) {
+            cur = cur.appendChild(node.cloneNode(false));
+            walk(node, chain.concat(node));
+            cur = cur.parentNode;
+          }
+        });
+      }
+      open([]);
+      walk(code, []);
+      code.style.setProperty("--code-digits", String(n - 1).length);
+      code.textContent = "";
+      code.appendChild(lines);
+    });
+})();
+
 /* ── 代码工具条：换行 / 复制 ──
    给每个 pre > code 注入两个按钮。工具条带 data-md-skip，导出 Markdown 时不出现。
    复制走 window.showMeCopy；反馈先行，不等 promise。 */
@@ -390,6 +437,9 @@
         var lang =
           (code && (code.className.match(/language-([\w+-]+)/) || [])[1]) ||
           (n.classList.contains("mermaid") ? "mermaid" : "");
+        /* 代码引用的来源标注（build.py 写在 code 前面）导出成围栏上方的一行，转贴后仍看得到出处 */
+        var src = n.querySelector(":scope > [data-src-label]");
+        if (src) out += "`" + src.textContent.trim() + "`\n\n";
         out +=
           "```" +
           lang +

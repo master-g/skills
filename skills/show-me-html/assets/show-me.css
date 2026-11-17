@@ -1488,6 +1488,37 @@ pre:focus-within .code-tools {
     display: none;
   }
 }
+/* ── 代码引用（components.md「代码引用」）：build.py 在 code 前写来源标注，在 code 上写起始行号，
+     骨架 JS 把每行包成 .code-line。行号是 ::before 的生成内容：不进 code 的文字（复制、导出不带），
+     「/ ""」把它对读屏器隐藏。每行是块，行号钉在块的首行：长行换行（「换行」按钮、打印）时只把本行撑高，
+     后面的行号不错位。手写的代码块没有这些标记，样式不变。 */
+pre > [data-src-label] {
+  display: block;
+  margin-block-end: 0.5rem;
+  padding-block-end: 0.375rem;
+  padding-inline-end: 7.5rem; /* 让开右上角的工具条 */
+  border-block-end: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+pre > code[data-src-start] .code-line {
+  display: block;
+  position: relative;
+  padding-inline-start: calc(var(--code-digits, 2) * 1ch + 1.25rem);
+}
+pre > code[data-src-start] .code-line::before {
+  content: attr(data-n);
+  content: attr(data-n) / "";
+  position: absolute;
+  inset-inline-start: 0;
+  width: calc(var(--code-digits, 2) * 1ch);
+  text-align: end;
+  color: var(--color-muted-foreground);
+  font-style: normal;
+}
 /* 语法高亮：class 由 build.py 内联的分词器在运行时发，配色在这里给。
          运算符（shj-syn-oper）和变量（shj-syn-var）刻意不上色 —— 全上会花。 */
 .shj-syn-cmnt {

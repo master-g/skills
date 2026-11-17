@@ -1666,7 +1666,7 @@ nodes.forEach((g) => {
         self.assertEqual(len(errors), 1, errors)
         for needle in needles:
             self.assertIn(needle, errors[0])
-        self.assertNotIn("data-src-start", page.read_text(encoding="utf-8"))
+        self.assertNotRegex(page.read_text(encoding="utf-8"), r"<code\b[^>]*\sdata-src-start")
         return errors[0]
 
     def test_paths_outside_the_build_folder_are_rejected_and_name_the_folder(self):
@@ -1892,6 +1892,17 @@ nodes.forEach((g) => {
         html = page.read_text(encoding="utf-8")
         self.assertNotIn(str(page.parent), html)
         self.assertNotIn(str(page.parent.resolve()), html)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_markdown_export_has_the_code_label_above_a_fence_without_line_numbers(self):
+        """行号由骨架 JS 按行拆开后用样式画出，不在 code 的文字里：导出的围栏和源码逐字相同，来源标注在围栏上方。"""
+        source = "/* 注释跨\n   两行 */\nconst a = 1;\n\n\tconst b = `x\ny`;\n"
+        page = self.code_ref_page('<pre><code data-src="src/a.ts" data-lines="2-5"></code></pre>', [("src/a.ts", source)])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+
+        md = (self.snap_one(page) / "export.md").read_text(encoding="utf-8")
+
+        self.assertIn("`src/a.ts:2-5`\n\n```ts\n   两行 */\nconst a = 1;\n\n\tconst b = `x\n```", md)
 
     def test_reply_page_inlines_reply_runtime_once(self):
         page = self.copy_fixture("reply-decisions.html")
