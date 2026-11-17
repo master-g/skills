@@ -48,6 +48,14 @@
 
 改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k image -k img`，再用一页带宽截图、长截图和行内小图的页面跑 `--snap`（看 390 / 1280 两种主题与 `export.md`）和 `--pdf`（看图和图注是否同页、长图是否缩进一页）。
 
+代码引用（`components.md`「代码引用」）分在三处，契约是成品里的 `<pre><span data-src-label>来源标注</span><code data-src-start="起始行号" …>转义后的文件原文</code></pre>`：
+
+- `build.py` 合成阶段用作者标记的标签解析器找 `<code data-src>`（注释、脚本和转义过的示例写法不算），按运行构建命令的目录读文件并检查路径、密钥、二进制、行号与长度，写来源标注、`data-src-start`，推断语言时另写 `data-src-lang`；这三样重建时认作构建器所有、整块重写。密钥目录清单 `SECRET_DIRS` 和密钥文本正则 `SECRET_TEXT_RE` 与图片共用。已填充的代码原文不进自检的文本检查（`without_code_refs`）。
+- `shell.js` 在高亮之后把带 `data-src-start` 的代码块按行拆成 `.code-line`（换行符留在行内，`textContent` 不变）；Markdown 导出把来源标注写在围栏上方一行。
+- `show-me.css` 用 `.code-line::before` 画行号，规则都限定在构建器的标记上，示意代码不受影响。
+
+改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k code`，再用一页带 30 行以上代码引用（含跨行注释、超长行、空行）的页面跑 `--snap` 和 `--pdf`：不换行、点「换行」后和打印时，第 N 个行号都要和源码第 N 行在同一视觉行上。
+
 改 `reveal` 的生命周期时另测常驻开销：用 `scripts/gallery.py` 拼好的 `all-charts.html`（59 图、约 20000px），无头 Chrome 滚到底，等入场动画沉降后静置 8s 取 `Performance.getMetrics` 的 `TaskDuration` 增量 —— 循环全停时应当接近 0；出现百分之几十说明有循环没被停掉。图滚出视口后开销不降反升，别拿视口外当安全区。
 
 旧页面重新跑一遍 `build.py` 会拿到当前的 CSS 与骨架脚本（`shell.js`，旧页面里复制的骨架块按段首注释认出并替换）；

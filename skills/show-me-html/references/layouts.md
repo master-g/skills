@@ -82,7 +82,7 @@ figure.quote {
 
 - 方案卡用 `.card`；推荐项的卡加 `style="border-color: var(--color-primary)"`，**只加一个**。
 - 判据表用 `.table-container > .table`，✓/✗ 用 `.badge`。
-- 代码用 `<pre><code class="language-ts">`。方案超过 3 个改用 `tabs`。
+- 代码用 `<pre><code class="language-ts">`；展示仓库里已有的代码时写代码引用，由构建器从文件读进来（`components.md`「代码引用」）。方案超过 3 个改用 `tabs`。
 - 默认开启回复能力。「推荐与前提」一节放一个单选决定块「采用哪个方案」，推荐项写 `data-suggested`；前提有取舍时再加一个多选决定块。
 
 ### `visual-directions` · 在几个视觉方向里选一个
@@ -177,6 +177,7 @@ diff 行着色写进页面 CSS，四条代码类配方共用（负外边距是�
 - 每个文件一个 `<details>`（`.accordion` 内），`summary` 放文件名 + 增删数。
 - diff 行着色用「结构视图」里的 `.d-add` / `.d-del`，不要另写一套。
 - 改动跨文件移动、改目录结构或改调用顺序时，在按文件的 diff 之前先放一个结构 diff。
+- 要贴改动后的完整上下文（某个函数现在的样子）时用代码引用（`components.md`「代码引用」），行号和源文件对得上，批注写「第 23 行」读者能直接对照；diff 本身照旧手写。
 - 默认开启回复能力。待确认问题里需要读者拍板的（修还是接受、选哪种修法）写成决定块，每块一个问题；只需读者知悉的照常用带 checkbox 的 `.field`。
 
 ### `pr-writeup` · 作者视角讲一次改动
@@ -187,6 +188,8 @@ diff 行着色写进页面 CSS，四条代码类配方共用（负外边距是�
 
 与 `code-review` 的区别：叙事驱动，不是文件驱动。文件清单降级到末尾的一个 `.item-group`。
 
+展示改动后的真实代码时用代码引用（`components.md`「代码引用」），不手抄。
+
 改动涉及界面时，「做了什么」里放改动前后的截图，图注写出两张的差别，写法见 `components.md`「图片」。
 
 ### `code-understanding` · 讲清这个仓库里某条流程
@@ -195,7 +198,7 @@ diff 行着色写进页面 CSS，四条代码类配方共用（负外边距是�
 
 入口 → 时序图（Mermaid `sequenceDiagram`，写法见 `diagrams.md`「Mermaid 图」；调用是一条直线时改用编号步骤）→ 每步一节（真实代码 + 解释）→ 边界与坑。
 
-- 代码片段必须来自真实文件，`<pre>` 上方标注 `path/to/file.ts:42-58`。
+- 代码片段必须来自真实文件，写成代码引用（`components.md`「代码引用」）：构建器从文件读进来，并在代码块上方生成 `path/to/file.ts:42-58` 这样的来源标注。
 - 步骤编号用 `.item-group`，`figure` 里放数字而非图标。
 
 ### `design-system-ref` · 设计系统 / 风格指南
