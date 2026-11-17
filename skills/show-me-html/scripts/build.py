@@ -541,8 +541,13 @@ IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
                ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml"}
 
 
-# 存放密钥和登录信息的目录：路径（解析符号链接前后任一）经过它们时不内联，免得写错的路径把私密文件带进要转发的页面
+# 图片内联和代码引用都不读进页面的东西，免得写错的路径把私密内容带进要转发的页面。
+# 存放密钥和登录信息的目录：绝对路径（解析符号链接前后任一）的任何一层是它们时不读，见 in_secret_dir
 SECRET_DIRS = (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store")
+# 常用来放凭据的文件名（代码引用用；图片只认图片扩展名，碰不到这些）：.env 与 .env.*（模板 .env.example、.env.sample、
+# .env.template、.env.dist 除外）、几种包管理器和 netrc 的登录配置、ssh-keygen 默认名的私钥（.pub 是公钥，不算）、证书与密钥库
+SECRET_FILE_RE = re.compile(r"\.env(?:\.(?!(?:example|sample|template|dist)$).*)?|\.netrc|\.npmrc|\.pypirc"
+                            r"|id_(?:rsa|dsa|ecdsa|ed25519|xmss)(?:_sk)?|.*\.(?:pem|key|p12|pfx)", re.I)
 # SVG 是文本，另扫一遍：私钥头、常见令牌前缀（含 JWT）、带密码的 URL。不扫 password = "…" 这类字面量：
 # 表单示意图里的字段标签会误中。区分大小写：不分大小写时 SVG 里内嵌的 base64 更容易偶然命中（AKIA、AIza 这两类仍有极小的概率）
 SECRET_TEXT_RE = re.compile(
@@ -551,6 +556,20 @@ SECRET_TEXT_RE = re.compile(
     r"|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.")
 # SVG 开头允许 BOM、空白、XML 声明、注释和 DOCTYPE，再是 <svg 根元素。占有量词：不回溯，注释多的非 SVG 文件也不卡
 SVG_START_RE = re.compile(r"\ufeff?(?:\s|<\?xml.*?\?>|<!--.*?-->|<!DOCTYPE[^\[>]*(?:\[.*?\]\s*)?>)*+<svg(?=[\s>/])", re.S | re.I)
+
+
+def in_secret_dir(*paths):
+    """任一路径的任何一层是 SECRET_DIRS 里的目录。调用方把解析符号链接前后的绝对路径都传进来；
+    比较时不分大小写：不区分大小写的卷上 .SSH 打开的就是 .ssh。"""
+    return any(part.lower() in SECRET_DIRS for p in paths for part in p.parts)
+
+
+def read_file_bytes(path, what):
+    """读文件的全部字节；读不了时抛 ValueError，消息以 what（「图片 x」「代码引用 x」）开头。"""
+    try:
+        return path.read_bytes()
+    except OSError as e:
+        raise ValueError(f"{what} 读不了（{e.strerror}）：检查文件权限") from None
 
 
 def is_avif(b):
@@ -663,18 +682,14 @@ def resolve_image(ref, base_dir):
     except OSError:
         where = f"（相对路径按页面所在目录 {base_dir} 解析）" if relative else f"（解析为 {path}）"
         raise ValueError(f"找不到图片 {ref}{where}：确认文件存在，或改写成绝对路径") from None
-    # 比较时不分大小写：不区分大小写的卷上 .SSH 打开的就是 .ssh
-    if any(part.lower() in SECRET_DIRS for p in (path, real) for part in p.parts):
+    if in_secret_dir(path, real):
         raise ValueError(f"图片 {ref} 位于存放密钥或登录信息的目录（{' '.join(SECRET_DIRS)}），不内联：先把图片复制到别处")
     if not real.is_file():
         raise ValueError(f"图片 {ref} 不是文件")
     size = real.stat().st_size
     if size > IMAGE_MAX_BYTES:
         raise ValueError(f"图片 {ref} 有 {size / 1048576:.1f} MB，单张上限 {IMAGE_MAX_BYTES // 1048576} MB：先裁剪或压缩再放")
-    try:
-        data = real.read_bytes()
-    except OSError as e:
-        raise ValueError(f"图片 {ref} 读不了（{e.strerror}）：检查文件权限") from None
+    data = read_file_bytes(real, f"图片 {ref}")
     if not IMAGE_MAGIC[mime](data):
         kind = "SVG" if mime == "image/svg+xml" else mime.split("/")[1].upper()
         raise ValueError(f"图片 {ref} 的扩展名是 {path.suffix}，内容不是 {kind}：改名的其他文件不会被内联，换成真正的图片文件")
@@ -762,10 +777,6 @@ def ref_name(attrs):
     return name + (f' data-lines="{attrs["data-lines"] or ""}"' if "data-lines" in attrs else "")
 
 
-# 常用来放凭据的文件名：.env 与 .env.*、几种包管理器和 netrc 的登录配置、私钥（id_* 里只有 .pub 是公钥）
-SECRET_FILE_RE = re.compile(r"\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|id_(?!.*\.pub$).+|.*\.(?:pem|key|p12|pfx)", re.I)
-
-
 def read_code_ref(src, lines, base_dir):
     """按 data-src / data-lines 读出引用的行：返回 (行列表, 起始行号)。有问题时抛 ValueError，消息说明原因和改法；
     文件找不到时抛 FileNotFoundError（重建时只给 WARN）。"""
@@ -782,10 +793,7 @@ def read_code_ref(src, lines, base_dir):
     if not real.is_relative_to(base_dir.resolve()):
         raise ValueError(f"的路径越出了运行构建命令的目录 {base_dir}：只能引用这个目录以内的文件，"
                          "到包含这个文件的仓库根目录运行构建，或改写路径")
-    # 比较时不分大小写：不区分大小写的卷上 .SSH 打开的就是 .ssh。只看构建目录以内的那几层，构建目录本身在哪不算
-    inside = [path.relative_to(base_dir).parts, real.relative_to(base_dir.resolve()).parts]
-    if any(part.lower() in SECRET_DIRS for parts in inside for part in parts) or \
-            any(SECRET_FILE_RE.fullmatch(parts[-1]) for parts in inside if parts):
+    if in_secret_dir(path, real) or any(SECRET_FILE_RE.fullmatch(p.name) for p in (path, real)):
         raise ValueError(f"指向存放密钥或登录信息的目录或文件（{' '.join(SECRET_DIRS)}、.env、.netrc、私钥一类），"
                          "不读进页面：引用别的文件，或把要展示的代码挪到普通文件里")
     if not real.exists():

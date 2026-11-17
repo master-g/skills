@@ -1701,8 +1701,9 @@ nodes.forEach((g) => {
     def test_files_in_secret_folders_or_with_credential_names_are_rejected(self):
         names = [f"{d}/config" for d in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker",
                                          ".password-store", ".SSH")]
-        names += [".env", ".env.local", "deploy/.netrc", ".npmrc", ".pypirc", "id_rsa", "id_ed25519",
-                  "certs/server.pem", "tls.key", "store.p12", "store.pfx"]
+        names += [".env", ".env.local", ".env.production", ".env.example.local", "deploy/.netrc", ".npmrc",
+                  ".pypirc", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "id_xmss", "id_ecdsa_sk",
+                  "id_ed25519_sk", "certs/server.pem", "tls.key", "store.p12", "store.pfx"]
         for name in names:
             with self.subTest(name=name):
                 self.assert_ref_rejected(f'<pre><code data-src="{name}"></code></pre>', [(name, "x = 1\n")],
@@ -1717,6 +1718,29 @@ nodes.forEach((g) => {
         result = self.build_ref(page)
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_env_templates_and_non_key_id_files_are_allowed(self):
+        names = [".env.example", ".env.sample", ".env.template", ".env.dist", "id_utils.ts", "id_rsa_backup.md"]
+        page = self.code_ref_page("".join(f'<pre><code data-src="{n}"></code></pre>' for n in names),
+                                  [(n, f"// {n}\n") for n in names])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual([label for label, _, _ in self.code_refs(page)], names)
+
+    def test_building_from_inside_a_secret_folder_is_rejected(self):
+        page = self.code_ref_page('<pre><code data-src="credentials"></code></pre>',
+                                  [(".aws/credentials", "[default]\nregion = us-east-1\n")])
+
+        result = run_build(page, cwd=page.parent / ".aws")
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        errors = [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="credentials"', errors[0])
+        self.assertIn("密钥", errors[0])
+        self.assertNotIn("us-east-1", page.read_text(encoding="utf-8"))
 
     def test_symlink_into_a_secret_folder_is_rejected(self):
         page = self.code_ref_page('<pre><code data-src="innocent.ts"></code></pre>', [(".ssh/conf.ts", "x\n")])
