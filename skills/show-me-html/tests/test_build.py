@@ -1899,6 +1899,26 @@ nodes.forEach((g) => {
         self.assertEqual(page.read_bytes(), before)
         self.assert_ref_rejected('<pre><code data-src="gone.ts"></code></pre>', [], 'data-src="gone.ts"', "找不到")
 
+    def test_summary_counts_every_code_reference_including_failed_and_kept_ones(self):
+        page = self.code_ref_page('<pre><code data-src="a.ts"></code></pre><pre><code data-src="b.ts"></code></pre>'
+                                  '<pre><code data-src="gone.ts"></code></pre>', [("a.ts", "a\n"), ("b.ts", "b\n")])
+
+        failed = self.build_ref(page)
+
+        self.assertEqual(failed.returncode, 1, failed.stdout)
+        self.assertIn("代码引用=3 处", failed.stdout)
+        page.write_text(page.read_text(encoding="utf-8").replace('<pre><code data-src="gone.ts"></code></pre>', ""),
+                        encoding="utf-8")
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        (page.parent / "a.ts").write_text("a2\n", encoding="utf-8")
+        (page.parent / "b.ts").unlink()
+
+        kept = self.build_ref(page)
+
+        self.assertEqual(kept.returncode, 0, kept.stdout + kept.stderr)
+        self.assertIn("保留", kept.stdout)
+        self.assertIn("代码引用=2 处", kept.stdout)
+
     def test_check_only_flags_code_references_that_are_not_filled(self):
         page = self.code_ref_page('<pre><code data-src="a.ts"></code></pre>', [("a.ts", self.SOURCE)])
         self.assertEqual(self.build_ref(page).returncode, 0)

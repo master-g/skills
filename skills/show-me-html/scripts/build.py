@@ -845,9 +845,11 @@ def with_code_ref_attrs(tag, classes, start, lang):
 
 
 def fill_code_refs(html, base_dir, errors, warns):
-    """把作者标记里的代码引用按文件当前内容填进去（每次构建都刷新）。返回 (新页面, 填充个数)。"""
-    out, last, count = [], 0, 0
-    for ref in code_refs(html):
+    """把作者标记里的代码引用按文件当前内容填进去（每次构建都刷新）。
+    返回 (新页面, 代码引用个数)：带 data-src 的 <code> 都算，报错的和保留旧内容的也算。"""
+    refs = code_refs(html)
+    out, last, count = [], 0, sum("data-src" in ref.tag.attrs for ref in refs)
+    for ref in refs:
         attrs = ref.tag.attrs
         # 只写属性名不写值时解析器给 None，按空串处理
         src = attrs.get("data-src") or ""
@@ -896,7 +898,6 @@ def fill_code_refs(html, base_dir, errors, warns):
         tag = with_code_ref_attrs(ref.tag.text, " ".join(classes), start, lang)
         out += [html[last:ref.pre_end], label, tag, escape("\n".join(got))]
         last = ref.content_end
-        count += 1
     out.append(html[last:])
     return "".join(out), count
 
