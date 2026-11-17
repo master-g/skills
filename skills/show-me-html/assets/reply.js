@@ -111,7 +111,7 @@
         return o.suggested;
       })
     );
-    var same =
+    var adopted =
       picked.length === hint.length &&
       picked.every(function (t) {
         return hint.indexOf(t) >= 0;
@@ -122,7 +122,7 @@
         ? "未作答（建议是 " + list(hint) + "）"
         : "未作答（没有建议项）";
     else if (!hint.length) answer = list(picked) + "（没有建议项）";
-    else if (same) answer = list(picked) + "（采纳建议）";
+    else if (adopted) answer = list(picked) + "（采纳建议）";
     else {
       answer = list(picked) + "（改选，建议是 " + list(hint);
       if (b.multi) {
@@ -194,16 +194,16 @@
     };
     sections.push(s);
     toggle.addEventListener("click", function () {
-      open(s, panel.hidden);
+      setCommentOpen(s, panel.hidden);
     });
     area.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
-        open(s, false);
+        setCommentOpen(s, false);
         toggle.focus();
       }
     });
   });
-  function open(s, on) {
+  function setCommentOpen(s, on) {
     s.panel.hidden = !on;
     s.toggle.setAttribute("aria-expanded", String(on));
     if (on) s.area.focus();
@@ -278,7 +278,7 @@
     return state;
   }
   /* 只动状态里有记录的键：没有记录不等于取消选中，标记里预先写好的选中状态要留着 */
-  function apply(state) {
+  function applyState(state) {
     if (!state || typeof state !== "object") return;
     var d = state.decisions || {},
       c = state.comments || {};
@@ -292,7 +292,7 @@
       if (typeof c[s.key] === "string") setComment(s, c[s.key]);
     });
   }
-  function initial() {
+  function readInitialState() {
     var el = document.querySelector(
       'script[type="application/json"][data-reply-state]'
     );
@@ -315,32 +315,12 @@
     try {
       localStorage.setItem(KEY, JSON.stringify(snapshot()));
     } catch (e) {}
-    count();
+    paintCounts();
   }
 
-  /* ── 回复按钮：工具条上一个（图标 + 已作答计数），页尾一个（带完整说明和清空作答） ── */
-  function copy(text) {
-    try {
-      return navigator.clipboard.writeText(text).catch(function () {
-        fallback(text);
-      });
-    } catch (e) {
-      fallback(text);
-    }
-  }
-  function fallback(text) {
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand("copy");
-    } catch (e) {}
-    ta.remove();
-  }
-  /* 反馈先行，同「复制为 Markdown」：图标换成对勾 1.6s，不等待 writeText —— 权限 pending 时它可能永不 settle */
+  /* ── 回复按钮：工具条上一个（图标 + 已作答计数），页尾一个（带完整说明和清空作答） ──
+     反馈先行，同「复制为 Markdown」：图标换成对勾 1.6s，不等待写入 —— 权限 pending 时它可能永不 settle。
+     写入用骨架的 window.showMeCopy：骨架脚本内联在本运行时之后，所以点击时再取 */
   function replyButton(cls) {
     var b = button(cls);
     var idle = icon("reply"),
@@ -357,7 +337,7 @@
         done.setAttribute("hidden", "");
         b.setAttribute("data-variant", "outline");
       }, 1600);
-      copy(toReply());
+      window.showMeCopy(toReply());
     });
     return b;
   }
@@ -399,7 +379,7 @@
     foot
   );
 
-  function count() {
+  function paintCounts() {
     var answered = blocks.filter(function (b) {
       return chosen(b).length;
     }).length;
@@ -438,8 +418,8 @@
     sections.forEach(function (s) {
       setComment(s, "");
     });
-    apply(initial());
-    count();
+    applyState(readInitialState());
+    paintCounts();
   });
   function disarm() {
     clearTimeout(armed);
@@ -460,12 +440,12 @@
 
   /* 初始状态的 <script> 可能写在本运行时之后：等文档解析完再恢复 */
   function restore() {
-    apply(initial());
-    apply(stored());
-    count();
+    applyState(readInitialState());
+    applyState(stored());
+    paintCounts();
   }
   sections.forEach(paintComment);
-  count();
+  paintCounts();
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", restore);
   else restore();

@@ -1009,7 +1009,7 @@ document.querySelectorAll("pre").forEach((pre) => {
   b.dataset.mdSkip = "";
   b.textContent = "复制代码";
   b.onclick = () => {
-    navigator.clipboard.writeText(pre.textContent);
+    window.showMeCopy(pre.textContent); // 骨架的剪贴板写入，失败时自带回退
     b.dataset.variant = "secondary";
     setTimeout(() => (b.dataset.variant = "ghost"), 1200);
   };

@@ -38,9 +38,38 @@
   });
 })();
 
+/* ── 剪贴板：页面上所有复制按钮共用的一份写入 ──
+   走 navigator.clipboard；接口不可用、调用抛错或 promise 被拒绝时，退回隐藏 textarea + execCommand。
+   调用方先给反馈再调它，不等 promise —— 权限 pending 时它可能永不 settle。 */
+(function () {
+  function fallback(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+    } catch (e) {}
+    ta.remove();
+  }
+  function copyText(text) {
+    try {
+      navigator.clipboard.writeText(text).catch(function () {
+        fallback(text);
+      });
+    } catch (e) {
+      fallback(text);
+    }
+  }
+  /* 暴露给页面用：回复运行时（reply.js）和页面自己的复制按钮都调它，不要另写一份 */
+  window.showMeCopy = copyText;
+})();
+
 /* ── 代码工具条：换行 / 复制 ──
    给每个 pre > code 注入两个按钮。工具条带 data-md-skip，导出 Markdown 时不出现。
-   复制走 navigator.clipboard，失败时退回 execCommand；反馈先行，不等 promise。 */
+   复制走 window.showMeCopy；反馈先行，不等 promise。 */
 (function () {
   function mk(label, title) {
     var b = document.createElement("button");
@@ -50,22 +79,6 @@
     b.title = title;
     b.textContent = label;
     return b;
-  }
-  function copyText(text) {
-    try {
-      return navigator.clipboard.writeText(text);
-    } catch (e) {
-      var ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand("copy");
-      } catch (e2) {}
-      ta.remove();
-    }
   }
   document.querySelectorAll("pre > code").forEach(function (code) {
     var pre = code.parentNode;
@@ -86,7 +99,7 @@
       setTimeout(function () {
         copy.textContent = "复制";
       }, 1600);
-      copyText(code.textContent.replace(/\n$/, ""));
+      window.showMeCopy(code.textContent.replace(/\n$/, ""));
     });
     bar.appendChild(wrap);
     bar.appendChild(copy);
@@ -452,7 +465,7 @@
 
   document.querySelectorAll("[data-copy-md]").forEach(function (btn) {
     var icons = btn.querySelectorAll("svg, i");
-    btn.addEventListener("click", async function () {
+    btn.addEventListener("click", function () {
       var md = toMarkdown();
       /* 反馈先行：剪贴板图标换成对勾 1.6s。不等待 writeText —— 权限 pending 时它可能永不 settle。
       SVG 没有 hidden 反射属性，必须操作属性本身 */
@@ -468,20 +481,7 @@
         }
         btn.setAttribute("data-variant", "outline");
       }, 1600);
-      try {
-        await navigator.clipboard.writeText(md);
-      } catch (e) {
-        var ta = document.createElement("textarea");
-        ta.value = md;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand("copy");
-        } catch (e2) {}
-        ta.remove();
-      }
+      window.showMeCopy(md);
     });
   });
 })();
