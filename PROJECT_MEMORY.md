@@ -67,11 +67,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-17] main：plans/034 七步执行完并已推到 origin，本机还没 make install。分流文字（Step 3 第 1、2 点和约定块第一条）按停止条件没做。
-  验证：make check 通过（含记忆门禁）；`git push origin main` 成功，HEAD 与 origin/main 一致。验收明细在 plans/README.md 的「执行记录（034）」。
+- [2026-11-17] main：plans/034 七步执行完，已推到 origin，新版 bootstrap-claude 已装到本机（安装副本与仓库逐文件相同）。分流文字（Step 3 第 1、2 点和约定块第一条）按停止条件没做。
+  验证：make check 通过（含记忆门禁）；用安装副本的 memory.py 对本仓库 check 全 PASS。验收明细在 plans/README.md 的「执行记录（034）」。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-17] 等用户决定：`make install SKILL=bootstrap-claude SOURCE=.`（装后本机另两个仓库的提交钩子立刻用上去向检查）。034 没做的事在 plans/README.md 的 Deferred 里。
+- [2026-11-17] 无排队任务。本机另两个提交钩子调用安装副本的仓库现在会跑去向检查，那里删记忆条目要在「上次会话」写 移出 行；约定还是旧版的仓库可以跑一次 setup_context.py 升到 v4。034 没做的事在 plans/README.md 的 Deferred 里。
