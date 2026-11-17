@@ -51,7 +51,7 @@
 代码引用（`components.md`「代码引用」）分在三处，契约是成品里的 `<pre><span data-src-label>来源标注</span><code data-src-start="起始行号" …>转义后的文件原文</code></pre>`：
 
 - `build.py` 合成阶段用作者标记的标签解析器找 `<code data-src>`（注释、脚本和转义过的示例写法不算），按运行构建命令的目录读文件并检查路径、密钥、二进制、行号与长度，写来源标注、`data-src-start`，推断语言时另写 `data-src-lang`；这三样重建时认作构建器所有、整块重写。与图片共用密钥目录清单 `SECRET_DIRS`、整条路径的检查 `in_secret_dir`、读文件的 `read_file_bytes` 和密钥文本正则 `SECRET_TEXT_RE`；凭据文件名 `SECRET_FILE_RE` 放在它们旁边，只有代码引用用。`read_code_ref`、`fill_code_refs` 和 `check()` 报的 ERROR 与 `components.md`「代码引用」的清单一一对应。已填充的代码原文不进自检的文本检查（`without_code_refs`）。
-- `shell.js` 在高亮之后把带 `data-src-start` 的代码块按行拆成 `.code-line`（换行符留在行内，`textContent` 不变）；Markdown 导出把来源标注写在围栏上方一行。
+- `shell.js` 在高亮之后把带 `data-src-start` 的代码块按行拆成 `.code-line`（换行符留在行内，`textContent` 不变）；Markdown 导出把来源标注写在围栏上方一行，在列表项、单元格里压成一行时（`inline()`）写成行内代码再隔一个空格。
 - `show-me.css` 用 `.code-line::before` 画行号，规则都限定在构建器的标记上，示意代码不受影响。
 
 改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k code`，再用一页带 30 行以上代码引用（含跨行注释、超长行、空行）的页面跑 `--snap` 和 `--pdf`：不换行、点「换行」后和打印时，第 N 个行号都要和源码第 N 行在同一视觉行上。
