@@ -530,7 +530,7 @@ IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 # 存放密钥和登录信息的目录：路径（解析符号链接前后任一）经过它们时不内联，免得写错的路径把私密文件带进要转发的页面
 SECRET_DIRS = (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store")
 # SVG 是文本，另扫一遍：私钥头、常见令牌前缀、带密码的 URL、写成字面量的密码或密钥。只有最后一类不分大小写，
-# 其余按原样匹配，免得 SVG 里内嵌的 base64 偶然命中
+# 其余按原样匹配：不分大小写时 SVG 里内嵌的 base64 更容易偶然命中（AKIA、AIza 这两类仍有极小的概率）
 SECRET_TEXT_RE = re.compile(
     r"://[^\s:@/\"'`$<>{}]*:[^\s@/\"'`$<>{}]+@|sk-ant-|sk-[A-Za-z0-9]{32,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY"
     r"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[abeprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{30,}"
@@ -621,14 +621,18 @@ def resolve_image(ref, base_dir):
         relative = not ref.startswith(("~/", "file:", "/"))
         where = f"（相对路径按页面所在目录 {base_dir} 解析）" if relative else f"（解析为 {path}）"
         raise ValueError(f"找不到图片 {ref}{where}：确认文件存在，或改写成绝对路径") from None
-    if any(part in SECRET_DIRS for p in (path, real) for part in p.parts):
+    # 比较时不分大小写：不区分大小写的卷上 .SSH 打开的就是 .ssh
+    if any(part.lower() in SECRET_DIRS for p in (path, real) for part in p.parts):
         raise ValueError(f"图片 {ref} 位于存放密钥或登录信息的目录（{' '.join(SECRET_DIRS)}），不内联：先把图片复制到别处")
     if not real.is_file():
         raise ValueError(f"图片 {ref} 不是文件")
     size = real.stat().st_size
     if size > IMAGE_MAX_BYTES:
         raise ValueError(f"图片 {ref} 有 {size / 1048576:.1f} MB，单张上限 {IMAGE_MAX_BYTES // 1048576} MB：先裁剪或压缩再放")
-    data = real.read_bytes()
+    try:
+        data = real.read_bytes()
+    except OSError as e:
+        raise ValueError(f"图片 {ref} 读不了（{e.strerror}）：检查文件权限") from None
     if not IMAGE_MAGIC[mime](data):
         kind = "SVG" if mime == "image/svg+xml" else mime.split("/")[1].upper()
         raise ValueError(f"图片 {ref} 的扩展名是 {path.suffix}，内容不是 {kind}：改名的其他文件不会被内联，换成真正的图片文件")
@@ -667,6 +671,8 @@ def image_label(attrs):
 # 只有 <img src> 的本地图片会被内联；这些属性指向本地文件时成品转发后就失效
 LOCAL_REF_ATTRS = {"img": ("srcset",), "source": ("src", "srcset"), "video": ("src",), "audio": ("src",),
                    "image": ("href", "xlink:href")}
+# 写得进 url() 的属性：内联样式和 SVG 的绘制属性。alt、title 这类文字属性里提到 url() 不算
+URL_ATTRS = {"style", "fill", "stroke", "clip-path", "mask", "filter", "marker-start", "marker-mid", "marker-end"}
 CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))""", re.I)
 
 
@@ -695,8 +701,8 @@ def check_images(authored, errors, just_built):
             value = attrs.get(key) or ""
             refs = srcset_urls(value) if key == "srcset" else [value]
             local += [f"<{tag} {key}> 的 {ref}" for ref in refs if is_local_ref(ref)]
-        for value in attrs.values():
-            local += [f"<{tag}> 属性里 url() 的 {ref}" for ref in css_urls(value or "") if is_local_ref(ref)]
+        for key in URL_ATTRS & attrs.keys():
+            local += [f"<{tag} {key}> 里 url() 的 {ref}" for ref in css_urls(attrs[key] or "") if is_local_ref(ref)]
     for css in parsed.styles:
         local += [f"<style> 里 url() 的 {ref}" for ref in css_urls(css) if is_local_ref(ref)]
     for where in dict.fromkeys(local):

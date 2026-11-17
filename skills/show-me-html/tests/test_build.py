@@ -1144,7 +1144,7 @@ nodes.forEach((g) => {
         self.assertNotIn("shots/", html)
         self.assertNotIn(str(page.parent), html)
 
-    def test_absolute_file_url_and_home_paths_are_inlined(self):
+    def test_absolute_file_url_and_home_image_paths_are_inlined(self):
         elsewhere = tempfile.TemporaryDirectory()
         self.addCleanup(elsewhere.cleanup)
         shot = Path(elsewhere.name) / "my shot.png"
@@ -1175,7 +1175,7 @@ nodes.forEach((g) => {
         self.assertIn("shots/gone.png", errors[0])
         self.assertIn(str(page.parent), errors[0])
 
-    def test_unsupported_extension_lists_the_supported_formats(self):
+    def test_unsupported_image_extension_lists_the_supported_formats(self):
         page = self.image_page('<img src="a.bmp" alt="截图">', [("a.bmp", b"BM" + b"\x00" * 40)])
 
         errors = self.image_errors(page)
@@ -1199,7 +1199,7 @@ nodes.forEach((g) => {
                                    b'<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "x.dtd">\n' + SVG),
     )
 
-    def test_each_supported_format_passes_its_content_check(self):
+    def test_each_supported_image_format_passes_its_content_check(self):
         for name, mime, data in self.FORMATS:
             with self.subTest(name=name):
                 page = self.image_page(f'<img src="{name}" alt="图">', [(name, data)])
@@ -1209,7 +1209,7 @@ nodes.forEach((g) => {
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertEqual(self.inlined(page), [(name, mime, data)])
 
-    def test_content_that_is_not_the_claimed_format_fails(self):
+    def test_image_content_that_is_not_the_claimed_format_fails(self):
         cases = (("a.png", b"\xff\xd8\xff\xe0" + b"\x00" * 16), ("a.jpg", self.PNG), ("a.gif", b"GIF90a"),
                  ("a.webp", b"RIFF\x10\x00\x00\x00WAVEfmt "), ("a.avif", b"\x00\x00\x00\x1cftypmp42"),
                  ("a.svg", b"<html><svg></svg></html>"), ("b.png", b"not an image at all"))
@@ -1234,6 +1234,18 @@ nodes.forEach((g) => {
         self.assertIn("6.0 MB", errors[0])
         self.assertIn("上限 5 MB", errors[0])
 
+    def test_unreadable_image_fails_with_the_reason(self):
+        page = self.image_page('<img src="locked.png" alt="图">', [("locked.png", self.PNG)])
+        locked = page.parent / "locked.png"
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("locked.png", errors[0])
+        self.assertIn("读不了", errors[0])
+
     def test_directory_named_like_an_image_fails(self):
         page = self.image_page('<img src="shots.png" alt="图">')
         (page.parent / "shots.png").mkdir()
@@ -1245,7 +1257,7 @@ nodes.forEach((g) => {
         self.assertIn("不是文件", errors[0])
 
     def test_images_in_secret_folders_are_not_inlined(self):
-        for folder in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store"):
+        for folder in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store", ".SSH"):
             with self.subTest(folder=folder):
                 page = self.image_page(f'<img src="{folder}/a.png" alt="图">', [(f"{folder}/a.png", self.PNG)])
 
@@ -1256,7 +1268,7 @@ nodes.forEach((g) => {
                 self.assertIn("密钥", errors[0])
                 self.assertNotIn("data:image/png", page.read_text(encoding="utf-8"))
 
-    def test_symlink_into_a_secret_folder_is_not_inlined(self):
+    def test_image_symlink_into_a_secret_folder_is_not_inlined(self):
         page = self.image_page('<img src="innocent.png" alt="图">', [(".ssh/id.png", self.PNG)])
         (page.parent / "innocent.png").symlink_to(page.parent / ".ssh" / "id.png")
 
@@ -1266,7 +1278,7 @@ nodes.forEach((g) => {
         self.assertIn("innocent.png", errors[0])
         self.assertIn("密钥", errors[0])
 
-    def test_svg_that_looks_like_it_holds_a_secret_is_not_inlined(self):
+    def test_svg_image_that_looks_like_it_holds_a_secret_is_not_inlined(self):
         tokens = ("-----BEGIN OPENSSH PRIVATE KEY-----", "AKIA" + "ABCDEFGHIJKLMNOP", "ghp_" + "a" * 36,
                   "sk-ant-api03-abc", "https://user:hunter2@example.com/", 'api_key="abcdefghijklmnop"')
         for token in tokens:
@@ -1362,7 +1374,7 @@ nodes.forEach((g) => {
                 self.assertEqual(len(errors), 1, errors)
                 self.assertIn("<img src>", errors[0])
 
-    def test_fragment_and_data_references_are_not_local_resources(self):
+    def test_fragment_and_data_references_are_not_local_image_resources(self):
         png = "data:image/png;base64," + base64.b64encode(self.PNG).decode()
         snippet = (
             '<svg viewBox="0 0 4 4" role="img" aria-label="图"><defs><linearGradient id="g"><stop offset="0"/>'
@@ -1372,6 +1384,7 @@ nodes.forEach((g) => {
             f'<style>.hero {{ background: url("{png}") }} .mask {{ mask: url(#c) }}</style>'
             f'<img src="{png}" alt="图" srcset="{png} 1x, {png} 2x">'
             "<p>CSS 写法示例：<code>background: url(bg.png)</code></p>"
+            '<p title="写法是 url(bg.png)" data-note="url(x.png)">说明文字</p>'
         )
         page = self.image_page(snippet)
 
