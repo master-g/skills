@@ -1954,6 +1954,20 @@ nodes.forEach((g) => {
 
         self.assertIn("`src/a.ts:2-5`\n\n```ts\n   两行 */\nconst a = 1;\n\n\tconst b = `x\n```", md)
 
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_markdown_export_keeps_the_code_label_apart_inside_list_items_and_table_cells(self):
+        """列表项和表格单元格里的代码块导出时压成一行：来源标注和代码之间要隔开。"""
+        page = self.code_ref_page('<ul><li>入口：<pre><code data-src="a.ts" data-lines="1"></code></pre></li></ul>'
+                                  '<div class="table-container"><table class="table"><thead><tr><th>位置</th></tr></thead>'
+                                  '<tbody><tr><td><pre><code data-src="a.ts" data-lines="2"></code></pre></td></tr>'
+                                  '</tbody></table></div>', [("a.ts", "const a = 1;\nconst b = 2;\n")])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+
+        md = (self.snap_one(page) / "export.md").read_text(encoding="utf-8")
+
+        self.assertIn("- 入口：`a.ts:1` `const a = 1;`\n", md)
+        self.assertIn("| `a.ts:2` `const b = 2;` |\n", md)
+
     def test_reply_page_inlines_reply_runtime_once(self):
         page = self.copy_fixture("reply-decisions.html")
 

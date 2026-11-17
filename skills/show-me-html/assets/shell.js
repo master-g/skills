@@ -273,6 +273,9 @@
       }
       if (t === "BR") out += "  \n";
       else if (t === "IMG") out += image(n);
+      else if (n.hasAttribute("data-src-label"))
+        /* 列表项、单元格里的代码引用压成一行：来源标注写成行内代码，和后面的代码隔一个空格 */
+        out += inner.trim() ? "`" + inner.trim() + "` " : "";
       else if (
         t === "CODE" ||
         t === "KBD" ||
