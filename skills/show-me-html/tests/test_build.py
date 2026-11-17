@@ -1419,6 +1419,9 @@ nodes.forEach((g) => {
             '<form><input type="IMAGE" src="go.png" alt="提交"></form>',
             '<svg viewBox="0 0 4 4" role="img" aria-label="图"><use href="sprite.svg#a"/></svg>',
             '<svg viewBox="0 0 4 4" role="img" aria-label="图"><use xlink:href="./sprite.svg#b"/></svg>',
+            '<svg viewBox="0 0 4 4" aria-hidden="true"><filter id="f"><feImage href="noise.png"/></filter></svg>',
+            '<style>.hero { background-image: image-set("bg.png" 1x, url("#none") 2x) }</style>',
+            "<div style=\"background: -webkit-image-set('bg.png' 1x)\">x</div>",
         )
         for snippet in cases:
             with self.subTest(snippet=snippet):
@@ -1441,6 +1444,7 @@ nodes.forEach((g) => {
             '<script src="app.js"></script>',
             '<style>@import "local.css"; .a { color: var(--color-fg) }</style>',
             "<style>@import 'theme/base.css' screen;</style>",
+            "<style>@import url(local.css);</style>",
         )
         for snippet in cases:
             with self.subTest(snippet=snippet):

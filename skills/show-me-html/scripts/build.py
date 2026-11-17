@@ -702,6 +702,7 @@ LOCAL_REF_ATTRS = {
     "source": (("srcset", "image"), ("src", "other")),
     "video": (("poster", "image"), ("src", "other")),
     "image": (("href", "image"), ("xlink:href", "image")),
+    "feimage": (("href", "image"), ("xlink:href", "image")),
     "use": (("href", "image"), ("xlink:href", "image")),
     "audio": (("src", "other"),),
     "track": (("src", "other"),),
@@ -716,6 +717,9 @@ LOADING_RELS = {"stylesheet", "icon", "apple-touch-icon", "apple-touch-icon-prec
 # 写得进 url() 的属性：内联样式和 SVG 的绘制属性。alt、title 这类文字属性里提到 url() 不算
 URL_ATTRS = {"style", "fill", "stroke", "clip-path", "mask", "filter", "marker-start", "marker-mid", "marker-end"}
 CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))""", re.I)
+# image-set() 的候选可以直接写成字符串（"a.png" 1x），不经过 url()；括号里允许一层 url(…)
+IMAGE_SET_RE = re.compile(r"image-set\(((?:[^()]|\([^()]*\))*)\)", re.I)
+CSS_STRING_RE = re.compile(r""""([^"]*)"|'([^']*)'""")
 LOCAL_REF_HINTS = {
     "image": "图片改用 <img src=\"路径\" alt=\"说明\">",
     "background": "图片改用 <img src=\"路径\" alt=\"说明\">；样式背景图不支持本地文件",
@@ -731,7 +735,14 @@ def srcset_urls(value):
 
 
 def css_urls(text):
-    return [next(g for g in m.groups() if g is not None) for m in CSS_URL_RE.finditer(text)] if "url(" in text.lower() else []
+    """样式文本里的图片地址：(写法, 地址)，写法是 url() 或 image-set()。"""
+    low = text.lower()
+    refs = [("url()", next(g for g in m.groups() if g is not None)) for m in CSS_URL_RE.finditer(text)] if "url(" in low else []
+    if "image-set(" in low:
+        for m in IMAGE_SET_RE.finditer(text):
+            bare = re.sub(r"url\([^)]*\)", "", m.group(1), flags=re.I)  # url() 候选上面已经取过
+            refs += [("image-set()", a or b) for a, b in CSS_STRING_RE.findall(bare)]
+    return refs
 
 
 def tag_refs(tag):
@@ -748,17 +759,17 @@ def tag_refs(tag):
         for ref in srcset_urls(value) if key == "srcset" else [value]:
             yield f"<{tag.name} {key}> 的 {ref}", ref, kind
     for key in URL_ATTRS & attrs.keys():
-        for ref in css_urls(attrs[key] or ""):
-            yield f"<{tag.name} {key}> 里 url() 的 {ref}", ref, "background"
+        for form, ref in css_urls(attrs[key] or ""):
+            yield f"<{tag.name} {key}> 里 {form} 的 {ref}", ref, "background"
 
 
 def style_refs(css):
-    """一段 <style> 内容里的 @import（非图片）和 url()（按背景图算）。"""
+    """一段 <style> 内容里的 @import（非图片）和 url()、image-set()（按背景图算）。"""
     for m in CSS_IMPORT_RE.finditer(css):
         ref = m.group(2) if m.group(2) is not None else m.group(4)
         yield f"<style> 里 @import 的 {ref}", ref, "other"
-    for ref in css_urls(CSS_IMPORT_RE.sub("", css)):
-        yield f"<style> 里 url() 的 {ref}", ref, "background"
+    for form, ref in css_urls(CSS_IMPORT_RE.sub("", css)):
+        yield f"<style> 里 {form} 的 {ref}", ref, "background"
 
 
 def check_images(authored, errors, just_built):
