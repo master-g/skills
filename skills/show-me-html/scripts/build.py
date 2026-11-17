@@ -12,7 +12,9 @@
   2. 把 show-me-html 自有 CSS 内联到 <!--SHOW-ME:CSS--> 处。
   3. 把用到的 lucide 图标从 sprite 里抽出来，替换 data-lucide="name"。
   4. 把作者 <img src> 指向的本地图片读进来写成 data URI，只留文件名（data-img-name）。
-  5. 重算运行时脚本，整块放到 <!--SHOW-ME:JS--> 处，依次是：
+  5. 把代码引用（<pre><code data-src="路径" data-lines="N-M">）按运行构建命令的目录读进代码块，
+     写上来源标注和起始行号；每次构建都按文件当前内容刷新。
+  6. 重算运行时脚本，整块放到 <!--SHOW-ME:JS--> 处，依次是：
      页面用到需要 JS 的组件时的 basecoat JS；页面有 data-chart 时的图表运行时；
      按页面实际出现的 language-* 内联的语法高亮（只带上用到的语言）；
      <body> 带 data-reply 时的回复运行时 assets/reply.js（决定块作答、按节评论、汇总回复）；
@@ -700,6 +702,195 @@ def inline_images(html, base_dir, errors):
     return "".join(out), count
 
 
+# ── 代码引用（components.md「代码引用」）────────────────────────────────────
+# 作者写 <pre><code data-src="路径" data-lines="18-30"></code></pre>，构建时把文件的这几行读进 <code>。
+# 构建器写的东西都带自己的标记，重建时认得出来、整块换掉：<code> 上的 data-src-start（起始行号，也是「已填充」的标记）
+# 与 data-src-lang（推断出的语言，作者没写 language-* 时才有），<pre> 里 <code> 之前的来源标注 <span data-src-label>。
+CODE_REF_WARN_LINES = 40
+CODE_REF_MAX_LINES = 200
+# 扩展名 -> vendor/shj/languages 里的语法名；不在表里的按纯文本（language-text）
+CODE_REF_LANGS = {
+    ".ts": "ts", ".tsx": "ts", ".mts": "ts", ".cts": "ts", ".js": "js", ".jsx": "js", ".mjs": "js", ".cjs": "js",
+    ".py": "py", ".rs": "rs", ".go": "go", ".c": "c", ".h": "c", ".cc": "c", ".cpp": "c", ".hpp": "c",
+    ".java": "java", ".kt": "kt", ".kts": "kt", ".lua": "lua", ".pl": "pl", ".sql": "sql",
+    ".css": "css", ".html": "html", ".htm": "html", ".xml": "xml", ".svg": "xml", ".json": "json",
+    ".yaml": "yaml", ".yml": "yaml", ".toml": "toml", ".ini": "ini", ".md": "md", ".csv": "csv",
+    ".sh": "bash", ".bash": "bash", ".zsh": "bash", ".mk": "make", ".log": "log",
+}
+CODE_REF_NAMES = {"makefile": "make", "gnumakefile": "make", "dockerfile": "docker"}
+CODE_LABEL_RE = re.compile(r"<span\b[^>]*\sdata-src-label(?![\w-])[^>]*>[^<]*</span>", re.I)
+CODE_END_RE = re.compile(r"</code\s*>", re.I)
+CodeRef = namedtuple("CodeRef", "tag pre_end content_start content_end")  # <code> 开标签、<pre> 开标签末尾、内容起止偏移
+
+
+def code_refs(html):
+    """作者标记里带 data-src 或 data-lines 的 <code>。用标签解析器找，注释、脚本和转义过的示例写法都不算。"""
+    tags = TagsAndStyles(without_system(html)).tags
+    found = []
+    for i, tag in enumerate(tags):
+        if tag.name != "code" or not {"data-src", "data-lines"} & tag.attrs.keys():
+            continue
+        # 所在的 <pre>：往前跳过构建器写的来源标注，紧挨着的那个开标签
+        j = i - 1
+        if j >= 0 and tags[j].name == "span" and "data-src-label" in tags[j].attrs:
+            j -= 1
+        pre = tags[j] if j >= 0 and tags[j].name == "pre" else None
+        pre_end = pre.start + len(pre.text) if pre else None
+        if pre and not re.fullmatch(r"\s*(?:" + CODE_LABEL_RE.pattern + r")?\s*", html[pre_end:tag.start], re.I):
+            pre_end = None
+        start = tag.start + len(tag.text)
+        end = CODE_END_RE.search(html, start)
+        found.append(CodeRef(tag, pre_end, start, end.start() if end else start))
+    return found
+
+
+def without_code_refs(html):
+    """已填充的代码引用的内容等长换成空格。那是文件里的原文，不是作者写的：自检和运行时判断不看它，
+    源码里的 TODO:、{{ … }}、写死的颜色不报，组件 class 也不触发内联脚本。手写的代码块照旧检查。"""
+    out, last = [], 0
+    for ref in code_refs(html):
+        if "data-src-start" in ref.tag.attrs:
+            out += [html[last:ref.content_start], " " * (ref.content_end - ref.content_start)]
+            last = ref.content_end
+    out.append(html[last:])
+    return "".join(out)
+
+
+def ref_name(attrs):
+    """报错里点名一个代码引用：写的 data-src 和 data-lines 原文。"""
+    name = f'data-src="{attrs["data-src"]}"' if attrs.get("data-src") is not None else "（没写 data-src）"
+    return name + (f' data-lines="{attrs["data-lines"]}"' if attrs.get("data-lines") is not None else "")
+
+
+# 常用来放凭据的文件名：.env 与 .env.*、几种包管理器和 netrc 的登录配置、私钥（id_* 里只有 .pub 是公钥）
+SECRET_FILE_RE = re.compile(r"\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|id_(?!.*\.pub$).+|.*\.(?:pem|key|p12|pfx)", re.I)
+
+
+def read_code_ref(src, lines, base_dir):
+    """按 data-src / data-lines 读出引用的行：返回 (行列表, 起始行号)。有问题时抛 ValueError，消息说明原因和改法；
+    文件找不到时抛 FileNotFoundError（重建时只给 WARN）。"""
+    if lines is not None:
+        m = re.fullmatch(r"\s*(\d+)\s*(?:-\s*(\d+)\s*)?", lines)
+        first, last = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
+        if not m or first < 1 or last < first:
+            raise ValueError("的 data-lines 写法不对：写成 N 或 N-M，从 1 起算，起始行不大于结束行，例如 data-lines=\"18-30\"")
+    rel = Path(src)
+    if not src or src.startswith("~") or src.lower().startswith("file:") or rel.is_absolute() or re.match(r"[A-Za-z]:[\\/]", src):
+        raise ValueError(f"的路径要写成相对路径，按运行构建命令的目录 {base_dir} 解析：去掉开头的 /、~ 或 file:")
+    path = base_dir / rel
+    real = path.resolve()
+    if not real.is_relative_to(base_dir.resolve()):
+        raise ValueError(f"的路径越出了运行构建命令的目录 {base_dir}：只能引用这个目录以内的文件，"
+                         "到包含这个文件的仓库根目录运行构建，或改写路径")
+    # 比较时不分大小写：不区分大小写的卷上 .SSH 打开的就是 .ssh。只看构建目录以内的那几层，构建目录本身在哪不算
+    inside = [path.relative_to(base_dir).parts, real.relative_to(base_dir.resolve()).parts]
+    if any(part.lower() in SECRET_DIRS for parts in inside for part in parts) or \
+            any(SECRET_FILE_RE.fullmatch(parts[-1]) for parts in inside if parts):
+        raise ValueError(f"指向存放密钥或登录信息的目录或文件（{' '.join(SECRET_DIRS)}、.env、.netrc、私钥一类），"
+                         "不读进页面：引用别的文件，或把要展示的代码挪到普通文件里")
+    if not real.exists():
+        raise FileNotFoundError(f"找不到文件（相对路径按运行构建命令的目录 {base_dir} 解析）：确认路径，或到写路径时所在的目录运行构建")
+    if not real.is_file():
+        raise ValueError("指向的不是文件")
+    try:
+        data = real.read_bytes()
+    except OSError as e:
+        raise ValueError(f"读不了（{e.strerror}）：检查文件权限") from None
+    try:
+        if b"\0" in data:
+            raise UnicodeDecodeError("utf-8", data, 0, 1, "NUL")
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise ValueError("看起来是二进制文件（含 NUL 字节或不是 UTF-8 文本），不读进页面：只引用文本源文件") from None
+    text = text.replace("\r\n", "\n")
+    if text.endswith("\n"):
+        text = text[:-1]
+    all_lines = text.split("\n") if text else []
+    if lines is None:
+        first, last = 1, len(all_lines)
+    elif last > len(all_lines):
+        raise ValueError(f"的行号超出了文件末尾：文件只有 {len(all_lines)} 行，把 data-lines 改到这个范围以内")
+    got = all_lines[first - 1:last]
+    if len(got) > CODE_REF_MAX_LINES:
+        raise ValueError(f"引用了 {len(got)} 行，超过上限 {CODE_REF_MAX_LINES} 行：用 data-lines 只引用和论点有关的那一段")
+    if SECRET_TEXT_RE.search("\n".join(got)):
+        raise ValueError("引用的行看起来含有密钥、令牌或带密码的地址，不读进页面：缩小 data-lines 避开这几行，或换一个文件")
+    return got, first
+
+
+def with_code_ref_attrs(tag, classes, start, lang):
+    """改写 <code> 开标签：class 原位换成 classes，去掉旧的构建器属性，末尾写 data-src-start 和（推断时）data-src-lang。"""
+    parts, pos, seen = [tag[:5]], 5, False
+    while m := TAG_ATTR_RE.match(tag, pos):
+        key = m.group(2).lower()
+        if key == "class":
+            parts.append(f'{m.group(1)}class="{escape(classes)}"')
+            seen = True
+        elif key not in ("data-src-start", "data-src-lang"):
+            parts.append(m.group(0))
+        pos = m.end()
+    if not seen:
+        parts.append(f' class="{escape(classes)}"')
+    parts.append(f' data-src-start="{start}"' + (f' data-src-lang="{lang}"' if lang else ""))
+    parts.append(tag[pos:])
+    return "".join(parts)
+
+
+def fill_code_refs(html, base_dir, errors, warns):
+    """把作者标记里的代码引用按文件当前内容填进去（每次构建都刷新）。返回 (新页面, 填充个数)。"""
+    out, last, count = [], 0, 0
+    for ref in code_refs(html):
+        attrs = ref.tag.attrs
+        src, lines = attrs.get("data-src"), attrs.get("data-lines")
+        filled = "data-src-start" in attrs
+        name = ref_name(attrs)
+        if src is None:
+            errors.append(f"代码块写了 data-lines=\"{lines}\" 却没写 data-src：代码引用要用 data-src 写明文件路径；"
+                          "手写的示意代码去掉 data-lines")
+            continue
+        if ref.pre_end is None:
+            errors.append(f"代码引用 {name} 要写成 <pre><code data-src=…></code></pre>：<code> 直接放在 <pre> 里")
+            continue
+        if "language-diff" in (attrs.get("class") or "").split():
+            errors.append(f"代码引用 {name} 写在 language-diff 上：diff 由页面自己的增删行结构负责，不从文件读；"
+                          "去掉 data-src 手写 diff，或换成 language-* 引用文件原样的几行")
+            continue
+        if not filled and html[ref.content_start:ref.content_end].strip():
+            errors.append(f"代码引用 {name} 里手写了内容：代码引用的内容由构建器从文件读进来，"
+                          "清空 <code> 里的内容；要手写示意代码就去掉 data-src 和 data-lines")
+            continue
+        try:
+            got, start = read_code_ref(src.strip(), lines, base_dir)
+        except FileNotFoundError as e:
+            if filled:
+                warns.append(f"代码引用 {name} {e}。保留页面里上次填进去的代码")
+            else:
+                errors.append(f"代码引用 {name} {e}")
+            continue
+        except ValueError as e:
+            errors.append(f"代码引用 {name} {e}")
+            continue
+        if len(got) > CODE_REF_WARN_LINES:
+            warns.append(f"代码引用 {name} 有 {len(got)} 行，超过 {CODE_REF_WARN_LINES} 行：读者要滚很久，"
+                         "考虑用 data-lines 缩小到和论点有关的那一段")
+        # 语言：作者写的 language-* 优先；上次推断出来的那个不算作者写的
+        inferred = attrs.get("data-src-lang")
+        classes = [c for c in (attrs.get("class") or "").split() if c != f"language-{inferred}"]
+        lang = None
+        if not any(c.startswith("language-") for c in classes):
+            name = Path(src.strip()).name
+            lang = CODE_REF_NAMES.get(name.lower()) or CODE_REF_LANGS.get(Path(name).suffix.lower(), "text")
+            classes.append(f"language-{lang}")
+        shown = src.strip() + ("" if lines is None else f":{start}" if len(got) == 1 else f":{start}-{start + len(got) - 1}")
+        label = f'<span data-src-label>{escape(shown)}</span>'
+        tag = with_code_ref_attrs(ref.tag.text, " ".join(classes), start, lang)
+        out += [html[last:ref.pre_end], label, tag, escape("\n".join(got))]
+        last = ref.content_end
+        count += 1
+    out.append(html[last:])
+    return "".join(out), count
+
+
 def image_label(attrs):
     name = attrs.get("data-img-name")
     src = (attrs.get("src") or "").strip()
@@ -1053,10 +1244,13 @@ def build(html, errors, base_dir):
     html, images = inline_images(html, base_dir, errors)
     if images:
         changed = True
-
     warns = []
+    filled, refs = fill_code_refs(html, Path.cwd(), errors, warns)
+    if filled != html:
+        html, changed = filled, True
+
     legacy = LEGACY_SHELL_RE.search(html)
-    slot, langs = runtime_scripts(html, warns)
+    slot, langs = runtime_scripts(without_code_refs(html), warns)
     block = f"{JS_BEGIN}{slot}{JS_END}"
     if JS_SLOT in html:
         new = html.replace(JS_SLOT, block, 1)
@@ -1073,7 +1267,7 @@ def build(html, errors, base_dir):
             anchor = nxt if nxt >= 0 else html.rfind("</body>")
         if anchor < 0:
             errors.append("找不到内联运行时脚本的位置（没有 <!--SHOW-ME:JS--> 占位符，也没有 </body>）")
-            return html, changed, used, images, langs, warns
+            return html, changed, used, images, refs, langs, warns
         head = html[:anchor]
         tail = SYSTEM_SCRIPT_RE.sub("", html[anchor:])
         new = head + block + tail
@@ -1082,7 +1276,7 @@ def build(html, errors, base_dir):
         html = new
         changed = True
 
-    return html, changed, used, images, langs, warns
+    return html, changed, used, images, refs, langs, warns
 
 
 # ── 自检 ────────────────────────────────────────────────────────────────
@@ -1123,7 +1317,7 @@ def without_data(html):
 def check(html, path, allow_legacy_recipe=False, just_built=False):
     errors, warns = [], []
     size = len(html.encode("utf-8"))
-    html = without_data(html)
+    html = without_code_refs(without_data(html))
     without_state = REPLY_STATE_OR_SYSTEM_RE.sub(lambda m: m.group(1) or "", html)
     stripped = re.sub(r"<!--.*?-->", "", without_state, flags=re.S)
 
@@ -1160,6 +1354,10 @@ def check(html, path, allow_legacy_recipe=False, just_built=False):
         errors.append("页面有 data-chart 但没有内联图表运行时：跑一遍不带 --check-only 的 build")
     if reply_enabled(authored_markup) and REPLY_MARK not in html:
         errors.append("页面开启了回复能力（data-reply）但没有内联回复运行时：跑一遍不带 --check-only 的 build")
+    if not just_built:
+        for ref in code_refs(html):
+            if "data-src" in ref.tag.attrs and "data-src-start" not in ref.tag.attrs:
+                errors.append(f"代码引用 {ref_name(ref.tag.attrs)} 没有填充：跑一遍不带 --check-only 的 build，把文件内容读进页面")
     check_decisions(authored_markup, errors)
     check_resources(without_system(stripped), errors, just_built)
     if needs_basecoat(authored_markup) and JS_MARK not in html:
@@ -1828,11 +2026,11 @@ def main():
             html = args.page.read_text(encoding="utf-8")
         if compile_mermaid(args.page, build_errors, build_warns):
             html = args.page.read_text(encoding="utf-8")
-        html, changed, used, images, langs, warns_from_build = build(html, build_errors, args.page.absolute().parent)
+        html, changed, used, images, refs, langs, warns_from_build = build(html, build_errors, args.page.absolute().parent)
         build_warns += warns_from_build
         if changed:
             args.page.write_text(html, encoding="utf-8")
-            print(f"已合成  {args.page}  图标={len(used)} 个  图片={images} 张"
+            print(f"已合成  {args.page}  图标={len(used)} 个  图片={images} 张  代码引用={refs} 处"
                   f"{'  语法=' + ','.join(sorted(langs)) if langs else ''}"
                   f"  体积={len(html.encode('utf-8'))/1024:.0f} KB")
 

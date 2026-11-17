@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 import unittest
+from html import unescape as html_unescape
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1]
@@ -34,12 +35,14 @@ def png_size(path):
     return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
-def run_build(page, *args):
+def run_build(page, *args, cwd=None):
+    """cwd：子进程的运行目录。代码引用的相对路径按它解析；不给时沿用测试进程的目录。"""
     return subprocess.run(
         [sys.executable, str(BUILD), str(page), "--no-render", *args],
         text=True,
         capture_output=True,
         check=False,
+        cwd=cwd,
     )
 
 
@@ -1560,6 +1563,335 @@ nodes.forEach((g) => {
         self.assertEqual(self.inlined(page)[0][2], near_limit)
 
     # ── 回复能力：读者在页面上作答，再把决定和评论汇总成一段 Markdown ──
+
+    # ── 代码引用：构建时按 data-src / data-lines 从运行目录里的文件读进代码块 ──
+
+    def code_ref_page(self, block, files=()):
+        """在临时目录里写页面和源文件；block 是插进第一节的标记，files 是 (相对路径, 文本或字节) 对。
+        返回页面路径；构建时把运行目录设成页面所在的临时目录。"""
+        page = self.copy_fixture()
+        for name, data in files:
+            target = page.parent / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if isinstance(data, bytes):
+                target.write_bytes(data)
+            else:
+                target.write_text(data, encoding="utf-8", newline="")
+        self.insert(page, block, before="</section>")
+        return page
+
+    def build_ref(self, page, *args):
+        return run_build(page, *args, cwd=page.parent)
+
+    def code_refs(self, page):
+        """成品里每个 <pre> 的 (来源标注, <code> 开标签, 代码文字)。来源标注没有时是 None。"""
+        found = []
+        for pre in re.findall(r"<pre\b[^>]*>(.*?)</pre>", page.read_text(encoding="utf-8"), re.S):
+            label = re.findall(r"<span\b[^>]*\bdata-src-label\b[^>]*>(.*?)</span>", pre, re.S)
+            code = re.search(r"(<code\b[^>]*>)(.*?)</code>", pre, re.S)
+            found.append((html_unescape(label[0]) if label else None, code.group(1), html_unescape(code.group(2))))
+            self.assertLessEqual(len(label), 1, pre)
+        return found
+
+    SOURCE = "".join(f"line {n} <&>\n" for n in range(1, 51))
+
+    def test_whole_file_code_reference_is_filled_with_its_path_as_the_label(self):
+        page = self.code_ref_page('<pre><code data-src="src/app.ts"></code></pre>',
+                                  [("src/app.ts", "const a = 1;\nconst b = 2;\n")])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        [(label, tag, text)] = self.code_refs(page)
+        self.assertEqual(label, "src/app.ts")
+        self.assertEqual(text, "const a = 1;\nconst b = 2;")
+        self.assertIn('data-src-start="1"', tag)
+        self.assertIn("language-ts", tag)
+
+    def test_line_range_and_single_line_references_start_at_the_file_line_numbers(self):
+        page = self.code_ref_page('<pre><code data-src="a.py" data-lines="18-30"></code></pre>'
+                                  '<pre><code data-src="a.py" data-lines="7"></code></pre>',
+                                  [("a.py", self.SOURCE)])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("代码引用=2 处", result.stdout)
+        (label1, tag1, text1), (label2, tag2, text2) = self.code_refs(page)
+        self.assertEqual(label1, "a.py:18-30")
+        self.assertEqual(text1, "".join(f"line {n} <&>\n" for n in range(18, 31)).rstrip("\n"))
+        self.assertIn('data-src-start="18"', tag1)
+        self.assertEqual(label2, "a.py:7")
+        self.assertEqual(text2, "line 7 <&>")
+        self.assertIn('data-src-start="7"', tag2)
+
+    def test_language_is_inferred_from_the_extension_and_an_explicit_one_wins(self):
+        page = self.code_ref_page('<pre><code data-src="a.rs"></code></pre>'
+                                  '<pre><code class="language-js" data-src="b.py"></code></pre>'
+                                  '<pre><code data-src="notes.weird"></code></pre>'
+                                  '<pre><code data-src="Makefile"></code></pre>',
+                                  [("a.rs", "fn main() {}\n"), ("b.py", "print(1)\n"), ("notes.weird", "x\n"),
+                                   ("Makefile", "all:\n\ttrue\n")])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("WARN", result.stdout)
+        classes = [re.search(r'class="([^"]*)"', tag).group(1) for _, tag, _ in self.code_refs(page)]
+        self.assertEqual(classes, ["language-rs", "language-js", "language-text", "language-make"])
+        self.assertRegex(result.stdout, r"语法=[^ ]*\bjs\b")
+        self.assertRegex(result.stdout, r"语法=[^ ]*\brs\b")
+
+    def test_file_text_is_escaped_and_keeps_tabs_and_trailing_spaces_with_unix_newlines(self):
+        page = self.code_ref_page('<pre><code data-src="w.txt"></code></pre>',
+                                  [("w.txt", "<b>&amp;</b>\r\n\tindented  \r\n</code></pre><p>x\r\n\n")])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        [(_, _, text)] = self.code_refs(page)
+        self.assertEqual(text, "<b>&amp;</b>\n\tindented  \n</code></pre><p>x\n")
+
+    def code_ref_errors(self, page, *args):
+        result = self.build_ref(page, *args)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        return [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+
+    def assert_ref_rejected(self, block, files, *needles):
+        """block 构建失败，恰好一条 ERROR，点名 needles 里的每一段；代码块保持原样没有填充。"""
+        page = self.code_ref_page(block, files)
+
+        errors = self.code_ref_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        for needle in needles:
+            self.assertIn(needle, errors[0])
+        self.assertNotIn("data-src-start", page.read_text(encoding="utf-8"))
+        return errors[0]
+
+    def test_paths_outside_the_build_folder_are_rejected_and_name_the_folder(self):
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        secret = Path(outside.name) / "x.ts"
+        secret.write_text("const leak = 1;\n", encoding="utf-8")
+        for src in ("../x.ts", str(secret), "~/x.ts", secret.as_uri()):
+            with self.subTest(src=src):
+                page = self.code_ref_page(f'<pre><code data-src="{src}"></code></pre>')
+
+                errors = self.code_ref_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn(f'data-src="{src}"', errors[0])
+                self.assertIn(str(page.parent.resolve()), errors[0])
+                self.assertIn("运行构建命令的目录", errors[0])
+
+    def test_symlink_pointing_out_of_the_build_folder_is_rejected(self):
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        (Path(outside.name) / "x.ts").write_text("const leak = 1;\n", encoding="utf-8")
+        page = self.code_ref_page('<pre><code data-src="link.ts"></code></pre>')
+        (page.parent / "link.ts").symlink_to(Path(outside.name) / "x.ts")
+
+        errors = self.code_ref_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="link.ts"', errors[0])
+        self.assertIn("越出", errors[0])
+
+    def test_files_in_secret_folders_or_with_credential_names_are_rejected(self):
+        names = [f"{d}/config" for d in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker",
+                                         ".password-store", ".SSH")]
+        names += [".env", ".env.local", "deploy/.netrc", ".npmrc", ".pypirc", "id_rsa", "id_ed25519",
+                  "certs/server.pem", "tls.key", "store.p12", "store.pfx"]
+        for name in names:
+            with self.subTest(name=name):
+                self.assert_ref_rejected(f'<pre><code data-src="{name}"></code></pre>', [(name, "x = 1\n")],
+                                         f'data-src="{name}"', "密钥")
+
+    def test_public_key_and_lookalike_names_are_allowed(self):
+        page = self.code_ref_page('<pre><code data-src="id_rsa.pub"></code></pre>'
+                                  '<pre><code data-src="env.ts"></code></pre>'
+                                  '<pre><code data-src="keyboard.ts"></code></pre>',
+                                  [("id_rsa.pub", "ssh-ed25519 AAAA me\n"), ("env.ts", "x\n"), ("keyboard.ts", "y\n")])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_symlink_into_a_secret_folder_is_rejected(self):
+        page = self.code_ref_page('<pre><code data-src="innocent.ts"></code></pre>', [(".ssh/conf.ts", "x\n")])
+        (page.parent / "innocent.ts").symlink_to(page.parent / ".ssh" / "conf.ts")
+
+        errors = self.code_ref_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="innocent.ts"', errors[0])
+        self.assertIn("密钥", errors[0])
+
+    def test_referenced_lines_that_look_like_secrets_are_rejected(self):
+        tokens = ("-----BEGIN OPENSSH PRIVATE KEY-----", "AKIA" + "ABCDEFGHIJKLMNOP", "ghp_" + "a" * 36,
+                  "sk-ant-api03-abc", "https://user:hunter2@example.com/")
+        for token in tokens:
+            with self.subTest(token=token):
+                self.assert_ref_rejected('<pre><code data-src="c.ts" data-lines="2"></code></pre>',
+                                         [("c.ts", f"ok\nconst t = '{token}';\nok\n")], 'data-src="c.ts" data-lines="2"', "令牌")
+
+    def test_secret_outside_the_referenced_lines_does_not_block_the_reference(self):
+        page = self.code_ref_page('<pre><code data-src="c.ts" data-lines="1"></code></pre>',
+                                  [("c.ts", "const ok = 1;\nconst t = 'ghp_" + "a" * 36 + "';\n")])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("ghp_", page.read_text(encoding="utf-8"))
+
+    def test_binary_files_are_rejected(self):
+        for data in (b"\x89PNG\r\n\x1a\n\x00\x00", b"caf\xe9\n"):
+            with self.subTest(data=data):
+                self.assert_ref_rejected('<pre><code data-src="blob.ts"></code></pre>', [("blob.ts", data)],
+                                         'data-src="blob.ts"', "二进制")
+
+    def test_long_references_warn_over_40_lines_and_fail_over_200(self):
+        source = "".join(f"x{n}\n" for n in range(1, 302))
+        page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="1-41"></code></pre>'
+                                  '<pre><code data-src="a.ts" data-lines="1-40"></code></pre>', [("a.ts", source)])
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        self.assertEqual(len(warns), 1, warns)
+        self.assertIn('data-lines="1-41"', warns[0])
+        self.assertIn("41 行", warns[0])
+        self.assert_ref_rejected('<pre><code data-src="a.ts" data-lines="100-300"></code></pre>', [("a.ts", source)],
+                                 'data-lines="100-300"', "201 行", "200")
+        self.assert_ref_rejected('<pre><code data-src="a.ts"></code></pre>', [("a.ts", source)], "301 行")
+
+    def test_line_numbers_past_the_end_name_the_file_length(self):
+        for lines in ("51", "45-52"):
+            with self.subTest(lines=lines):
+                self.assert_ref_rejected(f'<pre><code data-src="a.ts" data-lines="{lines}"></code></pre>',
+                                         [("a.ts", self.SOURCE)], f'data-lines="{lines}"', "50 行")
+
+    def test_malformed_line_ranges_are_rejected(self):
+        for lines in ("30-18", "0", "0-3", "abc", "1-", "", "1,3"):
+            with self.subTest(lines=lines):
+                self.assert_ref_rejected(f'<pre><code data-src="a.ts" data-lines="{lines}"></code></pre>',
+                                         [("a.ts", self.SOURCE)], f'data-lines="{lines}"')
+
+    def test_combinations_that_are_not_code_references_are_rejected(self):
+        cases = (
+            ('<pre><code class="language-ts" data-lines="3"></code></pre>', "data-src"),
+            ('<pre><code data-src="a.ts">const typed = 1;</code></pre>', "手写"),
+            ('<pre><code class="language-diff" data-src="a.ts"></code></pre>', "diff"),
+            ('<p><code data-src="a.ts"></code></p>', "<pre>"),
+        )
+        for block, needle in cases:
+            with self.subTest(block=block):
+                self.assert_ref_rejected(block, [("a.ts", self.SOURCE)], needle)
+
+    def test_handwritten_code_blocks_are_left_alone(self):
+        block = ('<pre><code class="language-ts">const sketch = 1;</code></pre>'
+                 '<pre><code class="language-html">&lt;pre&gt;&lt;code data-src="src/app.ts" data-lines="18-30"&gt;'
+                 '&lt;/code&gt;&lt;/pre&gt;</code></pre>')
+        page = self.code_ref_page(block)
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(block, page.read_text(encoding="utf-8"))
+        self.assertIn("代码引用=0 处", result.stdout)
+
+    def test_rebuilding_refreshes_the_code_label_and_start_line_from_the_current_file(self):
+        page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="2-3"></code></pre>', [("a.ts", self.SOURCE)])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        (page.parent / "a.ts").write_text("changed 1\nchanged 2\nchanged 3\nchanged 4\n", encoding="utf-8")
+        html = page.read_text(encoding="utf-8")
+        page.write_text(html.replace('data-lines="2-3"', 'data-lines="3-4"'), encoding="utf-8")
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        [(label, tag, text)] = self.code_refs(page)
+        self.assertEqual((label, text), ("a.ts:3-4", "changed 3\nchanged 4"))
+        self.assertIn('data-src-start="3"', tag)
+        self.assertNotIn('data-src-start="2"', page.read_text(encoding="utf-8"))
+
+    def test_rebuilding_unchanged_code_references_is_byte_identical_with_one_label(self):
+        # 源文件里的写法在页面别处会被当成待编译的公式、模板占位符、TODO 或写死的颜色；代码引用里的不算
+        source = ("const price = $a + $b$;  // TODO: 换成 {{ total }}\n"
+                  "const style = 'color: #ff0000';  // Lorem ipsum\n"
+                  '<i data-lucide="nope"></i> <div class="tabs"></div>\n')
+        page = self.code_ref_page('<pre><code data-src="a.ts"></code></pre>', [("a.ts", source)])
+        first = self.build_ref(page)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertNotIn("WARN", first.stdout)
+        before = page.read_bytes()
+
+        for _ in range(2):
+            result = self.build_ref(page)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(page.read_bytes(), before)
+        [(label, _, text)] = self.code_refs(page)
+        self.assertEqual(label, "a.ts")
+        self.assertEqual(text, source.rstrip("\n"))
+        self.assertNotIn('data-show-me="js"', before.decode("utf-8"))
+
+    def test_repointing_a_reference_to_another_language_follows_the_new_file(self):
+        page = self.code_ref_page('<pre><code data-src="a.ts"></code></pre><pre><code class="language-js" data-src="a.ts"></code></pre>',
+                                  [("a.ts", "const a = 1;\n"), ("b.py", "a = 1\n")])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        page.write_text(page.read_text(encoding="utf-8").replace('data-src="a.ts"', 'data-src="b.py"'), encoding="utf-8")
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        (label1, tag1, text1), (label2, tag2, _) = self.code_refs(page)
+        self.assertEqual((label1, text1), ("b.py", "a = 1"))
+        self.assertIn('class="language-py"', tag1)
+        self.assertNotIn("language-ts", tag1)
+        self.assertEqual(label2, "b.py")
+        self.assertIn('class="language-js"', tag2)
+        self.assertNotIn("language-py", tag2)
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        self.assertEqual([t for _, t, _ in self.code_refs(page)], [tag1, tag2])
+
+    def test_missing_file_keeps_the_filled_code_on_rebuild_and_fails_the_first_build(self):
+        page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="2"></code></pre>', [("a.ts", self.SOURCE)])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        before = page.read_bytes()
+        (page.parent / "a.ts").unlink()
+
+        result = self.build_ref(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        warns = [line for line in result.stdout.splitlines() if line.startswith("WARN")]
+        self.assertEqual(len(warns), 1, warns)
+        self.assertIn('data-src="a.ts" data-lines="2"', warns[0])
+        self.assertIn("保留", warns[0])
+        self.assertEqual(page.read_bytes(), before)
+        self.assert_ref_rejected('<pre><code data-src="gone.ts"></code></pre>', [], 'data-src="gone.ts"', "找不到")
+
+    def test_check_only_flags_code_references_that_are_not_filled(self):
+        page = self.code_ref_page('<pre><code data-src="a.ts"></code></pre>', [("a.ts", self.SOURCE)])
+        self.assertEqual(self.build_ref(page).returncode, 0)
+        self.assertEqual(self.build_ref(page, "--check-only").returncode, 0)
+        self.insert(page, '<pre><code data-src="later.ts" data-lines="2"></code></pre>', before="</section>")
+
+        errors = self.code_ref_errors(page, "--check-only")
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="later.ts" data-lines="2"', errors[0])
+        self.assertIn("--check-only", errors[0])
+
+    def test_built_page_holds_only_the_relative_path(self):
+        page = self.code_ref_page('<pre><code data-src="src/deep/a.ts"></code></pre>', [("src/deep/a.ts", "x\n")])
+
+        self.assertEqual(self.build_ref(page).returncode, 0)
+
+        html = page.read_text(encoding="utf-8")
+        self.assertNotIn(str(page.parent), html)
+        self.assertNotIn(str(page.parent.resolve()), html)
 
     def test_reply_page_inlines_reply_runtime_once(self):
         page = self.copy_fixture("reply-decisions.html")
