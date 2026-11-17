@@ -48,13 +48,15 @@ CHART_MARK = 'data-show-me="charts"'
 CHART_JS = ASSETS / "charts.js"
 MATH_MARK = 'data-show-me="math"'
 SHELL_MARK = 'data-show-me="shell"'
+SHELL_JS = ASSETS / "shell.js"
+# 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
+LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
 REPLY_MARK = 'data-show-me="reply"'
 REPLY_JS = ASSETS / "reply.js"
 # 回复能力的开关：<body> 开标签上的 data-reply。后面不能紧跟 -，免得 data-reply-xxx 一类属性误开
 REPLY_FLAG_RE = re.compile(r"<body\b[^>]*\sdata-reply(?![\w-])", re.I)
-SHELL_JS = ASSETS / "shell.js"
-# 骨架脚本改为构建注入之前，页面带着从 shell.html 复制来的普通 <script>；按各版本骨架块的段首注释认出来，重建时删掉
-LEGACY_SHELL_RE = re.compile(r"[ \t]*<script>\s*/\* ── (?:定尺卡|滑块填充|代码工具条|主题三态切换).*?</script>[ \t]*\n?", re.S)
+# 页面带的初始状态（components.md「读者状态与初始状态」）：不执行的读者原文，自检不把它当页面的标记、脚本或样式
+REPLY_STATE_RE = re.compile(r"<script\b[^>]*\sdata-reply-state(?![\w-])[^>]*>.*?</script>", re.S | re.I)
 MATH_SCRIPT = Path(__file__).resolve().parent / "math.mjs"
 MERMAID_SCRIPT = Path(__file__).resolve().parent / "mermaid.mjs"
 # Mermaid 源码留在页面里，每次构建都从它重新编译（见 mermaid.mjs）。开标签写法不对的源码 mermaid.mjs 认不出，
@@ -370,30 +372,42 @@ def main_children(html):
 
 # ── 决定块（components.md「决定块」）────────────────────────────────────
 class DecisionBlocks(HTMLParser):
-    """收集 <fieldset class="decision"> 的标识、问题文字和选项（单选框 / 复选框，是否建议项）。"""
+    """收集 <fieldset class="decision"> 的标识、问题文字和选项（单选框 / 复选框，是否建议项，选项名）。
+    选项名的取法同 reply.js：所在 <label> 的文字去掉 <small> 说明，空白折叠；不在 label 里的取 value。"""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.blocks = []
         self.depth = 0  # 当前决定块内 fieldset 的嵌套层数，0 表示不在块里
         self.in_legend = False
+        self.label = None  # 当前 <label>：{"text": 文字, "inputs": 里面的选项}
+        self.in_small = 0
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         if tag == "fieldset":
+            classed = "decision" in (a.get("class") or "").split()
             if self.depth:
                 self.depth += 1
-            elif "decision" in (a.get("class") or "").split() or "data-decision" in a:
+            elif classed or "data-decision" in a:
                 self.depth = 1
                 self.blocks.append({"id": (a.get("data-decision") or "").strip(), "question": "", "inputs": [],
-                                    "classed": "decision" in (a.get("class") or "").split()})
+                                    "classed": classed})
             return
         if not self.depth:
             return
+        kind = (a.get("type") or "").lower()
         if tag == "legend":
             self.in_legend = True
-        elif tag == "input" and (a.get("type") or "").lower() in ("radio", "checkbox"):
-            self.blocks[-1]["inputs"].append(((a.get("type") or "").lower(), "data-suggested" in a))
+        elif tag == "label":
+            self.label = {"text": "", "inputs": []}
+        elif tag == "small":
+            self.in_small += 1
+        elif tag == "input" and kind in ("radio", "checkbox"):
+            option = {"kind": kind, "suggested": "data-suggested" in a, "title": a.get("value") or ""}
+            self.blocks[-1]["inputs"].append(option)
+            if self.label:
+                self.label["inputs"].append(option)
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
@@ -403,17 +417,27 @@ class DecisionBlocks(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "legend":
             self.in_legend = False
+        elif tag == "small" and self.in_small:
+            self.in_small -= 1
+        elif tag == "label" and self.label:
+            for option in self.label["inputs"]:
+                option["title"] = self.label["text"]
+            self.label = None
         elif tag == "fieldset" and self.depth:
             self.depth -= 1
 
     def handle_data(self, data):
-        if self.depth and self.in_legend:
+        if not self.depth:
+            return
+        if self.in_legend:
             self.blocks[-1]["question"] += data
+        if self.label and not self.in_small:
+            self.label["text"] += data
 
 
-def check_decisions(html, errors):
-    """决定块的标记契约。markup 里写死的选中状态是作者的事（应当都不选中），这里不查。"""
-    authored = SYSTEM_SCRIPT_RE.sub("", html)  # 回复运行时的源码里也写着开关，不能算页面的
+def check_decisions(authored, errors):
+    """决定块的标记契约。authored 是去掉注释和系统脚本后作者写的标记（回复运行时的源码里也写着开关，不能算页面的）。
+    markup 里写死的选中状态是作者的事（应当都不选中），这里不查。"""
     parser = DecisionBlocks()
     parser.feed(authored)
     blocks = parser.blocks
@@ -443,13 +467,17 @@ def check_decisions(html, errors):
         n = len(b["inputs"])
         if not 2 <= n <= 6:
             errors.append(f"决定块 {name} 有 {n} 个选项：要 2 到 6 个，每个选项是 <label> 里的一个单选框或复选框")
-        kinds = {kind for kind, _ in b["inputs"]}
+        kinds = {o["kind"] for o in b["inputs"]}
         if len(kinds) > 1:
             errors.append(f"决定块 {name} 混用了单选框和复选框：单选全用 type=\"radio\"，多选全用 type=\"checkbox\"")
         elif kinds == {"radio"}:
-            picked = sum(1 for _, s in b["inputs"] if s)
+            picked = sum(1 for o in b["inputs"] if o["suggested"])
             if picked != 1:
                 errors.append(f"单选决定块 {name} 的建议项有 {picked} 个：要恰好 1 个，在建议的那个选项的 <input> 上写 data-suggested")
+        titles = [re.sub(r"\s+", " ", o["title"]).strip() for o in b["inputs"]]
+        for title in dict.fromkeys(t for t in titles if titles.count(t) > 1):
+            errors.append(f"决定块 {name} 的选项名「{title}」重复：回复和读者保存的作答按选项名对应选项，"
+                          "同一个决定块里每个选项的名字（<label> 里去掉 <small> 说明后的文字）要不同")
 
 
 # ── 自造 grid 容器 ──────────────────────────────────────────────────
@@ -671,15 +699,16 @@ def runtime_scripts(html, warns):
     if hl:
         # 同步执行，位置在代码块之后 —— 首绘时已着色，不会闪一下再变色
         slot += f'<script {HL_MARK}>{hl}</script>'
-    if reply_enabled(authored):
+    if reply_enabled(re.sub(r"<!--.*?-->", "", authored, flags=re.S)):
         slot += f'<script {REPLY_MARK}>{REPLY_JS.read_text(encoding="utf-8")}</script>'
     # 骨架放最后：原先它就紧跟在这些运行时脚本之后，页面脚本与它的相对顺序因此不变
     slot += f'<script {SHELL_MARK}>{SHELL_JS.read_text(encoding="utf-8")}</script>'
     return slot, langs
 
 
-def reply_enabled(html):
-    return bool(REPLY_FLAG_RE.search(re.sub(r"<!--.*?-->", "", html, flags=re.S)))
+def reply_enabled(markup):
+    """markup 要先去掉注释：注释掉的开关不算。"""
+    return bool(REPLY_FLAG_RE.search(markup))
 
 
 def needs_basecoat(html):
@@ -761,7 +790,7 @@ def writes_dynamic_html(script):
 
 def check(html, path, allow_legacy_recipe=False):
     errors, warns = [], []
-    stripped = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    stripped = re.sub(r"<!--.*?-->", "", REPLY_STATE_RE.sub("", html), flags=re.S)
 
     # 页面必须离线可开。唯一例外是 Google Fonts —— 它取不到时会静默回退到系统字体栈，
     # 页面照常可读（骨架把它写成异步加载，首屏也不会被卡住）。别的外部资源没有这个性质。
@@ -815,7 +844,7 @@ def check(html, path, allow_legacy_recipe=False):
         errors.append("页面有 data-chart 但没有内联图表运行时：跑一遍不带 --check-only 的 build")
     if reply_enabled(authored_markup) and REPLY_MARK not in html:
         errors.append("页面开启了回复能力（data-reply）但没有内联回复运行时：跑一遍不带 --check-only 的 build")
-    check_decisions(stripped, errors)
+    check_decisions(authored_markup, errors)
     if needs_basecoat(authored_markup) and JS_MARK not in html:
         errors.append("页面用了需要 JS 的组件（tabs / dropdown-menu 等）但没有内联 basecoat JS：跑一遍不带 --check-only 的 build")
     if "data-copy-md" not in html:

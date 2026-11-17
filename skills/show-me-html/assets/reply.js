@@ -153,7 +153,7 @@
       return;
     var title = txt(h.textContent);
     if (!title) return;
-    /* 同名的节各自一条：键加序号，回复里仍写原标题 */
+    /* 同名的节各自一条：从第二个起加序号。回复里写的节标题就是这个键，照抄回复写的初始状态能回到原来那一节 */
     var key = title;
     for (var n = 2; keys[key]; n++) key = title + "（" + n + "）";
     keys[key] = true;
@@ -187,7 +187,6 @@
     h.after(box);
     var s = {
       key: key,
-      title: title,
       area: area,
       toggle: toggle,
       panel: panel,
@@ -231,7 +230,7 @@
       .map(function (l) {
         return l.trim() ? "  > " + l.replace(/\s+$/, "") : "  >";
       });
-    return "- 「" + s.title + "」\n" + quoted.join("\n");
+    return "- 「" + s.key + "」\n" + quoted.join("\n");
   }
 
   function toReply() {

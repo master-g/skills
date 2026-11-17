@@ -1197,6 +1197,20 @@ nodes.forEach((g) => {
         self.assertNotIn("上线前提", reply)
 
     @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
+    def test_same_titled_sections_keep_their_comments_apart(self):
+        """同名的节从第二个起带序号：回复里的节标题就是状态的键，照抄回复写初始状态，评论回到原来那一节。"""
+        state = {"comments": {"方案对比": "第一节的意见", "方案对比（2）": "第二节的意见"}}
+        page = self.copy_fixture("reply-decisions.html")
+        page.write_text(page.read_text(encoding="utf-8").replace("<h2>上线前提</h2>", "<h2>方案对比</h2>"), encoding="utf-8")
+        self.insert(page, '<script type="application/json" data-reply-state>'
+                    + json.dumps(state, ensure_ascii=False) + "</script>\n", before="<!--SHOW-ME:JS-->")
+
+        reply = (self.snap_one(page) / "reply.md").read_text(encoding="utf-8")
+
+        self.assertTrue(reply.endswith(
+            "\n## 评论\n\n- 「方案对比」\n  > 第一节的意见\n- 「方案对比（2）」\n  > 第二节的意见\n"), reply)
+
+    @unittest.skipUnless(RENDERER, "需要本机 Chrome/Chromium 和 node")
     def test_markdown_export_lists_decision_options_without_reader_answers(self):
         """「复制为 Markdown」导出的是页面内容：决定块出问题和选项、标出建议项；读者的选择、评论入口和回复控件都不进导出。"""
         state = {"comments": {"方案对比": "读者原文不该进导出"}}
@@ -1213,6 +1227,19 @@ nodes.forEach((g) => {
         self.assertIn("**哪些前提要在上线前满足？**（多选）\n\n- 压测报告（建议）\n- 灰度一周\n- 回滚演练（建议）\n", md)
         for leaked in ("读者原文", "评论", "清空作答", "复制回复", "已选", "[x]"):
             self.assertNotIn(leaked, md)
+
+    def test_reader_text_in_initial_state_is_not_checked_as_page_code(self):
+        """初始状态数据是不执行的读者原文：评论里写到脚本或颜色，不算页面自己的脚本和写死颜色。"""
+        state = {"comments": {"方案对比": "示例里的 el.innerHTML = x 要改掉；标题色 color: #ff0000 太刺眼"}}
+        page = self.copy_fixture("reply-decisions.html")
+        self.insert(page, '<script type="application/json" data-reply-state>'
+                    + json.dumps(state, ensure_ascii=False) + "</script>\n", before="<!--SHOW-ME:JS-->")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("innerHTML", result.stdout)
+        self.assertNotIn("写死了", result.stdout)
 
     def test_decision_block_without_reply_flag_fails(self):
         page = self.copy_fixture("reply-decisions.html")
@@ -1250,6 +1277,8 @@ nodes.forEach((g) => {
              "单选决定块 queue 的建议项有 0 个：要恰好 1 个"),
             ('<input type="radio" />', '<input type="radio" data-suggested />', 1,
              "单选决定块 queue 的建议项有 2 个：要恰好 1 个"),
+            # 选项名不含 <small> 说明：带说明的「方案甲」与不带说明的「方案甲」同名
+            ("方案丙</label>", "方案甲</label>", 1, "决定块 queue 的选项名「方案甲」重复"),
         )
         for old, new, count, message in cases:
             with self.subTest(message=message):

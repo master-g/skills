@@ -35,7 +35,7 @@
 
 - 节的定义：`reply.js` 的评论入口、`shell.js` 的目录与 Markdown 导出共用一张组件容器排除表（`.card, .fig-box, …`），改一处三处一起改。
 - 回复格式：`components.md`「回复」是契约，`reply.js` 的 `showMeReply` 实现它，`tests/test_build.py` 里 `reply_md` 系列用例逐字断言；SKILL.md「收到页面回复怎么处理」按它的开头和分节识别回复。改格式四处同步。
-- 选项名：`reply.js`（回复、状态）和 `shell.js` 的导出器各取一次，规则都是 label 里去掉 `<input>`、`<small>` 和「建议」徽章后的文字。状态按选项名和节标题存，改了取名规则，读者已存的作答和页面带的初始状态都会对不上。
+- 选项名：`reply.js`（回复、状态）、`shell.js` 的导出器和 `build.py` 的选项重名检查各取一次，规则都是 label 里去掉 `<input>`、`<small>` 和「建议」徽章后的文字。状态按选项名和节标题存（同名的节从第二个起带「（2）」序号，回复里写的也是它），改了取名规则，读者已存的作答和页面带的初始状态都会对不上。
 - 标记契约：`build.py` 的 `check_decisions` 与 `components.md`「决定块」的 ERROR 清单一一对应。运行时的系统脚本标记 `data-show-me="reply"` 登记在 `SYSTEM_SCRIPT_RE`，开关只认 `<body>` 开标签上的 `data-reply`。
 
 改这几处后跑 `python3 -m unittest skills.show-me-html.tests.test_build -k reply -k decision`，再用一个开启回复能力的页面跑 `--snap` 读 `reply.md`、`export.md` 与切片，`probe_page.mjs` 点一遍控件，并按 `interactions.md`「页面回复」在浏览器里核对存储、清空、键盘和打印。
