@@ -14,15 +14,19 @@
   4. 按页面实际出现的 language-* 内联语法高亮：只带上用到的语言。
   5. 注入骨架行为脚本 assets/shell.js（主题切换、目录、Markdown 导出等）。每次构建重算，旧页面重建也拿到最新骨架。
   6. <body> 带 data-reply 时内联回复运行时 assets/reply.js（决定块作答、按节评论、汇总回复）。
+  7. 把作者 <img src> 指向的本地图片读进来写成 data URI，只留文件名（data-img-name）。
 
 对已合成的文件重复运行是安全的：占位符已消失时只跑自检。
 """
 
 import argparse
+import base64
 import re
 import sys
 from pathlib import Path
+from html import escape
 from html.parser import HTMLParser
+from urllib.parse import unquote, urlsplit
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 VENDOR = ASSETS / "vendor"
@@ -515,6 +519,191 @@ def check_grid_tracks(html, warns):
                 "带 minmax(min(100%,…),…) 的写法（anti-patterns.md #3）")
 
 
+# ── 本地图片（components.md「图片」）──────────────────────────────────────
+# 作者写 <img src="路径" alt="…">，构建时读进文件写成 data URI，成品仍是一个文件。
+# 成品里只留文件名（data-img-name），不留目录：转发时不泄露本机路径。
+IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+               ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml"}
+
+
+# 存放密钥和登录信息的目录：路径（解析符号链接前后任一）经过它们时不内联，免得写错的路径把私密文件带进要转发的页面
+SECRET_DIRS = (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store")
+# SVG 是文本，另扫一遍：私钥头、常见令牌前缀、带密码的 URL、写成字面量的密码或密钥。只有最后一类不分大小写，
+# 其余按原样匹配，免得 SVG 里内嵌的 base64 偶然命中
+SECRET_TEXT_RE = re.compile(
+    r"://[^\s:@/\"'`$<>{}]*:[^\s@/\"'`$<>{}]+@|sk-ant-|sk-[A-Za-z0-9]{32,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY"
+    r"|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[abeprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{30,}"
+    r"|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\."
+    r"|(?i:(?:password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token)[\"']?\s*[:=]\s*[\"'][^\"'\s$<{]{12,}[\"'])")
+# SVG 开头允许 BOM、空白、XML 声明、注释和 DOCTYPE，再是 <svg 根元素。占有量词：不回溯，注释多的非 SVG 文件也不卡
+SVG_START_RE = re.compile(r"\ufeff?(?:\s|<\?xml.*?\?>|<!--.*?-->|<!DOCTYPE[^\[>]*(?:\[.*?\]\s*)?>)*+<svg(?=[\s>/])", re.S | re.I)
+IMAGE_MAGIC = {
+    "image/png": lambda b: b.startswith(b"\x89PNG\r\n\x1a\n"),
+    "image/jpeg": lambda b: b.startswith(b"\xff\xd8\xff"),
+    "image/gif": lambda b: b[:6] in (b"GIF87a", b"GIF89a"),
+    "image/webp": lambda b: b[:4] == b"RIFF" and b[8:12] == b"WEBP",
+    "image/avif": lambda b: b[4:12] in (b"ftypavif", b"ftypavis"),
+    "image/svg+xml": lambda b: bool(SVG_START_RE.match(b[:65536].decode("utf-8", "replace"))),
+}
+
+
+def is_local_ref(ref):
+    """指向本机文件的引用：不是空串、页内片段、data:、http(s) 或协议相对地址等带协议的地址；file: 算本地。"""
+    ref = ref.strip()
+    if not ref or ref.startswith(("#", "//")):
+        return False
+    scheme = re.match(r"([a-z][a-z0-9+.-]+):", ref, re.I)  # 两个字母起：Windows 盘符不算协议
+    return not scheme or scheme.group(1).lower() == "file"
+
+
+class StartTags(HTMLParser):
+    """作者标记里每个开标签的 (起始偏移, 原文, 标签名, 属性)，以及每个 <style> 的内容。
+    注释和 <script> 里的不算。"""
+
+    def __init__(self, html):
+        super().__init__(convert_charrefs=True)
+        self.lines = [0] + [m.end() for m in re.finditer("\n", html)]
+        self.tags, self.styles = [], []
+        self.in_style = False
+        self.feed(html)
+        self.close()
+
+    def handle_starttag(self, tag, attrs):
+        line, col = self.getpos()
+        self.tags.append((self.lines[line - 1] + col, self.get_starttag_text(), tag, dict(attrs)))
+        self.in_style = tag == "style"
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        self.in_style = False
+
+    def handle_endtag(self, tag):
+        self.in_style = False
+
+    def handle_data(self, data):
+        if self.in_style:
+            self.styles.append(data)
+
+
+# 开标签里的一个属性；从标签名后逐个匹配，引号里的内容整体跳过
+TAG_ATTR_RE = re.compile(r"""(\s+)([^\s"'>/=]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?""")
+
+
+def with_inlined_src(tag, name, uri):
+    """把 <img> 开标签的 src 换成 data URI，前面写 data-img-name；其余属性原样保留。"""
+    parts, pos = [tag[:4]], 4
+    while m := TAG_ATTR_RE.match(tag, pos):
+        key = m.group(2).lower()
+        if key == "src":
+            parts.append(f'{m.group(1)}data-img-name="{escape(name)}" src="{uri}"')
+        elif key != "data-img-name":
+            parts.append(m.group(0))
+        pos = m.end()
+    parts.append(tag[pos:])
+    return "".join(parts)
+
+
+def resolve_image(ref, base_dir):
+    """把 <img src> 的本地引用读成 data URI；有问题时抛 ValueError，消息说明原因。"""
+    if ref.lower().startswith("file:"):
+        path = Path(unquote(urlsplit(ref).path))
+    elif ref.startswith("~/"):
+        path = Path.home() / unquote(ref[2:])
+    else:
+        path = base_dir / unquote(ref)
+    mime = IMAGE_TYPES.get(path.suffix.lower())
+    if not mime:
+        raise ValueError(f"图片 {ref} 的扩展名不是受支持的图片格式：支持 {' '.join(IMAGE_TYPES)}")
+    try:
+        real = path.resolve(strict=True)
+    except OSError:
+        relative = not ref.startswith(("~/", "file:", "/"))
+        where = f"（相对路径按页面所在目录 {base_dir} 解析）" if relative else f"（解析为 {path}）"
+        raise ValueError(f"找不到图片 {ref}{where}：确认文件存在，或改写成绝对路径") from None
+    if any(part in SECRET_DIRS for p in (path, real) for part in p.parts):
+        raise ValueError(f"图片 {ref} 位于存放密钥或登录信息的目录（{' '.join(SECRET_DIRS)}），不内联：先把图片复制到别处")
+    if not real.is_file():
+        raise ValueError(f"图片 {ref} 不是文件")
+    size = real.stat().st_size
+    if size > IMAGE_MAX_BYTES:
+        raise ValueError(f"图片 {ref} 有 {size / 1048576:.1f} MB，单张上限 {IMAGE_MAX_BYTES // 1048576} MB：先裁剪或压缩再放")
+    data = real.read_bytes()
+    if not IMAGE_MAGIC[mime](data):
+        kind = "SVG" if mime == "image/svg+xml" else mime.split("/")[1].upper()
+        raise ValueError(f"图片 {ref} 的扩展名是 {path.suffix}，内容不是 {kind}：改名的其他文件不会被内联，换成真正的图片文件")
+    if mime == "image/svg+xml" and SECRET_TEXT_RE.search(data.decode("utf-8", "replace")):
+        raise ValueError(f"图片 {ref} 看起来含有密钥、令牌或密码，不内联：删掉这段文本再放")
+    return f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}", path.name
+
+
+def inline_images(html, base_dir, errors):
+    """把作者标记里 <img src> 指向的本地图片内联。已是 data: 的原样保留（重复构建不变）。返回 (新页面, 内联张数)。"""
+    blank = lambda m: " " * len(m.group(0))  # 等长替换：解析出的偏移在原文上照样可用
+    authored = SYSTEM_STYLE_RE.sub(blank, SYSTEM_SCRIPT_RE.sub(blank, html))
+    out, last, count = [], 0, 0
+    for start, text, tag, attrs in StartTags(authored).tags:
+        ref = attrs.get("src")
+        if tag != "img" or ref is None or not is_local_ref(ref):
+            continue
+        try:
+            uri, name = resolve_image(ref.strip(), base_dir)
+        except ValueError as e:
+            errors.append(str(e))
+            continue
+        out += [html[last:start], with_inlined_src(text, name, uri)]
+        last = start + len(text)
+        count += 1
+    out.append(html[last:])
+    return "".join(out), count
+
+
+def image_label(attrs):
+    name = attrs.get("data-img-name")
+    src = (attrs.get("src") or "").strip()
+    return name or (src[:60] + "…" if len(src) > 60 else src) or "<img>"
+
+
+# 只有 <img src> 的本地图片会被内联；这些属性指向本地文件时成品转发后就失效
+LOCAL_REF_ATTRS = {"img": ("srcset",), "source": ("src", "srcset"), "video": ("src",), "audio": ("src",),
+                   "image": ("href", "xlink:href")}
+CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))""", re.I)
+
+
+def srcset_urls(value):
+    """srcset 里每个候选的地址。data: 地址自身带逗号，按「逗号后的空白」切而不是按逗号切。"""
+    return [m.group(1) for m in re.finditer(r"(?:^|,)\s*([^\s,]\S*)", value.strip())]
+
+
+def css_urls(text):
+    return [next(g for g in m.groups() if g is not None) for m in CSS_URL_RE.finditer(text)] if "url(" in text.lower() else []
+
+
+def check_images(authored, errors, just_built):
+    """authored 是去掉注释、系统脚本和系统样式后作者写的标记。
+    just_built：刚跑过合成，没能内联的本地图片已在合成阶段逐张报过原因。"""
+    parsed = StartTags(authored)
+    local = []
+    for _start, _text, tag, attrs in parsed.tags:
+        if tag == "img":
+            src = attrs.get("src")
+            if not just_built and src is not None and is_local_ref(src):
+                errors.append(f"图片 {src.strip()} 没有内联：跑一遍不带 --check-only 的 build，把本地图片写进页面")
+            if "alt" not in attrs:
+                errors.append(f"图片 {image_label(attrs)} 缺少 alt：写一句说明图上是什么，导出和读屏都用它；纯装饰图写 alt=\"\"")
+        for key in LOCAL_REF_ATTRS.get(tag, ()):
+            value = attrs.get(key) or ""
+            refs = srcset_urls(value) if key == "srcset" else [value]
+            local += [f"<{tag} {key}> 的 {ref}" for ref in refs if is_local_ref(ref)]
+        for value in attrs.values():
+            local += [f"<{tag}> 属性里 url() 的 {ref}" for ref in css_urls(value or "") if is_local_ref(ref)]
+    for css in parsed.styles:
+        local += [f"<style> 里 url() 的 {ref}" for ref in css_urls(css) if is_local_ref(ref)]
+    for where in dict.fromkeys(local):
+        errors.append(f"本地资源引用 {where[:120]} 不会内联，转发后失效：只有 <img src> 的本地图片会在构建时写进页面，"
+                      "图片改用 <img src=\"路径\" alt=\"说明\">；视频、音频和样式背景图不支持本地文件")
+
+
 def fail(msg):
     print(f"ERROR  {msg}")
     return 1
@@ -719,7 +908,7 @@ def needs_basecoat(html):
     return any(re.search(rf'class="[^"]*\b{c}\b', html) for c in JS_COMPONENTS)
 
 
-def build(html, errors):
+def build(html, errors, base_dir):
     changed = False
 
     css_tag = f'<style {CSS_MARK}>{read_css()}</style>'
@@ -744,6 +933,9 @@ def build(html, errors):
 
     html, used = inline_icons(html, errors)
     if used:
+        changed = True
+    html, images = inline_images(html, base_dir, errors)
+    if images:
         changed = True
 
     warns = []
@@ -792,8 +984,30 @@ def writes_dynamic_html(script):
     return False
 
 
-def check(html, path, allow_legacy_recipe=False):
+# 属性值或 url() 里一个 data: 地址的开头（到逗号为止）
+DATA_URI_START_RE = re.compile(r"""(?:=|url\()\s*(["']?)\s*(data:[^,"'\s)>]*,)""", re.I)
+
+
+def without_data(html):
+    """data: 地址的数据换成一个占位字符，前缀（MIME 类型）保留。自检不读图片数据：
+    几 MB 的 base64 不拖慢逐条正则，未编码的 SVG 里写到的颜色、脚本也不算页面自己的。
+    数据到收尾的引号为止（没有引号时到空白或括号）；base64 数据不含空白，遇到空白也停，srcset 后面的候选照常检查。"""
+    out, pos = [], 0
+    while m := DATA_URI_START_RE.search(html, pos):
+        quote, base64_data = m.group(1), m.group(2).lower().endswith(";base64,")
+        stop = f"[{quote}\\s]" if quote and base64_data else quote or r"[\s\"'>)]"
+        end = re.compile(stop).search(html, m.end())
+        end = end.start() if end else len(html)
+        out += [html[pos:m.end()], "…"]
+        pos = end
+    out.append(html[pos:])
+    return "".join(out)
+
+
+def check(html, path, allow_legacy_recipe=False, just_built=False):
     errors, warns = [], []
+    size = len(html.encode("utf-8"))
+    html = without_data(html)
     without_state = REPLY_STATE_OR_SYSTEM_RE.sub(lambda m: m.group(1) or "", html)
     stripped = re.sub(r"<!--.*?-->", "", without_state, flags=re.S)
 
@@ -850,6 +1064,7 @@ def check(html, path, allow_legacy_recipe=False):
     if reply_enabled(authored_markup) and REPLY_MARK not in html:
         errors.append("页面开启了回复能力（data-reply）但没有内联回复运行时：跑一遍不带 --check-only 的 build")
     check_decisions(authored_markup, errors)
+    check_images(SYSTEM_STYLE_RE.sub("", authored_markup), errors, just_built)
     if needs_basecoat(authored_markup) and JS_MARK not in html:
         errors.append("页面用了需要 JS 的组件（tabs / dropdown-menu 等）但没有内联 basecoat JS：跑一遍不带 --check-only 的 build")
     if "data-copy-md" not in html:
@@ -964,7 +1179,6 @@ def check(html, path, allow_legacy_recipe=False):
     check_svgs(authored, warns, errors)
     check_grid_tracks(stripped, warns)
 
-    size = len(html.encode("utf-8"))
     # 这些页面主要走 IM / 邮件附件转发，分级预警让作者在发送前知情。
     if size > 3_000_000:
         warns.append(f"页面 {size/1e6:.1f} MB，过大：检查是否内联了大图/长代码")
@@ -1517,7 +1731,7 @@ def main():
             html = args.page.read_text(encoding="utf-8")
         if compile_mermaid(args.page, build_errors, build_warns):
             html = args.page.read_text(encoding="utf-8")
-        html, changed, used, langs, warns_from_build = build(html, build_errors)
+        html, changed, used, langs, warns_from_build = build(html, build_errors, args.page.absolute().parent)
         build_warns += warns_from_build
         if changed:
             args.page.write_text(html, encoding="utf-8")
@@ -1525,7 +1739,7 @@ def main():
                   f"{'  语法=' + ','.join(sorted(langs)) if langs else ''}"
                   f"  体积={len(html.encode('utf-8'))/1024:.0f} KB")
 
-    errors, warns = check(html, args.page, allow_legacy_recipe=args.check_only)
+    errors, warns = check(html, args.page, allow_legacy_recipe=args.check_only, just_built=not args.check_only)
     errors = build_errors + errors
     warns = build_warns + warns
 

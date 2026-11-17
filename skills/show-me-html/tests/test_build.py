@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import os
@@ -1085,6 +1086,308 @@ nodes.forEach((g) => {
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertLess(time.monotonic() - started, 20)
+
+    # ── 本地图片：构建时内联成 data URI，未内联的本地资源引用报 ERROR ──
+
+    PNG = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + b"\x00" * 17
+
+    def image_page(self, img, files=()):
+        """在临时目录里写页面和图片文件；img 是插进第一节的标记，files 是 (相对路径, 字节) 对。"""
+        page = self.copy_fixture()
+        for name, data in files:
+            target = page.parent / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        self.insert(page, img, before="</section>")
+        return page
+
+    def inlined(self, page):
+        """成品里每张 <img> 的 (data-img-name, MIME, 解码后的字节)。"""
+        html = page.read_text(encoding="utf-8")
+        found = []
+        for tag in re.findall(r"<img\b[^>]*>", html):
+            name = re.search(r'\sdata-img-name="([^"]*)"', tag)
+            src = re.search(r'\ssrc="data:([^;,]+);base64,([^"]*)"', tag)
+            if src:
+                found.append((name and name.group(1), src.group(1), base64.b64decode(src.group(2))))
+        return found
+
+    def test_relative_image_is_inlined_with_its_file_name_only(self):
+        page = self.image_page('<img src="shots/a.png" alt="截图">', [("shots/a.png", self.PNG)])
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.inlined(page), [("a.png", "image/png", self.PNG)])
+        html = page.read_text(encoding="utf-8")
+        self.assertNotIn("shots/", html)
+        self.assertNotIn(str(page.parent), html)
+
+    def test_absolute_file_url_and_home_paths_are_inlined(self):
+        elsewhere = tempfile.TemporaryDirectory()
+        self.addCleanup(elsewhere.cleanup)
+        shot = Path(elsewhere.name) / "my shot.png"
+        shot.write_bytes(self.PNG)
+        cases = (str(shot), shot.as_uri(), "~/my%20shot.png")
+        for src in cases:
+            with self.subTest(src=src):
+                page = self.image_page(f'<img src="{src}" alt="截图">')
+
+                result = subprocess.run([sys.executable, str(BUILD), str(page), "--no-render"], text=True,
+                                        capture_output=True, env={**os.environ, "HOME": elsewhere.name})
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(self.inlined(page), [("my shot.png", "image/png", self.PNG)])
+                self.assertNotIn(elsewhere.name, page.read_text(encoding="utf-8"))
+
+    def image_errors(self, page, *args):
+        result = run_build(page, *args)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        return [line for line in result.stdout.splitlines() if line.startswith("ERROR  ")]
+
+    def test_missing_image_names_the_path_and_the_folder_it_was_read_from(self):
+        page = self.image_page('<img src="shots/gone.png" alt="截图">')
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("shots/gone.png", errors[0])
+        self.assertIn(str(page.parent), errors[0])
+
+    def test_unsupported_extension_lists_the_supported_formats(self):
+        page = self.image_page('<img src="a.bmp" alt="截图">', [("a.bmp", b"BM" + b"\x00" * 40)])
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("a.bmp", errors[0])
+        for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg"):
+            self.assertIn(ext, errors[0])
+
+    SVG = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4"/></svg>'
+    FORMATS = (
+        ("a.png", "image/png", PNG),
+        ("a.jpg", "image/jpeg", b"\xff\xd8\xff\xe0" + b"\x00" * 16),
+        ("a.jpeg", "image/jpeg", b"\xff\xd8\xff\xdb" + b"\x00" * 16),
+        ("a.gif", "image/gif", b"GIF89a" + b"\x00" * 16),
+        ("b.gif", "image/gif", b"GIF87a" + b"\x00" * 16),
+        ("a.webp", "image/webp", b"RIFF\x10\x00\x00\x00WEBPVP8 " + b"\x00" * 8),
+        ("a.avif", "image/avif", b"\x00\x00\x00\x1cftypavif" + b"\x00" * 16),
+        ("a.svg", "image/svg+xml", SVG),
+        ("b.svg", "image/svg+xml", b'\xef\xbb\xbf<?xml version="1.0"?>\n<!-- made by hand -->\n'
+                                   b'<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "x.dtd">\n' + SVG),
+    )
+
+    def test_each_supported_format_passes_its_content_check(self):
+        for name, mime, data in self.FORMATS:
+            with self.subTest(name=name):
+                page = self.image_page(f'<img src="{name}" alt="图">', [(name, data)])
+
+                result = run_build(page)
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(self.inlined(page), [(name, mime, data)])
+
+    def test_content_that_is_not_the_claimed_format_fails(self):
+        cases = (("a.png", b"\xff\xd8\xff\xe0" + b"\x00" * 16), ("a.jpg", self.PNG), ("a.gif", b"GIF90a"),
+                 ("a.webp", b"RIFF\x10\x00\x00\x00WAVEfmt "), ("a.avif", b"\x00\x00\x00\x1cftypmp42"),
+                 ("a.svg", b"<html><svg></svg></html>"), ("b.png", b"not an image at all"))
+        for name, data in cases:
+            with self.subTest(name=name):
+                page = self.image_page(f'<img src="{name}" alt="图">', [(name, data)])
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn(name, errors[0])
+                self.assertIn("内容不是", errors[0])
+
+    def test_image_over_the_size_limit_reports_its_size_and_the_limit(self):
+        big = self.PNG + b"\x00" * (6 * 1024 * 1024)
+        page = self.image_page('<img src="big.png" alt="大图">', [("big.png", big)])
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("big.png", errors[0])
+        self.assertIn("6.0 MB", errors[0])
+        self.assertIn("上限 5 MB", errors[0])
+
+    def test_directory_named_like_an_image_fails(self):
+        page = self.image_page('<img src="shots.png" alt="图">')
+        (page.parent / "shots.png").mkdir()
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("shots.png", errors[0])
+        self.assertIn("不是文件", errors[0])
+
+    def test_images_in_secret_folders_are_not_inlined(self):
+        for folder in (".git", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".docker", ".password-store"):
+            with self.subTest(folder=folder):
+                page = self.image_page(f'<img src="{folder}/a.png" alt="图">', [(f"{folder}/a.png", self.PNG)])
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn(f"{folder}/a.png", errors[0])
+                self.assertIn("密钥", errors[0])
+                self.assertNotIn("data:image/png", page.read_text(encoding="utf-8"))
+
+    def test_symlink_into_a_secret_folder_is_not_inlined(self):
+        page = self.image_page('<img src="innocent.png" alt="图">', [(".ssh/id.png", self.PNG)])
+        (page.parent / "innocent.png").symlink_to(page.parent / ".ssh" / "id.png")
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("innocent.png", errors[0])
+        self.assertIn("密钥", errors[0])
+
+    def test_svg_that_looks_like_it_holds_a_secret_is_not_inlined(self):
+        tokens = ("-----BEGIN OPENSSH PRIVATE KEY-----", "AKIA" + "ABCDEFGHIJKLMNOP", "ghp_" + "a" * 36,
+                  "sk-ant-api03-abc", "https://user:hunter2@example.com/", 'api_key="abcdefghijklmnop"')
+        for token in tokens:
+            with self.subTest(token=token):
+                svg = self.SVG.replace(b"</svg>", f"<text>{token}</text></svg>".encode())
+                page = self.image_page('<img src="a.svg" alt="图">', [("a.svg", svg)])
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("a.svg", errors[0])
+                self.assertIn("令牌", errors[0])
+
+    def test_rebuilding_a_page_with_inlined_images_is_byte_identical(self):
+        page = self.image_page('<figure>\n  <img\n    src="a.png"\n    alt="截图"\n  />\n  <figcaption>图注</figcaption>\n</figure>',
+                               [("a.png", self.PNG)])
+        self.assertEqual(run_build(page).returncode, 0)
+        before = page.read_bytes()
+        (page.parent / "a.png").unlink()  # 内联后原文件不再需要
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(page.read_bytes(), before)
+        self.assertEqual(self.inlined(page), [("a.png", "image/png", self.PNG)])
+
+    def test_existing_data_uri_images_are_kept_verbatim(self):
+        img = ('<img alt="手工内联" data-img-name="old.png" src="data:image/png;base64,'
+               + base64.b64encode(self.PNG).decode() + '"><img alt="" src="data:image/svg+xml,%3Csvg%3E%3C/svg%3E">')
+        page = self.image_page(img)
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(img, page.read_text(encoding="utf-8"))
+
+    def test_pointing_src_back_at_a_file_replaces_the_image(self):
+        page = self.image_page('<img src="a.png" alt="图">', [("a.png", self.PNG), ("b.gif", b"GIF89a" + b"\x00" * 16)])
+        self.assertEqual(run_build(page).returncode, 0)
+        html = page.read_text(encoding="utf-8")
+        page.write_text(re.sub(r'src="data:[^"]*"', 'src="b.gif"', html), encoding="utf-8")
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.inlined(page), [("b.gif", "image/gif", b"GIF89a" + b"\x00" * 16)])
+        self.assertEqual(page.read_text(encoding="utf-8").count("data-img-name"), 1)
+
+    def test_image_without_alt_fails_and_empty_alt_passes(self):
+        data = "data:image/png;base64," + base64.b64encode(self.PNG).decode()
+        page = self.image_page(f'<img src="{data}" alt=""><img src="a.png">', [("a.png", self.PNG)])
+
+        errors = self.image_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("alt", errors[0])
+        self.assertIn("a.png", errors[0])
+        self.assertEqual(len(self.image_errors(page, "--check-only")), 1)
+        page.write_text(page.read_text(encoding="utf-8").replace('data-img-name="a.png"', 'data-img-name="a.png" alt="图"'),
+                        encoding="utf-8")
+        self.assertEqual(run_build(page).returncode, 0)
+
+    def test_check_only_flags_local_images_that_are_not_inlined(self):
+        page = self.image_page('<img src="a.png" alt="图"><img src="gone.png" alt="图">', [("a.png", self.PNG)])
+        self.assertEqual(run_build(page).returncode, 1)  # gone.png 找不到；a.png 照常内联
+        page.write_text(page.read_text(encoding="utf-8").replace('src="gone.png"', 'src="later.png"'), encoding="utf-8")
+
+        errors = self.image_errors(page, "--check-only")
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("later.png", errors[0])
+        self.assertIn("没有内联", errors[0])
+
+    def test_other_local_resource_references_fail_and_point_at_img_src(self):
+        png = "data:image/png;base64," + base64.b64encode(self.PNG).decode()
+        cases = (
+            f'<img src="{png}" alt="图" srcset="{png} 1x, a@2x.png 2x">',
+            '<picture><source srcset="a.webp" type="image/webp"><img src="https://example.com/a.png" alt="图"></picture>',
+            '<video src="clip.mp4"></video>',
+            '<audio controls><source src="~/a.mp3"></audio>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><image href="a.png" width="4" height="4"/></svg>',
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><image xlink:href="file:///tmp/a.png"/></svg>',
+            '<style>.hero { background: url("bg.png") }</style>',
+            '<div style="background-image: url(/tmp/bg.png)">x</div>',
+        )
+        for snippet in cases:
+            with self.subTest(snippet=snippet):
+                page = self.image_page(snippet)
+
+                errors = [e for e in self.image_errors(page) if "外部资源" not in e]
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("<img src>", errors[0])
+
+    def test_fragment_and_data_references_are_not_local_resources(self):
+        png = "data:image/png;base64," + base64.b64encode(self.PNG).decode()
+        snippet = (
+            '<svg viewBox="0 0 4 4" role="img" aria-label="图"><defs><linearGradient id="g"><stop offset="0"/>'
+            '</linearGradient><clipPath id="c"><rect width="4" height="4"/></clipPath></defs>'
+            "<rect width=\"4\" height=\"4\" fill=\"url(#g)\" clip-path=\"url( '#c' )\"/>"
+            f'<image href="{png}" width="4" height="4"/><use href="#c"/></svg>'
+            f'<style>.hero {{ background: url("{png}") }} .mask {{ mask: url(#c) }}</style>'
+            f'<img src="{png}" alt="图" srcset="{png} 1x, {png} 2x">'
+            "<p>CSS 写法示例：<code>background: url(bg.png)</code></p>"
+        )
+        page = self.image_page(snippet)
+
+        result = run_build(page)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_remote_images_still_fail_as_external_resources(self):
+        for src in ("https://example.com/a.png", "//example.com/a.png"):
+            with self.subTest(src=src):
+                page = self.image_page(f'<img src="{src}" alt="图">')
+
+                errors = self.image_errors(page)
+
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("外部资源引用", errors[0])
+                self.assertNotIn("data-img-name", page.read_text(encoding="utf-8"))
+
+    def test_page_with_a_large_image_checks_fast_without_false_alarms(self):
+        """图片数据不算页面自己的样式和脚本：未编码的 SVG data URI 里写到颜色和 innerHTML 也不报。"""
+        near_limit = self.PNG + os.urandom(5 * 1024 * 1024 - 64 * 1024)
+        svg = ("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><script>el.innerHTML = x + y</script>"
+               "<rect style='fill: #ff0000' width='4' height='4'/></svg>")
+        page = self.image_page(f'<figure><img src="shot.png" alt="截图"></figure><p><img src="{svg}" alt="示意"></p>',
+                               [("shot.png", near_limit)])
+
+        started = time.monotonic()
+        first = run_build(page)
+        second = run_build(page)
+        elapsed = time.monotonic() - started
+
+        for result in (first, second):
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("写死了", result.stdout)
+            self.assertNotIn("innerHTML", result.stdout)
+            self.assertNotIn("SVG 图缺少", result.stdout)
+        self.assertLess(elapsed, 20)
+        self.assertEqual(self.inlined(page)[0][2], near_limit)
 
     # ── 回复能力：读者在页面上作答，再把决定和评论汇总成一段 Markdown ──
 
