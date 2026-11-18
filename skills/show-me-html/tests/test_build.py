@@ -1783,6 +1783,28 @@ nodes.forEach((g) => {
                 self.assert_ref_rejected('<pre><code data-src="blob.ts"></code></pre>', [("blob.ts", data)],
                                          'data-src="blob.ts"', "二进制")
 
+    def test_unreadable_file_fails_with_the_reason(self):
+        page = self.code_ref_page('<pre><code data-src="locked.ts"></code></pre>', [("locked.ts", "const a = 1;\n")])
+        locked = page.parent / "locked.ts"
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+
+        errors = self.code_ref_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="locked.ts"', errors[0])
+        self.assertIn("读不了", errors[0])
+        self.assertNotRegex(page.read_text(encoding="utf-8"), r"<code\b[^>]*\sdata-src-start")
+
+    def test_directory_reference_fails_as_not_a_file(self):
+        page = self.code_ref_page('<pre><code data-src="src"></code></pre>', [("src/app.ts", "const a = 1;\n")])
+
+        errors = self.code_ref_errors(page)
+
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn('data-src="src"', errors[0])
+        self.assertIn("不是文件", errors[0])
+
     def test_long_references_warn_over_40_lines_and_fail_over_200(self):
         source = "".join(f"x{n}\n" for n in range(1, 302))
         page = self.code_ref_page('<pre><code data-src="a.ts" data-lines="1-41"></code></pre>'
