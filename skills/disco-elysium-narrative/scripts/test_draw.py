@@ -3,7 +3,7 @@
 import collections, random, re, subprocess, sys
 from pathlib import Path
 
-from draw import NO_FAILURE, TABLE, draw
+from draw import INCOMPATIBLE, NO_FAILURE, TABLE, draw
 from draft_check import SKILLS
 
 HERE = Path(__file__).resolve().parent
@@ -25,7 +25,11 @@ def test_seed_reproducible():
 def test_distribution():
     rng, n = random.Random(0), 1000
     picks = [draw(rng) for _ in range(n)]
+    # 互斥对永不同时出现
+    assert all((p['转折'][0], p['解答开口'][0]) not in INCOMPATIBLE for p in picks)
     for group, rows in TABLE.items():
+        if group == '解答开口':
+            continue  # 受互斥重抽影响，边缘分布略有偏移
         total = sum(w for _, w, _ in rows)
         got = collections.Counter(p[group][0] for p in picks)
         for name, w, _ in rows:

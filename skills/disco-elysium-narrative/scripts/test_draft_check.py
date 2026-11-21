@@ -96,23 +96,34 @@ def test_gates():
     r = run(scene(PASSING))
     assert [r[k] for k in ('skill_share', 'single', 'imperative', 'connective')] == [[10, 31], [4, 10], [1, 10], [2, 10]], r
     assert r['failed'] == [], r
-    few = PASSING[:]
-    few[0], few[2], few[5] = '他在拖时间。他知道。', '这两个字。是说给你听的。', '对。抢在他发第三条之前。'
+    # 极端少单句（1/10 < 15%）未通过
+    few = [t if i == 0 else '他在拖时间。不过他知道。' for i, t in enumerate(PASSING)]
     assert run(scene(few))['failed'] == ['单句']
     code, out = cli('-', stdin=scene(few))
-    assert code == 1 and '未通过：截短已有台词或删掉只评论气氛的那条，不要加台词凑数' in out, out
-    many = PASSING[:]
-    many[1], many[4] = '他不知道，所以也不急。', '他累了，今晚一个表情都没有。'
+    assert code == 1 and '未通过：截短几条过满的台词' in out, out
+    # 极端多单句（8/10 > 75%）未通过
+    many = ['他在拖时间。' for _ in range(8)] + ['他不知道。所以也不急。', '他累了。今晚没说话。']
     code, out = cli('-', stdin=scene(many))
-    assert code == 1 and '60%（6/10）' in out and '不要加新台词' in out and '凑数' not in out, out
-    assert run(scene(PASSING, others=20))['failed'] == ['技能占比']
+    assert code == 1 and '80%（8/10）' in out and '不要加新台词' in out, out
+    # 技能占比 >= 45%（10/22 = 45.5%）未通过；10/23 = 43.5% 通过
+    assert run(scene(PASSING, others=12))['failed'] == ['技能占比']
+    assert run(scene(PASSING, others=13))['failed'] == []
+    # 祈使开头 > 30%（4/10）未通过，且能识别中文全角！？后的祈使句
     bossy = PASSING[:]
-    bossy[8] = '别信他。他只是换了一样东西来要。'
+    bossy[0] = '别信他。'
+    bossy[1] = '他不知道？告诉他真相。所以别急。'
+    bossy[2] = '去问他。'
     code, out = cli('-', stdin=scene(bossy))
-    assert code == 1 and '20%（2/10）' in out and '「别信他。' in out and '「先别回。' in out, out
+    assert code == 1 and '40%（4/10）' in out and '「别信他。」' in out and '「他不知道？告诉他真相。' in out, out
+    # 连词或语气词 < 10%（0/10）未通过
     flat = PASSING[:]
     flat[1] = '他不知道。他连你看没看见都不知道。'
+    flat[3] = '周一投影仪上也是这一行。'
     assert run(scene(flat))['failed'] == ['连词或语气词']
+    # 句中省略号不把单句切碎；「后颈」不报常见道具
+    mid_ellipsis = '**天人感应**【成功】 — 你……后颈发凉。\n'
+    rm = run(mid_ellipsis)
+    assert rm['single'] == [1, 1] and rm['stock_props'] == [], rm
 
 
 def test_small_sample():

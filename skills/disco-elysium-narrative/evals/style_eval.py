@@ -146,13 +146,13 @@ def make_round(work, n, imit_file):
 def texture(dev, imit_file):
     real = list({r['text'] for r in parse(Path(dev).read_text().split('\n')) if r['speaker'] in SKILLS and len(r['text']) >= 8})
     imit = [m['text'] for m in json.loads(Path(imit_file).read_text())]
-    sents = lambda t: [x for x in re.split(r'[。!?！？…]+|\.{2,}', t) if x.strip()]
+    sents = lambda t: [x for x in re.split(r'[。!?！？]+', t) if x.strip('… .')]
     has = lambda pat: (lambda T: 100 * sum(bool(re.search(pat, t)) for t in T) / len(T))
     metrics = {
         '字数中位': lambda T: statistics.median(map(len, T)),
         '单句%': lambda T: 100 * sum(len(sents(t)) == 1 for t in T) / len(T),
         '三句以上%': lambda T: 100 * sum(len(sents(t)) >= 3 for t in T) / len(T),
-        '指令起句%': has(r'(^|[。!?])(别(?!人|的|处)|问(?!题)|去(?!年|世)|把(?!握|手)|先(?!生|前)|给|让|试着|看看|告诉)'),
+        '指令起句%': has(r'(^|[。!?！？])(别(?!人|的|处)|问(?!题)|去(?!年|世)|把(?!握|手)|先(?!生|前)|给|让|试着|看看|告诉)'),
         '语气词%': has(r'[吧呢啊嘛哦呀哈唉嗯]'),
         '缓冲词%': has(r'也许|可能|好像|似乎|看起来|大概|或许|恐怕|有点|有些'),
         '虚指%': has(r'某种|一种|什么|这个|那个|这种|那种|这些|事情|东西'),

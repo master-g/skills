@@ -47,6 +47,7 @@
 - [2026-11-17] Claude Code 压缩后，项目根 CLAUDE.md、无 paths 的 rules 和自动记忆从磁盘重新注入；子目录指令文件和带 paths 的规则会被摘要掉，Read 过的文件最多重读 5 个且超 5,000 token 只留路径。所以规则的晋升目标应是根 AGENTS.md 或无 paths 的 rules（@ 导入的内容是否重新注入文档没明说，属推断），PROJECT_MEMORY.md 压缩后不保证还在。来源：code.claude.com/docs/en 的 context-window.md、memory.md，2026-11-17 核对原文
 - [2026-11-17] bootstrap-claude 的条目去向检查按 plans/034 落地。eval（Opus 5.5，每组 3 次）只在「消失的条目有去向」上分出新旧版（0/3 对 3/3）；现行文字在规则首次出现时已经会晋升，所以分流文字没做。真实历史里「进指令文件的少」没被夹具复现，不算已解决。实测数字和脚本在 plans/034-bootstrap-claude-memory-removal-gate/
 - [2026-11-17] 在本仓库用子 agent 跑技能 eval：子 agent 继承本仓库的 AGENTS.md，两组执行者都派出之后才能改它；夹具是普通目录，要先在副本里建基线提交；被测技能放中性路径并去掉 evals/，事后从运行记录核对实际跑的脚本路径。来源：plans/034 附件里的 eval-baseline.md
+- [2026-11-21] disco-elysium-narrative 优化：draft_check 改宽护栏（占比<45%、单句 15–75%、祈使≤30%、连词语气词≥10%）、修复句中省略号切句与全角！？正则、移除后颈道具告警；draw 加思维阁互斥重抽且不写失败降至 20%；清理声音文件旧说辩论与删行号残缺；补回双向摆荡美学与工业风非短戏示范
 
 ## 失败尝试
 
@@ -67,11 +68,11 @@
 
 <!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
 
-- [2026-11-18] main：issue #3 代码引用已合入、推送、关闭（关前评论写明收窄的凭据文件名规则）。之后按用户答复补了「读不了」「不是文件」两个测试，写了 docs/adr/0001（路径按构建目录算）；规格里自定的四个默认值用户确认保留。
-  验证：148 个单元测试全过；make check 通过；冻结场景与 2026-11-17-hover 轮 probe.json 相同、30/30 截图相同。
+- [2026-11-21] main：完成 disco-elysium-narrative 全面审计与四阶段优化（清理 13 个声音文件残缺与旧说辩论、松绑 draft_check 窄窗口门禁并修正则/省略号/后颈冲突、draw 加思维阁互斥与降无失败权重、补双向摆荡与非短戏示范、扩充 evals/cases.md 题材与盲评维度）。
+  验证：test_draw / test_draft_check / test_render_tui 全部 ok；新示范《七号码头值班室》过 draft_check；make check 全通过。
 
 ## 下次运行
 
 <!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
 
-- [2026-11-18] 无排队任务。
+- [2026-11-21] 无排队任务；如需本机生效运行 `make install SKILL=disco-elysium-narrative SOURCE=.`，如需验证效果可按 `evals/cases.md` 跑多题材盲评。
