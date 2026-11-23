@@ -48,7 +48,7 @@
 - [2026-11-17] bootstrap-claude 的条目去向检查按 plans/034 落地。eval（Opus 5.5，每组 3 次）只在「消失的条目有去向」上分出新旧版（0/3 对 3/3）；现行文字在规则首次出现时已经会晋升，所以分流文字没做。真实历史里「进指令文件的少」没被夹具复现，不算已解决。实测数字和脚本在 plans/034-bootstrap-claude-memory-removal-gate/
 - [2026-11-17] 在本仓库用子 agent 跑技能 eval：子 agent 继承本仓库的 AGENTS.md，两组执行者都派出之后才能改它；夹具是普通目录，要先在副本里建基线提交；被测技能放中性路径并去掉 evals/，事后从运行记录核对实际跑的脚本路径。来源：plans/034 附件里的 eval-baseline.md
 - [2026-11-21] disco-elysium-narrative 优化：draft_check 改宽护栏（占比<45%、单句 15–75%、祈使≤30%、连词语气词≥10%）、修复句中省略号切句与全角！？正则、移除后颈道具告警；draw 加思维阁互斥重抽且不写失败降至 20%；清理声音文件旧说辩论与删行号残缺；补回双向摆荡美学与工业风非短戏示范
-- [2026-11-23] farm #9 实测：Codex App 原生 worker（collaboration.spawn_agent，gpt-6.1-terra，low）用 view_image 读取 local-image 随机 PNG。报告值与派发前独立保存的预期均为 5XHENY5F，8/8 字符相同。仅验收这一组合的一次调用；本机原图、brief 和报告在 .farm/vision-rjg5_tgm/。
+- [2026-11-23] farm #9 实测：Codex App 原生 worker 首次验证读图，复验从标准 brief 生成计划后按计划派发；本次计划、原图、报告及独立核验见 docs/research/2026-11-23-farm-vision-9/。
 
 ## 失败尝试
 
@@ -67,8 +67,10 @@
 
 ## 上次会话
 
-- [2026-11-23] main，#6–#8 派发修正：用临时 Herdr/Pi 替身验证 Claude Code 宿主点名、缺失 pairs、无头截图的启动、等待和返工。test_text_plan、test_subagent 通过；pane 复用顺序仅静态核对。
+- [2026-11-23] main，#9 端到端复验通过，证据见 docs/research/2026-11-23-farm-vision-9/。test_text_plan、test_subagent 通过。
+
+移出：[2026-11-23] farm #9 实测：Code → 并入 [2026-11-23] farm #9 实测：Codex App 原生 worker 首次验证读图
 
 ## 下次运行
 
-- [2026-11-23] #4 待补 Claude CLI 发现；#9 待从正常规划入口取得端到端证据，实机调用另行授权。本机安装副本待另行更新，保留已有 farm pairs 修改。
+- [2026-11-23] 用户确认 Claude 不接收 farm 工作。本机安装副本待另行更新，保留已有 farm pairs 修改。

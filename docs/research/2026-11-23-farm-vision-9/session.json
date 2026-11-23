@@ -1,0 +1,29 @@
+{
+  "scope": "/Users/mg/github/skills",
+  "entries": [
+    {
+      "entry": "native",
+      "harness": "codex",
+      "launch": "collaboration.spawn_agent",
+      "completion": "collaboration.wait_agent / 完成通知",
+      "variant_input": "reasoning_effort",
+      "models": [
+        {
+          "id": "gpt-6.1-terra",
+          "thinking_levels": ["low", "medium", "high", "xhigh", "max", "ultra"],
+          "inputs": {
+            "local-image": {
+              "status": "supported",
+              "basis": "catalog",
+              "source": "当前会话 spawn_agent 模型说明：gpt-6.1-terra supports visual understanding"
+            }
+          }
+        }
+      ],
+      "local_image": {
+        "method": "view_image 打开本地 PNG",
+        "source": "当前会话 tools.view_image 的本地文件接口"
+      }
+    }
+  ]
+}

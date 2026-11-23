@@ -1,0 +1,61 @@
+{
+  "task": "核对本地图片",
+  "brief": "/Users/mg/github/skills/.farm/vision9-1tlf848z-brief.md",
+  "candidates": [
+    {
+      "input": {
+        "type": "local-image",
+        "capability": {
+          "status": "supported",
+          "basis": "catalog",
+          "source": "当前会话 spawn_agent 模型说明：gpt-6.1-terra supports visual understanding"
+        },
+        "delivery": {
+          "method": "view_image 打开本地 PNG",
+          "source": "当前会话 tools.view_image 的本地文件接口"
+        }
+      },
+      "entry": "native",
+      "harness": "codex",
+      "model": "gpt-6.1-terra",
+      "thinking_levels": ["low", "medium", "high", "xhigh", "max", "ultra"],
+      "variant": "low",
+      "variant_input": "reasoning_effort",
+      "launch": "collaboration.spawn_agent",
+      "completion": "collaboration.wait_agent / 完成通知"
+    }
+  ],
+  "excluded": [],
+  "source": {
+    "kind": "named"
+  },
+  "plan": {
+    "input": {
+      "type": "local-image",
+      "capability": {
+        "status": "supported",
+        "basis": "catalog",
+        "source": "当前会话 spawn_agent 模型说明：gpt-6.1-terra supports visual understanding"
+      },
+      "delivery": {
+        "method": "view_image 打开本地 PNG",
+        "source": "当前会话 tools.view_image 的本地文件接口"
+      }
+    },
+    "entry": "native",
+    "harness": "codex",
+    "model": "gpt-6.1-terra",
+    "thinking_levels": ["low", "medium", "high", "xhigh", "max", "ultra"],
+    "variant": "low",
+    "variant_input": "reasoning_effort",
+    "launch": "collaboration.spawn_agent",
+    "completion": "collaboration.wait_agent / 完成通知",
+    "brief": "/Users/mg/github/skills/.farm/vision9-1tlf848z-brief.md",
+    "task": "核对本地图片",
+    "source": {
+      "kind": "named"
+    },
+    "reason": "核对同一原生视觉组合能否经标准 brief 入口完成读图",
+    "location": "/Users/mg/github/skills"
+  }
+}
