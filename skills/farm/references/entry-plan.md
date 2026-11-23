@@ -33,10 +33,16 @@
 
 Pi、Codex、Grok CLI 由脚本读取本项目最新生成的 setup-farm 清单。先用 setup-farm 刷新可查询的入口。每次只用该入口自己的证据，CLI 的目录不能证明原生工具能选同名模型。在 variant_input 中写出该启动工具能传档位的具体参数或语法。请求指定档位时，脚本同时要求该方法和模型目录里的精确档位。派发时按此方法传值，复用 pane 时也核对当前模型与档位。
 
-按 brief 列出候选。可见 pane 是硬约束时加 `--pane`，用户点名模型或档位时加 `--model '<完整 ID>'` 或 `--variant '<档位>'`。指定入口或显式 pair 只从相应入口选。输出的 excluded 说明被排除的原因。
+按 brief 列出候选。传当前编排者在 pairs 左栏使用的 `host:model` 键，例如 Claude Code 的 `claude:opus-5.5`。需要可见 pane 时加 `--pane`。
 
 ```sh
-python3 <farm>/entry_plan.py .farm/edit-brief.md --session .farm/session.json
+python3 <farm>/entry_plan.py .farm/edit-brief.md --session .farm/session.json --orchestrator claude:opus-5.5
 ```
 
-在同一命令上保留全部约束，加 `--select <entry> <harness> --model '<完整 ID>' --reason '<选择理由>'` 取得确认屏使用的 plan。variant 为 null 表示使用入口默认。脚本只生成计划；启动和返工时按所选入口传入计划里的模型与档位。项目目录或工具能力在确认后有变化时重新列候选、核对并展示受影响的计划。
+- 用户本次点名时加 `--named <entry> <harness> --model '<完整 ID>'`，只点名模型时用 `--named --model '<完整 ID>'`。指定档位加 `--variant '<档位>'`。
+- 其余情况先读 `FARM_PAIRS` 指定的文件，未设置时读 `~/.config/farm/pairs`。在所读文件内按精确键、宿主通配、全局通配匹配。指定文件读取失败时展示路径及原因，等用户选择。用户文件无匹配或只有内置 pairs 时按任务选。
+- Pi 固定简称在该入口当前目录中解析为完整 ID，优先匹配模型名，再尝试唯一的模糊匹配。多个匹配时请用户指定完整 ID。
+
+在原命令上保留所有选型参数，加 `--select <entry> <harness> --model '<完整 ID>' --reason '<选择理由>'` 生成 plan。确认屏展示 source.kind；固定映射还展示 file、key 和 worker。variant 为 null 表示入口默认。指定组合与硬约束冲突或目录中已无该组合时，展示 error 和对应入口的 excluded 原因，等待用户选择后重新生成计划。
+
+脚本只生成计划。启动和返工时按所选入口传入计划里的模型与档位。项目目录或工具能力在确认后有变化时重新列候选、核对并展示受影响的计划。

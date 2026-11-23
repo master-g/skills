@@ -4,9 +4,6 @@
 set -u
 
 skill_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-pairs_file="${FARM_PAIRS:-$HOME/.config/farm/pairs}"
-[ -f "$pairs_file" ] || pairs_file="$skill_dir/pairs"
-
 # mux
 if [ "${HERDR_ENV:-}" = "1" ] && command -v herdr >/dev/null 2>&1; then
   mux="herdr"
@@ -17,33 +14,33 @@ else
 fi
 
 # worker CLIs
-clis=""
+clis=()
 for c in pi claude codex grok; do
-  command -v "$c" >/dev/null 2>&1 && clis="$clis\"$c\","
+  command -v "$c" >/dev/null 2>&1 && clis+=("$c")
 done
-clis="[${clis%,}]"
-
-# pairs(行格式: host:model = cli:model,# 开头为注释)
-pairs=""
-if [ -f "$pairs_file" ]; then
-  while IFS='=' read -r k v; do
-    k="$(printf '%s' "$k" | tr -d '[:space:]')"
-    v="$(printf '%s' "$v" | tr -d '[:space:]')"
-    case "$k" in '' | \#*) continue ;; esac
-    pairs="$pairs{\"orchestrator\":\"$k\",\"worker\":\"$v\"},"
-  done <"$pairs_file"
-fi
-pairs="[${pairs%,}]"
-
-# warnings
-warnings=""
+outdated=""
 if [ "$mux" = "herdr" ]; then
   outdated="$(herdr integration status 2>/dev/null | grep -E '^(pi|claude|codex|grok): outdated' | cut -d: -f1 | paste -sd' ' -)"
-  [ -n "$outdated" ] && warnings="$warnings\"herdr integration outdated: $outdated(跑 herdr integration install 更新,否则 agent 状态判定可能失真)\","
 fi
-[ "$clis" = "[]" ] && warnings="$warnings\"未发现任何 worker CLI(pi/claude/codex/grok)\","
-[ "$pairs" = "[]" ] && warnings="$warnings\"pairs 为空:检查 $pairs_file\","
-warnings="[${warnings%,}]"
+exec python3 -I - "$skill_dir" "$mux" "${clis[*]-}" "$outdated" <<'PYTHON'
+import json
+import sys
 
-printf '{"mux":"%s","clis":%s,"pairs":%s,"pairsFile":"%s","warnings":%s}\n' \
-  "$mux" "$clis" "$pairs" "$pairs_file" "$warnings"
+sys.path.insert(0, sys.argv[1])
+from pair_config import load_pairs
+
+mux, clis, stale = sys.argv[2:]
+warnings = []
+try:
+    kind, path, pairs = load_pairs()
+except (OSError, ValueError) as error:
+    sys.exit(f"读取 pairs 失败：{error}")
+if stale:
+    warnings.append(f"herdr integration outdated: {stale}(跑 herdr integration install 更新)")
+if not clis:
+    warnings.append("未发现任何 worker CLI(pi/claude/codex/grok)")
+if not pairs:
+    warnings.append(f"pairs 为空:检查 {path}")
+print(json.dumps(dict(mux=mux, clis=clis.split(), pairs=pairs, pairsFile=path,
+                      pairsSource=kind, warnings=warnings), ensure_ascii=False))
+PYTHON

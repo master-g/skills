@@ -66,7 +66,7 @@
 
 ## 上次会话
 
-- [2026-11-23] main，#6：用当前项目目录与模拟会话从 brief 生成计划，test_text_plan、test_subagent、make check 通过。未启动真实 worker。
+- [2026-11-23] main，#7：临时项目覆盖固定映射、当次点名、配置保留与阻塞原因。test_text_plan、test_subagent、make check 通过。未启动真实 worker。
 
 ## 下次运行
 

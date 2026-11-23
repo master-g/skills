@@ -15,6 +15,7 @@ class TextPlan(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.project = Path(temp.name).resolve()
+        self.env = {"HOME": str(self.project), "FARM_PAIRS": ""}
         self.pi = self.project / "pi"
         self.brief = self.project / ".farm/edit-brief.md"
         self.brief.parent.mkdir()
@@ -22,7 +23,7 @@ class TextPlan(unittest.TestCase):
 
     def run_entry(self, script, *args):
         return subprocess.run([sys.executable, SKILLS / script, *args], cwd=self.project,
-                              env={**os.environ, "PATH": str(self.project),
+                              env={**os.environ, **self.env, "PATH": str(self.project),
                                    "CODEX_HOME": str(self.project / "codex-dir"),
                                    "GROK_HOME": str(self.project / "grok-dir")},
                               text=True, capture_output=True)
@@ -159,6 +160,75 @@ class TextPlan(unittest.TestCase):
                                 "--model", "demo/before", "--pane")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("demo/before", json.loads(result.stdout)["excluded"][0]["error"])
+
+    def test_pairs_in_brief_plans_survive_refresh(self):
+        self.install_pi("echo 'provider model'\necho 'demo short'")
+        session = self.project / "session.json"
+        native = {"entry": "native", "harness": "opencode", "launch": "subagent",
+                  "completion": "result", "variant_input": "model#variant",
+                  "models": [{"id": "demo/text", "thinking_levels": ["high"]}]}
+        session.write_text(json.dumps({"scope": str(self.project), "entries": [
+            native, {"entry": "headless", "harness": "pi", "launch": "run", "completion": "wait"}]}))
+        default = self.project / ".config/farm/pairs"
+        default.parent.mkdir(parents=True)
+        default.write_text("* = pi:short")
+        override = self.project / 'my "pairs"'
+        mappings = "* = pi:short\npi:* = opencode:demo/text\npi:main = opencode:demo/text#high"
+        override.write_text(mappings)
+
+        def run(host, *args):
+            return self.run_entry("farm/entry_plan.py", self.brief, "--session", session,
+                                  "--orchestrator", host, *args)
+
+        for setting in ("", str(override)):
+            self.env["FARM_PAIRS"] = setting
+            self.assertEqual(self.catalog().returncode, 0)
+            self.assertEqual(default.read_text(), "* = pi:short")
+            self.assertEqual(override.read_text(), mappings)
+        for path, host, key, entry, harness, model, variant in [
+                (default, "pi:main", "*", "headless", "pi", "demo/short", None),
+                (override, "pi:main", "pi:main", "native", "opencode", "demo/text", "high"),
+                (override, "pi:other", "pi:*", "native", "opencode", "demo/text", None),
+                (override, "codex:other", "*", "headless", "pi", "demo/short", None)]:
+            self.env["FARM_PAIRS"] = "" if path == default else str(path)
+            result = run(host, "--select", entry, harness, "--model", model, "--reason", "固定映射")
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            plan = json.loads(result.stdout)["plan"]
+            self.assertEqual((plan["source"]["file"], plan["source"]["key"]), (str(path), key))
+            self.assertEqual(plan["variant"], variant)
+
+        named = run("pi:main", "--named", "headless", "pi", "--model", "demo/short",
+                    "--select", "headless", "pi", "--reason", "本次点名")
+        self.assertEqual(json.loads(named.stdout)["plan"]["source"]["kind"], "named")
+        for args, reason in [(("--pane",), "可见"), (("--named", "native", "opencode",
+                              "--model", "demo/gone"), "demo/gone")]:
+            result = run("pi:main", *args)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(reason, result.stdout)
+            self.assertNotIn("plan", json.loads(result.stdout))
+        override.write_text("* = pi:demo/retired")
+        stale = run("pi:main")
+        self.assertNotEqual(stale.returncode, 0)
+        self.assertIn("目录中没有固定模型：demo/retired", stale.stdout)
+        override.unlink()
+        missing = run("pi:main")
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn(str(override), missing.stderr)
+        model_only = run("pi:main", "--named", "--model", "demo/short")
+        self.assertEqual(json.loads(model_only.stdout)["source"]["kind"], "named")
+        override.write_text("other:* = pi:short")
+        for setting in (str(override), ""):
+            self.env["FARM_PAIRS"] = setting
+            if not setting:
+                default.unlink()
+            result = json.loads(run("pi:main").stdout)
+            self.assertEqual(result["source"]["kind"], "task")
+            self.assertEqual(len(result["candidates"]), 2)
+
+        session.write_text(json.dumps({"scope": str(self.project), "entries": []}))
+        empty = run("pi:main", "--named", "native", "opencode", "--model", "demo/text")
+        self.assertNotEqual(empty.returncode, 0)
+        self.assertIn("会话清单没有入口", json.loads(empty.stdout)["error"])
 
     def test_plan_from_catalog(self):
         self.install_pi("echo 'provider model context max-out thinking images'\necho 'demo text 1M 32K yes no'")
