@@ -1,46 +1,46 @@
 # CLI 后端：worker CLI 进程
 
-适用于该 brief 选中 CLI 入口的情况。worker 是 pi / claude / codex / grok 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。宿主是 Claude Code 时 cli 固定为 `claude`，只走 Herdr pane。
+适用于该 brief 选中 CLI 入口的情况。worker 是 pi / claude / codex / grok 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。确认计划中的 harness 决定使用哪个 CLI。
 
 SKILL.md 四个动作在本后端的对应:
 
-| 动作     | herdr pane                                                      | 无头(tmux / none,只限 pi)                                     |
-| -------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
-| 启动     | `herdr agent start` + `herdr agent prompt`                      | `headless.sh run`                                             |
-| 完成信号 | `agent prompt --wait` 返回                                      | `headless.sh wait` 返回 `done`                                |
-| 取现场   | `herdr agent read <task> --source recent-unwrapped --lines 120` | `.farm/<task>.log`                                            |
-| 修正     | 对同一 agent 再 `agent prompt`                                  | 修正追加进 brief,清标记后 `headless.sh run <task> <model> -c` |
+| 动作     | herdr pane                                                         | headless（仅 Pi）                                             |
+| -------- | ------------------------------------------------------------------ | ------------------------------------------------------------- |
+| 启动     | `herdr agent start` + `herdr agent prompt`                         | `headless.sh run`                                             |
+| 完成信号 | `agent prompt --wait` 返回                                         | `headless.sh wait` 返回 `done`                                |
+| 取现场   | `herdr agent read <pane-id> --source recent-unwrapped --lines 120` | `.farm/<task>.log`                                            |
+| 修正     | 对同一 agent 再 `agent prompt`                                     | 修正追加进 brief,清标记后 `headless.sh run <task> <model> -c` |
 
 ## Preflight
 
-运行本技能目录(与 SKILL.md 同目录)下的 `preflight.sh`,读 JSON:
+按 brief 核对环境。当次点名用 `preflight.sh --named`，只探测 mux 和 CLI；其余用 `preflight.sh` 同时读取 pairs。脚本位于本技能目录，输出 JSON。
 
-- `mux`: `herdr` | `tmux` | `none` — 决定派发方式
+- `mux`: `herdr` | `tmux` | `none`，表示当前环境
 - `clis`: 可用的 worker CLI
 - `pairs`: orchestrator→worker 对,匹配规则见 SKILL.md「worker 模型」
 - `warnings`: 如 herdr integration outdated(提示用户跑 `herdr integration install <cli>`,可继续,但 agent 状态判定可能失真——显式告知用户)
 
-完成标准:JSON 到手且选型来源可用（文本计划用对应 harness 的 setup-farm 清单，按 pair 选型时要求 pairs 非空）。否则报告缺什么(CLI / 配置),停止。
+选型前核对当前入口的模型目录。点名时将同一约束传给 `entry_plan.py --named`；使用固定映射时核对配置来源及匹配项。
 
 SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头,或 herdr 下复用哪个 pane / 新开。
 
 ## 派发
 
-明确选择 Pi 无头文本计划时使用下表 tmux 或 none 的无头方式（herdr 环境使用 none 行），等待和返工也沿用无头流程。其余情况按 mux 选一行执行( `<cli>` `<model>` 来自确认屏的计划或选定 pair):
+按每份已确认计划的 `entry` 选择启动、等待、取现场和修正的方式。文本和截图使用同一规则。若入口不可用，重新展示受影响的计划并确认。
 
-| mux   | 派发                                                                                                                   |
-| ----- | ---------------------------------------------------------------------------------------------------------------------- |
-| herdr | 先按下文「herdr pane 复用」拿到 agent 名(复用或新开)→ `herdr agent prompt <agent> "<prompt>" --wait --timeout 1800000` |
-| tmux  | `tmux new-window -d -c "$PWD" -n farm-<task> "sh '<skill>/headless.sh' run <task> <model>"`                            |
-| none  | `nohup sh '<skill>/headless.sh' run <task> <model> >/dev/null 2>&1 &`                                                  |
+| 计划入口         | 环境           | 启动                                                                                                         |
+| ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `herdr-pane`     | Herdr          | 按「herdr pane 复用」取得 pane_id，再运行 `herdr agent prompt <pane-id> "<prompt>" --wait --timeout 1800000` |
+| `headless`（Pi） | tmux           | `tmux new-window -d -c "$PWD" -n farm-<task> "sh '<skill>/headless.sh' run <task> <model>"`                  |
+| `headless`（Pi） | Herdr 或无 mux | `nohup sh '<skill>/headless.sh' run <task> <model> >/dev/null 2>&1 &`                                        |
 
-**无头派发**(tmux、none,以及任何在 pane 里跑 `pi -p` 的场景)一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 和 pi 的进程组 id 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid,pgid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit .farm/<task>.pgid` 清掉上一轮标记。要提前结束无头 worker,运行 `sh '<skill>/headless.sh' stop <task>`:它结束 pi 和它派生的全部进程(先 TERM,10 秒后仍在就 KILL),打印 `stopped` 或 `killed`;任务已结束时打印 `not-running`。
+**无头派发**一律经本技能目录的 `headless.sh` 启动(`<skill>` 为其绝对路径)。启动命令只由纯单词和单引号组成,fish/zsh/bash 都能解析;退出码、日志、pid 和 pi 的进程组 id 由脚本在 sh 里写入 `.farm/<task>.{exit,log,pid,pgid}`,手写 `; echo DONE_$?` 之类的 shell 哨兵在 fish 里会让整行不执行。每次派发前先 `rm -f .farm/<task>.pid .farm/<task>.exit .farm/<task>.pgid` 清掉上一轮标记。要提前结束无头 worker,运行 `sh '<skill>/headless.sh' stop <task>`:它结束 pi 和它派生的全部进程(先 TERM,10 秒后仍在就 KILL),打印 `stopped` 或 `killed`;任务已结束时打印 `not-running`。
 
 **herdr pane 复用**(单 worker 时一个 farm 会话只维护一个 worker pane;池见下文「池」):
 
 1. `herdr agent list`,筛 `tab_id == $HERDR_TAB_ID` 且 `agent == <cli>` 且 `cwd == $PWD` 且 `agent_status` 为 `idle`/`done` 的 agent(排除 `pane_id == $HERDR_PANE_ID` 即自己)。
-2. 命中 → 问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <agent> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
-3. 复用前核对模型与档位均与计划一致；无法核实时新开。未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag> <档位参数>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
+2. 先核对候选 pane 的模型和档位。仅将两项都与计划一致的 pane 交给用户选择；不匹配或无法核实时转到新开流程。匹配时问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <pane-id> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
+3. 没有可复用的 pane 或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag> <档位参数>`。
 4. 后续 `agent prompt` 一律用 pane_id 做目标(复用的 pane 名字是旧任务名,不可靠);记住 pane_id,收尾要用。
 
 Grok 启动时使用计划中的完整 ID，每次启动须取得用户对本次进程的明确确认，复用同模型会话用 `/new`。Codex 的启动同样逐次确认。
@@ -81,7 +81,7 @@ worker 结束(herdr:`agent prompt` 返回;无头:`headless.sh wait` 返回 `done
 
 ## 收尾
 
-herdr:汇报时问用户是否关闭 worker pane(`herdr pane close <pane-id>`);用户不回应则保留,但下次 /farm 新开 pane 前必关(见「herdr pane 复用」第 3 步)。
+只对本次使用的 worker pane 询问是否关闭（`herdr pane close <pane-id>`）；用户未确认时保留。
 
 ## 池
 
@@ -89,16 +89,16 @@ k ≥ 2 时在 [worker 池](pool.md) 之上补充本后端的做法。子任务 
 
 派发:
 
-- herdr:每个槽一个 pane。复用哪个、新开几个已在确认屏定下,不再逐个询问:复用的按「herdr pane 复用」第 2 步重置,新开的按第 3 步开,只关掉上一次 /farm 留下的 pane,不关当前池的其他槽。槽位接新子任务前，重新核对该 brief 的入口、harness、模型和档位。全部一致才复用并发 reset-cmd；否则按新计划的后端和授权启动 worker。派发用 `herdr agent prompt <pane-id> "<prompt>" --wait --until working --until blocked --timeout 15000`:确认已开工就返回,不等完成。
-- tmux / none:按「派发」的命令,task 取 `<task>-<i>`,tmux 窗口名 `farm-<task>-<i>`。
+- `herdr-pane`：每个使用该入口的槽一个 pane。复用哪个、新开几个已在确认屏定下,不再逐个询问:复用前按「herdr pane 复用」核对模型与档位，确认匹配后重置。新开的槽使用独立 pane。槽位接新子任务前，重新核对该 brief 的入口、harness、模型和档位。全部一致才复用并发 reset-cmd；否则按新计划的后端和授权启动 worker。派发用 `herdr agent prompt <pane-id> "<prompt>" --wait --until working --until blocked --timeout 15000`:确认已开工就返回,不等完成。
+- `headless`：按「派发」中对应环境的无头命令,task 取 `<task>-<i>`,tmux 窗口名 `farm-<task>-<i>`。
 
 等待:轮流检查未完成的 worker,哪个先结束就先审计哪个。
 
-- herdr:`herdr agent wait <pane-id> --timeout 10000`。返回 idle / done 表示已结束;timeout 表示仍在运行;blocked 表示在等审批,告诉用户是哪个 pane,然后继续检查其他 worker。
+- `herdr-pane`：`herdr agent wait <pane-id> --timeout 10000`。返回 idle / done 表示已结束;timeout 表示仍在运行;blocked 表示在等审批,告诉用户是哪个 pane,然后继续检查其他 worker。
 - 无头:派发后先对每个子任务跑一次 `sh '<skill>/headless.sh' wait <task>-<i> 20`,用来识别 not-started;之后轮询用 `wait <task>-<i> 5`。返回值的处理同「等待」。
 
 单个 worker 累计运行超过 30 分钟的处理同「等待」。
 
 修正:无头修正不带 `-c`。同一目录里跑过多个 pi,`-c` 接上的“上一个会话”不一定是这个子任务的。修正内容已追加进子 brief,新会话读 brief 即可。
 
-集成门禁通过后,herdr 下询问是否关闭全部 worker pane。
+集成门禁通过后，按「收尾」处理本次使用的 worker pane。

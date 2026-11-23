@@ -15,7 +15,7 @@ SKILL.md 四个动作在本后端的对应：
 
 选中此入口后用 Agent 工具起原生子代理。按当前会话的原生代理授权派发。Agent 工具支持按次指定模型，后台运行结束时自动通知，修正轮次可继续同一个代理。这些正好对应 brief → 报告 → 门禁 → 修正的循环，不需要 pid、退出码和 pane 状态。
 
-用户明确要求在 pane 里看 worker 时，按确认的计划走 [CLI 后端](cli-worker.md) 的 herdr pane，此时 cli 固定为 `claude`，每次启动 `claude` 进程按用户的外部 CLI 授权规则单独确认。
+计划选中 CLI 时，按该 brief 的入口和 harness 走 [CLI 后端](cli-worker.md)。要求可见 pane 时在选型阶段传 `--pane`；每次启动按当前环境的授权规则执行。
 
 不用 Workflow 工具：它需要用户明确要求多代理编排才能调用，而且 farm 的门禁需要 orchestrator 在轮次之间自己判断。
 

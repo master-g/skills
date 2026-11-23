@@ -22,24 +22,30 @@ outdated=""
 if [ "$mux" = "herdr" ]; then
   outdated="$(herdr integration status 2>/dev/null | grep -E '^(pi|claude|codex|grok): outdated' | cut -d: -f1 | paste -sd' ' -)"
 fi
-exec python3 -I - "$skill_dir" "$mux" "${clis[*]-}" "$outdated" <<'PYTHON'
+exec python3 -I - "$skill_dir" "$mux" "${clis[*]-}" "$outdated" "$@" <<'PYTHON'
 import json
 import sys
 
 sys.path.insert(0, sys.argv[1])
 from pair_config import load_pairs
 
-mux, clis, stale = sys.argv[2:]
+mux, clis, stale = sys.argv[2:5]
+options = sys.argv[5:]
 warnings = []
-try:
-    kind, path, pairs = load_pairs()
-except (OSError, ValueError) as error:
-    sys.exit(f"读取 pairs 失败：{error}")
+if options == ["--named"]:
+    kind, path, pairs = "named", None, []
+elif not options:
+    try:
+        kind, path, pairs = load_pairs()
+    except (OSError, ValueError) as error:
+        sys.exit(f"读取 pairs 失败：{error}")
+else:
+    sys.exit("用法：preflight.sh [--named]")
 if stale:
     warnings.append(f"herdr integration outdated: {stale}(跑 herdr integration install 更新)")
 if not clis:
     warnings.append("未发现任何 worker CLI(pi/claude/codex/grok)")
-if not pairs:
+if kind != "named" and not pairs:
     warnings.append(f"pairs 为空:检查 {path}")
 print(json.dumps(dict(mux=mux, clis=clis.split(), pairs=pairs, pairsFile=path,
                       pairsSource=kind, warnings=warnings), ensure_ascii=False))

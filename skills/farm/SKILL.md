@@ -26,7 +26,7 @@ worker 只做一件事：按 brief 实施并写报告。
 | 取现场   | 报告缺失时拿到 worker 的原始输出              |
 | 修正     | 把修正内容发给同一个 worker，让它接着做       |
 
-按当前项目和会话列候选入口，拆出 brief 后再逐项选。CLI 查 [CLI 后端](references/cli-worker.md) 和 `preflight.sh` 的 clis、mux；核对当前 Herdr tab 确实能开可见 pane、能等待该 harness。原生工具按宿主查 [OpenCode](references/opencode-worker.md)、[Claude Code](references/claude-code-worker.md) 或 [App](references/app-worker.md)；其他宿主直接查当前工具说明。后端文档提供调用方法，具体组合以当前工具能传入的模型、档位为准。
+按当前项目和会话列候选入口，拆出 brief 后再逐项选。CLI 查 [CLI 后端](references/cli-worker.md) 的预检步骤，读取 clis、mux（当次点名用 `preflight.sh --named`）；核对当前 Herdr tab 确实能开可见 pane、能等待该 harness。原生工具按宿主查 [OpenCode](references/opencode-worker.md)、[Claude Code](references/claude-code-worker.md) 或 [App](references/app-worker.md)；其他宿主直接查当前工具说明。后端文档提供调用方法，具体组合以当前工具能传入的模型、档位为准。
 
 用 [会话入口清单](references/entry-plan.md) 记录各入口的启动方式、完成信号、模型目录或查询错误。缺少启动或完成信号就排除该入口，继续核对其他入口。修正工具缺失时，将失败输出追加到 brief，按当前授权重新启动。
 

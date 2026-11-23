@@ -67,8 +67,8 @@
 
 ## 上次会话
 
-- [2026-11-23] main，#9：获授权后派发一个独立上下文的 worker。核对文件名与 brief 均未含答案，按落盘报告逐字比对通过。test_subagent、test_text_plan 通过。
+- [2026-11-23] main，#6–#8 派发修正：用临时 Herdr/Pi 替身验证 Claude Code 宿主点名、缺失 pairs、无头截图的启动、等待和返工。test_text_plan、test_subagent 通过；pane 复用顺序仅静态核对。
 
 ## 下次运行
 
-- [2026-11-23] 本机技能安装副本待另行更新；保留已有的 farm pairs 修改。
+- [2026-11-23] #4 待补 Claude CLI 发现；#9 待从正常规划入口取得端到端证据，实机调用另行授权。本机安装副本待另行更新，保留已有 farm pairs 修改。

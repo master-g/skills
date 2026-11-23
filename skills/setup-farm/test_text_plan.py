@@ -161,6 +161,55 @@ class TextPlan(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("demo/before", json.loads(result.stdout)["excluded"][0]["error"])
 
+    def test_named_pi_from_claude_in_herdr_with_missing_pairs(self):
+        self.env.update(FARM_PAIRS=str(self.project / "missing"), HERDR_ENV="1")
+        self.install_pi("echo 'provider model thinking images'\necho 'demo vision no yes'")
+        (self.project / "python3").symlink_to(sys.executable)
+        herdr = self.project / "herdr"
+        herdr.write_text('#!/bin/sh\n[ "$*" = "integration status" ]\n')
+        herdr.chmod(0o755)
+        env = {**self.env, "PATH": os.pathsep.join((str(self.project), os.defpath))}
+        command = ["/bin/bash", SKILLS / "farm/preflight.sh"]
+        preflight = subprocess.run([*command, "--named"], cwd=self.project, env=env,
+                                   text=True, capture_output=True)
+        self.assertEqual(preflight.returncode, 0, preflight.stderr)
+        self.assertEqual(json.loads(preflight.stdout)["mux"], "herdr")
+        self.assertIn("pi", json.loads(preflight.stdout)["clis"])
+        fixed = subprocess.run(command, cwd=self.project, env=env, text=True, capture_output=True)
+        self.assertNotEqual(fixed.returncode, 0)
+        self.assertIn(self.env["FARM_PAIRS"], fixed.stderr)
+        self.assertEqual(self.catalog().returncode, 0)
+        self.brief.write_text("# 核对截图\n输入类型：local-image\n")
+        session = self.project / "session.json"
+        session.write_text(json.dumps({"scope": str(self.project), "entries": [{
+            "entry": "headless", "harness": "pi", "launch": "headless.sh run",
+            "completion": "headless.sh wait",
+            "local_image": {"method": "read", "source": "fixture"}
+        }]}))
+        selected = self.run_entry("farm/entry_plan.py", self.brief, "--session", session,
+                                  "--orchestrator", "claude:opus", "--named", "headless", "pi",
+                                  "--select", "headless", "pi", "--model", "demo/vision",
+                                  "--reason", "读取本地截图")
+        self.assertEqual(selected.returncode, 0, selected.stderr + selected.stdout)
+        plan = json.loads(selected.stdout)["plan"]
+        self.assertEqual((plan["entry"], plan["harness"], plan["completion"], plan["source"]["kind"]),
+                         ("headless", "pi", "headless.sh wait", "named"))
+
+        # 按确认计划走无头启动、等待和单 worker 返工，用替身记录 Pi 实际收到的参数。
+        self.pi.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
+        headless = ["/bin/sh", SKILLS / "farm/headless.sh"]
+        for continuation in ([], ["-c"]):
+            for suffix in ("pid", "exit", "pgid"):
+                (self.brief.parent / f"edit.{suffix}").unlink(missing_ok=True)
+            subprocess.run([*headless, "run", "edit", plan["model"], *continuation],
+                           cwd=self.project, env=env, check=True)
+            waited = subprocess.run([*headless, "wait", "edit"], cwd=self.project, env=env,
+                                    text=True, capture_output=True, check=True)
+            self.assertEqual(waited.stdout.strip(), "done 0")
+            argv = (self.brief.parent / "edit.log").read_text().splitlines()
+            self.assertEqual(argv, ["-p", *continuation, "--model", "demo/vision",
+                                    f"读 {self.brief} 并执行,报告按其中要求落盘"])
+
     def test_pairs_in_brief_plans_survive_refresh(self):
         self.install_pi("echo 'provider model'\necho 'demo short'")
         session = self.project / "session.json"
