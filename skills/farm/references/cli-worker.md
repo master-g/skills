@@ -1,6 +1,6 @@
 # CLI 后端：worker CLI 进程
 
-适用于会话没有原生子代理工具,或用户明确要求在 pane 里看 worker 的情况。worker 是 pi / claude / codex 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。宿主是 Claude Code 时 cli 固定为 `claude`,只走 herdr pane。
+适用于会话没有原生子代理工具,或用户明确要求在 pane 里看 worker 的情况。worker 是 pi / claude / codex / grok 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。宿主是 Claude Code 时 cli 固定为 `claude`,只走 herdr pane。
 
 SKILL.md 四个动作在本后端的对应:
 
@@ -20,7 +20,7 @@ SKILL.md 四个动作在本后端的对应:
 - `pairs`: orchestrator→worker 对,匹配规则见 SKILL.md「worker 模型」
 - `warnings`: 如 herdr integration outdated(提示用户跑 `herdr integration install <cli>`,可继续,但 agent 状态判定可能失真——显式告知用户)
 
-完成标准:JSON 到手且选型来源可用（Pi 无头文本计划用 setup-farm 清单，按 pair 选型时要求 pairs 非空）。否则报告缺什么(CLI / 配置),停止。
+完成标准:JSON 到手且选型来源可用（文本计划用对应 harness 的 setup-farm 清单，按 pair 选型时要求 pairs 非空）。否则报告缺什么(CLI / 配置),停止。
 
 SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头,或 herdr 下复用哪个 pane / 新开。
 
@@ -40,8 +40,10 @@ SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头
 
 1. `herdr agent list`,筛 `tab_id == $HERDR_TAB_ID` 且 `agent == <cli>` 且 `cwd == $PWD` 且 `agent_status` 为 `idle`/`done` 的 agent(排除 `pane_id == $HERDR_PANE_ID` 即自己)。
 2. 命中 → 问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <agent> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
-3. 未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
+3. 复用前核对模型与计划一致；无法核实时新开。未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
 4. 后续 `agent prompt` 一律用 pane_id 做目标(复用的 pane 名字是旧任务名,不可靠);记住 pane_id,收尾要用。
+
+Grok 启动时使用计划中的完整 ID，每次启动须取得用户对本次进程的明确确认，复用同模型会话用 `/new`。Codex 的启动同样逐次确认。
 
 worker CLI 通用斜杠命令(用 `agent prompt` 发送,等价于用户在 pane 里输入):
 
@@ -59,6 +61,7 @@ modelflag(pane 交互 / 无头):
 | ------ | ----------------- | ------------------ |
 | pi     | `--model <model>` | `headless.sh` 内置 |
 | claude | `--model <model>` | 禁用(见红线)       |
+| grok   | `-m <model>`      | 禁用(见红线)       |
 | codex  | `-m <model>`      | 禁用(见红线)       |
 
 `herdr agent start` 返回 `agent_not_ready`:用 `herdr agent get <task>` 查看,通常是登录或 trust 提示,报告用户处理。

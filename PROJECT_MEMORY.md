@@ -66,8 +66,8 @@
 
 ## 上次会话
 
-- [2026-11-23] main，#5：临时项目以本机 Pi 查到 29 个目录项并生成文本计划；未启动 worker。test_text_plan、test_subagent 与 make check 通过。
+- [2026-11-23] main：本机 Pi 输出 29 个模型，Codex 与 Grok 现有缓存分别列出 10、4 个可见模型；Herdr 本机帮助列有 codex 和 grok。验证了模型发现和计划夹具，未启动 worker。test_text_plan、test_subagent、make check 通过。
 
 ## 下次运行
 
-- [2026-11-23] #4 的其余验收与依赖见 GitHub 子工单；保留工作区已有的 farm pairs 修改。
+- [2026-11-23] 实际派发与读图仍待独立验收；保留工作区已有的 farm pairs 修改。

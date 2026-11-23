@@ -29,7 +29,7 @@ worker 只做一件事：按 brief 实施并写报告。
 按第一条成立的选定后端，读对应文件，后续每一步的动作都用它给出的工具和命令：
 
 1. 用户明确要求在 pane 里看 worker 实时运行、随时插手 → [CLI 后端](references/cli-worker.md)。
-2. 用户明确要求 Pi 无头文本计划，且宿主允许该入口 → 读 [CLI 后端](references/cli-worker.md)，使用 setup-farm 的项目清单。仅请求计划时在确认屏结束。
+2. 用户明确要求使用 setup-farm 目录为文本任务选 CLI，或点名 Pi 无头、Codex CLI、Grok CLI，且宿主允许该入口 → 读 [CLI 后端](references/cli-worker.md)，使用 setup-farm 的项目清单。仅请求计划时在确认屏结束。
 3. 会话有原生子代理工具 → 原生后端。OpenCode（`subagent` 工具）读 [OpenCode 原生 worker 用例](references/opencode-worker.md)；Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
 4. 没有原生子代理工具 → [CLI 后端](references/cli-worker.md)。
 
@@ -90,11 +90,11 @@ brief 模板：
 
 ### worker 模型
 
-当前项目已有 setup-farm 生成的 `.farm/pi-catalog.json`，且已选定 Pi 无头 CLI 处理文本 brief 时，按下述路径准备确认屏：
+当前项目已有 setup-farm 生成的目录，且已选定 CLI 后端处理文本 brief 时，按下述路径准备确认屏：
 
-1. 核对项目目录与未提交改动，按「通信」模板写好本次 brief，再读取清单和 brief。清单有 error 时展示原因；项目范围有变化时重新运行 setup-farm。
-2. 用户点名或有显式用户 pairs 时先核对指定组合。否则由主模型根据 brief 从目录选一个完整模型 ID，写一句选择理由；目录无法区分多个合格项时如实说明。
-3. 在项目根目录运行本技能的 `python3 <farm>/text_plan.py .farm/<task>-brief.md '<provider/model>' '<选择理由>'`。把输出并入确认屏，按现有授权与 CLI 流程启动，传入计划中的完整模型 ID。Pi 模型目录只公布是否支持 thinking，具体档位沿用 Pi 默认值。
+1. 核对项目目录与未提交改动，按「通信」模板写好本次 brief，再读取 brief 和 `.farm/{pi,codex,grok}-catalog.json` 中已生成的清单。Pi 可无头运行，Codex 和 Grok 需要当前会话可用的 Herdr pane；要求可见运行时按 CLI 后端核对 pane。排除不符合运行条件的组合，单个清单有 error 时保留其他候选并说明原因；项目范围有变化时重新运行 setup-farm。
+2. 用户点名或有显式用户 pairs 时先核对指定组合。否则由主模型根据 brief 选择 harness 和该目录中的完整模型 ID，写一句选择理由；目录无法区分多个合格项时如实说明。
+3. 在项目根目录运行本技能的 `python3 <farm>/text_plan.py --harness <pi|codex|grok> .farm/<task>-brief.md '<完整模型ID>' '<选择理由>'`。把输出并入确认屏，按现有授权与 CLI 流程启动，传入计划中的完整模型 ID。当前计划沿用所选 harness 的默认推理档位。需要可见 Pi pane 时传入 `--pane`，按 CLI 后端流程展示运行位置。
 
 其他入口或项目尚无清单时，用户点名的模型优先。否则从 pairs 取：运行本技能目录（与 SKILL.md 同目录）下的 `preflight.sh`，读 JSON 的 `pairs`（用户配置 `~/.config/farm/pairs` 优先，否则技能自带默认）。你知道自己是谁（host + 模型名）：按 精确项 → `<host>:*` → `*` 的顺序取第一个匹配。无匹配且无 `*`：列出全部 pairs 让用户选。后端文件自带模型分工的，按后端文件。
 
@@ -108,7 +108,7 @@ brief 模板：
 
 ### 红线
 
-无头 worker 只允许 **pi**（用户调用本技能即接受 pi 无头改文件）。claude / codex CLI 当 worker 只能在 herdr pane 里跑，审批弹窗必须用户可见。宿主自带的原生子代理不是外部 CLI 进程，不受这条限制，按对应后端文件执行。
+无头 worker 只允许 **pi**（用户调用本技能即接受 pi 无头改文件）。claude / codex / grok CLI 当 worker 只能在 herdr pane 里跑，审批弹窗必须用户可见。宿主自带的原生子代理不是外部 CLI 进程，不受这条限制，按对应后端文件执行。
 
 ## 4. 派发与等待
 

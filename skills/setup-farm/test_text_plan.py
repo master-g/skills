@@ -22,11 +22,13 @@ class TextPlan(unittest.TestCase):
 
     def run_entry(self, script, *args):
         return subprocess.run([sys.executable, SKILLS / script, *args], cwd=self.project,
-                              env={**os.environ, "PATH": str(self.project)},
+                              env={**os.environ, "PATH": str(self.project),
+                                   "CODEX_HOME": str(self.project / "codex-dir"),
+                                   "GROK_HOME": str(self.project / "grok-dir")},
                               text=True, capture_output=True)
 
     def catalog(self):
-        return self.run_entry("setup-farm/discover.py")
+        return self.run_entry("setup-farm/discover.py", "--harness", "pi")
 
     def plan(self):
         return self.run_entry("farm/text_plan.py", self.brief, "demo/text", "可完成标题修改")
@@ -52,6 +54,38 @@ class TextPlan(unittest.TestCase):
                 self.assertIn(message, catalog["error"])
                 self.assertEqual(bool(catalog["binary"]), bool(command))
                 self.assertIn(message, self.plan().stderr)
+
+    def test_cached_directories_generate_separate_pane_plans(self):
+        fixtures = {
+            "codex": [{"slug": "visible", "visibility": "list", "input_modalities": ["image"],
+                       "supported_reasoning_levels": [{"effort": "high"}]},
+                      {"slug": "hidden", "visibility": "hide"}],
+            "grok": {"visible": {"info": {"hidden": False, "reasoning_efforts": [{"id": "high"}]},
+                                 "api_key": "fixture-secret"},
+                     "hidden": {"info": {"hidden": True}}},
+        }
+        for name, models in fixtures.items():
+            binary = self.project / name
+            binary.write_text("#!/bin/sh\nexit 99\n")
+            binary.chmod(0o755)
+            directory = self.project / (name + "-dir")
+            directory.mkdir()
+            (directory / "models_cache.json").write_text(json.dumps({"models": models, "fetched_at": "sample"}))
+        result = self.run_entry("setup-farm/discover.py")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("fixture-secret", result.stdout)
+        pi, codex, grok = json.loads(result.stdout)
+        self.assertIn("error", pi)
+        for catalog in (codex, grok):
+            self.assertEqual([m["id"] for m in catalog["models"]], ["visible"])
+            model = catalog["models"][0]
+            self.assertEqual(model["thinking_levels"], ["high"])
+            self.assertIs(model["images"], True if catalog == codex else None)
+            result = self.run_entry("farm/text_plan.py", "--harness", catalog["harness"],
+                                    self.brief, "visible", "文本任务")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plan = json.loads(result.stdout)
+            self.assertEqual((plan["entry"], plan["harness"]), ("herdr-pane", catalog["harness"]))
 
     def test_plan_from_catalog(self):
         self.install_pi("echo 'provider model context max-out thinking images'\necho 'demo text 1M 32K yes no'")

@@ -18,7 +18,7 @@ fi
 
 # worker CLIs
 clis=""
-for c in pi claude codex; do
+for c in pi claude codex grok; do
   command -v "$c" >/dev/null 2>&1 && clis="$clis\"$c\","
 done
 clis="[${clis%,}]"
@@ -38,10 +38,10 @@ pairs="[${pairs%,}]"
 # warnings
 warnings=""
 if [ "$mux" = "herdr" ]; then
-  outdated="$(herdr integration status 2>/dev/null | grep -E '^(pi|claude|codex): outdated' | cut -d: -f1 | paste -sd' ' -)"
+  outdated="$(herdr integration status 2>/dev/null | grep -E '^(pi|claude|codex|grok): outdated' | cut -d: -f1 | paste -sd' ' -)"
   [ -n "$outdated" ] && warnings="$warnings\"herdr integration outdated: $outdated(跑 herdr integration install 更新,否则 agent 状态判定可能失真)\","
 fi
-[ "$clis" = "[]" ] && warnings="$warnings\"未发现任何 worker CLI(pi/claude/codex)\","
+[ "$clis" = "[]" ] && warnings="$warnings\"未发现任何 worker CLI(pi/claude/codex/grok)\","
 [ "$pairs" = "[]" ] && warnings="$warnings\"pairs 为空:检查 $pairs_file\","
 warnings="[${warnings%,}]"
 

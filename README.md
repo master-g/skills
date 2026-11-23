@@ -34,7 +34,7 @@ npx skills add master-g/skills --skill '*' -g
 - `disco-elysium-narrative`: write multi-voice Disco Elysium-style narratives.
 - `guide-me`: assess where the work stands from session history and progress records, then plan next steps from first principles.
 - `farm`: dispatch implementation from an expensive orchestrator model to a cheaper worker (host-native subagent or CLI), with acceptance gates.
-- `setup-farm`: discover the current project’s Pi models for text worker dispatch.
+- `setup-farm`: discover the current project’s Pi, Codex, and Grok model catalogs for text worker dispatch.
 - `holy-shoot`: **DEPRECATED** — retired because the result was not good enough; no successor. Kept as `skills/deprecated/holy-shoot/ARCHIVE.md` for reference, without a discoverable SKILL.md entry. Previously installed copies are not removed automatically.
 - `makemake`: consolidate project commands into a documented Makefile.
 - `mdxcn-term`: draw mdxcn-style framed ASCII figures in the terminal, aligned for CJK labels (derived from MIT-licensed [mdxcn](https://github.com/keshav-exe/mdxcn)).
