@@ -11,7 +11,7 @@ worker 只做一件事：按 brief 实施并写报告。
 
 任务已有方案或明确目标才派发。没有就先规划，farm 不做探索。仅分析或编辑 farm 不代表要启动 worker。
 
-流程六步，顺序固定。本文件写每一步的语义和完成标准，与宿主无关；具体工具和命令在第 1 步选定的后端文件里。
+流程六步，顺序固定。本文件写每一步的语义和完成标准，与宿主无关；具体工具和命令在所选入口对应的后端文件里。
 
 ## 1. 检测环境与能力
 
@@ -26,14 +26,9 @@ worker 只做一件事：按 brief 实施并写报告。
 | 取现场   | 报告缺失时拿到 worker 的原始输出              |
 | 修正     | 把修正内容发给同一个 worker，让它接着做       |
 
-按第一条成立的选定后端，读对应文件，后续每一步的动作都用它给出的工具和命令：
+按当前项目和会话列候选入口，拆出 brief 后再逐项选。CLI 查 [CLI 后端](references/cli-worker.md) 和 `preflight.sh` 的 clis、mux；核对当前 Herdr tab 确实能开可见 pane、能等待该 harness。原生工具按宿主查 [OpenCode](references/opencode-worker.md)、[Claude Code](references/claude-code-worker.md) 或 [App](references/app-worker.md)；其他宿主直接查当前工具说明。后端文档提供调用方法，具体组合以当前工具能传入的模型、档位为准。
 
-1. 用户明确要求在 pane 里看 worker 实时运行、随时插手 → [CLI 后端](references/cli-worker.md)。
-2. 用户明确要求使用 setup-farm 目录为文本任务选 CLI，或点名 Pi 无头、Codex CLI、Grok CLI，且宿主允许该入口 → 读 [CLI 后端](references/cli-worker.md)，使用 setup-farm 的项目清单。仅请求计划时在确认屏结束。
-3. 会话有原生子代理工具 → 原生后端。OpenCode（`subagent` 工具）读 [OpenCode 原生 worker 用例](references/opencode-worker.md)；Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
-4. 没有原生子代理工具 → [CLI 后端](references/cli-worker.md)。
-
-完成标准：环境、后端、四个动作各用什么工具或命令都已确定。「启动」或「完成信号」找不到就报告缺什么（工具 / CLI / 配置），停止。「修正」找不到时，返工改为把修正内容追加进 brief、重新启动一个 worker。
+用 [会话入口清单](references/entry-plan.md) 记录各入口的启动方式、完成信号、模型目录或查询错误。缺少启动或完成信号就排除该入口，继续核对其他入口。修正工具缺失时，将失败输出追加到 brief，按当前授权重新启动。
 
 ## 2. 通信
 
@@ -90,21 +85,13 @@ brief 模板：
 
 ### worker 模型
 
-当前项目已有 setup-farm 生成的目录，且已选定 CLI 后端处理文本 brief 时，按下述路径准备确认屏：
+先按「通信」模板将每份 brief 写入当前项目的 .farm 目录，再逐份选择。用户点名优先；有显式 pairs 时按 `preflight.sh` 输出的 pairsFile 和 精确项 → `<host>:*` → `*` 顺序匹配。将匹配到的入口、完整模型 ID、variant 作为硬约束；指定项失效时展示具体原因，由用户决定是否替换。技能内置 pairs 和后端示例可作偏好参考。
 
-1. 核对项目目录与未提交改动，按「通信」模板写好本次 brief，再读取 brief 和 `.farm/{pi,codex,grok}-catalog.json` 中已生成的清单。Pi 可无头运行，Codex 和 Grok 需要当前会话可用的 Herdr pane；要求可见运行时按 CLI 后端核对 pane。排除不符合运行条件的组合，单个清单有 error 时保留其他候选并说明原因；项目范围有变化时重新运行 setup-farm。
-2. 用户点名或有显式用户 pairs 时先核对指定组合。否则由主模型根据 brief 选择 harness 和该目录中的完整模型 ID，写一句选择理由；目录无法区分多个合格项时如实说明。
-3. 在项目根目录运行本技能的 `python3 <farm>/text_plan.py --harness <pi|codex|grok> .farm/<task>-brief.md '<完整模型ID>' '<选择理由>'`。把输出并入确认屏，按现有授权与 CLI 流程启动，传入计划中的完整模型 ID。当前计划沿用所选 harness 的默认推理档位。需要可见 Pi pane 时传入 `--pane`，按 CLI 后端流程展示运行位置。
-
-其他入口或项目尚无清单时，用户点名的模型优先。否则从 pairs 取：运行本技能目录（与 SKILL.md 同目录）下的 `preflight.sh`，读 JSON 的 `pairs`（用户配置 `~/.config/farm/pairs` 优先，否则技能自带默认）。你知道自己是谁（host + 模型名）：按 精确项 → `<host>:*` → `*` 的顺序取第一个匹配。无匹配且无 `*`：列出全部 pairs 让用户选。后端文件自带模型分工的，按后端文件。
-
-指定的模型在本会话不可用时，说明缺什么让用户选，不静默换模型或换后端。
+按 [会话入口清单](references/entry-plan.md) 运行 `entry_plan.py`，先看符合 brief 约束的候选，再选入口、harness 和完整模型 ID，写一句与任务有关的理由。多个合格项难分时说明实际采用的偏好。全部不合格时报告各入口缺少的条件。仅请求计划时到确认屏结束。
 
 ### 确认屏
 
-一次列清：后端、worker 模型及其来源、并发问题（需要问时）、将启动的每个 worker（子任务、模型、运行位置）。一次确认覆盖屏上列出的全部启动。
-
-每次实际调用外部模型都遵守当前环境与用户的授权边界；模型选择不代替调用授权，修正轮次需要新进程时也一样。
+逐项列出子任务、项目、运行位置、harness、完整模型 ID、variant（或入口默认）、模型来源、理由和并发数。计划确认与实际调用分别遵守当前会话的授权。逐次授权的外部 CLI 每次启动前单独确认，返工重启同样处理。
 
 ### 红线
 
@@ -112,7 +99,7 @@ brief 模板：
 
 ## 4. 派发与等待
 
-1. 核对项目目录与未提交改动，核对确认屏使用的 brief；尚未落盘时按「通信」模板写到 `.farm/<task>-brief.md`。
+1. 核对项目目录与未提交改动，核对确认屏使用的 brief 与已落盘的内容。
 2. 用后端的「启动」动作派发。
 3. 等后端的「完成信号」，不猜结果。等待期间 orchestrator 不改 worker 负责的文件。
 

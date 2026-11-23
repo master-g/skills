@@ -66,7 +66,7 @@
 
 ## 上次会话
 
-- [2026-11-23] main：本机 Pi 输出 29 个模型，Codex 与 Grok 现有缓存分别列出 10、4 个可见模型；Herdr 本机帮助列有 codex 和 grok。验证了模型发现和计划夹具，未启动 worker。test_text_plan、test_subagent、make check 通过。
+- [2026-11-23] main，#6：用当前项目目录与模拟会话从 brief 生成计划，test_text_plan、test_subagent、make check 通过。未启动真实 worker。
 
 ## 下次运行
 

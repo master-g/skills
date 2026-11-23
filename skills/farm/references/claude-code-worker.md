@@ -1,6 +1,6 @@
 # Claude Code 原生 worker 用例
 
-适用于当前会话由 Claude Code 发起、提供 Agent 工具的情况。Claude Code 下 worker 一律是 Claude，不用 pi。
+适用于当前会话由 Claude Code 发起、提供 Agent 工具的情况。本入口派发 Claude 原生 worker。
 
 SKILL.md 四个动作在本后端的对应：
 
@@ -13,15 +13,15 @@ SKILL.md 四个动作在本后端的对应：
 
 ## 执行方式
 
-默认用 Agent 工具起原生子代理。原因：它不是外部 CLI 进程，/farm 加 SKILL.md 的确认屏就是派发授权；支持按次指定模型；后台运行、完成时自动通知；修正轮次能接着同一个代理继续。这些正好对应 brief → 报告 → 门禁 → 修正的循环，不需要 pid、退出码和 pane 状态。
+选中此入口后用 Agent 工具起原生子代理。按当前会话的原生代理授权派发。Agent 工具支持按次指定模型，后台运行结束时自动通知，修正轮次可继续同一个代理。这些正好对应 brief → 报告 → 门禁 → 修正的循环，不需要 pid、退出码和 pane 状态。
 
-只有用户明确要求在 pane 里看 worker 实时运行、随时插手时，才改走 [CLI 后端](cli-worker.md) 的 herdr pane，此时 cli 固定为 `claude`，每次启动 `claude` 进程按用户的外部 CLI 授权规则单独确认。
+用户明确要求在 pane 里看 worker 时，按确认的计划走 [CLI 后端](cli-worker.md) 的 herdr pane，此时 cli 固定为 `claude`，每次启动 `claude` 进程按用户的外部 CLI 授权规则单独确认。
 
 不用 Workflow 工具：它需要用户明确要求多代理编排才能调用，而且 farm 的门禁需要 orchestrator 在轮次之间自己判断。
 
 ## 选定 pair
 
-运行 `preflight.sh` 只为取 `pairs`，mux 和 clis 不影响本分支。匹配规则同 SKILL.md「worker 模型」。例如当前模型为 `claude-opus-5-5` 时命中 `claude:opus-5.5 = claude:claude-sonnet-5-5`。
+使用显式 pair 时运行 `preflight.sh` 取 `pairs`，mux 和 clis 不影响本分支。匹配规则同 SKILL.md「worker 模型」。例如当前模型为 `claude-opus-5-5` 时命中 `claude:opus-5.5 = claude:claude-sonnet-5-5`。
 
 Agent 工具的 `model` 只接受模型族别名（`sonnet`、`opus`、`haiku`、`fable`）。pairs 写的是完整模型 ID，派发时传对应别名，并用会话信息里的模型列表核对该别名当前就是 pairs 指定的 ID；对不上就说明差异让用户选，不静默换模型。
 

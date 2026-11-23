@@ -87,6 +87,79 @@ class TextPlan(unittest.TestCase):
             plan = json.loads(result.stdout)
             self.assertEqual((plan["entry"], plan["harness"]), ("herdr-pane", catalog["harness"]))
 
+        session = self.project / "session.json"
+        entries = [{"entry": "herdr-pane", "harness": harness, "launch": "herdr agent start",
+                    "completion": "herdr agent prompt --wait", "variant_input": "fixture effort option"}
+                   for harness in ("codex", "grok")]
+        session.write_text(json.dumps({"scope": str(self.project), "entries": entries}))
+        result = self.run_entry("farm/entry_plan.py", self.brief, "--session", session, "--pane",
+                                "--model", "visible", "--variant", "high", "--select",
+                                "herdr-pane", "codex", "--reason", "复用已核对的 Codex pane")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        self.assertEqual({c["harness"] for c in data["candidates"]}, {"codex", "grok"})
+        self.assertEqual(data["plan"]["variant_input"], "fixture effort option")
+        self.assertEqual(data["plan"]["variant"], "high")
+
+    def test_session_selection_uses_current_entry_evidence(self):
+        self.install_pi("echo 'provider model context max-out thinking images'\necho 'demo text 1M 32K yes no'")
+        self.assertEqual(self.catalog().returncode, 0)
+        session = self.project / "session.json"
+        native = {"entry": "native", "harness": "opencode", "launch": "subagent",
+                  "completion": "completion notification", "variant_input": "subagent.model=id#variant",
+                  "models": [{"id": "demo/text", "thinking_levels": ["high"]}]}
+        headless = {"entry": "headless", "harness": "pi", "launch": "headless.sh run",
+                    "completion": "headless.sh wait"}
+        session.write_text(json.dumps({"scope": str(self.project), "entries": [headless, native]}))
+
+        def plans(*args):
+            return self.run_entry("farm/entry_plan.py", self.brief, "--session", session,
+                                  "--model", "demo/text", *args)
+
+        result = plans()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual({r["entry"] for r in json.loads(result.stdout)["candidates"]},
+                         {"headless", "native"})
+        result = plans("--variant", "high", "--select", "native", "opencode",
+                       "--reason", "当前原生入口支持指定档位")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        plan = json.loads(result.stdout)["plan"]
+        self.assertEqual((plan["model"], plan["variant"], plan["reason"]),
+                         ("demo/text", "high", "当前原生入口支持指定档位"))
+        self.assertNotEqual(plans("--pane").returncode, 0)
+        unavailable = plans("--variant", "HIGH")
+        self.assertNotEqual(unavailable.returncode, 0)
+        self.assertIn("未公布档位 HIGH", json.loads(unavailable.stdout)["excluded"][1]["error"])
+        del native["variant_input"]
+        session.write_text(json.dumps({"scope": str(self.project), "entries": [native]}))
+        rejected = plans("--variant", "high")
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("指定档位", json.loads(rejected.stdout)["excluded"][0]["error"])
+
+    def test_pane_plan_refreshes_models_and_reports_each_unavailable_entry(self):
+        session = self.project / "session.json"
+        pane = {"entry": "herdr-pane", "harness": "pi", "launch": "herdr agent start",
+                "completion": "herdr agent prompt --wait"}
+        entries = [pane, {**pane, "harness": "grok", "error": "缓存读取失败"},
+                   {**pane, "harness": "codex", "completion": ""},
+                   {**pane, "harness": "claude", "launch": ""},
+                   {**pane, "entry": "headless"}]
+        session.write_text(json.dumps({"scope": str(self.project), "entries": entries}))
+        for model in ("before", "after"):
+            self.install_pi("echo 'provider model'\necho 'demo " + model + "'")
+            self.assertEqual(self.catalog().returncode, 0)
+            result = self.run_entry("farm/entry_plan.py", self.brief, "--session", session, "--pane")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            data = json.loads(result.stdout)
+            self.assertEqual([(c["entry"], c["model"]) for c in data["candidates"]],
+                             [("herdr-pane", "demo/" + model)])
+            self.assertEqual({r["error"] for r in data["excluded"]},
+                             {"缓存读取失败", "缺少完成信号", "缺少启动", "需要可见 Herdr pane"})
+        result = self.run_entry("farm/entry_plan.py", self.brief, "--session", session,
+                                "--model", "demo/before", "--pane")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("demo/before", json.loads(result.stdout)["excluded"][0]["error"])
+
     def test_plan_from_catalog(self):
         self.install_pi("echo 'provider model context max-out thinking images'\necho 'demo text 1M 32K yes no'")
         catalog = self.catalog()

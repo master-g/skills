@@ -4,6 +4,16 @@ import json
 from pathlib import Path
 
 
+def read_task(path):
+    brief = path.resolve()
+    if brief.parent != Path.cwd() / ".farm" or not brief.name.endswith("-brief.md"):
+        raise ValueError("请使用项目中的 .farm/<task>-brief.md")
+    heading = brief.read_text().split("\n", 1)[0]
+    if not heading.startswith("# ") or not heading[2:].strip():
+        raise ValueError("任务标题不能为空")
+    return brief, heading[2:].strip()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("brief", type=Path)
@@ -22,13 +32,10 @@ def main():
             raise ValueError(catalog["error"])
         if args.model not in [item["id"] for item in catalog["models"]]:
             raise ValueError("目录中没有指定的模型：" + args.model)
-        brief = args.brief.resolve()
-        if brief.parent != Path.cwd() / ".farm" or not brief.name.endswith("-brief.md"):
-            raise ValueError("请使用项目中的 .farm/<task>-brief.md")
-        heading = brief.read_text().split("\n", 1)[0]
-        if not heading.startswith("# ") or not heading[2:].strip() or not args.reason.strip():
-            raise ValueError("任务标题和选择理由不能为空")
-        plan = {"task": heading[2:].strip(), "brief": str(brief), "location": catalog["scope"],
+        brief, task = read_task(args.brief)
+        if not args.reason.strip():
+            raise ValueError("选择理由不能为空")
+        plan = {"task": task, "brief": str(brief), "location": catalog["scope"],
                 "entry": "herdr-pane" if args.pane else catalog["entry"], "harness": catalog["harness"], "model": args.model,
                 "thinking": f"{'Pi' if args.harness == 'pi' else args.harness} 默认", "reason": args.reason}
     except (OSError, ValueError, KeyError, TypeError) as error:

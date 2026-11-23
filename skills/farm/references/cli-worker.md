@@ -1,6 +1,6 @@
 # CLI 后端：worker CLI 进程
 
-适用于会话没有原生子代理工具,或用户明确要求在 pane 里看 worker 的情况。worker 是 pi / claude / codex / grok 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。宿主是 Claude Code 时 cli 固定为 `claude`,只走 herdr pane。
+适用于该 brief 选中 CLI 入口的情况。worker 是 pi / claude / codex / grok 的 CLI 进程,跑在 herdr pane 里或无头运行。SKILL.md「红线」决定哪个 CLI 能用哪种方式。宿主是 Claude Code 时 cli 固定为 `claude`，只走 Herdr pane。
 
 SKILL.md 四个动作在本后端的对应:
 
@@ -40,7 +40,7 @@ SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头
 
 1. `herdr agent list`,筛 `tab_id == $HERDR_TAB_ID` 且 `agent == <cli>` 且 `cwd == $PWD` 且 `agent_status` 为 `idle`/`done` 的 agent(排除 `pane_id == $HERDR_PANE_ID` 即自己)。
 2. 命中 → 问用户:复用这个 pane(列出 pane_id / name / terminal_title)还是新开。复用时先重置会话再派发:`herdr agent prompt <agent> "<reset-cmd>" --wait --timeout 60000`,reset-cmd 见下表;`--wait` 返回 `agent_prompt_stalled` 属正常(斜杠命令不产生 working 态),继续即可。
-3. 复用前核对模型与计划一致；无法核实时新开。未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
+3. 复用前核对模型与档位均与计划一致；无法核实时新开。未命中或用户选新开 → `herdr pane split --current --direction right --cwd "$PWD" --no-focus`(从返回 JSON 的 `.result.pane.pane_id` 读 pane id)→ `herdr agent start <task> --kind <cli> --pane <pane-id> -- <modelflag> <档位参数>`。新开前若本会话已有自己开的 worker pane,先 `herdr pane close <旧 pane-id>`。
 4. 后续 `agent prompt` 一律用 pane_id 做目标(复用的 pane 名字是旧任务名,不可靠);记住 pane_id,收尾要用。
 
 Grok 启动时使用计划中的完整 ID，每次启动须取得用户对本次进程的明确确认，复用同模型会话用 `/new`。Codex 的启动同样逐次确认。
@@ -55,7 +55,7 @@ worker CLI 通用斜杠命令(用 `agent prompt` 发送,等价于用户在 pane 
 
 修正轮次上下文太长时,先发 `/compact` 再发修正 brief,不用重开 pane。
 
-modelflag(pane 交互 / 无头):
+modelflag 见下表。计划的 variant 为空时省略档位参数；指定档位时按计划中已核实的 variant_input 传入该值（如通过模型引用传档位，合并到 modelflag）。启动和重启用同一规则。
 
 | cli    | herdr pane        | 无头               |
 | ------ | ----------------- | ------------------ |
@@ -89,7 +89,7 @@ k ≥ 2 时在 [worker 池](pool.md) 之上补充本后端的做法。子任务 
 
 派发:
 
-- herdr:每个槽一个 pane。复用哪个、新开几个已在确认屏定下,不再逐个询问:复用的按「herdr pane 复用」第 2 步重置,新开的按第 3 步开,只关掉上一次 /farm 留下的 pane,不关当前池的其他槽。槽位接新子任务前先发 reset-cmd。派发用 `herdr agent prompt <pane-id> "<prompt>" --wait --until working --until blocked --timeout 15000`:确认已开工就返回,不等完成。
+- herdr:每个槽一个 pane。复用哪个、新开几个已在确认屏定下,不再逐个询问:复用的按「herdr pane 复用」第 2 步重置,新开的按第 3 步开,只关掉上一次 /farm 留下的 pane,不关当前池的其他槽。槽位接新子任务前，重新核对该 brief 的入口、harness、模型和档位。全部一致才复用并发 reset-cmd；否则按新计划的后端和授权启动 worker。派发用 `herdr agent prompt <pane-id> "<prompt>" --wait --until working --until blocked --timeout 15000`:确认已开工就返回,不等完成。
 - tmux / none:按「派发」的命令,task 取 `<task>-<i>`,tmux 窗口名 `farm-<task>-<i>`。
 
 等待:轮流检查未完成的 worker,哪个先结束就先审计哪个。

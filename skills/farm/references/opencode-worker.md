@@ -13,7 +13,7 @@ SKILL.md 四个动作在本后端的对应：
 
 ## 配置与模型
 
-运行本技能目录下的 `preflight.sh` 取 `pairs`，mux 和 clis 不影响本分支。按 SKILL.md「worker 模型」匹配 orchestrator，原生后端只接受以下 worker 值：
+使用显式 pair 时，运行本技能目录下的 `preflight.sh` 取 `pairs`，按 SKILL.md「worker 模型」匹配 orchestrator。OpenCode 原生入口的 pair 格式为：
 
 ```text
 opencode:<providerID>/<modelID>[#variant]
@@ -27,11 +27,11 @@ opencode:<providerID>/<modelID>[#variant]
 opencode:* = opencode:anthropic/claude-sonnet-5-5#high
 ```
 
-这只是语法示例。provider、模型和 variant 以当前项目的 OpenCode 模型列表为准，ID 区分大小写。用户调用时点名的模型优先；否则用匹配到的 pair。`model` 参数只使用这两个明确来源，省略它会继承 orchestrator，不能实现 farm 的模型分工。
+这只是语法示例。provider、模型和 variant 以当前项目的 OpenCode 模型列表为准，ID 区分大小写。用户调用时点名的模型优先；其次用匹配到的显式 pair，其他情况按 brief 从已核对的目录中选。`model` 参数使用确认屏上的完整引用，省略它会继承 orchestrator，不能实现 farm 的模型分工。
 
-确认屏之前实际查询当前项目的模型目录，而不只检查配置文本。会话提供模型查询工具时，用 `tools.opencode.models` 按 provider 查询 chat 模型：返回的模型 `id` 必须精确相等，带 `#variant` 时，`variant` 名（不含 `#`）必须出现在该模型公布的 `variants` 中。没有目录查询工具时，让用户通过 `/models` 在当前项目选择，并把所选完整引用写入 pair。目录查询失败、模型无精确匹配或 variant 未公布时都停止，让用户从当前可用项重新选择，不凭记忆补全模型或 variant。
+确认屏之前实际查询当前项目的模型目录，而不只检查配置文本。会话提供模型查询工具时，用 `tools.opencode.models` 按 provider 查询 chat 模型：返回的模型 `id` 必须精确相等，带 `#variant` 时，`variant` 名（不含 `#`）必须出现在该模型公布的 `variants` 中。没有目录查询工具时，让用户通过 `/models` 在当前项目选择，并把所选完整引用写入 pair。目录查询失败、模型无精确匹配或 variant 未公布时排除该组合；用户固定该组合时让用户重新选择，不凭记忆补全模型或 variant。
 
-匹配结果是 `pi:`、`claude:`、`codex:`，或以上目录核对未通过，都说明原生后端缺少有效配置。列出所需格式让用户选择或补充配置，不把 CLI 模型名改写成 OpenCode 模型，不静默改用其他后端。
+显式 pair 指向 CLI 时按该 CLI 入口核对。用户同时固定 OpenCode 原生入口时，展示两项约束的冲突，由用户选择；其他入口的同名模型不能证明 OpenCode 有该模型。
 
 确认屏列出后端 `OpenCode 原生子代理`、完整 worker 模型引用及其来源、每个子任务和并发数。
 
