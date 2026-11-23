@@ -66,13 +66,8 @@
 
 ## 上次会话
 
-<!-- 整块改写：分支、验证命令及实际结果、停在何处；任务细节只留一行指向证据目录。 -->
-
-- [2026-11-21] main：完成 disco-elysium-narrative 全面审计与四阶段优化（清理 13 个声音文件残缺与旧说辩论、松绑 draft_check 窄窗口门禁并修正则/省略号/后颈冲突、draw 加思维阁互斥与降无失败权重、补双向摆荡与非短戏示范、扩充 evals/cases.md 题材与盲评维度）。
-  验证：test_draw / test_draft_check / test_render_tui 全部 ok；新示范《七号码头值班室》过 draft_check；make check 全通过。
+- [2026-11-23] main，#5：临时项目以本机 Pi 查到 29 个目录项并生成文本计划；未启动 worker。test_text_plan、test_subagent 与 make check 通过。
 
 ## 下次运行
 
-<!-- 整块改写：接下来的任务和优先级，含仍受阻的项。 -->
-
-- [2026-11-21] 无排队任务；如需本机生效运行 `make install SKILL=disco-elysium-narrative SOURCE=.`，如需验证效果可按 `evals/cases.md` 跑多题材盲评。
+- [2026-11-23] #4 的其余验收与依赖见 GitHub 子工单；保留工作区已有的 farm pairs 修改。

@@ -20,13 +20,13 @@ SKILL.md 四个动作在本后端的对应:
 - `pairs`: orchestrator→worker 对,匹配规则见 SKILL.md「worker 模型」
 - `warnings`: 如 herdr integration outdated(提示用户跑 `herdr integration install <cli>`,可继续,但 agent 状态判定可能失真——显式告知用户)
 
-完成标准:JSON 到手且 pairs 非空。否则报告缺什么(CLI / 配置),停止。
+完成标准:JSON 到手且选型来源可用（Pi 无头文本计划用 setup-farm 清单，按 pair 选型时要求 pairs 非空）。否则报告缺什么(CLI / 配置),停止。
 
 SKILL.md「确认屏」里每个 worker 的运行位置写成:cli:model、无头,或 herdr 下复用哪个 pane / 新开。
 
 ## 派发
 
-按 mux 选一行执行( `<cli>` `<model>` 来自选定 pair):
+明确选择 Pi 无头文本计划时使用下表 tmux 或 none 的无头方式（herdr 环境使用 none 行），等待和返工也沿用无头流程。其余情况按 mux 选一行执行( `<cli>` `<model>` 来自确认屏的计划或选定 pair):
 
 | mux   | 派发                                                                                                                   |
 | ----- | ---------------------------------------------------------------------------------------------------------------------- |

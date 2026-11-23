@@ -29,8 +29,9 @@ worker 只做一件事：按 brief 实施并写报告。
 按第一条成立的选定后端，读对应文件，后续每一步的动作都用它给出的工具和命令：
 
 1. 用户明确要求在 pane 里看 worker 实时运行、随时插手 → [CLI 后端](references/cli-worker.md)。
-2. 会话有原生子代理工具 → 原生后端。OpenCode（`subagent` 工具）读 [OpenCode 原生 worker 用例](references/opencode-worker.md)；Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
-3. 没有原生子代理工具 → [CLI 后端](references/cli-worker.md)。
+2. 用户明确要求 Pi 无头文本计划，且宿主允许该入口 → 读 [CLI 后端](references/cli-worker.md)，使用 setup-farm 的项目清单。仅请求计划时在确认屏结束。
+3. 会话有原生子代理工具 → 原生后端。OpenCode（`subagent` 工具）读 [OpenCode 原生 worker 用例](references/opencode-worker.md)；Claude Code（Agent 工具）读 [Claude Code 原生 worker 用例](references/claude-code-worker.md)；Codex 桌面 App 等 GUI（`spawn_agent`）读 [App 原生 worker 用例](references/app-worker.md)。其他宿主没有专门文件：从它的工具说明里找出四个动作，后续各步按本文件执行。
+4. 没有原生子代理工具 → [CLI 后端](references/cli-worker.md)。
 
 完成标准：环境、后端、四个动作各用什么工具或命令都已确定。「启动」或「完成信号」找不到就报告缺什么（工具 / CLI / 配置），停止。「修正」找不到时，返工改为把修正内容追加进 brief、重新启动一个 worker。
 
@@ -89,7 +90,13 @@ brief 模板：
 
 ### worker 模型
 
-用户点名的模型优先。否则从 pairs 取：运行本技能目录（与 SKILL.md 同目录）下的 `preflight.sh`，读 JSON 的 `pairs`（用户配置 `~/.config/farm/pairs` 优先，否则技能自带默认）。你知道自己是谁（host + 模型名）：按 精确项 → `<host>:*` → `*` 的顺序取第一个匹配。无匹配且无 `*`：列出全部 pairs 让用户选。后端文件自带模型分工的，按后端文件。
+当前项目已有 setup-farm 生成的 `.farm/pi-catalog.json`，且已选定 Pi 无头 CLI 处理文本 brief 时，按下述路径准备确认屏：
+
+1. 核对项目目录与未提交改动，按「通信」模板写好本次 brief，再读取清单和 brief。清单有 error 时展示原因；项目范围有变化时重新运行 setup-farm。
+2. 用户点名或有显式用户 pairs 时先核对指定组合。否则由主模型根据 brief 从目录选一个完整模型 ID，写一句选择理由；目录无法区分多个合格项时如实说明。
+3. 在项目根目录运行本技能的 `python3 <farm>/text_plan.py .farm/<task>-brief.md '<provider/model>' '<选择理由>'`。把输出并入确认屏，按现有授权与 CLI 流程启动，传入计划中的完整模型 ID。Pi 模型目录只公布是否支持 thinking，具体档位沿用 Pi 默认值。
+
+其他入口或项目尚无清单时，用户点名的模型优先。否则从 pairs 取：运行本技能目录（与 SKILL.md 同目录）下的 `preflight.sh`，读 JSON 的 `pairs`（用户配置 `~/.config/farm/pairs` 优先，否则技能自带默认）。你知道自己是谁（host + 模型名）：按 精确项 → `<host>:*` → `*` 的顺序取第一个匹配。无匹配且无 `*`：列出全部 pairs 让用户选。后端文件自带模型分工的，按后端文件。
 
 指定的模型在本会话不可用时，说明缺什么让用户选，不静默换模型或换后端。
 
@@ -105,7 +112,7 @@ brief 模板：
 
 ## 4. 派发与等待
 
-1. 核对项目目录与未提交改动，按上面的模板把 brief 写到 `.farm/<task>-brief.md`。
+1. 核对项目目录与未提交改动，核对确认屏使用的 brief；尚未落盘时按「通信」模板写到 `.farm/<task>-brief.md`。
 2. 用后端的「启动」动作派发。
 3. 等后端的「完成信号」，不猜结果。等待期间 orchestrator 不改 worker 负责的文件。
 
