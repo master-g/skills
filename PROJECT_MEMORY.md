@@ -67,9 +67,7 @@
 
 ## 上次会话
 
-- [2026-11-23] main，#9 端到端复验通过，证据见 docs/research/2026-11-23-farm-vision-9/。test_text_plan、test_subagent 通过。
-
-移出：[2026-11-23] farm #9 实测：Code → 并入 [2026-11-23] farm #9 实测：Codex App 原生 worker 首次验证读图
+- [2026-11-23] main，按 #9 复盘更新 farm 派发步骤。用两次原始 brief 运行规划器：首次嵌套路径被拒绝，标准路径输出与 docs/research/2026-11-23-farm-vision-9/plan.json 相同。
 
 ## 下次运行
 
