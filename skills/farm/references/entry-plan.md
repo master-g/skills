@@ -33,6 +33,10 @@
 
 Pi、Codex、Grok CLI 由脚本读取本项目最新生成的 setup-farm 清单。先用 setup-farm 刷新可查询的入口。每次只用该入口自己的证据，CLI 的目录不能证明原生工具能选同名模型。在 variant_input 中写出该启动工具能传档位的具体参数或语法。请求指定档位时，脚本同时要求该方法和模型目录里的精确档位。派发时按此方法传值，复用 pane 时也核对当前模型与档位。
 
+截图 brief 声明 `输入类型：local-image`。在能提供本地图片的会话入口记录 `local_image`，例如 `{"method":"worker 用 read 工具读取 brief 中的绝对路径","source":"本会话 read 工具说明"}`。只把实际能向该模型提供图像内容的工具记为取得方式。未核实时省略。原生目录的模型可提供 `inputs`，与 setup-farm 格式一致。
+
+计划的 input 同时展示模型能力及其依据、入口提供材料的方法及其来源。目录和工具声明足以生成待确认计划。实际验过时，在该入口的 `verified_inputs` 以完整模型 ID、输入类型为两层键，值如 `{"status":"supported","method":"与本入口 method 完全相同的值","source":"本次读图报告路径"}`。同一取得方式的实测结果优先，失败可记为 `unsupported`。
+
 按 brief 列出候选。传当前编排者在 pairs 左栏使用的 `host:model` 键，例如 Claude Code 的 `claude:opus-5.5`。需要可见 pane 时加 `--pane`。
 
 ```sh

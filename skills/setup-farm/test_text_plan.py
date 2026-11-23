@@ -58,7 +58,7 @@ class TextPlan(unittest.TestCase):
 
     def test_cached_directories_generate_separate_pane_plans(self):
         fixtures = {
-            "codex": [{"slug": "visible", "visibility": "list", "input_modalities": ["image"],
+            "codex": [{"slug": "visible", "visibility": "list", "input_modalities": ["text", "image"],
                        "supported_reasoning_levels": [{"effort": "high"}]},
                       {"slug": "hidden", "visibility": "hide"}],
             "grok": {"visible": {"info": {"hidden": False, "reasoning_efforts": [{"id": "high"}]},
@@ -229,6 +229,62 @@ class TextPlan(unittest.TestCase):
         empty = run("pi:main", "--named", "native", "opencode", "--model", "demo/text")
         self.assertNotEqual(empty.returncode, 0)
         self.assertIn("会话清单没有入口", json.loads(empty.stdout)["error"])
+
+    def test_screenshot_requires_model_and_local_image_delivery(self):
+        self.install_pi("echo 'provider model images'\necho 'demo text no'\necho 'demo mystery ?'\necho 'demo vision yes'")
+        catalog = json.loads(self.catalog().stdout)
+        screenshot = self.brief.with_name("screen-brief.md")
+        screenshot.write_text("# 核对截图\n\n输入类型：local-image\n\n## 目标\n读取 screen.png 的标题。\n")
+        session = self.project / "session.json"
+        row = {"entry": "headless", "harness": "pi", "launch": "run", "completion": "wait"}
+
+        def plans(brief, *args):
+            session.write_text(json.dumps({"scope": str(self.project), "entries": [row]}))
+            result = self.run_entry("farm/entry_plan.py", brief, "--session", session, *args)
+            return result.returncode, json.loads(result.stdout)
+
+        status, blocked = plans(screenshot)
+        self.assertNotEqual(status, 0)
+        errors = {r["model"]: r["error"] for r in blocked["excluded"]}
+        self.assertIn("未知", errors["demo/mystery"])
+        self.assertIn("不支持", errors["demo/text"])
+        self.assertIn("取得", errors["demo/vision"])
+        row["local_image"] = {"method": "read 工具读取 brief 中的路径", "source": "夹具工具清单"}
+        status, valid = plans(screenshot)
+        self.assertEqual(status, 0)
+        self.assertEqual([c["model"] for c in valid["candidates"]], ["demo/vision"])
+        self.assertEqual(valid["candidates"][0]["input"]["delivery"], row["local_image"])
+        self.assertEqual(valid["candidates"][0]["input"]["capability"]["source"], catalog["source"])
+        self.assertEqual(valid["candidates"][0]["input"]["capability"]["basis"], "catalog")
+
+        self.brief.write_text(self.brief.read_text() + "\n示例：\n```\n输入类型：CSV\n```\n")
+        files = []
+        for brief, model, reason in [(self.brief, "demo/text", "修改标题"), (screenshot, "demo/vision", "读取截图")]:
+            status, selected = plans(brief, "--select", "headless", "pi", "--model", model, "--reason", reason)
+            self.assertEqual(status, 0)
+            path = brief.with_suffix(".json")
+            path.write_text(json.dumps(selected))
+            files.append(path)
+        result = self.run_entry("farm/pool_plan.py", "-j", "1", *files)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        queue = json.loads(result.stdout)
+        self.assertEqual(queue["max_active"], 1)
+        self.assertEqual([(p["model"], p["reason"]) for p in queue["queue"]],
+                         [("demo/text", "修改标题"), ("demo/vision", "读取截图")])
+
+        for state, expected in [([], ["demo/text"]), (["--active", self.brief], []),
+                                (["--passed", self.brief], ["demo/vision"])]:
+            result = self.run_entry("farm/pool_plan.py", "-j", "1", *state, *files)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual([p["model"] for p in json.loads(result.stdout)["ready"]], expected)
+
+        row["verified_inputs"] = {"demo/vision": {"local-image": {
+            "status": "unsupported", "method": "另一工具", "source": "夹具读图报告"}}}
+        self.assertEqual(plans(screenshot)[0], 0)
+        row["verified_inputs"]["demo/vision"]["local-image"]["method"] = row["local_image"]["method"]
+        status, blocked = plans(screenshot)
+        self.assertNotEqual(status, 0)
+        self.assertIn("夹具读图报告", blocked["excluded"][-1]["error"])
 
     def test_plan_from_catalog(self):
         self.install_pi("echo 'provider model context max-out thinking images'\necho 'demo text 1M 32K yes no'")

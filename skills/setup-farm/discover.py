@@ -9,6 +9,11 @@ import subprocess
 import tempfile
 
 
+def input_capability(value, source, basis="catalog"):
+    status = {True: "supported", False: "unsupported", None: "unknown"}[value]
+    return {"status": status, "source": source, "basis": basis}
+
+
 def list_models(binary):
     result = subprocess.run([binary, "--list-models"], capture_output=True,
                             text=True, timeout=30, check=True)
@@ -40,7 +45,8 @@ def cached_models(harness, cache):
             modalities = item.get("input_modalities")
             models.append({"id": item["slug"],
                            "thinking_levels": [row["effort"] for row in levels] if levels is not None else None,
-                           "images": "image" in modalities if modalities is not None else None})
+                           "text": "text" in modalities if isinstance(modalities, list) else None,
+                           "images": "image" in modalities if isinstance(modalities, list) else None})
     else:
         for model_id, record in data["models"].items():
             info = record["info"]
@@ -69,6 +75,13 @@ def discover(harness):
             catalog["models"] = list_models(binary)
         else:
             catalog["models"], catalog["fetched_at"] = cached_models(harness, cache)
+        catalog["delivery"] = {"text": {"method": "读取 brief", "source": "farm brief 协议"},
+                               "local-image": {"method": None, "source": "需核对当前入口工具"}}
+        for model in catalog["models"]:
+            text_input = (input_capability(model.pop("text"), catalog["source"])
+                          if "text" in model else input_capability(True, "文本 worker 接口", "protocol"))
+            model["inputs"] = {"text": text_input,
+                               "local-image": input_capability(model["images"], catalog["source"])}
         if not catalog["models"]:
             raise ValueError(harness + " 目录没有可用模型")
     except (OSError, ValueError, KeyError, AttributeError, TypeError, subprocess.SubprocessError) as error:

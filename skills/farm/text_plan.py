@@ -8,10 +8,20 @@ def read_task(path):
     brief = path.resolve()
     if brief.parent != Path.cwd() / ".farm" or not brief.name.endswith("-brief.md"):
         raise ValueError("请使用项目中的 .farm/<task>-brief.md")
-    heading = brief.read_text().split("\n", 1)[0]
+    lines = brief.read_text().split("\n")
+    heading = lines[0]
     if not heading.startswith("# ") or not heading[2:].strip():
         raise ValueError("任务标题不能为空")
-    return brief, heading[2:].strip()
+    inputs = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        if not line.startswith("输入类型："):
+            break
+        inputs.append(line.removeprefix("输入类型：").strip())
+    if inputs and inputs not in (["text"], ["local-image"]):
+        raise ValueError("brief 应声明一项输入类型：text 或 local-image")
+    return brief, heading[2:].strip(), inputs[0] if inputs else "text"
 
 
 def main():
@@ -30,9 +40,14 @@ def main():
             raise ValueError("项目已变化，请在当前项目运行 setup-farm")
         if catalog.get("error"):
             raise ValueError(catalog["error"])
-        if args.model not in [item["id"] for item in catalog["models"]]:
+        model = next((m for m in catalog["models"] if m["id"] == args.model), None)
+        if model is None:
             raise ValueError("目录中没有指定的模型：" + args.model)
-        brief, task = read_task(args.brief)
+        brief, task, input_type = read_task(args.brief)
+        if input_type != "text":
+            raise ValueError("截图 brief 请用 entry_plan.py 核对入口取得图片的方式")
+        if model.get("inputs", {}).get("text", {}).get("status", "supported") != "supported":
+            raise ValueError("模型缺少文本输入支持：" + args.model)
         if not args.reason.strip():
             raise ValueError("选择理由不能为空")
         plan = {"task": task, "brief": str(brief), "location": catalog["scope"],

@@ -14,6 +14,8 @@ SKILL.md「拆分与并发数」拆出 k 个子任务、并发上限为 N 时，
 
 ## 池
 
+把每份 brief 的 `entry_plan.py --select` 输出分别保存到 .farm 目录。按计划顺序运行 `python3 <farm>/pool_plan.py -j N <选型结果文件> ...`。确认屏展示 queue。编排者每轮用可重复的 `--active <brief 路径>` 登记已启动待审计项，用 `--passed <brief 路径>` 登记已通过项，只派发输出的 ready。每项按自己的 brief、入口、模型、档位和材料取得方式启动。max_active 为 1 时，前一项通过审计后才启动下一项。
+
 同时运行的 worker 不超过 N。开局派发前 min(N, k) 个子任务；某个 worker 通过审计后，它的槽位接下一个待办子任务。修正轮次继续占用原槽位。
 
 ## 审计
