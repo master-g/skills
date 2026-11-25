@@ -31,6 +31,13 @@ from pathlib import Path
 
 SKILLS = ("逻辑思维 博学多闻 能说会道 故弄玄虚 标新立异 见微知著 平心定气 内陆帝国 通情达理 争强好胜 同舟共济 循循善诱 "
           "钢筋铁骨 坚忍不拔 强身健体 食髓知味 天人感应 疑神疑鬼 眼明手巧 五感发达 反应速度 鬼祟玲珑 能工巧匠 从容自若").split()
+# 净语料 dev 集各声部 p95 字数（与 assets/skills/*.md「量表」一致）
+SKILL_P95 = {
+    '逻辑思维': 56, '博学多闻': 105, '能说会道': 56, '故弄玄虚': 61, '标新立异': 70, '见微知著': 94,
+    '平心定气': 53, '内陆帝国': 57, '通情达理': 54, '争强好胜': 59, '同舟共济': 142, '循循善诱': 54,
+    '钢筋铁骨': 75, '坚忍不拔': 55, '强身健体': 60, '食髓知味': 68, '天人感应': 135, '疑神疑鬼': 55,
+    '眼明手巧': 73, '五感发达': 65, '反应速度': 52, '鬼祟玲珑': 89, '能工巧匠': 63, '从容自若': 70,
+}
 BUREAU = re.compile(r'^(通告|通知|公告|特此|兹|经审议|委员会|本办公室|本通告|.{0,12}(今日|正式)(通告|宣布|挂牌|公告))')
 TODO = re.compile(r'(请(于|你|尽快|查阅|回复|把|去)|你(该|得|应该|需要)去?|记得|尽快|务必|别忘了|试着|去把)')
 PROPS = {
@@ -38,6 +45,12 @@ PROPS = {
     '悬在回车上的手指': r'(食指|手指|指尖)[^。\n]{0,10}(悬|停)[^。\n]{0,6}回车',
     '震到桌边的手机': r'震[^。\n]{0,12}(挪|推|移)[^。\n]{0,8}(边|沿)',
     '没回头': r'没(有)?(回头|抬头)',
+}
+CLICHES = {
+    '不是X而是Y': r'不是[^。！？\n]{1,18}[，,]而是',
+    '没有ABC排比': r'没有[^，。！？\n]{1,10}[，,]没有[^，。！？\n]{1,10}[，,]没有',
+    '鸡汤金句': r'(生活|世界|人生)就是',
+    '抽象词堆叠': r'(真理|尊严|荒谬|命运|灵魂)',
 }
 TASK = re.compile(r'^\s*(>\s*)?(新任务|(隐藏)?任务完成)[:：]', re.M)
 BRACKET = re.compile(r'^\s*\[[^\]\n]+\]\s*$', re.M)
@@ -49,7 +62,10 @@ def sents(t):
     return [x for x in re.split(r'[。!?！？]+', t) if x.strip('… .')]
 
 
-IMPERATIVE = re.compile(r'(^|[。!?！？])(别(?!人|的|处)|问(?!题)|去(?!年|世)|把(?!握|手)|先(?!生|前)|给|让|试着|看看|告诉)')
+IMPERATIVE = re.compile(
+    r'(^|[。!?！？])(别(?!人|的|处|无|具|说|提)|不要|快(?!乐|速|要|点到|慢)|停(?!在|了|下?来?了|止?了|留)|闭嘴|站住|退后|抬头|深呼吸|'
+    r'问(?!题|答|号|太多)|去(?!年|世|了|过|处)|把(?!握|手|戏)|先(?!生|前|后|是|天)|给(?!予|不|了)|让(?!·|人|我看看|他走运)|试着|看看|告诉)'
+)
 PARTICLE = re.compile(r'[吧呢啊嘛哦呀哈唉嗯]')
 CONJUNCTION = re.compile(r'因为|所以|但是|不过|虽然|如果|而且|然后|可是')
 
@@ -60,10 +76,10 @@ TEXTURE_GATES = (
     # 键, 名称, 门槛, 下限, 上限, 低于下限怎么改, 高于上限怎么改
     ('skill_share', '技能占比', '不到 45%（语料 22%）', None, lambda v: v < F(9, 20), None,
      '删掉只评论气氛的技能台词，把推进交给世界和你的追问；纯独处内心戏可适当偏高'),
-    ('single', '单句', '15%–75%（语料 36%）', lambda v: v >= F(3, 20), lambda v: v <= F(3, 4),
+    ('single', '单句', '15%–75%（语料 39%）', lambda v: v >= F(3, 20), lambda v: v <= F(3, 4),
      '截短几条过满的台词，留出一句就停的呼吸感，不要加台词凑数',
      '给几条过碎的电报句接上半句理由或具体细节，不要加新台词'),
-    ('imperative', '祈使开头', '不超过 30%（语料 8%）', None, lambda v: v <= F(3, 10), None,
+    ('imperative', '祈使开头', '不超过 30%（语料 5%）', None, lambda v: v <= F(3, 10), None,
      '把多余的说教指令改成观察、判断或挑衅；命令留给争强好胜、疑神疑鬼、平心定气这类声部'),
     ('connective', '连词或语气词', '至少 10%（语料 22%）', lambda v: v >= F(1, 10), None,
      '让一两条台词像说话一样带因为、不过、所以或吧、呢、啊，别全篇写成警句', None),
@@ -197,10 +213,25 @@ def gates(r):
     return rows
 
 
+def max_skill_streak(recs):
+    best = cur = 0
+    for rec in recs:
+        if rec['kind'] == 'skill':
+            cur += 1
+            best = max(best, cur)
+        elif rec['kind'] in ('you', 'world'):
+            cur = 0
+    return best
+
+
+def clean_len(t):
+    return len(re.sub(r'[\s*]', '', plain(t)))
+
+
 def check_draft(d):
     t, recs, skill_recs = d['text'], d['recs'], d['skill_recs']
     ans = d['answer']
-    last = [s for s in re.split(r'(?<=[。！？!?])', ans) if s.strip()]
+    last = [s for s in re.split(r'(?<=[。！？!?])[”’」』）】]*', ans) if s.strip('”’」』）】 \t\n')]
     texts = [plain(x['text']) for x in skill_recs]
     skill = len(skill_recs)
     you = sum(x['kind'] == 'you' for x in recs)
@@ -208,12 +239,21 @@ def check_draft(d):
     narrative = skill + you + world > 0
     count = lambda f: [sum(bool(f(x)) for x in texts), len(texts)]
     seen = collections.Counter(x['speaker'] for x in skill_recs)
+    over_p95 = [[x['speaker'], len(plain(x['text'])), SKILL_P95[x['speaker']]]
+                for x in skill_recs if len(plain(x['text'])) > SKILL_P95[x['speaker']]]
+    cliches = {}
+    for k, pat in CLICHES.items():
+        n = len(re.findall(pat, t))
+        if (k == '抽象词堆叠' and n >= 3) or (k != '抽象词堆叠' and n > 0):
+            cliches[k] = n
     r = {
         'file': d['name'],
         'cabinet': '思维阁' in t,
+        'cabinet_len': [clean_len(d['question']), clean_len(ans)] if (d['question'] or ans) else [0, 0],
         'bureau_answer': bool(ans and BUREAU.search(ans)),
         'todo_ending': bool(last and TODO.search(last[-1])),
         'stock_props': [k for k, p in PROPS.items() if re.search(p, t)],
+        'cliches': cliches,
         'crisis_leak': (not narrative) and bool(LEAK.search(t)),
         'task_lines': len(TASK.findall(t)),
         'bracket_ending': bool(BRACKET.search(t)),
@@ -224,6 +264,9 @@ def check_draft(d):
         'imperative': count(IMPERATIVE.search),
         'connective': count(lambda x: PARTICLE.search(x) or CONJUNCTION.search(x)),
         'appearances': dict(sorted(seen.items(), key=lambda kv: (-kv[1], SKILLS.index(kv[0])))),
+        'skill_count': len(seen),
+        'max_streak': max_skill_streak(recs),
+        'over_p95': over_p95,
         'failures': [x['speaker'] for x in skill_recs if '失败' in x['tag']],
         'ending': last_line(recs)[0] if narrative else '',
         'question_open': opening(d['question']) if d['question'] else '',
@@ -280,15 +323,21 @@ def report(d, r):
     if is_narrative(r):
         kind, text = ending_view(d)
         out.append('只报不判')
-        out.append('  出场：' + '、'.join(f'{k} {v}' for k, v in r['appearances'].items()))
+        out.append(f'  出场（{r["skill_count"]} 个技能，建议 4–6；最长连发 {r["max_streak"]} 条）：'
+                   + '、'.join(f'{k} {v}' for k, v in r['appearances'].items()))
+        over = '、'.join(f'{s}({n}>{p})' for s, n, p in r['over_p95']) or '无'
+        out.append(f'  超 p95 台词（破壁长镜头可留 1 条）：{over}')
         out.append(f'  失败：{len(r["failures"])} 条' + (f'（{"、".join(r["failures"])}）' if r['failures'] else ''))
         out.append(f'  最后一行：{kind}「{text}」')
         if r['question_open'] or r['answer_open']:
-            out.append(f'  思维阁：问题开口「{r["question_open"]}」，解答开口「{r["answer_open"]}」')
+            ql, al = r['cabinet_len']
+            out.append(f'  思维阁：问 {ql} 字 / 答 {al} 字（参考 140–180 / 150–180）；'
+                       f'问题开口「{r["question_open"]}」，解答开口「{r["answer_open"]}」')
         else:
             out.append('  思维阁：没有')
+        cl = '、'.join(f'{k}×{n}' for k, n in r['cliches'].items()) or '无'
         out.append(f'  任务行 {r["task_lines"]} 条；机构腔解答：{"是" if r["bureau_answer"] else "否"}；'
-                   f'解答派活收尾：{"是" if r["todo_ending"] else "否"}；常见道具：{"、".join(r["stock_props"]) or "无"}')
+                   f'解答派活收尾：{"是" if r["todo_ending"] else "否"}；常见道具：{"、".join(r["stock_props"]) or "无"}；跑偏句式：{cl}')
     out.append(f'结论：{len(r["failed"])} 项未通过' if r['failed'] else '结论：全部通过')
     return '\n'.join(out)
 

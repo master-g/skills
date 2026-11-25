@@ -13,9 +13,9 @@ DRAFT = '''*门铃* — 响了两声，接着是敲门，敲得很客气。
 
 房东 — “续肯定是续。”他把文件袋换到左手。“就是房租得动一动，涨五百。”
 
-**五感发达**(视觉)【成功】 — 文件袋里那几页纸是新打印的，第一页抬头写着：房屋租赁合同，*新的*。
+**五感发达**(视觉)【传奇：成功】 — 文件袋里那几页纸是新打印的，第一页抬头写着：房屋租赁合同，*新的*，印着 _社区事务_ 和 order_id_v2。
 
-**从容自若**【失败】 — 你想让脸上什么都不写，嘴角却先往下撇了一下，又被你硬拉回来。拉得太快，他看见了，还冲你点点头。
+**从容自若**【极简：失败】 — 你想让脸上什么都不写，嘴角却先往下撇了一下，又被你硬拉回来。拉得太快，他看见了，还冲你点点头。
 
 **循循善诱** — 他松了二十块，这就是他的底了。
 
@@ -35,6 +35,7 @@ _冰柜_ — 压缩机嗡了一声。
 > ### 💭 思维阁:「门框上的第三层胶」
 >
 > **问题**: 按照通常的租赁习惯，续租时的涨幅大致跟着附近同户型的成交价走。
+> 哪怕走廊里的灯坏了三个月也没人换。
 >
 > **解答**: 停！答案是：不算。
 '''
@@ -49,21 +50,22 @@ def test_skill_names_take_their_attribute_color():
     assert f'\x1b[1;{fg("mot")}m五感发达(视觉)\x1b[0m' in out
     assert f'\x1b[1;{fg("mot")}m从容自若\x1b[0m' in out
     assert f'\x1b[1;{fg("psy")}m循循善诱\x1b[0m' in out
-    assert f'\x1b[{fg("ck")}m【成功】\x1b[0m' in out and f'\x1b[{fg("ck")}m【失败】\x1b[0m' in out
+    assert f'\x1b[{fg("ck")}m【传奇：成功】\x1b[0m' in out and f'\x1b[{fg("ck")}m【极简：失败】\x1b[0m' in out
     assert f'\x1b[1;{fg("you")}m你\x1b[0m' in out
     assert '\x1b[1m房东\x1b[0m' in out and '\x1b[1;3m门铃\x1b[0m' in out and '\x1b[1;3m冰柜\x1b[0m' in out
-    assert '\x1b[3m新的\x1b[0m' in out
+    assert '\x1b[3m新的\x1b[0m' in out and '\x1b[3m社区事务\x1b[0m' in out and 'order_id_v2' in plain(out)
 
 
 def test_layout():
     for cols in (40, 72):
         lines = plain(render(DRAFT, cols)).split('\n')
         assert max(width(l) for l in lines) <= cols + 2, cols
-        i = next(k for k, l in enumerate(lines) if l.startswith('从容自若【失败】 — '))
+        i = next(k for k, l in enumerate(lines) if l.startswith('从容自若【极简：失败】 — '))
         assert lines[i + 1].startswith('   ') and not lines[i + 1].startswith('    '), lines[i + 1]
     text = plain(render(DRAFT))
     assert '新任务  打听附近的租金' in text and '获得道具  房屋租赁合同' in text
     assert '门框上的第三层胶' in text and '💭' not in text and ' 问题  /  解答 ' in text
+    assert '成交价走。哪怕走廊里的灯坏了三个月也没人换。' in text.replace('\n', '')
     assert '月租' in text and '|' not in text and '**' not in text
     box = [l for l in text.split('\n') if l and l[0] in '┌│└']
     assert len(box) >= 4 and len({width(l) for l in box}) == 1, box

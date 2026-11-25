@@ -17,6 +17,14 @@ SKILLS = ("逻辑思维 博学多闻 能说会道 故弄玄虚 标新立异 见�
           "钢筋铁骨 坚忍不拔 强身健体 食髓知味 天人感应 疑神疑鬼 眼明手巧 五感发达 反应速度 鬼祟玲珑 能工巧匠 从容自若").split()
 SPACED = re.compile(r'^(.{1,30}?)(【[^】]*】)? — ?(.*)$')
 TIGHT = re.compile(r'^(.{1,30}?)(【[^】]*】)?— ?(.*)$')
+STOP_LINE = re.compile(
+    r'^(获得道具|失去道具|新任务|任务完成|隐藏任务完成|解锁思维|问题|解答)[:：]'
+    r'|^Day\s?\d+\s|^周[一二三四五六日]\s*$|^[+-]\s?\d+\s?[^:：]{2,6}[:：]|^\[完成思维\]'
+)
+IMPERATIVE = re.compile(
+    r'(^|[。!?！？])(别(?!人|的|处|无|具|说|提)|不要|快(?!乐|速|要|点到|慢)|停(?!在|了|下?来?了|止?了|留)|闭嘴|站住|退后|抬头|深呼吸|'
+    r'问(?!题|答|号|太多)|去(?!年|世|了|过|处)|把(?!握|手|戏)|先(?!生|前|后|是|天)|给(?!予|不|了)|让(?!·|人|我看看|他走运)|试着|看看|告诉)'
+)
 INTRO_END = 340  # 此前是技能介绍页
 
 
@@ -30,11 +38,29 @@ def known_speakers(lines):
     return {s for s, n in seen.items() if n >= 2} | set(SKILLS)
 
 
+def thought_title_lines(lines):
+    """紧挨在「问题：」前面的思维名称行（不含发言破折号），防止并入上一条发言。"""
+    titles = set()
+    for idx in range(1, len(lines)):
+        if re.match(r'^问题[:：]', lines[idx].strip()):
+            j = idx - 1
+            while j >= 0 and not lines[j].strip():
+                j -= 1
+            if j >= 0 and '—' not in lines[j] and not STOP_LINE.match(lines[j].strip()):
+                titles.add(j + 1)
+    return titles
+
+
 def parse(lines):
-    """合并续行。返回 [{speaker, tag, text, line, lines}]；speaker 去括号后缀。"""
+    """合并续行，跳过界面行与思维阁。返回 [{speaker, tag, text, line, lines}]；speaker 去括号后缀。"""
     known = known_speakers(lines)
+    titles = thought_title_lines(lines)
     recs, cur = [], None
     for i, line in enumerate(lines, 1):
+        s = line.strip()
+        if i in titles or STOP_LINE.match(s):
+            cur = None
+            continue
         m = None
         if not line.startswith(('“', '"', '—', '-')):
             m = SPACED.match(line)
@@ -44,7 +70,7 @@ def parse(lines):
         if i >= INTRO_END and m:
             cur = {'speaker': speaker(m[1]), 'tag': m[2] or '', 'text': m[3], 'line': i, 'lines': [i]}
             recs.append(cur)
-        elif not line.strip():
+        elif not s:
             cur = None
         elif cur is not None:
             cur['text'] += line
@@ -152,7 +178,7 @@ def texture(dev, imit_file):
         '字数中位': lambda T: statistics.median(map(len, T)),
         '单句%': lambda T: 100 * sum(len(sents(t)) == 1 for t in T) / len(T),
         '三句以上%': lambda T: 100 * sum(len(sents(t)) >= 3 for t in T) / len(T),
-        '指令起句%': has(r'(^|[。!?！？])(别(?!人|的|处)|问(?!题)|去(?!年|世)|把(?!握|手)|先(?!生|前)|给|让|试着|看看|告诉)'),
+        '指令起句%': has(IMPERATIVE),
         '语气词%': has(r'[吧呢啊嘛哦呀哈唉嗯]'),
         '缓冲词%': has(r'也许|可能|好像|似乎|看起来|大概|或许|恐怕|有点|有些'),
         '虚指%': has(r'某种|一种|什么|这个|那个|这种|那种|这些|事情|东西'),

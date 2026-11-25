@@ -46,10 +46,21 @@ def width(text):
     return sum(2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in text)
 
 
+EMPH = re.compile(r'\*([^*]+)\*|(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])')
+
+
 def spans(text, base=''):
-    """把 *强调* 拆成 [(片段, 样式)]。"""
-    return [(part, ';'.join(x for x in (base, ITALIC if i % 2 else '') if x))
-            for i, part in enumerate(re.split(r'\*([^*]+)\*', text)) if part]
+    """把 *强调* 和 _强调_（不含标识符内下划线）拆成 [(片段, 样式)]。"""
+    out, pos = [], 0
+    emph_style = ';'.join(x for x in (base, ITALIC) if x)
+    for m in EMPH.finditer(text):
+        if m.start() > pos:
+            out.append((text[pos:m.start()], base))
+        out.append((m[1] if m[1] is not None else m[2], emph_style))
+        pos = m.end()
+    if pos < len(text):
+        out.append((text[pos:], base))
+    return out
 
 
 def wrap(segs, cols, hang=0):
@@ -113,10 +124,17 @@ def blocks(md, cols):
         if m := re.match(r'^>\s*#+\s*💭?\s*思维阁[:：]\s*「(.+)」', ln):
             yield [[('思 维 阁', DIM)], [(' ' * max(0, cols - width(m[1]) - 2) + m[1] + '  ', BAR)]]
         elif m := re.match(r'^>\s*\*\*(问题|解答)\*\*[:：]\s*(.+)', ln):
+            body = [m[2]]
+            while i < len(lines):
+                nxt = lines[i].strip()
+                if not nxt.startswith('>') or nxt == '>' or re.match(r'^>\s*(\*\*|#)', nxt):
+                    break
+                body.append(re.sub(r'^>\s*', '', nxt))
+                i += 1
             tabs = [(f' {t} ', BAR if t == m[1] else DIM) for t in ('问题', '解答')]
             tabs.insert(1, (' / ', DIM))
             yield [[(' ' * ((cols - 15) // 2), '')] + tabs]
-            yield wrap(spans(m[2]), cols)
+            yield wrap(spans(''.join(body)), cols)
         elif ln.startswith('|'):
             rows = [ln]
             while i < len(lines) and lines[i].strip().startswith('|'):

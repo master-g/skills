@@ -49,6 +49,7 @@
 - [2026-11-17] 在本仓库用子 agent 跑技能 eval：子 agent 继承本仓库的 AGENTS.md，两组执行者都派出之后才能改它；夹具是普通目录，要先在副本里建基线提交；被测技能放中性路径并去掉 evals/，事后从运行记录核对实际跑的脚本路径。来源：plans/034 附件里的 eval-baseline.md
 - [2026-11-21] disco-elysium-narrative 优化：draft_check 改宽护栏（占比<45%、单句 15–75%、祈使≤30%、连词语气词≥10%）、修复句中省略号切句与全角！？正则、移除后颈道具告警；draw 加思维阁互斥重抽且不写失败降至 20%；清理声音文件旧说辩论与删行号残缺；补回双向摆荡美学与工业风非短戏示范
 - [2026-11-23] farm #9 实测：Codex App 原生 worker 首次验证读图，复验从标准 brief 生成计划后按计划派发；本次计划、原图、报告及独立核验见 docs/research/2026-11-23-farm-vision-9/。
+- [2026-11-25] disco-elysium-narrative 审计改造：style_eval.parse() 跳过界面行与思维阁（清 38 思维阁+549 界面行吞行污染，净语料单句 39%、祈使 5%）；用户确认支持可选难度档（【极简：失败】【传奇：成功】）；引入偏畸 Build、帮倒忙成功、平拍+破壁、跳离当场思维阁与非鸡汤温柔；draw 接入 10 种幽默机制
 
 ## 失败尝试
 
@@ -67,8 +68,8 @@
 
 ## 上次会话
 
-- [2026-11-23] main，按 #9 复盘更新 farm 派发步骤。用两次原始 brief 运行规划器：首次嵌套路径被拒绝，标准路径输出与 docs/research/2026-11-23-farm-vision-9/plan.json 相同。
+- [2026-11-25] main，完成 disco-elysium-narrative 审计与双阶段改造（确定性修复 + 叙事核心升级 + 可选难度档），验证三项脚本单测、check_quotes（199 条 0 错）与 make check 全通过，已提交并 make install 更新本机副本。
 
 ## 下次运行
 
-- [2026-11-23] 用户确认 Claude 不接收 farm 工作。本机安装副本待另行更新，保留已有 farm pairs 修改。
+- [2026-11-25] 保留已有 skills/farm/pairs 修改（Claude 不接收 farm 工作，本机副本待另行更新）；disco-elysium-narrative 如有需要可按 evals/cases.md 跑跨篇盲评复验新版增益。

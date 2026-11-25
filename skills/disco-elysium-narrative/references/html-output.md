@@ -11,24 +11,24 @@
 
 ## 速查
 
-| Markdown 稿                           | HTML                                                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 技能 `**技能名**【成功】 — 内容`      | `<p class="s"><span class="sk int">技能名</span><span class="ck">【成功】</span> — 内容</p>`      |
-| 五感发达 `**五感发达**(视觉)【成功】` | 感官写进名字：`<span class="sk mot">五感发达(视觉)</span>`                                        |
-| 你 `> **你** — 内容`                  | `<p class="you"><span class="who">你</span> — 内容</p>`                                           |
-| 人物 `称呼 — “引语”动作。`            | `<p class="npc"><span class="who">称呼</span> — “引语”动作。</p>`                                 |
-| 物品与场所 `*物品名* — 内容`          | `<p class="obj"><span class="on">物品名</span> — 内容</p>`                                        |
-| 古老的爬虫脑、边缘系统                | `<p class="reptile"><span class="sk rep">古老的爬虫脑</span> — 内容</p>`                          |
-| 强调 `*词*`                           | `<em>词</em>`                                                                                     |
-| 没有名字的旁白                        | `<p class="scene">`，开场那段加 `lead`                                                            |
-| 场景抬头 `Day1 8am 区域 具体处`       | `<span class="timestamp">`                                                                        |
-| 物证、官方引文                        | `<div class="doc-quote">`，出处放 `<span class="src">`                                            |
-| 分隔 `---`                            | `<hr class="sep">`；重大转折用 `<hr class="beat">`                                                |
-| 新任务、任务完成                      | `<p class="ui"><span class="k">新任务</span>内容</p>`                                             |
-| 道具卡                                | `<div class="card">`：名称行 `<p class="ui">`，描述 `<p>`，属性行 `<p class="mod">`               |
-| 信息表                                | `<table>`，表头按本篇的事起名                                                                     |
-| 思维阁                                | `<section class="tc">`：`<h2>思维阁</h2>`、`<h3>名字</h3>`，问题和解答前各一行 `<p class="tabs">` |
-| 页头、页尾                            | `<header>` 里放 `.kicker`、`h1`、`.dek`、`.cast`、`.stamp`；页尾 `.colophon` 是属性色图例         |
+| Markdown 稿                           | HTML                                                                                                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 技能 `**技能名**【成功】 — 内容`      | `<p class="s"><span class="sk int">技能名</span><span class="ck">【成功】</span> — 内容</p>`（可选难度档如 `【极简：失败】` 同样放进 `.ck`） |
+| 五感发达 `**五感发达**(视觉)【成功】` | 感官写进名字：`<span class="sk mot">五感发达(视觉)</span>`                                                                                   |
+| 你 `> **你** — 内容`                  | `<p class="you"><span class="who">你</span> — 内容</p>`                                                                                      |
+| 人物 `称呼 — “引语”动作。`            | `<p class="npc"><span class="who">称呼</span> — “引语”动作。</p>`                                                                            |
+| 物品与场所 `*物品名* — 内容`          | `<p class="obj"><span class="on">物品名</span> — 内容</p>`                                                                                   |
+| 古老的爬虫脑、边缘系统                | `<p class="reptile"><span class="sk rep">古老的爬虫脑</span> — 内容</p>`                                                                     |
+| 强调 `*词*`                           | `<em>词</em>`                                                                                                                                |
+| 没有名字的旁白                        | `<p class="scene">`，开场那段加 `lead`                                                                                                       |
+| 场景抬头 `Day1 8am 区域 具体处`       | `<span class="timestamp">`                                                                                                                   |
+| 物证、官方引文                        | `<div class="doc-quote">`，出处放 `<span class="src">`                                                                                       |
+| 分隔 `---`                            | `<hr class="sep">`；重大转折用 `<hr class="beat">`                                                                                           |
+| 新任务、任务完成                      | `<p class="ui"><span class="k">新任务</span>内容</p>`                                                                                        |
+| 道具卡                                | `<div class="card">`：名称行 `<p class="ui">`，描述 `<p>`，属性行 `<p class="mod">`                                                          |
+| 信息表                                | `<table>`，表头按本篇的事起名                                                                                                                |
+| 思维阁                                | `<section class="tc">`：`<h2>思维阁</h2>`、`<h3>名字</h3>`，问题和解答前各一行 `<p class="tabs">`                                            |
+| 页头、页尾                            | `<header>` 里放 `.kicker`、`h1`、`.dek`、`.cast`、`.stamp`；页尾 `.colophon` 是属性色图例                                                    |
 
 Markdown 稿靠粗细区分说话人，所以人物名不加粗；网页里技能名有属性色，人物名和物品名也加粗，这是有意的差别。检定标记【成功】【失败】共用一个 `.ck`，不写标记的技能行不加 `.ck`。页头 `.cast` 里的技能名同样带属性 class。思维阁的标题条只写名字；`.tabs` 里当前段落的标签包在 `<b>` 里，显示为反白页签。
 

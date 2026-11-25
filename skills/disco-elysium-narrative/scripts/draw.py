@@ -15,12 +15,16 @@ from draft_check import SKILLS
 # 失败取自 references/style.md「检定呈现」的三种主形态（29:27:24 = 80），「不写失败」权重 20（占 20%）：
 # 单篇叙事里失败检定是核心喜剧与脆弱引擎，默认多数篇目带一次失败，同时保留两成无失败以防篇篇套路。
 NO_FAILURE = '这一篇不写失败'
-# 思维阁 (转折, 解答开口) 互斥对：避免抽出自相矛盾的写作约束。
+# 思维阁 (转折, 解答开口) 与 (转折, 安慰度) 互斥对：避免抽出自相矛盾或语调撕裂的写作约束。
 INCOMPATIBLE = {
     ('直答', '场景：时间、拟声或画面'),
     ('揭伤', '完成词'),
     ('揭伤', '公文：汇报、公告、贺词'),
+    ('揭伤', '爆发：喝令、堆词、动作中途'),
     ('跑题', '直判：一句判决'),
+}
+INCOMPATIBLE_COMFORT = {
+    ('揭伤', '反讽打气'),
 }
 TABLE = {
     '名字形状': [
@@ -71,6 +75,18 @@ TABLE = {
         ('你说出口的一句话', 2, '停在你带引号的一句话上，不总结，也不发问'),
         ('同名的任务完成', 1, '本篇当场解决了一件事时，用同名的「任务完成」作最后一行；没解决就改用下一个动作'),
     ],
+    '幽默机制': [
+        ('客服循环', 1, '不管你答什么，物件都回同一句'),
+        ('集体背书', 1, '失败检定出坏点子，技能和物品轮流夸，说出口，现实一句打回'),
+        ('零度复述', 1, '胡话被搭档原样复述，不带起伏'),
+        ('自信递减', 1, '每次失败后更肯定下一次'),
+        ('追问参数', 1, '对宏大比喻问尺寸'),
+        ('字面事故', 1, '你计划耍酷，身体按物理执行'),
+        ('行政结算', 1, '用计分规则宣判善意'),
+        ('递减汇报', 1, '先夸成果，再报代价'),
+        ('羞辱押韵', 1, '正经人念出外人编的顺口溜'),
+        ('把比喻当真', 1, '搭档认真为比喻设边界'),
+    ],
     '失败': [
         ('坏主意或抢话', 29, '技能自信地给错建议，或话已出口'),
         ('身体事故', 27, '工具从手里滑出去，身体不听使唤'),
@@ -91,6 +107,8 @@ def draw(rng):
     picks = {group: pick_one(rng, rows) for group, rows in TABLE.items()}
     while (picks['转折'][0], picks['解答开口'][0]) in INCOMPATIBLE:
         picks['解答开口'] = pick_one(rng, TABLE['解答开口'])
+    while (picks['转折'][0], picks['安慰度'][0]) in INCOMPATIBLE_COMFORT:
+        picks['安慰度'] = pick_one(rng, TABLE['安慰度'])
     picks['候选技能'] = rng.sample(SKILLS, 3)
     return picks
 
@@ -103,9 +121,14 @@ def show(name, how):
 
 def render(picks, seed):
     out = [f'种子 {seed}（用 --seed {seed} 复现）', '思维阁']
-    out += [f'  {g}：{show(*picks[g])}' for g in CABINET]
+    for g in CABINET:
+        line = f'  {g}：{show(*picks[g])}'
+        if g == '解答开口' and picks[g][0].startswith('续接'):
+            line += '；联动：问题末句须用省略号收住，解答直接续接它'
+        out.append(line)
     out.append(f'收尾：{show(*picks["收尾"])}')
-    out.append(f'候选技能：先看这三个在场景里有没有戏：{"、".join(picks["候选技能"])}，有触发就用，没有就算了')
+    out.append(f'幽默机制：{show(*picks["幽默机制"])}。非短戏用这一种制造荒唐的过量；短戏可选')
+    out.append(f'候选技能：先看这三个在场景里有没有戏：{"、".join(picks["候选技能"])}，有触发就用（可挑 1 个作本篇主控偏执），没有就算了')
     fail = picks['失败']
     out.append(f'失败：{show(*fail)}' + ('' if fail[0] == NO_FAILURE else '。失败稀有，短戏可以没有；写就写这一种'))
     return '\n'.join(out)

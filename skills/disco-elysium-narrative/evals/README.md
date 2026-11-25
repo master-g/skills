@@ -5,7 +5,7 @@
 - `check_quotes.py raw.txt file.md ...`：校验文档里的 `「原文」（行 N）` 是否逐字。
 - `style_eval.py`：切留出集，生成声部量表和盲标题目，计分，比较仿写和语料的质地。子命令见文件开头。
 - `corpus_stats.py dev.txt`：重算 `references/style.md` 和 `special-voices.md` 的语料比例。先用 `style_eval.py split` 生成 `dev.txt`。
-- `ui_stats.py raw.txt`：统计任务行、道具卡与属性行、场景抬头、解锁思维，重算 `references/game-ui.md` 的数字。这些行不走发言格式，`parse()` 会把它们并进上一条发言。
+- `ui_stats.py raw.txt`：统计任务行、道具卡与属性行、场景抬头、解锁思维，重算 `references/game-ui.md` 的数字。这些行不走发言格式，`style_eval.parse()` 会显式跳过界面行和思维阁，不把它们并进上一条发言。
 - `voice-evidence/`：声音文件的完整取证版，含行号、接话计数和对旧说法的核对。`assets/skills/` 里的文件是从它删减来的。
 - `style-evidence.md`：风格总论的取证版，含分母、完整分布表和从写作版删掉的引文。
 - `thought-cabinet-entries.md`：53 条思维的完整表和取证说明。

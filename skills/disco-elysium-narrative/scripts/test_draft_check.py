@@ -75,9 +75,9 @@ def test_ui_fields():
 
 def test_speakers():
     text = '\n\n'.join([
-        '**内陆帝国** — 那张票有点烫手……',
+        '**内陆帝国**【传奇：成功】 — 那张票有点烫手……',
         '**五感发达**（视觉）【成功】 — 有烟味。',
-        '**逻辑思维**【中等:失败】',
+        '**逻辑思维**【极简：失败】',
         '有三种可能。',
         '*自动灯器* — 绿灯。运行正常。',
         '_砂糖橘_ — 翠苑好啊。',
@@ -90,6 +90,33 @@ def test_speakers():
     assert (r['skill'], r['you'], r['world']) == (3, 1, 4), r
     assert r['appearances'] == {'逻辑思维': 1, '内陆帝国': 1, '五感发达': 1}, r
     assert r['failures'] == ['逻辑思维'] and r['single'] == [3, 3], r
+    assert r['skill_count'] == 3 and r['max_streak'] == 3, r
+
+
+def test_imperative_todo_and_diagnostics():
+    # 祈使误杀/漏杀修复
+    edge = '\n\n'.join([
+        '**同舟共济**【成功】 — 让·维克玛皱了皱眉。',
+        '**逻辑思维**【成功】 — 问答节目马上开始。问太多问题只会显得脆弱。',
+        '**平心定气**【成功】 — 不要回那条消息。',
+        '**疑神疑鬼**【成功】 — 闭嘴！快把门锁上。',
+    ])
+    r = run(edge)
+    assert r['imperative'] == [2, 4], r['imperative']
+    # 解答末句带右引号时仍能抓住派活收尾；并报告思维阁字数、超 p95 与跑偏句式
+    long_line = 'a' * 60
+    draft = (
+        f'**逻辑思维**【成功】 — {long_line}。这不是巧合，而是必然。\n\n'
+        '> **你** — “好。”\n\n'
+        '> ### 💭 思维阁:「测试」\n>\n'
+        '> **问题**: 这是一段测试问题。\n>\n'
+        '> **解答**: 他最后说：“请你尽快把表交了。”\n'
+    )
+    r2 = run(draft)
+    assert r2['todo_ending'] is True, r2
+    assert r2['cabinet_len'] == [9, 16], r2['cabinet_len']
+    assert r2['over_p95'] and r2['over_p95'][0][0] == '逻辑思维', r2['over_p95']
+    assert r2['cliches'].get('不是X而是Y') == 1, r2['cliches']
 
 
 def test_gates():

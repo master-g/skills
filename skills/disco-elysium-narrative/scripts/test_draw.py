@@ -3,7 +3,7 @@
 import collections, random, re, subprocess, sys
 from pathlib import Path
 
-from draw import INCOMPATIBLE, NO_FAILURE, TABLE, draw
+from draw import INCOMPATIBLE, INCOMPATIBLE_COMFORT, NO_FAILURE, TABLE, draw, render
 from draft_check import SKILLS
 
 HERE = Path(__file__).resolve().parent
@@ -19,7 +19,15 @@ def test_seed_reproducible():
     assert cli('--seed', '7') == cli('--seed', '7')
     assert len({cli('--seed', str(s)) for s in range(1, 6)}) > 1
     out = cli('--seed', '7')
-    assert out.startswith('种子 7') and '先看这三个在场景里有没有戏：' in out and '写就写这一种' in out, out
+    assert out.startswith('种子 7') and '先看这三个在场景里有没有戏：' in out and '幽默机制：' in out and '写就写这一种' in out, out
+    # 续接联动提示
+    for s in range(500):
+        p = draw(random.Random(s))
+        if p['解答开口'][0].startswith('续接'):
+            assert '联动：问题末句须用省略号收住' in render(p, s)
+            break
+    else:
+        raise AssertionError('未抽到续接')
 
 
 def test_distribution():
@@ -27,8 +35,9 @@ def test_distribution():
     picks = [draw(rng) for _ in range(n)]
     # 互斥对永不同时出现
     assert all((p['转折'][0], p['解答开口'][0]) not in INCOMPATIBLE for p in picks)
+    assert all((p['转折'][0], p['安慰度'][0]) not in INCOMPATIBLE_COMFORT for p in picks)
     for group, rows in TABLE.items():
-        if group == '解答开口':
+        if group in ('解答开口', '安慰度'):
             continue  # 受互斥重抽影响，边缘分布略有偏移
         total = sum(w for _, w, _ in rows)
         got = collections.Counter(p[group][0] for p in picks)
@@ -51,6 +60,8 @@ def test_names_match_references():
     for name, w, _ in TABLE['安慰度']:
         assert f'{name} {w}（' in cabinet, name
     style = (REFS / 'style.md').read_text()
+    for name, _, how in TABLE['幽默机制']:
+        assert f'**{name}**：{how}' in style, (name, how)
     for name, w, _ in TABLE['失败']:
         if name == NO_FAILURE:
             continue
